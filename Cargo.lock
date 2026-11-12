@@ -1447,11 +1447,14 @@ name = "workbench-tui"
 version = "0.1.0"
 dependencies = [
  "chronos-client",
+ "chronos-local",
  "chronos-protocol",
  "chronos-tui",
  "crossterm",
  "ratatui",
  "serde_json",
+ "vellum-adapter-local-authentication",
+ "vellum-sdk-client",
  "vellum-tui",
 ]
 

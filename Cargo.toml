@@ -9,9 +9,12 @@ description = "Composition root for independent Chronos and Vellum Ratatui peers
 
 [dependencies]
 vellum-tui = { version = "=0.1.0", path = "../vellum-tui" }
+vellum-sdk-client = { version = "=0.1.0", path = "../vellum/sdk/client" }
+vellum-adapter-local-authentication = { version = "=0.1.0", path = "../vellum/adapters/local-authentication" }
 chronos-tui = { version = "=0.1.0", path = "../../github.com/gantbd/chronos-tui" }
 chronos-client = { version = "=0.1.0", path = "../../github.com/gantbd/chronos/client/chronos-client" }
 chronos-protocol = { version = "=0.1.0", path = "../../github.com/gantbd/chronos/protocol/chronos-protocol" }
+chronos-local = { version = "=0.1.0", path = "../../github.com/gantbd/chronos/transport/chronos-local" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 

@@ -2,7 +2,7 @@
   "schema": 1,
   "package": "workbench-tui",
   "vellumRevision": "f4a53ba664acf2a12b6fadfd7d378eef63307c39",
-  "vellumTuiRevision": "5a3479f84d1a5a118199c807b945ca3d34dc9974",
+  "vellumTuiRevision": "bf4e4fe6e1631378e566408798df94c20ebea679",
   "chronosWorkspaceRevision": "03c468463fd4bda6af77414730c2f76405c3a73a",
   "remoteReachabilityQualified": false,
   "cratesIoPublished": false

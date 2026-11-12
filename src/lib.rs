@@ -31,6 +31,30 @@ pub enum RoutedInput {
     Vellum(vellum_tui::Input),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExitDecision {
+    Exit,
+    ConfirmDiscard,
+    RefuseIndeterminate,
+}
+
+/// The composition root may terminate only after preserving Vellum's explicit
+/// uncertainty. Dirty state requires one local confirmation; an indeterminate
+/// effect is never converted into discard or success.
+pub const fn decide_exit(
+    persistence: vellum_sdk_client::workspace::PersistenceProjectionV1,
+    discard_confirmed: bool,
+) -> ExitDecision {
+    use vellum_sdk_client::workspace::PersistenceProjectionV1;
+    match persistence {
+        PersistenceProjectionV1::Indeterminate => ExitDecision::RefuseIndeterminate,
+        PersistenceProjectionV1::Dirty if !discard_confirmed => ExitDecision::ConfirmDiscard,
+        PersistenceProjectionV1::Unknown
+        | PersistenceProjectionV1::Clean
+        | PersistenceProjectionV1::Dirty => ExitDecision::Exit,
+    }
+}
+
 /// Routes one terminal event without granting either pane authority over the
 /// other. The composition root alone owns global exit and focus transfer.
 pub fn route_key(key: KeyEvent, focus: Focus) -> RoutedInput {
@@ -147,5 +171,30 @@ mod tests {
             route_key(text, Focus::Vellum),
             RoutedInput::Vellum(vellum_tui::Input::Edit(_))
         ));
+    }
+
+    #[test]
+    fn exit_preserves_dirty_confirmation_and_indeterminate_effects() {
+        use vellum_sdk_client::workspace::PersistenceProjectionV1;
+        assert_eq!(
+            decide_exit(PersistenceProjectionV1::Clean, false),
+            ExitDecision::Exit
+        );
+        assert_eq!(
+            decide_exit(PersistenceProjectionV1::Unknown, false),
+            ExitDecision::Exit
+        );
+        assert_eq!(
+            decide_exit(PersistenceProjectionV1::Dirty, false),
+            ExitDecision::ConfirmDiscard
+        );
+        assert_eq!(
+            decide_exit(PersistenceProjectionV1::Dirty, true),
+            ExitDecision::Exit
+        );
+        assert_eq!(
+            decide_exit(PersistenceProjectionV1::Indeterminate, true),
+            ExitDecision::RefuseIndeterminate
+        );
     }
 }
