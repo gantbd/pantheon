@@ -50,3 +50,6 @@
   envelopes that preserve refusal, not-sent, outcome-unknown, invalid reply or
   projection, and uncertain disconnect states instead of collapsing them into
   unstructured stderr.
+- Added guarded hosted-topology assembly that rolls back already-started peers
+  in reverse order and returns exact clean, refused, or outcome-unknown receipts
+  when a later factory refuses startup.

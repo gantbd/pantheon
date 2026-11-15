@@ -55,6 +55,12 @@ pub enum StartError<E> {
     Peer(E),
 }
 
+#[derive(Debug, Eq, PartialEq)]
+pub struct StartupFailure<E> {
+    pub cause: StartError<E>,
+    pub rollback: Option<TopologyShutdown>,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RegistryError {
     Empty,
@@ -110,6 +116,31 @@ impl HostRegistry {
         Ok(client)
     }
 
+    /// Starts one peer as part of an all-or-nothing topology assembly. Any
+    /// failure while assembling aborts already-started peers in reverse order
+    /// and returns their exact shutdown receipts. Lifecycle errors after the
+    /// topology is sealed do not disturb the running topology.
+    pub fn start_or_rollback<C, E, S>(
+        &mut self,
+        peer: HostedPeerId,
+        start: impl FnOnce() -> Result<(C, S), E>,
+    ) -> Result<C, StartupFailure<E>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        match self.start(peer, start) {
+            Ok(client) => Ok(client),
+            Err(cause) => {
+                let rollback = if self.lifecycle == RegistryLifecycle::Assembling {
+                    Some(self.abort().expect("assembling topology can be aborted"))
+                } else {
+                    None
+                };
+                Err(StartupFailure { cause, rollback })
+            }
+        }
+    }
+
     pub fn seal(&mut self) -> Result<(), RegistryError> {
         if self.lifecycle != RegistryLifecycle::Assembling {
             return Err(RegistryError::Lifecycle(self.lifecycle));
@@ -133,6 +164,19 @@ impl HostRegistry {
         if self.shutdown.is_empty() {
             return Err(RegistryError::Empty);
         }
+        Ok(self.drain())
+    }
+
+    /// Aborts topology assembly. Unlike orderly shutdown, aborting an empty
+    /// assembly is valid and yields an empty clean receipt set.
+    pub fn abort(&mut self) -> Result<TopologyShutdown, RegistryError> {
+        if self.lifecycle != RegistryLifecycle::Assembling {
+            return Err(RegistryError::Lifecycle(self.lifecycle));
+        }
+        Ok(self.drain())
+    }
+
+    fn drain(&mut self) -> TopologyShutdown {
         self.lifecycle = RegistryLifecycle::Draining;
         let mut receipts = Vec::with_capacity(self.shutdown.len());
         for (peer, mut shutdown) in self.shutdown.drain(..).rev() {
@@ -142,7 +186,7 @@ impl HostRegistry {
             });
         }
         self.lifecycle = RegistryLifecycle::Stopped;
-        Ok(TopologyShutdown { receipts })
+        TopologyShutdown { receipts }
     }
 }
 
@@ -191,20 +235,35 @@ mod tests {
             })
             .unwrap();
         assert_eq!(
-            registry.start(HostedPeerId::Vellum, || {
+            registry.start_or_rollback(HostedPeerId::Vellum, || {
                 Err::<((), fn() -> ShutdownDisposition), _>("refused")
             }),
-            Err(StartError::Peer("refused"))
+            Err(StartupFailure {
+                cause: StartError::Peer("refused"),
+                rollback: Some(TopologyShutdown {
+                    receipts: vec![ShutdownReceipt {
+                        peer: HostedPeerId::Agora,
+                        disposition: ShutdownDisposition::OutcomeUnknown,
+                    }],
+                }),
+            })
         );
-        let receipt = registry.shutdown().unwrap();
-        assert!(!receipt.clean());
+        assert_eq!(registry.lifecycle(), RegistryLifecycle::Stopped);
+    }
+
+    #[test]
+    fn first_start_failure_aborts_to_an_empty_stopped_topology() {
+        let mut registry = HostRegistry::new();
         assert_eq!(
-            receipt.receipts,
-            [ShutdownReceipt {
-                peer: HostedPeerId::Agora,
-                disposition: ShutdownDisposition::OutcomeUnknown,
-            }]
+            registry.start_or_rollback(HostedPeerId::Chronos("Atlas".into()), || {
+                Err::<((), fn() -> ShutdownDisposition), _>("refused")
+            }),
+            Err(StartupFailure {
+                cause: StartError::Peer("refused"),
+                rollback: Some(TopologyShutdown { receipts: vec![] }),
+            })
         );
+        assert_eq!(registry.lifecycle(), RegistryLifecycle::Stopped);
     }
 
     #[test]
