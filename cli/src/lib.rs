@@ -11,4 +11,5 @@ mod terminal;
 pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
 pub use terminal::{
     run_multi_peer_terminal, run_profiled_terminal, run_terminal, run_terminal_with_moira,
+    run_terminal_with_operational_peers,
 };

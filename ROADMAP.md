@@ -158,6 +158,12 @@ confirmation, command-scoped authority, revision, durable receipt, and uncertain
 delivery contracts can be preserved end to end. Native Workbench hosting also
 remains open.
 
+Daimon now likewise has an independent reusable TUI, standalone CLI,
+`agents.presence.v1` headless observation, and Workbench attach composition. The
+initial surface is deliberately redacted to age and stale/current classification;
+it neither exposes agent identity nor dispatches a provider. Exact execution
+inspection and guarded execute/resume operations remain later slices.
+
 Integrate Daimon, Grounding/Dendrite, Aegis, and Hermes only after each
 has a public client plus a reusable TUI component. Track unavailable boundaries
 in `WORKSPACE_GAPS.md`; do not reproduce peer semantics inside Workbench.

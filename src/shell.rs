@@ -36,9 +36,7 @@ impl Surface {
             Self::Overview | Self::Workspace => None,
             Self::Agora => Some("Agora has no composable Ratatui presentation peer"),
             Self::Moira => Some("Moira workflow presentation is not configured"),
-            Self::Daimon => {
-                Some("Daimon is inspected through Chronos; no execution TUI peer exists")
-            }
+            Self::Daimon => Some("Daimon operations presentation is not configured"),
             Self::Grounding => {
                 Some("Dendrite exposes MCP; no typed Workbench presentation peer exists")
             }

@@ -21,6 +21,7 @@ pub struct WorkspaceProfile {
     pub surfaces: Vec<Surface>,
     pub agora: Option<AgoraProfile>,
     pub moira: Option<MoiraProfile>,
+    pub daimon: Option<DaimonProfile>,
     pub chronos: Option<ChronosProfile>,
     pub vellum: Option<VellumProfile>,
 }
@@ -37,6 +38,14 @@ pub struct AgoraProfile {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct MoiraProfile {
+    pub socket: PathBuf,
+    #[serde(default)]
+    pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonProfile {
     pub socket: PathBuf,
     #[serde(default)]
     pub requires: Vec<String>,
@@ -123,6 +132,9 @@ impl WorkspaceProfile {
         if let Some(moira) = &mut profile.moira {
             moira.socket = resolve(base, &moira.socket);
         }
+        if let Some(daimon) = &mut profile.daimon {
+            daimon.socket = resolve(base, &daimon.socket);
+        }
         if let Some(chronos) = &mut profile.chronos {
             for workstream in &mut chronos.workstreams {
                 workstream.directory = resolve(base, &workstream.directory);
@@ -173,6 +185,13 @@ impl WorkspaceProfile {
             }
             validate_path(&moira.socket)?;
             validate_required_capabilities(&moira.requires)?;
+        }
+        if let Some(daimon) = &self.daimon {
+            if !self.surfaces.contains(&Surface::Daimon) {
+                return Err("Daimon configuration requires the Daimon surface");
+            }
+            validate_path(&daimon.socket)?;
+            validate_required_capabilities(&daimon.requires)?;
         }
         if self.surfaces.contains(&Surface::Workspace)
             && self.chronos.is_none()

@@ -41,11 +41,22 @@ pub fn run_multi_peer_terminal<T: ServicePort>(
 
 /// Runs the selected shell with an independently supplied Moira peer.
 pub fn run_terminal_with_moira<T: ServicePort>(
+    shell: Shell,
+    chronos: Option<Hub>,
+    vellum: Option<ServiceEditor<T>>,
+    agora: Option<agora_tui::Component>,
+    moira: Option<moira_tui::Component>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_terminal_with_operational_peers(shell, chronos, vellum, agora, moira, None)
+}
+
+pub fn run_terminal_with_operational_peers<T: ServicePort>(
     mut shell: Shell,
     mut chronos: Option<Hub>,
     mut vellum: Option<ServiceEditor<T>>,
     mut agora: Option<agora_tui::Component>,
     mut moira: Option<moira_tui::Component>,
+    mut daimon: Option<daimon_tui::Component>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut focus = Focus::Chronos;
     let mut notice = String::from("workspace profile loaded");
@@ -62,6 +73,9 @@ pub fn run_terminal_with_moira<T: ServicePort>(
             }
             if let Some(moira) = &mut moira {
                 moira.poll();
+            }
+            if let Some(daimon) = &mut daimon {
+                daimon.poll();
             }
             if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
                 if let Some(vellum) = &mut vellum
@@ -82,6 +96,7 @@ pub fn run_terminal_with_moira<T: ServicePort>(
                         vellum: vellum_frame.as_ref(),
                         agora: agora.as_ref(),
                         moira: moira.as_ref(),
+                        daimon: daimon.as_ref(),
                     },
                     focus,
                     &notice,
@@ -151,6 +166,25 @@ pub fn run_terminal_with_moira<T: ServicePort>(
                         notice = Surface::Moira
                             .gap()
                             .unwrap_or("Moira presentation is unavailable")
+                            .into();
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Daimon
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    if let Some(daimon) = &mut daimon {
+                        if let Some(input) = daimon_tui::translate_key(key)
+                            && daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else {
+                        notice = Surface::Daimon
+                            .gap()
+                            .unwrap_or("Daimon presentation is unavailable")
                             .into();
                     }
                 }

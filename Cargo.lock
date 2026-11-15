@@ -292,6 +292,16 @@ name = "daimon-protocol"
 version = "0.1.0"
 
 [[package]]
+name = "daimon-tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "daimon-client",
+ "daimon-protocol",
+ "ratatui",
+]
+
+[[package]]
 name = "daimon-wire"
 version = "0.1.0"
 dependencies = [
@@ -1341,6 +1351,9 @@ dependencies = [
  "agora-tui",
  "chronos-tui",
  "crossterm",
+ "daimon-client",
+ "daimon-protocol",
+ "daimon-tui",
  "moira-client",
  "moira-protocol",
  "moira-tui",
@@ -1366,6 +1379,10 @@ dependencies = [
  "chronos-standalone",
  "chronos-tui",
  "crossterm",
+ "daimon-client",
+ "daimon-protocol",
+ "daimon-tui",
+ "daimon-wire",
  "moira-client",
  "moira-protocol",
  "moira-tui",

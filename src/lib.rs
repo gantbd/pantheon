@@ -120,6 +120,7 @@ pub fn draw_shell(
             vellum,
             agora,
             moira: None,
+            daimon: None,
         },
         focus,
         notice,
@@ -131,6 +132,7 @@ pub struct PeerViews<'a> {
     pub vellum: Option<&'a EditorFrame>,
     pub agora: Option<&'a agora_tui::Component>,
     pub moira: Option<&'a moira_tui::Component>,
+    pub daimon: Option<&'a daimon_tui::Component>,
 }
 
 /// Draws the shell with an independently hosted Moira workflow peer.
@@ -147,6 +149,7 @@ pub fn draw_shell_with_moira(
         vellum,
         agora,
         moira,
+        daimon,
     } = peers;
     let [tabs, header, body] = Layout::vertical([
         Constraint::Length(1),
@@ -199,16 +202,22 @@ pub fn draw_shell_with_moira(
             frame,
             body,
             shell,
-            chronos.is_some(),
-            vellum.is_some(),
-            agora.is_some(),
-            moira.is_some(),
+            PeerAvailability {
+                chronos: chronos.is_some(),
+                vellum: vellum.is_some(),
+                agora: agora.is_some(),
+                moira: moira.is_some(),
+                daimon: daimon.is_some(),
+            },
         ),
         Surface::Agora if agora.is_some() => {
             agora.expect("matched above").draw_in(frame, body, true);
         }
         Surface::Moira if moira.is_some() => {
             moira.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Daimon if daimon.is_some() => {
+            daimon.expect("matched above").draw_in(frame, body, true);
         }
         surface => {
             frame.render_widget(
@@ -223,19 +232,24 @@ pub fn draw_shell_with_moira(
     }
 }
 
+struct PeerAvailability {
+    chronos: bool,
+    vellum: bool,
+    agora: bool,
+    moira: bool,
+    daimon: bool,
+}
+
 fn draw_overview(
     frame: &mut Frame<'_>,
     area: ratatui::layout::Rect,
     shell: &Shell,
-    chronos_attached: bool,
-    vellum_attached: bool,
-    agora_attached: bool,
-    moira_attached: bool,
+    peers: PeerAvailability,
 ) {
     let mut lines = vec![
         Line::from(format!(
             "Chronos: {}",
-            if chronos_attached {
+            if peers.chronos {
                 "attached"
             } else {
                 "not configured"
@@ -243,7 +257,7 @@ fn draw_overview(
         )),
         Line::from(format!(
             "Vellum: {}",
-            if vellum_attached {
+            if peers.vellum {
                 "attached"
             } else {
                 "not configured"
@@ -251,7 +265,7 @@ fn draw_overview(
         )),
         Line::from(format!(
             "Agora: {}",
-            if agora_attached {
+            if peers.agora {
                 "attached"
             } else {
                 "not configured"
@@ -259,7 +273,15 @@ fn draw_overview(
         )),
         Line::from(format!(
             "Moira: {}",
-            if moira_attached {
+            if peers.moira {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
+        Line::from(format!(
+            "Daimon: {}",
+            if peers.daimon {
                 "attached"
             } else {
                 "not configured"
@@ -267,10 +289,13 @@ fn draw_overview(
         )),
     ];
     for surface in shell.surfaces() {
-        if *surface == Surface::Agora && agora_attached {
+        if *surface == Surface::Agora && peers.agora {
             continue;
         }
-        if *surface == Surface::Moira && moira_attached {
+        if *surface == Surface::Moira && peers.moira {
+            continue;
+        }
+        if *surface == Surface::Daimon && peers.daimon {
             continue;
         }
         if let Some(gap) = surface.gap() {
@@ -292,6 +317,11 @@ mod tests {
     use super::*;
     use agora_client::v2::{ClientV2, PortFailureV2, ServicePortV2};
     use agora_protocol::v2::{ClientIdV2, OutcomeV2, ReplyV2, RequestV2, RoomPageV2};
+    use daimon_client::ServicePort as DaimonServicePort;
+    use daimon_protocol::{
+        CommandV1 as DaimonCommandV1, OutcomeV1 as DaimonOutcomeV1, ReplyV1 as DaimonReplyV1,
+        SessionHandleV1 as DaimonSessionHandleV1,
+    };
     use moira_client::SagaServicePort;
     use moira_protocol::{SagaCommandV1, SagaOutcomeV1, SagaPageV1, SagaReplyV1};
     use ratatui::{Terminal, backend::TestBackend};
@@ -300,6 +330,23 @@ mod tests {
     struct AgoraPort;
 
     struct MoiraPort;
+    struct DaimonPort;
+
+    impl DaimonServicePort for DaimonPort {
+        type Error = ();
+
+        fn execute(
+            &mut self,
+            _: DaimonSessionHandleV1,
+            command: DaimonCommandV1,
+        ) -> Result<DaimonReplyV1, Self::Error> {
+            assert!(matches!(command, DaimonCommandV1::ReadPresence { .. }));
+            Ok(DaimonReplyV1::Accepted(DaimonOutcomeV1::Presence {
+                entries: Vec::new(),
+                truncated: false,
+            }))
+        }
+    }
 
     impl SagaServicePort for MoiraPort {
         type Error = ();
@@ -450,6 +497,7 @@ mod tests {
                             vellum: None,
                             agora: None,
                             moira: Some(&moira),
+                            daimon: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -470,6 +518,46 @@ mod tests {
             thread::sleep(Duration::from_millis(1));
         }
         panic!("Moira peer did not render its accepted saga page");
+    }
+
+    #[test]
+    fn shell_renders_host_supplied_daimon_peer_instead_of_gap() {
+        let shell = Shell::new(vec![Surface::Daimon]).unwrap();
+        let mut daimon = daimon_tui::Component::new(DaimonSessionHandleV1(1), DaimonPort);
+        for _ in 0..100 {
+            daimon.poll();
+            let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
+            terminal
+                .draw(|frame| {
+                    draw_shell_with_moira(
+                        frame,
+                        &shell,
+                        PeerViews {
+                            chronos: None,
+                            vellum: None,
+                            agora: None,
+                            moira: None,
+                            daimon: Some(&daimon),
+                        },
+                        Focus::Chronos,
+                        "host supplied",
+                    )
+                })
+                .unwrap();
+            let rendered = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            if rendered.contains("0 agent(s)") {
+                assert!(!rendered.contains("operations presentation is not configured"));
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("Daimon peer did not render its accepted presence page");
     }
 
     #[test]

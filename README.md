@@ -104,6 +104,8 @@ Local coordinated source layout:
 gantbd/
   chronos/
   chronos-tui/
+  daimon/
+  daimon-tui/
   moira/
   moira-tui/
   vellum/
@@ -117,7 +119,7 @@ The machine source receipt records the current dirty coordinated closure as
 unqualified; immutable-revision CI is intentionally deferred until those
 inputs are committed and remotely reachable.
 
-The source receipt now pins the committed Agora, Chronos, Moira, and Vellum TUI
+The source receipt now pins the committed Agora, Chronos, Daimon, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
 The owning engine working trees and remote reachability remain unqualified.

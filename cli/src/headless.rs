@@ -22,6 +22,8 @@ pub struct HeadlessRequest {
     pub agora: Option<AgoraProfile>,
     pub moira_socket: Option<PathBuf>,
     pub moira_requires: Vec<String>,
+    pub daimon_socket: Option<PathBuf>,
+    pub daimon_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
     pub chronos_requires: Vec<String>,
     pub vellum_socket: Option<PathBuf>,
@@ -49,6 +51,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         moira_tui::CAPABILITIES.headless,
     )?;
     negotiate(
+        "daimon",
+        &request.daimon_requires,
+        daimon_tui::CAPABILITIES.headless,
+    )?;
+    negotiate(
         "chronos",
         &request.chronos_requires,
         chronos_tui::CAPABILITIES.headless,
@@ -71,6 +78,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         peers.push(observation);
         complete &= current;
     }
+    if let Some(socket) = request.daimon_socket {
+        let (observation, current) = observe_daimon(socket);
+        peers.push(observation);
+        complete &= current;
+    }
     for workstream in request.chronos {
         let (observation, current) = observe_chronos(workstream);
         peers.push(observation);
@@ -89,6 +101,70 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete,
         peers,
     })
+}
+
+fn observe_daimon(socket: PathBuf) -> (serde_json::Value, bool) {
+    use daimon_client::ReadOnlyClient;
+    use daimon_client::unix::ClientErrorV1;
+    use daimon_protocol::{OutcomeV1, ReplyV1};
+    use std::time::Duration;
+
+    let capability = daimon_tui::CAPABILITIES.headless[0];
+    let (session, port) = match daimon_client::unix::connect(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => {
+            return (
+                peer_failure(
+                    "daimon",
+                    capability,
+                    "connect_refused",
+                    format!("{error:?}"),
+                ),
+                false,
+            );
+        }
+    };
+    let mut client = ReadOnlyClient::new(session, port);
+    match client.read_presence(64) {
+        Ok(ReplyV1::Accepted(OutcomeV1::Presence { entries, truncated })) => {
+            let current = entries.iter().filter(|entry| !entry.stale).count();
+            (
+                serde_json::json!({
+                    "peer": "daimon",
+                    "capability": capability,
+                    "status": "current",
+                    "agents": entries.len(),
+                    "current": current,
+                    "stale": entries.len().saturating_sub(current),
+                    "truncated": truncated,
+                }),
+                true,
+            )
+        }
+        Ok(ReplyV1::Refused(reason)) => (
+            peer_failure("daimon", capability, "refused", format!("{reason:?}")),
+            false,
+        ),
+        Ok(ReplyV1::Accepted(_)) => (
+            peer_failure("daimon", capability, "invalid_reply", "unexpected outcome"),
+            false,
+        ),
+        Err(error) => {
+            let status = match error {
+                ClientErrorV1::NotSent(_) => "not_sent",
+                ClientErrorV1::OutcomeUnknown(_) => "outcome_unknown",
+                ClientErrorV1::Wire(_) | ClientErrorV1::SessionMismatch => "invalid_reply",
+            };
+            (
+                peer_failure("daimon", capability, status, "client access failure"),
+                false,
+            )
+        }
+    }
 }
 
 fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
@@ -421,6 +497,8 @@ mod tests {
             }),
             moira_socket: None,
             moira_requires: Vec::new(),
+            daimon_socket: None,
+            daimon_requires: Vec::new(),
             chronos: Vec::new(),
             chronos_requires: Vec::new(),
             vellum_socket: None,

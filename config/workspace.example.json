@@ -20,6 +20,10 @@
     "socket": "../run/moira.sock",
     "requires": ["sagas.inspect.v1"]
   },
+  "daimon": {
+    "socket": "../run/daimon.sock",
+    "requires": ["agents.presence.v1"]
+  },
   "chronos": {
     "deployment": "attach",
     "workstreams": [

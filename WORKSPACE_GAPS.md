@@ -8,7 +8,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 | --- | --- | --- | --- |
 | Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory | Production peer-provenance, Aegis grant/time, and durable-host factory for the standalone Workbench profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
 | Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench headless observation | Guarded operator reconciliation actions and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
-| Daimon | Execution/status clients, local daemon and supervisor census | Execution and agent-operations Ratatui peer | Attempt and roster inspection through Chronos |
+| Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite MCP service over authored Rune material | Typed presentation client and composable Ratatui peer | Explicit unavailable surface |
 | Aegis | Administrative/read clients and local daemon | Guarded authority-administration Ratatui peer | Explicit unavailable surface |
 | Hermes | Ledger/operator clients and local daemon | Ledger operations Ratatui peer | Explicit unavailable surface |
@@ -19,7 +19,7 @@ engine or workflow presentation. Keystone remains presentation-free.
 ## Current qualification state
 
 The reusable/CLI boundary and versioned headless contract are now aligned for
-Agora, Chronos, Vellum, Moira, and Workbench. Each standalone CLI names its public
+Agora, Chronos, Vellum, Moira, Daimon, and Workbench. Each standalone CLI names its public
 read capability and constructs no TUI state in headless mode. Workbench attaches
 the same clients and preserves healthy observations beside a failed peer.
 Each peer also owns a closed presentation capability manifest; Workbench
@@ -32,6 +32,7 @@ connection without treating a manifest match as service authorization.
 | Chronos | Reused TUI; real-service journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service | Native owner; interactive + headless client path; joined drain |
 | Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 | Moira | Reused saga TUI; public-port rendering gate | `sagas.inspect.v1`; real SQLite daemon | Interactive component + aggregate headless; real daemon | Open; attach only |
+| Daimon | Reused redacted presence TUI; public-port rendering gate | `agents.presence.v1`; real durable daemon and roster | Interactive component + aggregate headless; real daemon | Open; attach only |
 
 This is qualified local working-tree evidence, not an immutable release
 qualification. The three peer TUI commits are exact and clean in Workbench's
@@ -63,8 +64,8 @@ qualified across all three interactive panes and one aggregate headless report.
 3. Extend Moira's read-only trace with census, evidence, and operator receipts;
    expose reconciliation actions only with exact confirmation, current authority,
    durable receipts, and outcome-unknown recovery.
-4. Promote Daimon attempt and roster inspection into a peer without removing
-   the task-local Chronos route.
+4. Extend Daimon's peer from redacted roster observation to exact-ID execution
+   detail; add dispatch/resume only with no-redispatch and uncertainty evidence.
 5. Define a typed Dendrite presentation boundary rather than making MCP the
    Workbench's canonical internal protocol.
 6. Add Aegis and Hermes operator peers only with their existing authorization,
