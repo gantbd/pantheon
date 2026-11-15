@@ -83,3 +83,5 @@
   in one process.
 - Extended the same three-owner qualification through the real Agora component
   and Workbench shell rendering boundary for room and message projections.
+- Made reusable headless composition fail closed on unsupported Agora, Chronos,
+  or Vellum requirements before any peer connection, matching CLI negotiation.

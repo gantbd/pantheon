@@ -44,8 +44,10 @@ struct Options {
     shell: Shell,
     agora: Option<AgoraProfile>,
     chronos_streams: Vec<Workstream>,
+    chronos_requires: Vec<String>,
     vellum_socket: Option<PathBuf>,
     vellum_credential: Option<PathBuf>,
+    vellum_requires: Vec<String>,
     chronos_writes: bool,
     headless: bool,
     chronos_watch: bool,
@@ -291,8 +293,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         shell,
         agora,
         chronos_streams,
+        chronos_requires,
         vellum_socket,
         vellum_credential,
+        vellum_requires,
         chronos_writes,
         headless,
         chronos_watch,
@@ -588,8 +592,10 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         workspace: options.workspace_name,
         agora: options.agora,
         chronos: options.chronos_streams,
+        chronos_requires: options.chronos_requires,
         vellum_socket: options.vellum_socket,
         vellum_credential: options.vellum_credential,
+        vellum_requires: options.vellum_requires,
     })
-    .map_err(Into::into)
+    .map_err(|error| error.into())
 }

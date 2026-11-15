@@ -96,6 +96,16 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         );
     }
     for peer_manifest in [
+        "agora_tui::CAPABILITIES.headless",
+        "chronos_tui::CAPABILITIES.headless",
+        "vellum_tui::CAPABILITIES.headless",
+    ] {
+        assert!(
+            headless.contains(peer_manifest),
+            "headless composition does not negotiate {peer_manifest}"
+        );
+    }
+    for peer_manifest in [
         "agora_tui::CAPABILITIES",
         "chronos_tui::CAPABILITIES",
         "vellum_tui::CAPABILITIES",

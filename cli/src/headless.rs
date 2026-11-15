@@ -19,10 +19,13 @@ pub struct HeadlessRequest {
     pub workspace: String,
     pub agora: Option<AgoraProfile>,
     pub chronos: Vec<Workstream>,
+    pub chronos_requires: Vec<String>,
     pub vellum_socket: Option<PathBuf>,
     pub vellum_credential: Option<PathBuf>,
+    pub vellum_requires: Vec<String>,
 }
 
+#[derive(Debug)]
 pub struct HeadlessObservation {
     pub workspace: String,
     pub complete: bool,
@@ -32,7 +35,20 @@ pub struct HeadlessObservation {
 /// Observes every configured peer through its ordinary public client without
 /// constructing presentation state. Healthy peer evidence remains present when
 /// another peer refuses or has an uncertain transport outcome.
-pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, &'static str> {
+pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> {
+    if let Some(profile) = &request.agora {
+        negotiate("agora", &profile.requires, agora_tui::CAPABILITIES.headless)?;
+    }
+    negotiate(
+        "chronos",
+        &request.chronos_requires,
+        chronos_tui::CAPABILITIES.headless,
+    )?;
+    negotiate(
+        "vellum",
+        &request.vellum_requires,
+        vellum_tui::CAPABILITIES.headless,
+    )?;
     let mut peers = Vec::new();
     let mut complete = true;
 
@@ -52,13 +68,24 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, &'static
         complete &= current;
     }
     if peers.is_empty() {
-        return Err("headless observation requires at least one configured peer");
+        return Err("headless observation requires at least one configured peer".into());
     }
     Ok(HeadlessObservation {
         workspace: request.workspace,
         complete,
         peers,
     })
+}
+
+fn negotiate(peer: &str, required: &[String], supported: &[&str]) -> Result<(), String> {
+    for capability in required {
+        if !supported.contains(&capability.as_str()) {
+            return Err(format!(
+                "{peer} does not support required headless capability {capability}"
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
@@ -314,4 +341,31 @@ fn peer_failure(
         "status": status,
         "detail": detail.into(),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn requirements_are_refused_before_any_peer_connection() {
+        let failure = observe(HeadlessRequest {
+            workspace: "gate".into(),
+            agora: Some(AgoraProfile {
+                socket: "/definitely/not/a/socket".into(),
+                participant: "operator".into(),
+                requires: vec!["messages.read.v2".into()],
+            }),
+            chronos: Vec::new(),
+            chronos_requires: Vec::new(),
+            vellum_socket: None,
+            vellum_credential: None,
+            vellum_requires: Vec::new(),
+        })
+        .unwrap_err();
+        assert_eq!(
+            failure,
+            "agora does not support required headless capability messages.read.v2"
+        );
+    }
 }

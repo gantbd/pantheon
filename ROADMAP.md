@@ -123,7 +123,10 @@ Agora owner factory.
 The headless observer is now an application-library API rather than CLI-private
 code. Deployments can supply the same typed Agora profile, Chronos workstreams,
 and Vellum endpoint used by the standalone parser and receive the same bounded
-peer observations without constructing TUI state.
+peer observations without constructing TUI state. The API independently checks
+every requested capability against the peer-owned headless manifests before
+opening any connection, so a deployment cannot bypass negotiation by omitting
+the CLI parser.
 
 - Run the same hosted topology without Ratatui, focus, selection, or cursor state.
 - Provide bounded per-peer command and snapshot routing plus aggregate health;
