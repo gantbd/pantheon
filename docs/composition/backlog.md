@@ -44,8 +44,10 @@ read-only input until that repository settles.
   current authority, revision, durable receipt, and outcome-unknown recovery
   are public and qualified end to end.
 - [ ] Hermes: configured-stream health now has standalone/Workbench parity; add
-  explicit configured cursor and gap views without inventing a global stream
-  catalogue.
+  a read-only cursor observation facade plus an exact opaque consumer selector;
+  do not acquire the acknowledgement-capable consumer facade. Add gap views
+  only with explicit event-content disclosure and response bounds, without
+  inventing a global stream catalogue.
 - [ ] Aegis: guarded issue/attenuate/revoke administration with exact epoch,
   resource/action confirmation and outcome-unknown fencing.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and

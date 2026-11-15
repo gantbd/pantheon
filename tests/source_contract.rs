@@ -135,7 +135,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "d4f92b194b7d335386dae80b7a8304a006acc8db"
+        "982a04abe359156571ad9d7004307033a3d41dea"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
