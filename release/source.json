@@ -55,7 +55,7 @@
     },
     "aegisTui": {
       "repository": "https://github.com/gantbd/aegis-tui",
-      "revision": "1731b84d7f9a0af1c44f58e87e9042e07d40e254",
+      "revision": "d432f5b7796ab91bd2a0febc0b29dc580c693644",
       "workingTreeClean": true
     },
     "moiraTui": {

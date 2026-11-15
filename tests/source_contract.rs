@@ -41,7 +41,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "1731b84d7f9a0af1c44f58e87e9042e07d40e254"
+        "d432f5b7796ab91bd2a0febc0b29dc580c693644"
     );
     for input in [
         "agoraTui",
