@@ -3,7 +3,7 @@ set -eu
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 vellum=$(CDPATH= cd -- "$repo/../vellum" && pwd -P)
-chronos=$(CDPATH= cd -- "$repo/../../github.com/gantbd/chronos" && pwd -P)
+chronos=$(CDPATH= cd -- "$repo/../chronos" && pwd -P)
 # Keep both nested Unix socket names below macOS's sockaddr_un path bound even
 # when TMPDIR expands to a long per-user directory.
 scratch=$(mktemp -d /tmp/wb-live.XXXXXX)
@@ -48,7 +48,7 @@ cargo build --manifest-path "$vellum/Cargo.toml" --package vellum-daemon \
 cargo build --manifest-path "$repo/Cargo.toml" --bin workbench-tui \
   --locked --offline --target-dir "$workbench_target"
 
-"$chronos_bin" "$chronos_dir" >"$chronos_log" 2>&1 &
+"$chronos_bin" "$chronos_dir" --atomic-state --observer-history --allow-writes >"$chronos_log" 2>&1 &
 chronos_pid=$!
 "$vellum_bin" --socket "$vellum_socket" --control "$vellum_control" \
   --allow-edit --allow-save -- "$source_file" >"$vellum_log" 2>&1 &
@@ -77,12 +77,94 @@ if [ "$attempt" -eq 100 ]; then
 fi
 
 snapshot=$(
-  "$workbench_bin" "$chronos_dir" --vellum-service "$vellum_socket" --snapshot
+  "$workbench_bin" "$chronos_dir" --vellum-service "$vellum_socket" \
+    --chronos-watch --chronos-scheduling --chronos-allow-writes --chronos-cancel-receipts \
+    --chronos-workstream Offline "$scratch/offline" --snapshot
 )
 if [ "$snapshot" != 'dual-service snapshot current' ]; then
   echo 'FAIL: workbench did not report exact dual-service attachment' >&2
   exit 1
 fi
+
+profile="$scratch/chronos-profile.json"
+printf '%s\n' '{"version":1,"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}]}' >"$profile"
+snapshot=$(
+  "$workbench_bin" --chronos-profile "$profile" --vellum-service "$vellum_socket" --snapshot
+)
+if [ "$snapshot" != 'dual-service snapshot current' ]; then
+  echo 'FAIL: workbench did not reopen the saved Chronos workspace' >&2
+  exit 1
+fi
+
+workspace_profile="$scratch/workspace-profile.json"
+printf '%s\n' \
+  '{"version":1,"name":"Live gate","surfaces":["overview","workspace","agora"],"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null}}' \
+  >"$workspace_profile"
+profile_check=$("$workbench_bin" --workspace-profile "$workspace_profile" --check-profile)
+if [ "$profile_check" != 'workspace profile valid: 3 surfaces' ]; then
+  echo 'FAIL: workbench did not validate the workspace profile' >&2
+  exit 1
+fi
+
+# Exercise actual keyboard routing and focus with both service panes attached.
+python3 - "$scratch" "$workbench_bin" "$workspace_profile" <<'PYTHON'
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+import time
+
+scratch, binary, profile = sys.argv[1:]
+socket = str(Path(scratch) / "tmux.sock")
+command = shlex.join([binary, "--workspace-profile", profile])
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", socket, "-f", "/dev/null", *args],
+        capture_output=True, text=True, check=check, timeout=5,
+    )
+
+def expect(*markers):
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "workbench").stdout
+        if all(marker in screen for marker in markers):
+            return
+        time.sleep(0.025)
+    raise AssertionError(f"Missing {markers!r} in:\n{screen}")
+
+def switch(name):
+    tmux("send-keys", "-t", "workbench", "w")
+    expect("Switch workstream")
+    tmux("send-keys", "-t", "workbench", "-l", name)
+    tmux("send-keys", "-t", "workbench", "Enter")
+
+try:
+    tmux("new-session", "-d", "-x", "240", "-y", "36", "-s", "workbench", command)
+    expect("Chronos: attached", "Vellum: attached", "Agora: gap")
+    tmux("send-keys", "-t", "workbench", "]")
+    expect("Chronos  ·  revision", "Observed 0 tasks", "alpha")
+    switch("Offline")
+    expect("Offline  ·  revision", "Refresh failed", "alpha")
+    switch("Chronos")
+    expect("Chronos  ·  revision", "Observed 0 tasks", "alpha")
+    tmux("send-keys", "-t", "workbench", "Tab")
+    expect("focus=Vellum", "alpha")
+    tmux("send-keys", "-t", "workbench", "Tab")
+    expect("focus=Chronos")
+    tmux("send-keys", "-t", "workbench", "]")
+    expect("Agora has no composable Ratatui presentation peer")
+    tmux("send-keys", "-t", "workbench", "[")
+    expect("Chronos  ·  revision", "alpha")
+    tmux("send-keys", "-t", "workbench", "C-q")
+    deadline = time.monotonic() + 5
+    while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Workbench did not exit")
+        time.sleep(0.025)
+finally:
+    tmux("kill-server", check=False)
+PYTHON
 
 "$vellum_bin" --shutdown "$vellum_control" >/dev/null
 wait "$vellum_pid"

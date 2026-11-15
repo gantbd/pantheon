@@ -1,9 +1,47 @@
 {
-  "schema": 1,
+  "schema": 2,
   "package": "workbench-tui",
-  "vellumRevision": "f4a53ba664acf2a12b6fadfd7d378eef63307c39",
-  "vellumTuiRevision": "bf4e4fe6e1631378e566408798df94c20ebea679",
-  "chronosWorkspaceRevision": "03c468463fd4bda6af77414730c2f76405c3a73a",
+  "components": ["agora", "chronos", "vellum"],
+  "inputs": {
+    "agora": {
+      "repository": "https://github.com/gantbd/agora",
+      "revision": "aa763ce6a9c4d2ab9d81caed7abe32b446e55e8e",
+      "workingTreeClean": false
+    },
+    "agoraTui": {
+      "repository": "https://github.com/gantbd/agora-tui",
+      "revision": "f7103d85c8bed043fcf63924bc2251ce85b2d038",
+      "workingTreeClean": true
+    },
+    "chronos": {
+      "repository": "https://github.com/gantbd/chronos",
+      "revision": "982405bdff813e2f8df17d4ec3a827e63ecaf87a",
+      "workingTreeClean": false
+    },
+    "chronosTui": {
+      "repository": "https://github.com/gantbd/chronos-tui",
+      "revision": "3352a9972d7f0d5a383c0d42845649872d5819a9",
+      "workingTreeClean": true
+    },
+    "vellum": {
+      "repository": "https://github.com/gantbd/vellum",
+      "revision": "d7de5f2587b3299983792c95f83fcff39ca54d0c",
+      "workingTreeClean": false
+    },
+    "vellumTui": {
+      "repository": "https://github.com/gantbd/vellum-tui",
+      "revision": "d9895823c2f071bc22dbf040893b32aefb77f9cd",
+      "workingTreeClean": true
+    }
+  },
+  "coordinatedWorkingTreeQualified": false,
+  "ci": {
+    "qualified": false,
+    "blockers": [
+      "dependency working trees differ from their recorded revisions",
+      "immutable remote reachability is not yet authorized or qualified"
+    ]
+  },
   "remoteReachabilityQualified": false,
   "cratesIoPublished": false
 }

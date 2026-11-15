@@ -1,11 +1,21 @@
 //! Host-owned layout and focus routing for independent engine presentations.
 #![forbid(unsafe_code)]
 
+mod hosted;
+pub mod profile;
+mod shell;
+mod terminal;
+
+pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
+pub use shell::{Shell, ShellInput, Surface, shell_input};
+pub use terminal::{run_multi_peer_terminal, run_profiled_terminal, run_terminal};
+
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},
-    widgets::Paragraph,
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph},
 };
 use vellum_tui::EditorFrame;
 
@@ -27,7 +37,7 @@ impl Focus {
 pub enum RoutedInput {
     Exit,
     SwitchFocus,
-    Chronos(chronos_tui::Input),
+    Chronos(KeyEvent),
     Vellum(vellum_tui::Input),
 }
 
@@ -71,7 +81,7 @@ pub fn route_key(key: KeyEvent, focus: Focus) -> RoutedInput {
         return RoutedInput::SwitchFocus;
     }
     match focus {
-        Focus::Chronos => RoutedInput::Chronos(chronos_tui::translate_key(key)),
+        Focus::Chronos => RoutedInput::Chronos(key),
         Focus::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
     }
 }
@@ -80,51 +90,193 @@ pub fn route_key(key: KeyEvent, focus: Focus) -> RoutedInput {
 /// function owns geometry only; it cannot read or mutate either engine.
 pub fn draw(
     frame: &mut Frame<'_>,
-    chronos: &chronos_tui::Component,
+    chronos: &chronos_tui::Hub,
     vellum: Option<&EditorFrame>,
     focus: Focus,
     notice: &str,
 ) {
-    let [header, body] =
-        Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).areas(frame.area());
+    draw_shell(
+        frame,
+        &Shell::dual_peer(),
+        Some(chronos),
+        vellum,
+        None,
+        focus,
+        notice,
+    );
+}
+
+/// Draws the host navigation and the selected explicit presentation surface.
+/// Missing peers remain visible gaps; the host never fabricates their state.
+pub fn draw_shell(
+    frame: &mut Frame<'_>,
+    shell: &Shell,
+    chronos: Option<&chronos_tui::Hub>,
+    vellum: Option<&EditorFrame>,
+    agora: Option<&agora_tui::Component>,
+    focus: Focus,
+    notice: &str,
+) {
+    let [tabs, header, body] = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Min(0),
+    ])
+    .areas(frame.area());
+    let tab_line = shell
+        .surfaces()
+        .iter()
+        .map(|surface| {
+            if *surface == shell.active() {
+                Span::raw(format!("[{}] ", surface.label()))
+            } else {
+                Span::raw(format!(" {}  ", surface.label()))
+            }
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(Line::from(tab_line)), tabs);
     let [chronos_area, vellum_area] =
         Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(body);
     frame.render_widget(
         Paragraph::new(format!(
-            "Workbench | focus={focus:?} | Tab switches | Ctrl-Q exits | {notice}"
+            "Workbench | [/] surfaces | focus={focus:?} | Tab switches | Ctrl-Q exits | {notice}"
         )),
         header,
     );
-    chronos.draw_in(frame, chronos_area);
-    if let Some(vellum) = vellum {
-        vellum_tui::draw_in(frame, vellum_area, vellum, None);
-    } else {
-        vellum_tui::draw_empty_in(frame, vellum_area, Some("Vellum service not attached"));
+    match shell.active() {
+        Surface::Workspace => {
+            if let Some(chronos) = chronos {
+                chronos.draw_in(frame, chronos_area);
+            } else {
+                frame.render_widget(
+                    Paragraph::new("Chronos service not configured")
+                        .block(Block::default().borders(Borders::ALL).title("Chronos")),
+                    chronos_area,
+                );
+            }
+            if let Some(vellum) = vellum {
+                vellum_tui::draw_in(frame, vellum_area, vellum, None);
+            } else {
+                vellum_tui::draw_empty_in(
+                    frame,
+                    vellum_area,
+                    Some("Vellum service not configured"),
+                );
+            }
+        }
+        Surface::Overview => draw_overview(
+            frame,
+            body,
+            shell,
+            chronos.is_some(),
+            vellum.is_some(),
+            agora.is_some(),
+        ),
+        Surface::Agora if agora.is_some() => {
+            agora.expect("matched above").draw_in(frame, body, true);
+        }
+        surface => {
+            frame.render_widget(
+                Paragraph::new(surface.gap().unwrap_or("presentation unavailable")).block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title(surface.label()),
+                ),
+                body,
+            );
+        }
     }
+}
+
+fn draw_overview(
+    frame: &mut Frame<'_>,
+    area: ratatui::layout::Rect,
+    shell: &Shell,
+    chronos_attached: bool,
+    vellum_attached: bool,
+    agora_attached: bool,
+) {
+    let mut lines = vec![
+        Line::from(format!(
+            "Chronos: {}",
+            if chronos_attached {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
+        Line::from(format!(
+            "Vellum: {}",
+            if vellum_attached {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
+        Line::from(format!(
+            "Agora: {}",
+            if agora_attached {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
+    ];
+    for surface in shell.surfaces() {
+        if *surface == Surface::Agora && agora_attached {
+            continue;
+        }
+        if let Some(gap) = surface.gap() {
+            lines.push(Line::from(format!("{}: gap — {gap}", surface.label())));
+        }
+    }
+    frame.render_widget(
+        Paragraph::new(lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Workspace observations"),
+        ),
+        area,
+    );
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chronos_client::WireClientV1;
+    use agora_client::v2::{ClientV2, PortFailureV2, ServicePortV2};
+    use agora_protocol::v2::{ClientIdV2, OutcomeV2, ReplyV2, RequestV2, RoomPageV2};
     use ratatui::{Terminal, backend::TestBackend};
+    use std::{thread, time::Duration};
 
-    struct Unavailable;
+    struct AgoraPort;
 
-    impl WireClientV1 for Unavailable {
+    impl ServicePortV2 for AgoraPort {
         type Error = ();
 
-        fn request(
+        fn execute(
             &mut self,
-            _: chronos_protocol::Request,
-        ) -> Result<chronos_protocol::Response, Self::Error> {
-            Err(())
+            _: ClientIdV2,
+            _: RequestV2,
+        ) -> Result<ReplyV2, PortFailureV2<Self::Error>> {
+            Ok(ReplyV2::Accepted(OutcomeV2::Rooms(RoomPageV2 {
+                revision: 3,
+                rooms: Vec::new(),
+                next: None,
+            })))
         }
     }
 
     #[test]
     fn one_frame_contains_both_independent_presentations() {
-        let chronos = chronos_tui::Component::new(Unavailable, false);
+        let chronos = chronos_tui::Hub::new(
+            vec![chronos_tui::Workstream {
+                name: "Chronos".into(),
+                directory: "/nonexistent".into(),
+            }],
+            false,
+            false,
+        )
+        .unwrap();
         let vellum = EditorFrame {
             lines: vec!["vellum source".into()],
             selection_cells: vec![Vec::new()],
@@ -148,9 +300,74 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect();
         assert!(rendered.contains("focus=Vellum"));
-        assert!(rendered.contains("Chronos"));
+        assert!(rendered.contains("CHRONOS"));
         assert!(rendered.contains("Vellum"));
         assert!(rendered.contains("vellum source"));
+    }
+
+    #[test]
+    fn shell_exposes_gaps_without_inventing_peer_state() {
+        let shell = Shell::new(vec![Surface::Overview, Surface::Agora]).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
+        terminal
+            .draw(|frame| {
+                draw_shell(
+                    frame,
+                    &shell,
+                    None,
+                    None,
+                    None,
+                    Focus::Chronos,
+                    "profile loaded",
+                )
+            })
+            .unwrap();
+        let rendered: String = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect();
+        assert!(rendered.contains("Agora: gap"));
+        assert!(rendered.contains("no composable Ratatui"));
+        assert!(rendered.contains("Chronos: not configured"));
+    }
+
+    #[test]
+    fn shell_renders_host_supplied_agora_peer_instead_of_gap() {
+        let shell = Shell::new(vec![Surface::Agora]).unwrap();
+        let mut agora = agora_tui::Component::new(ClientV2::new(ClientIdV2(1), AgoraPort));
+        for _ in 0..100 {
+            agora.poll();
+            let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
+            terminal
+                .draw(|frame| {
+                    draw_shell(
+                        frame,
+                        &shell,
+                        None,
+                        None,
+                        Some(&agora),
+                        Focus::Chronos,
+                        "host supplied",
+                    )
+                })
+                .unwrap();
+            let rendered: String = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect();
+            if rendered.contains("revision 3") {
+                assert!(!rendered.contains("no composable Ratatui"));
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("Agora peer did not render its accepted room page");
     }
 
     #[test]
@@ -165,7 +382,7 @@ mod tests {
         let text = KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE);
         assert!(matches!(
             route_key(text, Focus::Chronos),
-            RoutedInput::Chronos(chronos_tui::Input::Text('x'))
+            RoutedInput::Chronos(key) if key == text
         ));
         assert!(matches!(
             route_key(text, Focus::Vellum),

@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "name": "Local engine federation",
+  "surfaces": [
+    "overview",
+    "workspace",
+    "agora",
+    "moira",
+    "daimon",
+    "grounding",
+    "aegis",
+    "hermes"
+  ],
+  "agora": {
+    "socket": "../run/agora.sock",
+    "participant": "operator"
+  },
+  "chronos": {
+    "workstreams": [
+      {
+        "name": "Atlas / Delivery",
+        "directory": "../state/chronos-atlas"
+      }
+    ],
+    "moira": [
+      {
+        "workstream": "Atlas / Delivery",
+        "socket": "../run/moira.sock",
+        "scope": "atlas-delivery"
+      }
+    ],
+    "daimon": [
+      {
+        "workstream": "Atlas / Delivery",
+        "socket": "../run/daimon.sock"
+      }
+    ],
+    "planning": null
+  },
+  "vellum": {
+    "socket": "../run/vellum.sock",
+    "credential": null
+  }
+}

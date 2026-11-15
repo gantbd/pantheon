@@ -8,14 +8,32 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         &fs::read_to_string(root.join("release/source.json")).expect("source contract"),
     )
     .expect("source JSON");
+    assert_eq!(source["schema"], 2);
     assert_eq!(
-        source["vellumTuiRevision"],
-        "bf4e4fe6e1631378e566408798df94c20ebea679"
+        source["components"],
+        serde_json::json!(["agora", "chronos", "vellum"])
     );
     assert_eq!(
-        source["chronosWorkspaceRevision"],
-        "03c468463fd4bda6af77414730c2f76405c3a73a"
+        source["inputs"]["vellumTui"]["revision"],
+        "d9895823c2f071bc22dbf040893b32aefb77f9cd"
     );
+    assert_eq!(
+        source["inputs"]["chronosTui"]["revision"],
+        "3352a9972d7f0d5a383c0d42845649872d5819a9"
+    );
+    assert_eq!(
+        source["inputs"]["agoraTui"]["revision"],
+        "f7103d85c8bed043fcf63924bc2251ce85b2d038"
+    );
+    for input in ["agoraTui", "chronosTui", "vellumTui"] {
+        assert_eq!(source["inputs"][input]["workingTreeClean"], true);
+    }
+    for input in ["agora", "chronos", "vellum"] {
+        assert_eq!(source["inputs"][input]["workingTreeClean"], false);
+    }
+    assert_eq!(source["coordinatedWorkingTreeQualified"], false);
+    assert_eq!(source["ci"]["qualified"], false);
+    assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 2);
     assert_eq!(source["remoteReachabilityQualified"], false);
     assert_eq!(source["cratesIoPublished"], false);
 
@@ -23,16 +41,30 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("vellum-tui"));
     assert!(manifest.contains("vellum-sdk-client"));
     assert!(manifest.contains("chronos-tui"));
+    assert!(manifest.contains("agora-tui"));
+    assert!(manifest.contains("agora-tui-local-client"));
     assert!(manifest.contains("chronos-local"));
     for forbidden in [
         "vellum-engine",
         "vellum-host",
         "chronos-engine",
         "chronos-service",
+        "agora-engine",
+        "agora-service",
+        "agora-local-daemon",
     ] {
         assert!(!manifest.contains(forbidden), "imports {forbidden}");
     }
     assert!(manifest.contains("publish = false"));
+    assert!(manifest.contains("repository = \"https://github.com/gantbd/workbench-tui\""));
+    assert!(manifest.contains("readme = \"README.md\""));
+    assert!(manifest.contains("resolver = \"3\""));
+    let architecture = fs::read_to_string(root.join("COMPONENT_ARCHITECTURE.md"))
+        .expect("component architecture law");
+    assert!(architecture.contains("Version: 2"));
+    assert!(
+        architecture.contains("github.com/gantbd/keystone/blob/main/COMPONENT_ARCHITECTURE.md")
+    );
 }
 
 #[test]

@@ -1,7 +1,8 @@
 #![forbid(unsafe_code)]
 
-use chronos_tui::Lifecycle;
-use crossterm::event::{self, Event};
+use agora_client::v2::ClientV2 as AgoraClientV2;
+use agora_tui_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
+use chronos_tui::{Hub, Workstream};
 use std::{
     path::PathBuf,
     time::{Duration, Instant},
@@ -13,8 +14,12 @@ use vellum_sdk_client::{
     },
     workspace::WorkspaceClientV1,
 };
-use vellum_tui::{ServiceAction, ServiceEditor, ServiceInput, translate_service_input};
-use workbench_tui::{ExitDecision, Focus, RoutedInput, decide_exit, draw, route_key};
+use vellum_tui::ServiceEditor;
+use workbench_tui::{
+    Focus, Shell, draw,
+    profile::{AgoraProfile, WorkspaceProfile},
+    run_multi_peer_terminal,
+};
 
 enum VellumConnector {
     Plain(UnixConnector),
@@ -35,11 +40,29 @@ impl FrameExchange for VellumConnector {
 }
 
 struct Options {
-    chronos_directory: PathBuf,
-    vellum_socket: PathBuf,
+    shell: Shell,
+    agora: Option<AgoraProfile>,
+    chronos_streams: Vec<Workstream>,
+    vellum_socket: Option<PathBuf>,
     vellum_credential: Option<PathBuf>,
     chronos_writes: bool,
     snapshot: bool,
+    chronos_watch: bool,
+    chronos_scheduling: bool,
+    chronos_planning: Option<PathBuf>,
+    chronos_cancel_receipts: bool,
+    moira_bindings: Vec<(String, PathBuf, String)>,
+    daimon_bindings: Vec<(String, PathBuf)>,
+    check_profile: bool,
+}
+
+fn required_arg(
+    args: &mut impl Iterator<Item = std::ffi::OsString>,
+    usage: &'static str,
+) -> Result<std::ffi::OsString, &'static str> {
+    args.next()
+        .filter(|value| !value.is_empty() && !value.as_encoded_bytes().starts_with(b"--"))
+        .ok_or(usage)
 }
 
 fn options() -> Result<Options, Box<dyn std::error::Error>> {
@@ -51,11 +74,62 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         println!("{}", usage());
         std::process::exit(0);
     }
-    let chronos_directory = PathBuf::from(first);
+    let workspace_profile = first == "--workspace-profile";
+    let chronos_profile = first == "--chronos-profile";
+    let mut shell = Shell::dual_peer();
+    let mut agora = None;
     let mut vellum_socket = None;
     let mut vellum_credential = None;
+    let mut moira_bindings = Vec::new();
+    let mut daimon_bindings = Vec::new();
+    let mut chronos_planning = None;
+    let mut chronos_streams = if workspace_profile {
+        let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
+        let profile = WorkspaceProfile::load(std::path::Path::new(&path))?;
+        shell = profile.shell()?;
+        agora = profile.agora;
+        if let Some(vellum) = profile.vellum {
+            vellum_socket = Some(vellum.socket);
+            vellum_credential = vellum.credential;
+        }
+        if let Some(chronos) = profile.chronos {
+            chronos_planning = chronos.planning;
+            moira_bindings = chronos
+                .moira
+                .into_iter()
+                .map(|binding| (binding.workstream, binding.socket, binding.scope))
+                .collect();
+            daimon_bindings = chronos
+                .daimon
+                .into_iter()
+                .map(|binding| (binding.workstream, binding.socket))
+                .collect();
+            chronos
+                .workstreams
+                .into_iter()
+                .map(|workstream| Workstream {
+                    name: workstream.name,
+                    directory: workstream.directory,
+                })
+                .collect()
+        } else {
+            Vec::new()
+        }
+    } else if chronos_profile {
+        let path = required_arg(&mut args, "--chronos-profile requires PATH")?;
+        chronos_tui::profile::load(std::path::Path::new(&path))?
+    } else {
+        vec![Workstream {
+            name: "Chronos".into(),
+            directory: PathBuf::from(first),
+        }]
+    };
     let mut chronos_writes = false;
     let mut snapshot = false;
+    let mut chronos_watch = false;
+    let mut chronos_scheduling = false;
+    let mut chronos_cancel_receipts = false;
+    let mut check_profile = false;
     while let Some(argument) = args.next() {
         if argument == "--vellum-service" && vellum_socket.is_none() {
             vellum_socket = Some(PathBuf::from(
@@ -67,8 +141,52 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             ));
         } else if argument == "--chronos-allow-writes" && !chronos_writes {
             chronos_writes = true;
+        } else if argument == "--chronos-watch" && !chronos_watch {
+            chronos_watch = true;
+        } else if argument == "--chronos-scheduling" && !chronos_scheduling {
+            chronos_scheduling = true;
+        } else if argument == "--chronos-cancel-receipts" && !chronos_cancel_receipts {
+            chronos_cancel_receipts = true;
+        } else if argument == "--chronos-planning" && chronos_planning.is_none() {
+            chronos_planning =
+                Some(required_arg(&mut args, "--chronos-planning requires PATH")?.into());
+        } else if argument == "--chronos-workstream" {
+            if workspace_profile || chronos_profile {
+                return Err("--chronos-workstream cannot extend a saved profile".into());
+            }
+            let name = args
+                .next()
+                .and_then(|name| name.into_string().ok())
+                .ok_or("--chronos-workstream requires NAME DIRECTORY")?;
+            let directory = args
+                .next()
+                .filter(|path| !path.as_encoded_bytes().starts_with(b"--"))
+                .ok_or("--chronos-workstream requires NAME DIRECTORY")?;
+            chronos_streams.push(Workstream {
+                name,
+                directory: directory.into(),
+            });
+        } else if argument == "--chronos-moira" {
+            let usage = "--chronos-moira requires WORKSTREAM SOCKET SCOPE";
+            let name = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| usage)?;
+            let socket = required_arg(&mut args, usage)?.into();
+            let scope = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| usage)?;
+            moira_bindings.push((name, socket, scope));
+        } else if argument == "--chronos-daimon" {
+            let usage = "--chronos-daimon requires WORKSTREAM SOCKET";
+            let name = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| usage)?;
+            let socket = required_arg(&mut args, usage)?.into();
+            daimon_bindings.push((name, socket));
         } else if argument == "--snapshot" && !snapshot {
             snapshot = true;
+        } else if argument == "--check-profile" && workspace_profile && !check_profile {
+            check_profile = true;
         } else {
             return Err("unknown or duplicate option".into());
         }
@@ -77,20 +195,32 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         return Err("--vellum-credential requires --vellum-service".into());
     }
     Ok(Options {
-        chronos_directory,
-        vellum_socket: vellum_socket.ok_or("--vellum-service is required")?,
+        shell,
+        agora,
+        chronos_streams,
+        vellum_socket,
         vellum_credential,
         chronos_writes,
         snapshot,
+        chronos_watch,
+        chronos_scheduling,
+        chronos_planning,
+        chronos_cancel_receipts,
+        moira_bindings,
+        daimon_bindings,
+        check_profile,
     })
 }
 
 fn usage() -> &'static str {
-    "workbench-tui CHRONOS_PRIVATE_SERVICE_DIRECTORY --vellum-service SOCKET [--vellum-credential PATH] [--chronos-allow-writes] [--snapshot]\nTab switches focus; Ctrl-Q exits after Vellum persistence checks. Each pane otherwise retains its own bindings and authority. --snapshot performs one bounded dual-service attachment probe without terminal mode."
+    "workbench-tui (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--vellum-service SOCKET] [--vellum-credential PATH] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--snapshot] [--check-profile]\n[/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
-fn vellum_connector(options: &Options) -> Result<VellumConnector, Box<dyn std::error::Error>> {
-    if let Some(path) = &options.vellum_credential {
+fn vellum_connector(
+    socket: PathBuf,
+    credential: Option<&PathBuf>,
+) -> Result<VellumConnector, Box<dyn std::error::Error>> {
+    if let Some(path) = credential {
         let mut store = vellum_adapter_local_authentication::LocalCredentialStoreV1::default();
         let record = store
             .load(path)
@@ -98,152 +228,101 @@ fn vellum_connector(options: &Options) -> Result<VellumConnector, Box<dyn std::e
         let provider =
             vellum_adapter_local_authentication::LocalCredentialClaimProviderV1::new(record);
         Ok(VellumConnector::Authenticated(
-            AuthenticatedUnixConnector::with_provider(options.vellum_socket.clone(), provider),
+            AuthenticatedUnixConnector::with_provider(socket, provider),
         ))
     } else {
-        Ok(VellumConnector::Plain(UnixConnector::new(
-            options.vellum_socket.clone(),
-        )))
+        Ok(VellumConnector::Plain(UnixConnector::new(socket)))
     }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = options()?;
-    let connector = vellum_connector(&options)?;
-    let chronos_client = chronos_local::LocalClient::new(options.chronos_directory);
-    let mut chronos = chronos_tui::Component::new(chronos_client, options.chronos_writes);
-    let transport = RemoteTransport::new(connector, TransportLimits::reference())
-        .map_err(|error| format!("Vellum transport refused: {error:?}"))?;
-    let workspace = WorkspaceClientV1::connect(transport)
-        .map_err(|error| format!("Vellum service refused: {error:?}"))?;
-    let mut vellum = ServiceEditor::open(workspace)?;
-    if options.snapshot {
-        return snapshot(chronos, vellum);
+    if options.check_profile {
+        println!(
+            "workspace profile valid: {} surfaces",
+            options.shell.surfaces().len()
+        );
+        return Ok(());
     }
-    let mut focus = Focus::Chronos;
-    let mut notice = String::from("both services attached; no cross-engine workflow authority");
-    let mut confirming_discard = false;
-    let mut last_vellum_poll = Instant::now();
-
-    let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
-        loop {
-            chronos.poll();
-            if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
-                if let Err(error) = vellum.poll() {
-                    notice = error.to_string();
-                }
-                last_vellum_poll = Instant::now();
-            }
-            let height = terminal.size()?.height.saturating_sub(2);
-            let vellum_frame = vellum.frame(height);
-            terminal.draw(|frame| draw(frame, &chronos, vellum_frame.as_ref(), focus, &notice))?;
-            if !event::poll(Duration::from_millis(25))? {
-                continue;
-            }
-            match event::read()? {
-                Event::Resize(..) => continue,
-                Event::Paste(text) if focus == Focus::Vellum => {
-                    notice = match vellum.apply(ServiceAction::Insert(text)) {
-                        Ok(()) => "Vellum edit accepted".into(),
-                        Err(error) => error.to_string(),
-                    };
-                    confirming_discard = false;
-                }
-                Event::Paste(_) => {
-                    notice = "Paste is available only in the focused Vellum pane".into();
-                }
-                Event::Key(key) => match route_key(key, focus) {
-                    RoutedInput::Exit => match decide_exit(
-                        vellum.workspace().projection().persistence(),
-                        confirming_discard,
-                    ) {
-                        ExitDecision::Exit => break,
-                        ExitDecision::ConfirmDiscard => {
-                            confirming_discard = true;
-                            notice =
-                                "Unsaved Vellum edit; Ctrl-Q again discards, Esc cancels".into();
-                        }
-                        ExitDecision::RefuseIndeterminate => {
-                            notice = "Vellum effect is indeterminate; repeat the exact action before exit"
-                                .into();
-                        }
-                    },
-                    RoutedInput::SwitchFocus => {
-                        focus = focus.other();
-                        confirming_discard = false;
-                        notice = format!("focus moved to {focus:?}");
-                    }
-                    RoutedInput::Chronos(input) => {
-                        if chronos.update(input, true) == Lifecycle::CloseRequested {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
-                        }
-                    }
-                    RoutedInput::Vellum(input) => match translate_service_input(input) {
-                        ServiceInput::CancelQuit => {
-                            confirming_discard = false;
-                            notice = "discard cancelled".into();
-                        }
-                        ServiceInput::Apply(action) => {
-                            notice = match vellum.apply(action) {
-                                Ok(()) => "Vellum action accepted".into(),
-                                Err(error) => error.to_string(),
-                            };
-                            confirming_discard = false;
-                        }
-                        ServiceInput::Open => {
-                            notice = "Workspace admission remains service/operator-owned in the composite"
-                                .into();
-                        }
-                        ServiceInput::Quit => unreachable!("Ctrl-Q is host-owned"),
-                        ServiceInput::Unsupported => {
-                            notice = "Command is unavailable in Vellum service mode".into();
-                        }
-                    },
-                },
-                _ => {}
-            }
+    let agora = if let Some(profile) = options.agora {
+        let (client_id, port) = AgoraLocalServicePort::connect(
+            &profile.socket,
+            &profile.participant,
+            LocalClientLimits::default(),
+        )
+        .map_err(|error| format!("Agora service refused: {error:?}"))?;
+        Some(agora_tui::Component::new(AgoraClientV2::new(
+            client_id, port,
+        )))
+    } else {
+        None
+    };
+    let mut chronos = if options.chronos_streams.is_empty() {
+        None
+    } else {
+        Some(Hub::with_cancel_receipts(
+            options.chronos_streams,
+            options.chronos_writes,
+            options.chronos_scheduling,
+            options.chronos_watch,
+            options.chronos_cancel_receipts,
+        )?)
+    };
+    if let Some(hub) = &mut chronos {
+        if let Some(path) = &options.chronos_planning {
+            hub.load_planning(path)?;
         }
-        Ok(())
-    });
-    let disconnect = vellum
-        .disconnect()
-        .map_err(|failure| format!("Vellum disconnect refused: {failure:?}"));
-    result?;
-    disconnect?;
-    Ok(())
+        for (name, socket, scope) in options.moira_bindings {
+            hub.bind_moira(&name, socket, scope)?;
+        }
+        for (name, socket) in options.daimon_bindings {
+            hub.bind_daimon(&name, socket)?;
+        }
+    }
+    let vellum = if let Some(socket) = options.vellum_socket {
+        let connector = vellum_connector(socket, options.vellum_credential.as_ref())?;
+        let transport = RemoteTransport::new(connector, TransportLimits::reference())
+            .map_err(|error| format!("Vellum transport refused: {error:?}"))?;
+        let workspace = WorkspaceClientV1::connect(transport)
+            .map_err(|error| format!("Vellum service refused: {error:?}"))?;
+        Some(ServiceEditor::open(workspace)?)
+    } else {
+        None
+    };
+    if options.snapshot {
+        return snapshot(
+            chronos.ok_or("--snapshot requires Chronos configuration")?,
+            vellum.ok_or("--snapshot requires Vellum configuration")?,
+        );
+    }
+    run_multi_peer_terminal(options.shell, chronos, vellum, agora)
 }
 
 fn snapshot(
-    mut chronos: chronos_tui::Component,
+    mut chronos: Hub,
     vellum: ServiceEditor<RemoteTransport<VellumConnector>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let deadline = Instant::now() + Duration::from_secs(2);
-    while !chronos.poll() {
-        if Instant::now() >= deadline {
-            return Err("Chronos attachment timed out".into());
-        }
-        std::thread::sleep(Duration::from_millis(10));
-    }
     let vellum_frame = vellum.frame(12);
     let mut terminal = ratatui::Terminal::new(ratatui::backend::TestBackend::new(120, 18))?;
-    terminal.draw(|frame| {
-        draw(
-            frame,
-            &chronos,
-            vellum_frame.as_ref(),
-            Focus::Chronos,
-            "dual-service snapshot",
-        )
-    })?;
-    let rendered: String = terminal
-        .backend()
-        .buffer()
-        .content
-        .iter()
-        .map(|cell| cell.symbol())
-        .collect();
-    if !rendered.contains("Observed") || !rendered.contains("Vellum") {
-        return Err("dual-service snapshot was not current".into());
+    loop {
+        chronos.poll();
+        terminal.draw(|frame| {
+            draw(
+                frame,
+                &chronos,
+                vellum_frame.as_ref(),
+                Focus::Chronos,
+                "dual-service snapshot",
+            )
+        })?;
+        if chronos.has_current_tasks() && vellum_frame.is_some() {
+            break;
+        }
+        if Instant::now() >= deadline {
+            return Err("dual-service snapshot was not current".into());
+        }
+        std::thread::sleep(Duration::from_millis(10));
     }
     vellum
         .disconnect()

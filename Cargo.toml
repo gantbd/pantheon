@@ -1,25 +1,36 @@
+[workspace]
+resolver = "3"
+
 [package]
 name = "workbench-tui"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/gantbd/workbench-tui"
+readme = "README.md"
 publish = false
-description = "Composition root for independent Chronos and Vellum Ratatui peers"
+description = "Terminal presentation host for independent workspace peers"
 
 [dependencies]
 vellum-tui = { version = "=0.1.0", path = "../vellum-tui" }
 vellum-sdk-client = { version = "=0.1.0", path = "../vellum/sdk/client" }
 vellum-adapter-local-authentication = { version = "=0.1.0", path = "../vellum/adapters/local-authentication" }
-chronos-tui = { version = "=0.1.0", path = "../../github.com/gantbd/chronos-tui" }
-chronos-client = { version = "=0.1.0", path = "../../github.com/gantbd/chronos/client/chronos-client" }
-chronos-protocol = { version = "=0.1.0", path = "../../github.com/gantbd/chronos/protocol/chronos-protocol" }
-chronos-local = { version = "=0.1.0", path = "../../github.com/gantbd/chronos/transport/chronos-local" }
+chronos-tui = { version = "=0.1.0", path = "../chronos-tui" }
+chronos-client = { version = "=0.1.0", path = "../chronos/client/chronos-client" }
+chronos-protocol = { version = "=0.1.0", path = "../chronos/protocol/chronos-protocol" }
+chronos-local = { version = "=0.1.0", path = "../chronos/transport/chronos-local" }
+agora-tui = { version = "=0.1.0", path = "../agora-tui" }
+agora-tui-local-client = { version = "=0.1.0", path = "../agora-tui/local-client" }
+agora-client = { version = "=0.1.0", path = "../agora/client/agora-client" }
+agora-protocol = { version = "=0.1.0", path = "../agora/protocol/agora-protocol" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
 
 [dev-dependencies]
-serde_json = "=1.0.151"
+agora-wire = { version = "=0.1.0", path = "../agora/protocol/agora-wire" }
 
 [lints.rust]
 unsafe_code = "forbid"
