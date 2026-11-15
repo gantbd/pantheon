@@ -10,7 +10,7 @@
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
-      "revision": "f7103d85c8bed043fcf63924bc2251ce85b2d038",
+      "revision": "cdef63d07423403a06c7933683d7d177c10f7f4d",
       "workingTreeClean": true
     },
     "chronos": {
@@ -30,7 +30,7 @@
     },
     "vellumTui": {
       "repository": "https://github.com/gantbd/vellum-tui",
-      "revision": "af7b74fde8c77c8e89ed2df91361da497d7a5a00",
+      "revision": "11f1acd68b6daa0eceae353dbd4c9ed764550c94",
       "workingTreeClean": true
     }
   },

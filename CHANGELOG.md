@@ -36,3 +36,5 @@
   multi-workstream standalone headless contract.
 - Added explicit `interactive` and `headless` Workbench commands while retaining
   the historical headless flags as compatibility aliases.
+- Advanced the Agora and Vellum peer inputs to their versioned standalone
+  `rooms.read.v2` and `workspace.inventory.v1` headless contracts.

@@ -15,7 +15,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
-        "af7b74fde8c77c8e89ed2df91361da497d7a5a00"
+        "11f1acd68b6daa0eceae353dbd4c9ed764550c94"
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
@@ -23,7 +23,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "f7103d85c8bed043fcf63924bc2251ce85b2d038"
+        "cdef63d07423403a06c7933683d7d177c10f7f4d"
     );
     for input in ["agoraTui", "chronosTui", "vellumTui"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
