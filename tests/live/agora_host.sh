@@ -103,3 +103,35 @@ wait "$server_pid"
 server_pid=
 
 echo 'PASS: profile-driven Agora Unix client -> Workbench surface'
+
+rm -f "$agora_socket"
+"$target/debug/examples/agora_fixture_server" "$agora_socket" >"$server_log" 2>&1 &
+server_pid=$!
+attempt=0
+while [ ! -S "$agora_socket" ]; do
+  if ! kill -0 "$server_pid" 2>/dev/null || [ "$attempt" -eq 200 ]; then
+    sed -n '1,120p' "$server_log" >&2
+    echo 'FAIL: Agora headless fixture did not become ready' >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+headless=$("$target/debug/workbench-tui" --workspace-profile "$profile" --headless)
+printf '%s' "$headless" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"] and report["mode"] == "headless"
+assert report["peers"] == [{
+    "capability": "rooms.read.v2",
+    "peer": "agora",
+    "revision": 11,
+    "rooms": 1,
+    "status": "current",
+    "truncated": False,
+}]
+'
+wait "$server_pid"
+server_pid=
+
+echo 'PASS: profile-driven Agora Unix client -> Workbench headless observation'

@@ -80,7 +80,7 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
         "vellum-daemon",
         "workbench-tui",
         "--status",
-        "--snapshot",
+        "--headless",
         "--shutdown",
         "--locked",
         "--offline",

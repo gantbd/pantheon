@@ -66,6 +66,12 @@ arguments, opening a terminal, connecting a service, or terminating a process.
 Exit check: one profile can run the interactive shell or a headless snapshot
 against the same attached clients with identical authorization and freshness.
 
+Status: the current CLI has explicit interactive behavior and a `--headless`
+mode (with `--snapshot` compatibility alias). Headless emits a versioned JSON
+report for any configured subset of Agora, Chronos workstreams, and Vellum,
+uses their public clients directly, and refuses aggregate success on partial
+failure. Moving the CLI into a separate package remains open.
+
 ### 3. Add composite service hosting
 
 - Define a host registry whose entries construct peer services and clients from
@@ -88,6 +94,11 @@ reused TUIs, and shuts them down in a bounded order without an external daemon.
 Exit check: interactive and headless journeys produce the same peer-owned
 receipts/refusals for equivalent operations and never infer aggregate success
 from presentation or process state.
+
+Status: attached read parity is qualified for Agora, Chronos, and Vellum,
+including one unavailable Chronos workstream alongside healthy peers. Hosted
+service parity, mutation routing, restart, and partial-shutdown qualification
+remain open.
 
 ### 5. Extend peer coverage
 

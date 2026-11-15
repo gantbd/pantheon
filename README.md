@@ -65,7 +65,11 @@ the standalone Chronos Hub. Press **7** to view the plan.
 `--chronos-cancel-receipts` selects V3 cancellation on a writable
 atomic service. Add `--vellum-credential PATH` for Vellum's optional local credential
 handshake. Tab changes focus and Ctrl-Q requests whole-workbench exit. Add
-`--snapshot` for a bounded headless attachment probe against both services.
+`--headless` for a bounded, versioned JSON observation of every configured
+Agora, Chronos, and Vellum peer. Each row names its peer-owned capability and
+truthful status. Healthy rows remain visible when another peer is unavailable,
+but the command refuses aggregate success. `--snapshot` remains a compatibility
+alias.
 
 A Vellum-owned integration host can call `workbench_tui::run_hosted_terminal`
 with a Chronos `Hub` and a factory for the Vellum service and handoff handler.

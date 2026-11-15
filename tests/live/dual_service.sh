@@ -78,23 +78,35 @@ fi
 
 snapshot=$(
   "$workbench_bin" "$chronos_dir" --vellum-service "$vellum_socket" \
-    --chronos-watch --chronos-scheduling --chronos-allow-writes --chronos-cancel-receipts \
-    --chronos-workstream Offline "$scratch/offline" --snapshot
+    --headless
 )
-if [ "$snapshot" != 'dual-service snapshot current' ]; then
-  echo 'FAIL: workbench did not report exact dual-service attachment' >&2
-  exit 1
-fi
+printf '%s' "$snapshot" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["version"] == 1 and report["mode"] == "headless" and report["complete"]
+peers = {peer["peer"]: peer for peer in report["peers"]}
+assert peers["chronos"]["status"] == "current"
+assert peers["vellum"]["status"] == "current"
+'
 
 profile="$scratch/chronos-profile.json"
 printf '%s\n' '{"version":1,"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}]}' >"$profile"
-snapshot=$(
-  "$workbench_bin" --chronos-profile "$profile" --vellum-service "$vellum_socket" --snapshot
-)
-if [ "$snapshot" != 'dual-service snapshot current' ]; then
-  echo 'FAIL: workbench did not reopen the saved Chronos workspace' >&2
+set +e
+snapshot=$("$workbench_bin" --chronos-profile "$profile" --vellum-service "$vellum_socket" --headless 2>/dev/null)
+snapshot_status=$?
+set -e
+if [ "$snapshot_status" -eq 0 ]; then
+  echo 'FAIL: partial headless workspace reported aggregate success' >&2
   exit 1
 fi
+printf '%s' "$snapshot" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert not report["complete"]
+chronos = [peer for peer in report["peers"] if peer["peer"] == "chronos"]
+assert [peer["status"] for peer in chronos] == ["current", "not_sent"]
+assert next(peer for peer in report["peers"] if peer["peer"] == "vellum")["status"] == "current"
+'
 
 workspace_profile="$scratch/workspace-profile.json"
 printf '%s\n' \

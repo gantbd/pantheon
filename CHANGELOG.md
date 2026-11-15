@@ -23,3 +23,7 @@
 - Qualified host-supplied and profile-driven Agora rendering in tmux, including
   a real private Unix handshake and request/response exchange with a bounded
   protocol fixture.
+- Replaced the dual-service-only presentation snapshot with a versioned
+  headless report over any configured subset of Agora, Chronos workstreams, and
+  Vellum. Reports preserve per-peer capability, truncation, refusal, access
+  uncertainty, and partial aggregate failure without constructing TUI state.
