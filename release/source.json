@@ -70,7 +70,7 @@
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "608b13f64be9714a98d288c66694e470c7785ecc",
+      "revision": "8bb5c22d452939de3ffaff184a519b4def23b35c",
       "workingTreeClean": true
     },
     "vellum": {
