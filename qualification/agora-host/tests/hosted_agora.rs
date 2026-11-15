@@ -18,14 +18,18 @@ use aegis_protocol::{
 };
 use agora_aegis_verifier::{AegisContextV1, AegisVerifierV1};
 use agora_client::v2::ClientV2;
-use agora_engine::{Engine, Participant, ParticipantKind};
+use agora_engine::{
+    AdmissionPolicy, CommandV2 as EngineCommandV2, Engine, LogicalTime, Participant, ParticipantId,
+    ParticipantKind, RoomId,
+};
 use agora_host::{HostLimits, HostTimeV1, VerifiedSubjectV1, v2::HostV2};
 use agora_local_daemon::{
     AuthenticatorV1, DaemonCleanupV1, DaemonLimitsV1, DaemonV1, HostClockV1, ServerIncarnationV1,
 };
-use agora_protocol::v2::{CommandV2, OutcomeV2, ReplyV2};
 use agora_service::v2::{ServiceLimitsV2, ServiceV2};
 use agora_wire::WireLimits;
+use ratatui::{Terminal, backend::TestBackend};
+use workbench_tui::{Focus, Shell, Surface, draw_shell};
 use workbench_tui_cli::{
     headless::{HeadlessRequest, observe as observe_headless},
     native_host::{ChronosHostOptions, NativeHost},
@@ -115,6 +119,22 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
         .apply(agora_engine::CommandV2::RegisterParticipant(
             Participant::new("operator", "Operator", ParticipantKind::Human),
         ))
+        .unwrap();
+    engine
+        .apply(EngineCommandV2::CreateRoom {
+            room_id: RoomId::from("operator-room"),
+            name: "Operator Room".into(),
+            owner: ParticipantId::from("operator"),
+            admission: AdmissionPolicy::InviteOnly,
+        })
+        .unwrap();
+    engine
+        .apply(EngineCommandV2::Speak {
+            room_id: RoomId::from("operator-room"),
+            author: ParticipantId::from("operator"),
+            at: LogicalTime(1),
+            body: "All three owners reached the Workbench surface".into(),
+        })
         .unwrap();
     let host = HostV2::new(
         ServiceV2::new(engine, ServiceLimitsV2::default()),
@@ -208,6 +228,7 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
             ("vellum", "current")
         ]
     );
+    assert_eq!(observation.peers[0]["rooms"], 1);
 
     let (client_id, port) = agora_tui_local_client::LocalServicePort::connect(
         &socket,
@@ -215,18 +236,49 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
         agora_tui_local_client::LocalClientLimits::default(),
     )
     .unwrap();
-    let mut client = ClientV2::new(client_id, port);
-    let ReplyV2::Accepted(OutcomeV2::Rooms(page)) = client
-        .execute(CommandV2::Rooms {
-            cursor: None,
-            limit: 8,
-        })
-        .unwrap()
-    else {
-        panic!("room observation expected");
+    let mut component = agora_tui::Component::new(ClientV2::new(client_id, port));
+    let shell = Shell::new(vec![Surface::Agora]).unwrap();
+    let render = |component: &agora_tui::Component| {
+        let mut terminal = Terminal::new(TestBackend::new(120, 20)).unwrap();
+        terminal
+            .draw(|frame| {
+                draw_shell(
+                    frame,
+                    &shell,
+                    None,
+                    None,
+                    Some(component),
+                    Focus::Chronos,
+                    "three owners",
+                )
+            })
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
     };
-    assert!(page.rooms.is_empty());
-    drop(client);
+    for _ in 0..200 {
+        component.poll();
+        if render(&component).contains("Operator Room") {
+            break;
+        }
+        thread::sleep(Duration::from_millis(1));
+    }
+    assert!(render(&component).contains("Operator Room"));
+    component.update(agora_tui::Input::Open, true);
+    for _ in 0..200 {
+        component.poll();
+        if render(&component).contains("All three owners reached the Workbench surface") {
+            break;
+        }
+        thread::sleep(Duration::from_millis(1));
+    }
+    assert!(render(&component).contains("All three owners reached the Workbench surface"));
+    drop(component);
 
     let receipt = native.shutdown().unwrap();
     assert!(receipt.clean());

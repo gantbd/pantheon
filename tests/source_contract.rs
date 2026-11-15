@@ -75,6 +75,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         .expect("isolated Agora host qualifier");
     assert!(agora_qualifier.contains("[workspace]"));
     assert!(agora_qualifier.contains("workbench-tui-cli = { path = \"../../cli\" }"));
+    assert!(agora_qualifier.contains("workbench-tui = { path = \"../..\" }"));
+    assert!(agora_qualifier.contains("agora-tui ="));
     assert!(agora_qualifier.contains("agora-local-daemon"));
     let qualification_script = fs::read_to_string(root.join("qualification/agora-host/qualify.sh"))
         .expect("three-owner qualification command");

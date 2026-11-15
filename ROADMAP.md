@@ -103,7 +103,9 @@ Aegis grant/time, and durable-host factory. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
-the standalone CLI and retains a current observation for every peer. Chronos standalone and Agora
+the standalone CLI and retains a current observation for every peer. It then
+feeds a second real Agora client into the reusable component and renders its
+room and message projections through Workbench's shell boundary. Chronos standalone and Agora
 daemon select the compatible checkpoint/commit subset under different source
 identities for `keystone-storage`; the qualifier derives a scoped local Cargo patch to prove
 the all-three lifecycle without embedding a machine path. Normal production

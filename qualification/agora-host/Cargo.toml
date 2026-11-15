@@ -9,7 +9,9 @@ resolver = "3"
 
 [dependencies]
 workbench-tui-cli = { path = "../../cli" }
+workbench-tui = { path = "../.." }
 chronos-tui = { path = "../../../chronos-tui" }
+agora-tui = { path = "../../../agora-tui" }
 agora-tui-local-client = { path = "../../../agora-tui/local-client" }
 agora-client = { path = "../../../agora/client/agora-client" }
 agora-protocol = { path = "../../../agora/protocol/agora-protocol" }
@@ -21,6 +23,7 @@ agora-local-daemon = { path = "../../../agora/applications/agora-local-daemon" }
 agora-service = { path = "../../../agora/service/agora-service" }
 aegis-client = { path = "../../../aegis/crates/aegis-client" }
 aegis-protocol = { path = "../../../aegis/crates/aegis-protocol" }
+ratatui = { version = "=0.30.2", default-features = false }
 
 [lints.rust]
 unsafe_code = "forbid"

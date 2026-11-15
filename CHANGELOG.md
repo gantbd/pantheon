@@ -81,3 +81,5 @@
 - Extracted Workbench headless aggregation from CLI-private code into a typed
   application-library API and qualified it against all three live native owners
   in one process.
+- Extended the same three-owner qualification through the real Agora component
+  and Workbench shell rendering boundary for room and message projections.

@@ -1449,9 +1449,12 @@ dependencies = [
  "agora-local-daemon",
  "agora-protocol",
  "agora-service",
+ "agora-tui",
  "agora-tui-local-client",
  "agora-wire",
  "chronos-tui",
+ "ratatui",
+ "workbench-tui",
  "workbench-tui-cli",
 ]
 
