@@ -177,7 +177,8 @@ build.
 
 Run `sh tests/live/aegis_attach.sh` to qualify the independently packaged
 read-only Aegis peer through the real durable daemon in both Workbench headless
-and interactive attachment. The gate exercises `authority.observe.v1` only; it
+and interactive attachment, including bounded grant/decision page navigation.
+The gate exercises `authority.observe.v1` only; it
 does not grant Workbench issue, attenuation, authorization or revocation power.
 
 Run `sh tests/live/grounding_attach.sh` to qualify the independently packaged

@@ -191,7 +191,10 @@ compaction remain guarded later operations.
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
 and Workbench attachment qualified against the real durable daemon in both
-interactive and headless modes. Issue, attenuation, authorization, and epoch revocation
+interactive and headless modes. The shared component now navigates forward and
+backward across bounded redacted grant/decision pages while headless observation
+retains one bounded page plus explicit continuation evidence. Issue,
+attenuation, authorization, and epoch revocation
 remain excluded until exact confirmation, current-epoch, non-amplification,
 durable receipt, and outcome-unknown laws are qualified.
 

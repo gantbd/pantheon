@@ -61,7 +61,7 @@ implies production credential provenance.
 | Moira | qualified read/reconciliation, census, evidence and receipt projections | qualified attach with the same component and census | absent | guarded reconciliation and native host factory |
 | Daimon | qualified redacted presence | qualified attach | absent | settle active engine work, then exact execution evidence and guarded dispatch/resume |
 | Hermes | qualified status/usage/signals, configured stream health and consumer cursor | qualified attach with the same selectors | absent | bounded event-gap disclosure and host factory |
-| Aegis | qualified read-only authority observation | qualified read-only attach | absent | guarded administration and deployment-owned hosting |
+| Aegis | qualified read-only authority observation and bounded pages | qualified read-only attach with the same navigation | absent | guarded administration and deployment-owned hosting |
 | Grounding/Dendrite | qualified typed observation | qualified typed attach | absent | selected surface/read DTOs and deployment-owned hosting |
 
 The detailed open-boundary ledger remains `WORKSPACE_GAPS.md`. The ordered

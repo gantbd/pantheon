@@ -76,6 +76,9 @@ peer = report["peers"][0]
 assert peer["peer"] == "aegis"
 assert peer["capability"] == "authority.observe.v1"
 assert peer["status"] == "current" and peer["epoch"] == 0
+assert peer["active_grants"] == 6 and peer["retained_decisions"] == 6
+assert peer["page_grants"] == 4 and peer["more_grants"]
+assert peer["page_decisions"] == 4 and peer["more_decisions"]
 '
 
 start_fixture
@@ -106,10 +109,14 @@ def expect(*markers):
     raise AssertionError(f"Missing {markers!r} in:\n{screen}")
 
 try:
-    tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "workbench", command)
+    tmux("new-session", "-d", "-x", "120", "-y", "28", "-s", "workbench", command)
     expect("Aegis: attached")
     tmux("send-keys", "-t", "workbench", "]")
-    expect("Aegis", "epoch: 0", "active grants: 0")
+    expect("Aegis", "page: 1", "epoch: 0", "active grants: 6", "grant #0", "decision #3")
+    tmux("send-keys", "-t", "workbench", "n")
+    expect("page: 2", "grant #4", "grant #5", "decision #4", "decision #5")
+    tmux("send-keys", "-t", "workbench", "p")
+    expect("page: 1", "grant #0", "decision #0")
     tmux("send-keys", "-t", "workbench", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
@@ -121,4 +128,4 @@ finally:
 PYTHON
 finish_fixture
 
-echo 'PASS: real Aegis daemon -> standalone peer contract -> Workbench headless and interactive attach'
+echo 'PASS: real Aegis daemon -> bounded authority pages -> Workbench headless and interactive attach'

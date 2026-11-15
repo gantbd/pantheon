@@ -53,6 +53,8 @@ read-only input until that repository settles.
   response bounds, without inventing a global stream or consumer catalogue.
 - [ ] Aegis: guarded issue/attenuate/revoke administration with exact epoch,
   resource/action confirmation and outcome-unknown fencing.
+- [x] Aegis: preserve bounded redacted grant/decision pagination through the
+  same read-only component in standalone and Workbench interactive paths.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and
   guarded dispatch/resume with no-redispatch qualification.
 - [ ] Agora, Chronos and Vellum: add mutations only where standalone and
