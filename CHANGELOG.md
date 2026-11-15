@@ -32,3 +32,7 @@
 - Extracted Workbench's executable, profile parser, terminal lifecycle, and
   hosted-service helpers into `workbench-tui-cli`; the root package is now the
   reusable shell and peer-presentation composition boundary.
+- Advanced the Chronos peer input to its explicit, versioned,
+  multi-workstream standalone headless contract.
+- Added explicit `interactive` and `headless` Workbench commands while retaining
+  the historical headless flags as compatibility aliases.

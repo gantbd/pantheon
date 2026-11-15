@@ -26,7 +26,7 @@ surfaces; Tab switches focus only inside Workspace. See
 [the gap ledger](WORKSPACE_GAPS.md) and [delivery roadmap](ROADMAP.md).
 
 ```sh
-cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- \
+cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interactive \
   /private/tmp/chronos-service-directory \
   --vellum-service /private/tmp/vellum.sock
 ```
@@ -35,14 +35,14 @@ To load a bounded workspace profile instead, copy
 `config/workspace.example.json`, adjust its relative service paths, and run:
 
 ```sh
-cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- \
+cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interactive \
   --workspace-profile config/workspace.json
 ```
 
 Validate profile structure and path resolution without contacting a service:
 
 ```sh
-cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- \
+cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interactive \
   --workspace-profile config/workspace.json --check-profile
 ```
 
@@ -67,11 +67,11 @@ the standalone Chronos Hub. Press **7** to view the plan.
 `--chronos-cancel-receipts` selects V3 cancellation on a writable
 atomic service. Add `--vellum-credential PATH` for Vellum's optional local credential
 handshake. Tab changes focus and Ctrl-Q requests whole-workbench exit. Add
-`--headless` for a bounded, versioned JSON observation of every configured
+Use the explicit `headless` command for a bounded, versioned JSON observation of every configured
 Agora, Chronos, and Vellum peer. Each row names its peer-owned capability and
 truthful status. Healthy rows remain visible when another peer is unavailable,
-but the command refuses aggregate success. `--snapshot` remains a compatibility
-alias.
+but the command refuses aggregate success. `--headless` and `--snapshot` remain
+compatibility aliases for invocations without an explicit command.
 
 A Vellum-owned integration host can call `workbench_tui_cli::run_hosted_terminal`
 with a Chronos `Hub` and a factory for the Vellum service and handoff handler.

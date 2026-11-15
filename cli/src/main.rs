@@ -65,8 +65,21 @@ fn required_arg(
 
 fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut args = std::env::args_os().skip(1);
-    let Some(first) = args.next() else {
+    let Some(mut first) = args.next() else {
         return Err(usage().into());
+    };
+    let explicit_mode = if first == "interactive" {
+        first = args
+            .next()
+            .ok_or("interactive requires a workspace or Chronos configuration")?;
+        Some(false)
+    } else if first == "headless" {
+        first = args
+            .next()
+            .ok_or("headless requires a workspace or Chronos configuration")?;
+        Some(true)
+    } else {
+        None
     };
     if first == "--help" {
         println!("{}", usage());
@@ -125,7 +138,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         }]
     };
     let mut chronos_writes = false;
-    let mut headless = false;
+    let mut headless = explicit_mode.unwrap_or(false);
     let mut chronos_watch = false;
     let mut chronos_scheduling = false;
     let mut chronos_cancel_receipts = false;
@@ -183,7 +196,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                 .map_err(|_| usage)?;
             let socket = required_arg(&mut args, usage)?.into();
             daimon_bindings.push((name, socket));
-        } else if (argument == "--headless" || argument == "--snapshot") && !headless {
+        } else if (argument == "--headless" || argument == "--snapshot")
+            && !headless
+            && explicit_mode.is_none()
+        {
             headless = true;
         } else if argument == "--check-profile" && workspace_profile && !check_profile {
             check_profile = true;
@@ -214,7 +230,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
 }
 
 fn usage() -> &'static str {
-    "workbench-tui (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--vellum-service SOCKET] [--vellum-credential PATH] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--headless] [--check-profile]\n--headless emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --snapshot remains a compatibility alias. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--vellum-service SOCKET] [--vellum-credential PATH] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(

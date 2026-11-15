@@ -117,7 +117,7 @@ while [ ! -S "$agora_socket" ]; do
   attempt=$((attempt + 1))
   sleep 0.025
 done
-headless=$("$target/debug/workbench-tui" --workspace-profile "$profile" --headless)
+headless=$("$target/debug/workbench-tui" headless --workspace-profile "$profile")
 printf '%s' "$headless" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)

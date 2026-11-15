@@ -77,8 +77,7 @@ if [ "$attempt" -eq 100 ]; then
 fi
 
 snapshot=$(
-  "$workbench_bin" "$chronos_dir" --vellum-service "$vellum_socket" \
-    --headless
+  "$workbench_bin" headless "$chronos_dir" --vellum-service "$vellum_socket"
 )
 printf '%s' "$snapshot" | python3 -c '
 import json, sys

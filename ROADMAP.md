@@ -66,8 +66,8 @@ arguments, opening a terminal, connecting a service, or terminating a process.
 Exit check: one profile can run the interactive shell or a headless snapshot
 against the same attached clients with identical authorization and freshness.
 
-Status: the current CLI has explicit interactive behavior and a `--headless`
-mode (with `--snapshot` compatibility alias). Headless emits a versioned JSON
+Status: the current CLI has explicit `interactive` and `headless` commands
+(with `--headless` and `--snapshot` compatibility aliases). Headless emits a versioned JSON
 report for any configured subset of Agora, Chronos workstreams, and Vellum,
 uses their public clients directly, and refuses aggregate success on partial
 failure. The executable, profile parser, terminal lifecycle, and hosted-service

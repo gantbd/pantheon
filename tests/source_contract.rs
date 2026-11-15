@@ -19,7 +19,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "3352a9972d7f0d5a383c0d42845649872d5819a9"
+        "a1358561817c2712dcf915b1ff95a20d6980b60a"
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],

@@ -6,6 +6,7 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
         .parent()
         .expect("CLI package is nested under the workspace root");
     let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+        .arg("interactive")
         .arg("--workspace-profile")
         .arg(root.join("config/workspace.example.json"))
         .arg("--check-profile")
