@@ -1,6 +1,7 @@
 //! Workbench application lifecycle for interactive and headless composition.
 #![forbid(unsafe_code)]
 
+pub mod headless;
 mod hosted;
 pub mod native_host;
 pub mod profile;

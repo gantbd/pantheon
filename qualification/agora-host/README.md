@@ -3,7 +3,9 @@
 This nested Cargo workspace qualifies one `NativeHost` process owning Chronos,
 Vellum, and a real Agora local daemon while serving Agora's public Unix client.
 Its Agora authority port, authentication, and clock are explicitly test-only
-deployment inputs.
+deployment inputs. While all owners are live it invokes Workbench's reusable
+headless aggregation API and requires current Agora, Chronos, and Vellum
+observations before reverse shutdown.
 
 The separate lock closure is deliberate. Workbench's default CLI enables its
 native Chronos owner, whose current standalone graph selects a vendored

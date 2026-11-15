@@ -9,6 +9,7 @@ resolver = "3"
 
 [dependencies]
 workbench-tui-cli = { path = "../../cli" }
+chronos-tui = { path = "../../../chronos-tui" }
 agora-tui-local-client = { path = "../../../agora-tui/local-client" }
 agora-client = { path = "../../../agora/client/agora-client" }
 agora-protocol = { path = "../../../agora/protocol/agora-protocol" }

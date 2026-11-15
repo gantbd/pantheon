@@ -101,7 +101,9 @@ Agora authority factory is qualified against the real daemon and public client;
 the standalone Workbench profile still lacks a production peer-provenance,
 Aegis grant/time, and durable-host factory. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
-explicitly test-only Agora authority composition. Chronos standalone and Agora
+explicitly test-only Agora authority composition. While all three owners are
+live, that qualifier also runs the reusable headless aggregation API used by
+the standalone CLI and retains a current observation for every peer. Chronos standalone and Agora
 daemon select the compatible checkpoint/commit subset under different source
 identities for `keystone-storage`; the qualifier derives a scoped local Cargo patch to prove
 the all-three lifecycle without embedding a machine path. Normal production
@@ -115,6 +117,11 @@ does not substitute test authority or attachment for the still-open production
 Agora owner factory.
 
 ### 4. Qualify headless parity
+
+The headless observer is now an application-library API rather than CLI-private
+code. Deployments can supply the same typed Agora profile, Chronos workstreams,
+and Vellum endpoint used by the standalone parser and receive the same bounded
+peer observations without constructing TUI state.
 
 - Run the same hosted topology without Ratatui, focus, selection, or cursor state.
 - Provide bounded per-peer command and snapshot routing plus aggregate health;

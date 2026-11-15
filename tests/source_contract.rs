@@ -83,6 +83,16 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(qualification_script.contains("patch.\\\"file://$vendor\\\""));
     assert!(manifest.contains("exclude = [\"qualification/agora-host\"]"));
     let cli_entry = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI entry point");
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs"))
+        .expect("reusable headless composition");
+    assert!(cli_entry.contains("observe_headless(HeadlessRequest"));
+    assert!(!cli_entry.contains("fn observe_agora"));
+    for peer_observer in ["observe_agora", "observe_chronos", "observe_vellum"] {
+        assert!(
+            headless.contains(peer_observer),
+            "headless composition omits {peer_observer}"
+        );
+    }
     for peer_manifest in [
         "agora_tui::CAPABILITIES",
         "chronos_tui::CAPABILITIES",

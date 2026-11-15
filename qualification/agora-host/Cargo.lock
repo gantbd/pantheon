@@ -1451,6 +1451,7 @@ dependencies = [
  "agora-service",
  "agora-tui-local-client",
  "agora-wire",
+ "chronos-tui",
  "workbench-tui-cli",
 ]
 

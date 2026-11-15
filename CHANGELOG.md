@@ -78,3 +78,6 @@
   patch and explicitly test-only Agora authority inputs.
 - Advanced the exact Agora TUI source receipt to its standalone real-daemon
   interactive and headless qualification revision.
+- Extracted Workbench headless aggregation from CLI-private code into a typed
+  application-library API and qualified it against all three live native owners
+  in one process.

@@ -27,7 +27,9 @@ use agora_protocol::v2::{CommandV2, OutcomeV2, ReplyV2};
 use agora_service::v2::{ServiceLimitsV2, ServiceV2};
 use agora_wire::WireLimits;
 use workbench_tui_cli::{
+    headless::{HeadlessRequest, observe as observe_headless},
     native_host::{ChronosHostOptions, NativeHost},
+    profile::AgoraProfile,
     registry::{HostedPeerId, ShutdownDisposition},
 };
 
@@ -173,6 +175,39 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     native.seal().unwrap();
     assert!(chronos.join("chronos.sock").exists());
     assert!(vellum.exists());
+
+    let observation = observe_headless(HeadlessRequest {
+        workspace: "All peers".into(),
+        agora: Some(AgoraProfile {
+            socket: socket.clone(),
+            participant: "operator".into(),
+            requires: vec!["rooms.read.v2".into()],
+        }),
+        chronos: vec![chronos_tui::Workstream {
+            name: "Atlas".into(),
+            directory: chronos.clone(),
+        }],
+        vellum_socket: Some(vellum.clone()),
+        vellum_credential: None,
+    })
+    .unwrap();
+    assert!(observation.complete);
+    assert_eq!(observation.workspace, "All peers");
+    assert_eq!(
+        observation
+            .peers
+            .iter()
+            .map(|peer| (
+                peer["peer"].as_str().unwrap(),
+                peer["status"].as_str().unwrap()
+            ))
+            .collect::<Vec<_>>(),
+        [
+            ("agora", "current"),
+            ("chronos", "current"),
+            ("vellum", "current")
+        ]
+    );
 
     let (client_id, port) = agora_tui_local_client::LocalServicePort::connect(
         &socket,

@@ -149,8 +149,9 @@ Workbench-owned data and control endpoint.
 
 Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
 owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
-public Unix client. The nested lock closure uses an explicitly test-only Agora
-authority composition. Its command derives a scoped Cargo source patch because
+public Unix client. The same process observes all three peers through the
+headless aggregation API used by the standalone Workbench CLI. The nested lock
+closure uses an explicitly test-only Agora authority composition. Its command derives a scoped Cargo source patch because
 Chronos standalone and Agora resolve the compatible checkpoint/commit subset of
 `keystone-storage` from different local identities. It qualifies the all-three lifecycle graph,
 but not the production Agora authority factory or a normal unpatched release
