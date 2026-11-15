@@ -18,13 +18,23 @@ engine or workflow presentation. Keystone remains presentation-free.
 
 ## Current qualification state
 
-The locked Workbench build, component tests, profile tests, and the live Agora
-gate pass against the present coordinated working trees. The live gate covers
-both host-supplied composition and profile-driven attachment through the Unix
-client to a protocol fixture. This is working-tree evidence, not an immutable
-release qualification: several engine trees differ from their source receipts,
+The reusable/CLI boundary and versioned headless contract are now aligned for
+Agora, Chronos, Vellum, and Workbench. Each standalone CLI names its public
+read capability and constructs no TUI state in headless mode. Workbench attaches
+the same clients and preserves healthy observations beside a failed peer.
+
+| Core peer | Standalone interactive | Standalone headless | Workbench attach | Workbench host |
+| --- | --- | --- | --- | --- |
+| Agora | Reused TUI over private Unix client | `rooms.read.v2`, protocol fixture | Interactive + headless, protocol fixture | Host-supplied component only |
+| Chronos | Reused TUI; real-service journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service | Open |
+| Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Generic helper only |
+
+This is qualified local working-tree evidence, not an immutable release
+qualification. The three peer TUI commits are exact and clean in Workbench's
+source receipt, but several engine trees differ from their recorded revisions,
 remote reachability is unqualified, and Agora still lacks a packaged standalone
-daemon journey.
+daemon journey. A single hosted Workbench service/client graph therefore remains
+open rather than being inferred from successful attachment.
 
 ## Reconciliation order
 

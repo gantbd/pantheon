@@ -38,3 +38,5 @@
   the historical headless flags as compatibility aliases.
 - Advanced the Agora and Vellum peer inputs to their versioned standalone
   `rooms.read.v2` and `workspace.inventory.v1` headless contracts.
+- Recorded the qualified core-peer parity matrix separately from the still-open
+  hosted service topology and immutable engine-source closure.

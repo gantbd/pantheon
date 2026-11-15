@@ -120,3 +120,9 @@ Every peer integration must pass:
 
 The matrix includes authorization denial, stale revision, service unavailable,
 outcome unknown, recovery, and orderly/partial shutdown cases.
+
+Current status: the standalone and Workbench-attach read cells pass for Agora,
+Chronos, and Vellum with explicit capability IDs. Agora's passing evidence uses
+the selected private client against a bounded protocol fixture; Chronos and
+Vellum use their real services. The Workbench-host row remains open for all
+three and is not implied by attachment success.
