@@ -1,4 +1,4 @@
-#![cfg(unix)]
+#![cfg(target_os = "macos")]
 
 use std::{
     fs,
@@ -27,7 +27,7 @@ use agora_protocol::v2::{CommandV2, OutcomeV2, ReplyV2};
 use agora_service::v2::{ServiceLimitsV2, ServiceV2};
 use agora_wire::WireLimits;
 use workbench_tui_cli::{
-    native_host::NativeHost,
+    native_host::{ChronosHostOptions, NativeHost},
     registry::{HostedPeerId, ShutdownDisposition},
 };
 
@@ -82,7 +82,7 @@ impl HostClockV1 for Clock {
 }
 
 fn scratch() -> PathBuf {
-    std::env::temp_dir().join(format!("workbench-agora-owner-{}", std::process::id()))
+    PathBuf::from("/private/tmp").join(format!("workbench-all-owner-{}", std::process::id()))
 }
 
 fn wire_limits() -> WireLimits {
@@ -95,7 +95,7 @@ fn wire_limits() -> WireLimits {
 }
 
 #[test]
-fn injected_authority_hosts_real_agora_daemon_and_public_client() {
+fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     let root = scratch();
     if root.exists() {
         fs::remove_dir_all(&root).unwrap();
@@ -103,6 +103,10 @@ fn injected_authority_hosts_real_agora_daemon_and_public_client() {
     fs::create_dir(&root).unwrap();
     fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
     let socket = root.join("agora.sock");
+    let chronos = root.join("chronos");
+    let vellum = root.join("vellum.sock");
+    let source = root.join("source.txt");
+    fs::write(&source, "qualified three-peer owner").unwrap();
 
     let mut engine = Engine::new();
     engine
@@ -144,6 +148,12 @@ fn injected_authority_hosts_real_agora_daemon_and_public_client() {
     });
 
     let mut native = NativeHost::new();
+    native
+        .start_chronos("Atlas", &chronos, ChronosHostOptions::default())
+        .unwrap();
+    native
+        .start_vellum(&vellum, std::slice::from_ref(&source), None, false, false)
+        .unwrap();
     let shutdown_socket = socket.clone();
     let mut owner = Some(owner);
     native
@@ -161,6 +171,8 @@ fn injected_authority_hosts_real_agora_daemon_and_public_client() {
         })
         .unwrap();
     native.seal().unwrap();
+    assert!(chronos.join("chronos.sock").exists());
+    assert!(vellum.exists());
 
     let (client_id, port) = agora_tui_local_client::LocalServicePort::connect(
         &socket,
@@ -183,7 +195,17 @@ fn injected_authority_hosts_real_agora_daemon_and_public_client() {
 
     let receipt = native.shutdown().unwrap();
     assert!(receipt.clean());
+    assert_eq!(receipt.receipts.len(), 3);
     assert_eq!(receipt.receipts[0].peer, HostedPeerId::Agora);
+    assert_eq!(receipt.receipts[1].peer, HostedPeerId::Vellum);
+    assert_eq!(
+        receipt.receipts[2].peer,
+        HostedPeerId::Chronos("Atlas".into())
+    );
     assert!(!socket.exists());
+    assert!(!vellum.exists());
+    assert!(!vellum.with_file_name("vellum.sock.control").exists());
+    assert!(!chronos.join("chronos.sock").exists());
+    assert!(!chronos.join("chronos.control.sock").exists());
     fs::remove_dir_all(root).unwrap();
 }

@@ -37,21 +37,20 @@ qualification. The three peer TUI commits are exact and clean in Workbench's
 source receipt, but several engine trees differ from their recorded revisions,
 remote reachability is unqualified, and Agora still lacks a production
 standalone factory. The joint Chronos/Vellum hosted graph is locally qualified;
-the full three-peer hosted graph remains open rather than being inferred from
-successful attachment. Its immediate build blocker is source convergence:
-Chronos standalone currently resolves a vendored `keystone-storage` package,
-while Agora's daemon resolves the sibling Keystone package with the same name
-and version. Cargo refuses both package identities in one lockfile. The Agora
-owner qualification therefore has an explicit nested lock closure and disables
-the optional native-Chronos owner; this is evidence for the lifecycle seam, not
-evidence that the all-three deployment graph resolves. The mixed deployment
-that owns Chronos and Vellum while attaching Agora is qualified across all three
-interactive panes and one aggregate headless report.
+the full production three-peer hosted profile remains open rather than being
+inferred from successful attachment. Chronos standalone resolves a vendored
+`keystone-storage` package while Agora's daemon resolves a sibling package with
+the same compatible checkpoint/commit subset, name, and version. Cargo refuses both
+identities in one ordinary lockfile. The nested qualification derives a scoped
+source patch at runtime and now proves one process can own and reverse-drain all
+three peers from one lock closure without changing standalone source policy.
+The mixed deployment that owns Chronos and Vellum while attaching Agora is also
+qualified across all three interactive panes and one aggregate headless report.
 
 ## Reconciliation order
 
-1. Converge Chronos and Agora on one Keystone source identity, then qualify all
-   three native owners in one Workbench process and lock closure.
+1. Converge Chronos and Agora on one Keystone source identity so the already
+   qualified all-three owner graph builds without a local source patch.
 2. Supply Agora's production peer-provenance, Aegis grant/time, and durable-host
    factory without moving those authority semantics into Workbench.
 3. Add a Moira workflow trace before exposing operator reconciliation actions.

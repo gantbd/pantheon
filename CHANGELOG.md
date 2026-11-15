@@ -73,3 +73,6 @@
   explicitly test-only injected authority composition.
 - Qualified a single interactive and headless mixed topology with attached
   Agora plus Workbench-owned Chronos and Vellum.
+- Qualified one process and lock closure owning real Chronos, Vellum, and Agora
+  services, with reverse clean drain, using a derived local source-identity
+  patch and explicitly test-only Agora authority inputs.

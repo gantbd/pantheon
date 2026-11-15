@@ -74,8 +74,13 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     let agora_qualifier = fs::read_to_string(root.join("qualification/agora-host/Cargo.toml"))
         .expect("isolated Agora host qualifier");
     assert!(agora_qualifier.contains("[workspace]"));
-    assert!(agora_qualifier.contains("default-features = false"));
+    assert!(agora_qualifier.contains("workbench-tui-cli = { path = \"../../cli\" }"));
     assert!(agora_qualifier.contains("agora-local-daemon"));
+    let qualification_script = fs::read_to_string(root.join("qualification/agora-host/qualify.sh"))
+        .expect("three-owner qualification command");
+    assert!(qualification_script.contains("chronos/third_party/keystone-storage-0.0.1"));
+    assert!(qualification_script.contains("keystone/crates/keystone-storage"));
+    assert!(qualification_script.contains("patch.\\\"file://$vendor\\\""));
     assert!(manifest.contains("exclude = [\"qualification/agora-host\"]"));
     let cli_entry = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI entry point");
     for peer_manifest in [
@@ -144,12 +149,7 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
 fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");
-    for required in [
-        "qualification/agora-host/Cargo.toml",
-        "--all-targets",
-        "--locked",
-        "--offline",
-    ] {
+    for required in ["qualification/agora-host/qualify.sh", "--target-dir"] {
         assert!(gate.contains(required), "Agora live gate omits {required}");
     }
 }

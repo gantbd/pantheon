@@ -147,10 +147,11 @@ ownership while attaching Agora, qualifies the mixed topology's headless
 snapshot and interactive panes, and proves reverse shutdown removes every
 Workbench-owned data and control endpoint.
 
-Run `cargo test --manifest-path qualification/agora-host/Cargo.toml --locked
---offline` to qualify Workbench's deployment-owned Agora lifecycle seam against
-the real local daemon and public Unix client. This nested lock closure uses an
-explicitly test-only authority composition and disables native Chronos hosting.
-It is intentionally separate while Chronos standalone and Agora resolve
-different source identities for `keystone-storage`; it does not qualify the
-production Agora authority factory or the all-three native graph.
+Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
+owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
+public Unix client. The nested lock closure uses an explicitly test-only Agora
+authority composition. Its command derives a scoped Cargo source patch because
+Chronos standalone and Agora resolve the compatible checkpoint/commit subset of
+`keystone-storage` from different local identities. It qualifies the all-three lifecycle graph,
+but not the production Agora authority factory or a normal unpatched release
+build.

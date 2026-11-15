@@ -18,8 +18,8 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-cargo test --manifest-path "$repo/qualification/agora-host/Cargo.toml" \
-  --all-targets --locked --offline --target-dir "$target/agora-owner"
+sh "$repo/qualification/agora-host/qualify.sh" \
+  --target-dir "$target/agora-owner"
 
 cargo build --manifest-path "$repo/Cargo.toml" --package workbench-tui-cli --bin workbench-tui \
   --example agora_host --example agora_fixture_server \

@@ -99,16 +99,20 @@ preserves refused or outcome-unknown shutdown receipts, and rolls back partial
 assembly with exact receipts when a guarded factory start fails. An injected
 Agora authority factory is qualified against the real daemon and public client;
 the standalone Workbench profile still lacks a production peer-provenance,
-Aegis grant/time, and durable-host factory. Full three-peer hosted qualification
-therefore remains open. Chronos standalone and Agora daemon also currently
-select different source identities for `keystone-storage`; the real-Agora
-lifecycle qualification is isolated in its own lock closure until those inputs
-converge rather than masking Cargo's all-three collision.
+Aegis grant/time, and durable-host factory. A single Workbench process and lock
+closure now own all three peers and drain them in reverse order under an
+explicitly test-only Agora authority composition. Chronos standalone and Agora
+daemon select the compatible checkpoint/commit subset under different source
+identities for `keystone-storage`; the qualifier derives a scoped local Cargo patch to prove
+the all-three lifecycle without embedding a machine path. Normal production
+builds still require the owning inputs to converge on one source identity.
 
 The supported mixed topology is now qualified independently: Workbench can own
 Chronos and Vellum while attaching Agora, and can present and observe all three
-in one interactive or headless invocation. This does not substitute attachment
-for the still-open native Agora owner factory.
+in one interactive or headless invocation. Together with the all-three owner
+qualification this proves the composition and lifecycle seams separately; it
+does not substitute test authority or attachment for the still-open production
+Agora owner factory.
 
 ### 4. Qualify headless parity
 
