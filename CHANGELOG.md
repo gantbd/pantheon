@@ -66,3 +66,5 @@
 - Advanced Agora and Vellum so selecting headless mode always yields one
   versioned refusal on malformed configuration and never falls through to an
   interactive presentation path.
+- Made explicit Workbench headless profile, capability, and syntax refusals use
+  the aggregate versioned envelope before any service or presentation startup.

@@ -76,6 +76,8 @@ contains the reusable shell and peer-presentation composition only.
 Profiles may require bounded peer-owned capability identifiers. Workbench
 negotiates them against the selected mode before any connection while leaving
 runtime authorization and refusal with the owning service.
+Explicit headless configuration or capability negotiation failures retain the
+versioned aggregate envelope and cannot fall through to interactive startup.
 
 ### 3. Add composite service hosting
 

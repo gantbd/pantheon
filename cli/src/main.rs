@@ -349,7 +349,16 @@ fn vellum_connector(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let options = options()?;
+    let explicit_headless = std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "headless");
+    let options = match options() {
+        Ok(options) => options,
+        Err(error) if explicit_headless => {
+            return workbench_headless_configuration_failure(&error.to_string());
+        }
+        Err(error) => return Err(error),
+    };
     if options.check_profile {
         println!(
             "workspace profile valid: {} surfaces",
@@ -366,6 +375,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn workbench_headless_configuration_failure(
+    message: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "workspace": serde_json::Value::Null,
+            "mode": "headless",
+            "complete": false,
+            "status": "configuration_refused",
+            "peers": [],
+            "hosted_shutdown": serde_json::Value::Null,
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn shutdown_native_host(

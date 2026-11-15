@@ -47,12 +47,33 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
         .output()
         .unwrap();
     assert!(!headless.status.success());
+    let refusal: serde_json::Value = serde_json::from_slice(&headless.stdout).unwrap();
+    assert_eq!(refusal["version"], 1);
+    assert_eq!(refusal["mode"], "headless");
+    assert_eq!(refusal["complete"], false);
+    assert_eq!(refusal["status"], "configuration_refused");
+    assert_eq!(refusal["peers"], serde_json::json!([]));
     assert!(
         String::from_utf8_lossy(&headless.stderr)
             .contains("agora does not support required headless capability messages.read.v2")
     );
 
     fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn explicit_headless_syntax_failure_is_versioned_json() {
+    let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+        .arg("headless")
+        .output()
+        .unwrap();
+    assert!(!output.status.success());
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["version"], 1);
+    assert_eq!(report["mode"], "headless");
+    assert_eq!(report["complete"], false);
+    assert_eq!(report["status"], "configuration_refused");
+    assert_eq!(report["hosted_shutdown"], serde_json::Value::Null);
 }
 
 #[test]
