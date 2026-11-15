@@ -123,7 +123,7 @@ assert actual == expected, actual
 assert all(peer["status"] == "current" for peer in report["peers"])
 moira = next(peer for peer in report["peers"] if peer["peer"] == "moira")
 assert moira["census"]["total"] == 1
-assert moira["census"]["runnable_effects"] == 1
+assert moira["census"]["fenced"] == 1
 hermes = next(peer for peer in report["peers"] if peer["peer"] == "hermes")
 assert hermes["configured_stream"]["status"] == "current"
 assert hermes["configured_stream"]["retained_events"] == 1

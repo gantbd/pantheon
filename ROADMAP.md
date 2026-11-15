@@ -164,11 +164,13 @@ induced partial-shutdown qualification remain open.
 Moira now has an independent reusable TUI, standalone interactive/headless CLI,
 peer-owned `sagas.inspect.v1` capability, content-free aggregate census, and
 Workbench attach composition through the same read-only client. Its
-read-only component exposes bounded saga and reconciliation projections through
-the public client. Operator reconciliation remains deliberately absent until its
-confirmation, command-scoped authority, revision, durable receipt, and uncertain
-delivery contracts can be preserved end to end. Native Workbench hosting also
-remains open.
+read-only component exposes bounded saga, reconciliation, effect-evidence, and
+operator-receipt projections through the public client. The real-daemon journey
+is qualified interactively both standalone and through Workbench, while the
+headless path preserves the content-free census. Operator reconciliation remains
+deliberately absent until its confirmation, command-scoped authority, revision,
+durable receipt, and uncertain delivery contracts can be preserved end to end.
+Native Workbench hosting also remains open.
 
 Daimon now likewise has an independent reusable TUI, standalone CLI,
 `agents.presence.v1` headless observation, and Workbench attach composition. The
@@ -193,8 +195,10 @@ durable receipt, and outcome-unknown laws are qualified.
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
 place for one headless Workbench invocation and now also observes Grounding
 through Dendrite's typed endpoint. The current qualification passes against all
-five real services, including Hermes's configured-stream and Moira's census
-projections. This remains local working-tree evidence;
+five real services, including Hermes's configured-stream and Moira's fenced-saga
+census. Moira's selected evidence and operator receipt are additionally
+qualified in its isolated standalone/Workbench interactive journeys. This
+remains local working-tree evidence;
 it does not imply native hosting, immutable source closure, or shared mutation
 authority.
 

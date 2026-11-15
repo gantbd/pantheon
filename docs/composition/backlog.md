@@ -37,9 +37,12 @@ read-only input until that repository settles.
 
 ## P2 — operational depth
 
-- [ ] Moira: census now has standalone/Workbench parity; add selected-saga
-  effect evidence and operator-receipt projections. Guard reconciliation until
-  the complete authority/receipt contract is public.
+- [x] Moira: carry bounded selected-saga effect evidence and operator receipts
+  through the same read-only component in standalone and Workbench interactive
+  paths.
+- [ ] Moira: keep reconciliation mutation guarded until exact confirmation,
+  current authority, revision, durable receipt, and outcome-unknown recovery
+  are public and qualified end to end.
 - [ ] Hermes: configured-stream health now has standalone/Workbench parity; add
   explicit configured cursor and gap views without inventing a global stream
   catalogue.

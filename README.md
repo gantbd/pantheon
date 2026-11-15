@@ -185,6 +185,11 @@ Grounding peer through Dendrite's typed authenticated observation endpoint in
 both Workbench modes. This uses `grounding.observe.v1`, not Dendrite's agent-facing
 MCP boundary.
 
+Run `sh tests/live/moira_attach.sh` to qualify Moira's content-free census in
+headless mode and the same reusable component's bounded selected-saga evidence
+and operator receipts interactively. The gate uses only `SagaReadOnlyClient`;
+it grants Workbench no reconciliation authority.
+
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one
 Workbench headless invocation. This coexistence gate exercises only the five

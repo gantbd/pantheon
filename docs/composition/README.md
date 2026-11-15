@@ -58,7 +58,7 @@ implies production credential provenance.
 | Agora | qualified read | qualified read | implemented with test-only authority | production provenance, Aegis grant/time and durable-owner factory |
 | Chronos | qualified read and selected guarded writes | qualified | qualified local owner | immutable shared Keystone source and broader mutation parity |
 | Vellum | qualified editor/read | qualified | qualified local owner | newer durable operations and release-qualified platform composition |
-| Moira | qualified read/reconciliation projection and census | qualified attach with the same census | absent | evidence/receipt depth, guarded reconciliation, native host factory |
+| Moira | qualified read/reconciliation, census, evidence and receipt projections | qualified attach with the same component and census | absent | guarded reconciliation and native host factory |
 | Daimon | qualified redacted presence | qualified attach | absent | settle active engine work, then exact execution evidence and guarded dispatch/resume |
 | Hermes | qualified status/usage/signals and configured stream health | qualified attach with the same selector | absent | configured cursor/gap views and host factory |
 | Aegis | qualified read-only authority observation | qualified read-only attach | absent | guarded administration and deployment-owned hosting |

@@ -127,7 +127,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "2a9c7f2cee0c706802413fcb9b79d83fa5c0534e"
+        "608b13f64be9714a98d288c66694e470c7785ecc"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -403,6 +403,41 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
 }
 
 #[test]
+fn moira_live_gate_reuses_selected_saga_evidence_in_both_workbench_modes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/moira_attach.sh")).expect("Moira attach gate");
+    for required in [
+        "real_daemon_fixture",
+        "sagas.inspect.v1",
+        "headless",
+        "interactive",
+        "FencedUncertain",
+        "evidence page: 1",
+        "operator receipts: 1",
+        "authority 9/10",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Moira attach gate omits {required}"
+        );
+    }
+    for forbidden in [
+        "SagaOperatorClient",
+        "SagaCommandV1",
+        "cargo publish",
+        "git push",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Moira attach gate acquires or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn operational_live_gate_composes_all_read_only_peer_daemons() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/operational_attach.sh"))
@@ -414,7 +449,7 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "aegis-tui-cli",
         "grounding_fixture.exs",
         "sagas.inspect.v1",
-        "runnable_effects",
+        "fenced",
         "agents.presence.v1",
         "ledger.observe.v1",
         "authority.observe.v1",
