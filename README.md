@@ -139,12 +139,13 @@ Moira authorizes its receipt disclosure. Daimon authenticates and authorizes
 a separate inspection when Moira supplies a recorded execution ID.
 
 Run `sh tests/live/dual_service.sh` for local composition qualification.
-It first builds and attaches temporary Chronos and Vellum services, reopens a
-saved profile with a relative service path, and uses an isolated tmux session
-to check workstream switching, offline recovery, focus routing, and exit. It
-then restarts both peers under Workbench ownership, qualifies the joint headless
-snapshot and interactive panes, and proves reverse shutdown removes every data
-and control endpoint.
+It first builds and attaches temporary Agora, Chronos, and Vellum services,
+reopens a saved profile with relative service paths, and uses an isolated tmux
+session to check workstream switching, offline recovery, focus routing, all
+three peer panes, and exit. It then restarts Chronos and Vellum under Workbench
+ownership while attaching Agora, qualifies the mixed topology's headless
+snapshot and interactive panes, and proves reverse shutdown removes every
+Workbench-owned data and control endpoint.
 
 Run `cargo test --manifest-path qualification/agora-host/Cargo.toml --locked
 --offline` to qualify Workbench's deployment-owned Agora lifecycle seam against

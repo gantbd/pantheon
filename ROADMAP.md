@@ -105,6 +105,11 @@ select different source identities for `keystone-storage`; the real-Agora
 lifecycle qualification is isolated in its own lock closure until those inputs
 converge rather than masking Cargo's all-three collision.
 
+The supported mixed topology is now qualified independently: Workbench can own
+Chronos and Vellum while attaching Agora, and can present and observe all three
+in one interactive or headless invocation. This does not substitute attachment
+for the still-open native Agora owner factory.
+
 ### 4. Qualify headless parity
 
 - Run the same hosted topology without Ratatui, focus, selection, or cursor state.

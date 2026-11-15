@@ -44,7 +44,9 @@ while Agora's daemon resolves the sibling Keystone package with the same name
 and version. Cargo refuses both package identities in one lockfile. The Agora
 owner qualification therefore has an explicit nested lock closure and disables
 the optional native-Chronos owner; this is evidence for the lifecycle seam, not
-evidence that the all-three deployment graph resolves.
+evidence that the all-three deployment graph resolves. The mixed deployment
+that owns Chronos and Vellum while attaching Agora is qualified across all three
+interactive panes and one aggregate headless report.
 
 ## Reconciliation order
 

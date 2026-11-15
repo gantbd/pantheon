@@ -128,6 +128,8 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
         "--shutdown",
         "\"deployment\":\"hosted\"",
         "hosted Chronos + Vellum",
+        "attached Agora + Chronos + Vellum",
+        "with attached Agora",
         "--locked",
         "--offline",
     ] {

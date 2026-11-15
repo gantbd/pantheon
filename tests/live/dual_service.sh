@@ -18,12 +18,20 @@ workbench_target="$scratch/workbench-target"
 chronos_bin="$chronos_target/debug/chronos-service"
 vellum_bin="$vellum_target/debug/vellum-daemon"
 workbench_bin="$workbench_target/debug/workbench-tui"
+agora_bin="$workbench_target/debug/examples/agora_fixture_server"
+agora_socket="$scratch/agora.sock"
 chronos_log="$scratch/chronos.log"
 vellum_log="$scratch/vellum.log"
+agora_log="$scratch/agora.log"
 chronos_pid=
 vellum_pid=
+agora_pid=
 
 cleanup() {
+  if [ -n "$agora_pid" ] && kill -0 "$agora_pid" 2>/dev/null; then
+    kill "$agora_pid" 2>/dev/null || true
+    wait "$agora_pid" 2>/dev/null || true
+  fi
   if [ -n "$vellum_pid" ] && kill -0 "$vellum_pid" 2>/dev/null; then
     if [ -S "$vellum_control" ]; then
       "$vellum_bin" --shutdown "$vellum_control" >/dev/null 2>&1 || true
@@ -46,7 +54,30 @@ cargo build --manifest-path "$chronos/Cargo.toml" --package chronos-standalone \
 cargo build --manifest-path "$vellum/Cargo.toml" --package vellum-daemon \
   --bin vellum-daemon --locked --offline --target-dir "$vellum_target"
 cargo build --manifest-path "$repo/Cargo.toml" --package workbench-tui-cli --bin workbench-tui \
+  --example agora_fixture_server \
   --locked --offline --target-dir "$workbench_target"
+
+start_agora() {
+  rm -f "$agora_socket"
+  "$agora_bin" "$agora_socket" >"$agora_log" 2>&1 &
+  agora_pid=$!
+  attempt=0
+  while [ ! -S "$agora_socket" ]; do
+    if ! kill -0 "$agora_pid" 2>/dev/null || [ "$attempt" -eq 100 ]; then
+      sed -n '1,120p' "$agora_log" >&2
+      echo 'FAIL: Agora fixture did not become ready' >&2
+      exit 1
+    fi
+    attempt=$((attempt + 1))
+    sleep 0.025
+  done
+}
+
+finish_agora() {
+  wait "$agora_pid"
+  agora_pid=
+  rm -f "$agora_socket"
+}
 
 "$chronos_bin" "$chronos_dir" --atomic-state --observer-history --allow-writes >"$chronos_log" 2>&1 &
 chronos_pid=$!
@@ -109,7 +140,7 @@ assert next(peer for peer in report["peers"] if peer["peer"] == "vellum")["statu
 
 workspace_profile="$scratch/workspace-profile.json"
 printf '%s\n' \
-  '{"version":1,"name":"Live gate","surfaces":["overview","workspace","agora"],"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null}}' \
+  '{"version":1,"name":"Live gate","surfaces":["overview","workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null}}' \
   >"$workspace_profile"
 profile_check=$("$workbench_bin" --workspace-profile "$workspace_profile" --check-profile)
 if [ "$profile_check" != 'workspace profile valid: 3 surfaces' ]; then
@@ -117,7 +148,24 @@ if [ "$profile_check" != 'workspace profile valid: 3 surfaces' ]; then
   exit 1
 fi
 
-# Exercise actual keyboard routing and focus with both service panes attached.
+triple_profile="$scratch/triple-workspace.json"
+printf '%s\n' \
+  '{"version":1,"name":"Attached triple gate","surfaces":["overview","workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null,"requires":["workspace.inventory.v1"]}}' \
+  >"$triple_profile"
+start_agora
+triple_snapshot=$("$workbench_bin" headless --workspace-profile "$triple_profile")
+finish_agora
+printf '%s' "$triple_snapshot" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"] and report["mode"] == "headless"
+assert [(peer["peer"], peer["status"]) for peer in report["peers"]] == [
+    ("agora", "current"), ("chronos", "current"), ("vellum", "current")
+]
+'
+
+# Exercise actual keyboard routing and focus with all three peer panes attached.
+start_agora
 python3 - "$scratch" "$workbench_bin" "$workspace_profile" <<'PYTHON'
 from pathlib import Path
 import shlex
@@ -152,7 +200,7 @@ def switch(name):
 
 try:
     tmux("new-session", "-d", "-x", "240", "-y", "36", "-s", "workbench", command)
-    expect("Chronos: attached", "Vellum: attached", "Agora: gap")
+    expect("Chronos: attached", "Vellum: attached", "Agora: attached")
     tmux("send-keys", "-t", "workbench", "]")
     expect("Chronos  ·  revision", "Observed 0 tasks", "alpha")
     switch("Offline")
@@ -164,7 +212,9 @@ try:
     tmux("send-keys", "-t", "workbench", "Tab")
     expect("focus=Chronos")
     tmux("send-keys", "-t", "workbench", "]")
-    expect("Agora has no composable Ratatui presentation peer")
+    expect("AGORA · rooms · revision 11", "Profile Room")
+    tmux("send-keys", "-t", "workbench", "Enter")
+    expect("Profile Agora transport is live")
     tmux("send-keys", "-t", "workbench", "[")
     expect("Chronos  ·  revision", "alpha")
     tmux("send-keys", "-t", "workbench", "C-q")
@@ -176,6 +226,7 @@ try:
 finally:
     tmux("kill-server", check=False)
 PYTHON
+finish_agora
 
 "$vellum_bin" --shutdown "$vellum_control" >/dev/null
 wait "$vellum_pid"
@@ -183,20 +234,22 @@ vellum_pid=
 "$chronos_bin" --shutdown "$chronos_dir" >/dev/null
 wait "$chronos_pid"
 chronos_pid=
-echo 'PASS: attached Chronos + Vellum services -> one workbench composition'
+echo 'PASS: attached Agora + Chronos + Vellum services -> one workbench composition'
 
 hosted_profile="$scratch/hosted-workspace.json"
 printf '%s\n' \
-  '{"version":1,"name":"Hosted gate","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}' \
+  '{"version":1,"name":"Mixed hosted gate","surfaces":["workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"deployment":"hosted","workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}' \
   >"$hosted_profile"
 
+start_agora
 hosted_snapshot=$("$workbench_bin" headless --workspace-profile "$hosted_profile")
+finish_agora
 printf '%s' "$hosted_snapshot" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)
 assert report["complete"] and report["mode"] == "headless"
 assert [(peer["peer"], peer["status"]) for peer in report["peers"]] == [
-    ("chronos", "current"), ("vellum", "current")
+    ("agora", "current"), ("chronos", "current"), ("vellum", "current")
 ]
 assert report["hosted_shutdown"]["status"] == "clean"
 assert [receipt["peer"] for receipt in report["hosted_shutdown"]["receipts"]] == [
@@ -204,6 +257,7 @@ assert [receipt["peer"] for receipt in report["hosted_shutdown"]["receipts"]] ==
 ]
 '
 
+start_agora
 python3 - "$scratch" "$workbench_bin" "$hosted_profile" <<'PYTHON'
 from pathlib import Path
 import shlex
@@ -231,6 +285,15 @@ try:
         time.sleep(0.025)
     else:
         raise AssertionError(f"Hosted Workbench panes not ready:\n{screen}")
+    tmux("send-keys", "-t", "hosted", "]")
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
+        if "AGORA · rooms · revision 11" in screen and "Profile Room" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Attached Agora pane not ready:\n{screen}")
     tmux("send-keys", "-t", "hosted", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "hosted", check=False).returncode == 0:
@@ -240,6 +303,7 @@ try:
 finally:
     tmux("kill-server", check=False)
 PYTHON
+finish_agora
 
 for endpoint in \
   "$chronos_dir/chronos.sock" \
@@ -253,4 +317,4 @@ do
   fi
 done
 
-echo 'PASS: hosted Chronos + Vellum -> headless and interactive Workbench composition'
+echo 'PASS: hosted Chronos + Vellum with attached Agora -> headless and interactive Workbench composition'

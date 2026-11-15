@@ -71,3 +71,5 @@
 - Added a typed deployment-owned Agora factory seam and qualified its lifecycle
   registry against the real local daemon and public Unix client under an
   explicitly test-only injected authority composition.
+- Qualified a single interactive and headless mixed topology with attached
+  Agora plus Workbench-owned Chronos and Vellum.
