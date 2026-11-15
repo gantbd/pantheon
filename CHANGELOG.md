@@ -43,3 +43,6 @@
 - Added mode-specific capability negotiation from bounded profile requirements
   to peer-owned Agora, Chronos, and Vellum presentation manifests before any
   service connection.
+- Added the hosted-topology lifecycle core: concrete typed clients remain with
+  peer integrations while a bounded registry owns reverse-order shutdown and
+  explicit clean, refused, or outcome-unknown receipts.

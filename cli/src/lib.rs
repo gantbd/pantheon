@@ -3,6 +3,7 @@
 
 mod hosted;
 pub mod profile;
+pub mod registry;
 mod terminal;
 
 pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
