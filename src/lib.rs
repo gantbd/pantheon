@@ -112,6 +112,42 @@ pub fn draw_shell(
     focus: Focus,
     notice: &str,
 ) {
+    draw_shell_with_moira(
+        frame,
+        shell,
+        PeerViews {
+            chronos,
+            vellum,
+            agora,
+            moira: None,
+        },
+        focus,
+        notice,
+    );
+}
+
+pub struct PeerViews<'a> {
+    pub chronos: Option<&'a chronos_tui::Hub>,
+    pub vellum: Option<&'a EditorFrame>,
+    pub agora: Option<&'a agora_tui::Component>,
+    pub moira: Option<&'a moira_tui::Component>,
+}
+
+/// Draws the shell with an independently hosted Moira workflow peer.
+/// This additive entry point preserves the original three-peer host contract.
+pub fn draw_shell_with_moira(
+    frame: &mut Frame<'_>,
+    shell: &Shell,
+    peers: PeerViews<'_>,
+    focus: Focus,
+    notice: &str,
+) {
+    let PeerViews {
+        chronos,
+        vellum,
+        agora,
+        moira,
+    } = peers;
     let [tabs, header, body] = Layout::vertical([
         Constraint::Length(1),
         Constraint::Length(1),
@@ -166,9 +202,13 @@ pub fn draw_shell(
             chronos.is_some(),
             vellum.is_some(),
             agora.is_some(),
+            moira.is_some(),
         ),
         Surface::Agora if agora.is_some() => {
             agora.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Moira if moira.is_some() => {
+            moira.expect("matched above").draw_in(frame, body, true);
         }
         surface => {
             frame.render_widget(
@@ -190,6 +230,7 @@ fn draw_overview(
     chronos_attached: bool,
     vellum_attached: bool,
     agora_attached: bool,
+    moira_attached: bool,
 ) {
     let mut lines = vec![
         Line::from(format!(
@@ -216,9 +257,20 @@ fn draw_overview(
                 "not configured"
             }
         )),
+        Line::from(format!(
+            "Moira: {}",
+            if moira_attached {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
     ];
     for surface in shell.surfaces() {
         if *surface == Surface::Agora && agora_attached {
+            continue;
+        }
+        if *surface == Surface::Moira && moira_attached {
             continue;
         }
         if let Some(gap) = surface.gap() {
@@ -240,10 +292,26 @@ mod tests {
     use super::*;
     use agora_client::v2::{ClientV2, PortFailureV2, ServicePortV2};
     use agora_protocol::v2::{ClientIdV2, OutcomeV2, ReplyV2, RequestV2, RoomPageV2};
+    use moira_client::SagaServicePort;
+    use moira_protocol::{SagaCommandV1, SagaOutcomeV1, SagaPageV1, SagaReplyV1};
     use ratatui::{Terminal, backend::TestBackend};
     use std::{thread, time::Duration};
 
     struct AgoraPort;
+
+    struct MoiraPort;
+
+    impl SagaServicePort for MoiraPort {
+        type Error = ();
+
+        fn execute(&mut self, command: SagaCommandV1) -> Result<SagaReplyV1, Self::Error> {
+            assert!(matches!(command, SagaCommandV1::Inspect { .. }));
+            Ok(SagaReplyV1::Accepted(SagaOutcomeV1::Page(SagaPageV1 {
+                entries: Vec::new(),
+                next_after: None,
+            })))
+        }
+    }
 
     impl ServicePortV2 for AgoraPort {
         type Error = ();
@@ -363,6 +431,45 @@ mod tests {
             thread::sleep(Duration::from_millis(1));
         }
         panic!("Agora peer did not render its accepted room page");
+    }
+
+    #[test]
+    fn shell_renders_host_supplied_moira_peer_instead_of_gap() {
+        let shell = Shell::new(vec![Surface::Moira]).unwrap();
+        let mut moira = moira_tui::Component::new(MoiraPort);
+        for _ in 0..100 {
+            moira.poll();
+            let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
+            terminal
+                .draw(|frame| {
+                    draw_shell_with_moira(
+                        frame,
+                        &shell,
+                        PeerViews {
+                            chronos: None,
+                            vellum: None,
+                            agora: None,
+                            moira: Some(&moira),
+                        },
+                        Focus::Chronos,
+                        "host supplied",
+                    )
+                })
+                .unwrap();
+            let rendered = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            if rendered.contains("0 saga(s)") {
+                assert!(!rendered.contains("workflow presentation is not configured"));
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("Moira peer did not render its accepted saga page");
     }
 
     #[test]

@@ -624,8 +624,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "moira-client"
+version = "0.1.0"
+dependencies = [
+ "moira-protocol",
+]
+
+[[package]]
 name = "moira-protocol"
 version = "0.1.0"
+
+[[package]]
+name = "moira-tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "moira-client",
+ "moira-protocol",
+ "ratatui",
+]
+
+[[package]]
+name = "moira-tui-local-client"
+version = "0.1.0"
+dependencies = [
+ "moira-client",
+ "moira-protocol",
+ "moira-wire",
+]
 
 [[package]]
 name = "moira-wire"
@@ -1315,6 +1341,9 @@ dependencies = [
  "agora-tui",
  "chronos-tui",
  "crossterm",
+ "moira-client",
+ "moira-protocol",
+ "moira-tui",
  "ratatui",
  "serde",
  "serde_json",
@@ -1337,6 +1366,10 @@ dependencies = [
  "chronos-standalone",
  "chronos-tui",
  "crossterm",
+ "moira-client",
+ "moira-protocol",
+ "moira-tui",
+ "moira-tui-local-client",
  "ratatui",
  "serde",
  "serde_json",

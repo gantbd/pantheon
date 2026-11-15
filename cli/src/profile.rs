@@ -20,6 +20,7 @@ pub struct WorkspaceProfile {
     pub name: String,
     pub surfaces: Vec<Surface>,
     pub agora: Option<AgoraProfile>,
+    pub moira: Option<MoiraProfile>,
     pub chronos: Option<ChronosProfile>,
     pub vellum: Option<VellumProfile>,
 }
@@ -29,6 +30,14 @@ pub struct WorkspaceProfile {
 pub struct AgoraProfile {
     pub socket: PathBuf,
     pub participant: String,
+    #[serde(default)]
+    pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct MoiraProfile {
+    pub socket: PathBuf,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -111,6 +120,9 @@ impl WorkspaceProfile {
         if let Some(agora) = &mut profile.agora {
             agora.socket = resolve(base, &agora.socket);
         }
+        if let Some(moira) = &mut profile.moira {
+            moira.socket = resolve(base, &moira.socket);
+        }
         if let Some(chronos) = &mut profile.chronos {
             for workstream in &mut chronos.workstreams {
                 workstream.directory = resolve(base, &workstream.directory);
@@ -154,6 +166,13 @@ impl WorkspaceProfile {
             validate_path(&agora.socket)?;
             validate_text(&agora.participant, "Agora participant")?;
             validate_required_capabilities(&agora.requires)?;
+        }
+        if let Some(moira) = &self.moira {
+            if !self.surfaces.contains(&Surface::Moira) {
+                return Err("Moira configuration requires the Moira surface");
+            }
+            validate_path(&moira.socket)?;
+            validate_required_capabilities(&moira.requires)?;
         }
         if self.surfaces.contains(&Surface::Workspace)
             && self.chronos.is_none()

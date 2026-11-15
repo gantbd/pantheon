@@ -18,7 +18,7 @@ use workbench_tui_cli::{
     native_host::{ChronosHostOptions, NativeHost},
     profile::{AgoraProfile, DeploymentMode, WorkspaceProfile},
     registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
-    run_multi_peer_terminal,
+    run_terminal_with_moira,
 };
 
 enum VellumConnector {
@@ -43,6 +43,8 @@ struct Options {
     workspace_name: String,
     shell: Shell,
     agora: Option<AgoraProfile>,
+    moira_socket: Option<PathBuf>,
+    moira_requires: Vec<String>,
     chronos_streams: Vec<Workstream>,
     chronos_requires: Vec<String>,
     vellum_socket: Option<PathBuf>,
@@ -100,6 +102,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut shell = Shell::dual_peer();
     let mut workspace_name = "Workbench".to_owned();
     let mut agora = None;
+    let mut moira_socket = None;
+    let mut moira_requires = Vec::new();
     let mut vellum_socket = None;
     let mut vellum_credential = None;
     let mut moira_bindings = Vec::new();
@@ -119,6 +123,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         agora = profile.agora.inspect(|configured| {
             agora_requires = configured.requires.clone();
         });
+        if let Some(moira) = profile.moira {
+            moira_socket = Some(moira.socket);
+            moira_requires = moira.requires;
+        }
         if let Some(vellum) = profile.vellum {
             host_vellum = vellum.deployment == DeploymentMode::Hosted;
             vellum_requires = vellum.requires;
@@ -269,6 +277,16 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         },
     )?;
     negotiate_capabilities(
+        "moira",
+        mode,
+        &moira_requires,
+        if headless {
+            moira_tui::CAPABILITIES.headless
+        } else {
+            moira_tui::CAPABILITIES.interactive
+        },
+    )?;
+    negotiate_capabilities(
         "chronos",
         mode,
         &chronos_requires,
@@ -292,6 +310,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         workspace_name,
         shell,
         agora,
+        moira_socket,
+        moira_requires,
         chronos_streams,
         chronos_requires,
         vellum_socket,
@@ -552,6 +572,16 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let moira = if let Some(socket) = options.moira_socket {
+        let port = moira_tui_local_client::LocalSagaPort::connect(
+            socket,
+            moira_tui_local_client::ClientLimits::default(),
+        )
+        .map_err(|error| format!("Moira service refused: {error:?}"))?;
+        Some(moira_tui::Component::new(port))
+    } else {
+        None
+    };
     let mut chronos = if options.chronos_streams.is_empty() {
         None
     } else {
@@ -584,13 +614,15 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    run_multi_peer_terminal(options.shell, chronos, vellum, agora)
+    run_terminal_with_moira(options.shell, chronos, vellum, agora, moira)
 }
 
 fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error::Error>> {
     observe_headless(HeadlessRequest {
         workspace: options.workspace_name,
         agora: options.agora,
+        moira_socket: options.moira_socket,
+        moira_requires: options.moira_requires,
         chronos: options.chronos_streams,
         chronos_requires: options.chronos_requires,
         vellum_socket: options.vellum_socket,

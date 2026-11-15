@@ -19,6 +19,7 @@ vellum-tui = { version = "=0.1.0", path = "../vellum-tui" }
 vellum-sdk-client = { version = "=0.1.0", path = "../vellum/sdk/client" }
 chronos-tui = { version = "=0.1.0", path = "../chronos-tui" }
 agora-tui = { version = "=0.1.0", path = "../agora-tui" }
+moira-tui = { version = "=0.1.0", path = "../moira-tui" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }
@@ -26,6 +27,8 @@ serde = { version = "=1.0.229", features = ["derive"] }
 [dev-dependencies]
 agora-client = { version = "=0.1.0", path = "../agora/client/agora-client" }
 agora-protocol = { version = "=0.1.0", path = "../agora/protocol/agora-protocol" }
+moira-client = { version = "=0.1.0", path = "../moira/crates/moira-client" }
+moira-protocol = { version = "=0.1.0", path = "../moira/crates/moira-protocol" }
 serde_json = "=1.0.151"
 
 [lints.rust]

@@ -5,8 +5,8 @@ use vellum_sdk_client::protocol::ServicePort;
 use vellum_tui::{ServiceAction, ServiceEditor, ServiceInput, translate_service_input};
 
 use workbench_tui::{
-    ExitDecision, Focus, RoutedInput, Shell, ShellInput, Surface, decide_exit, draw_shell,
-    route_key, shell_input,
+    ExitDecision, Focus, PeerViews, RoutedInput, Shell, ShellInput, Surface, decide_exit,
+    draw_shell_with_moira, route_key, shell_input,
 };
 
 /// Runs the composite terminal for host-supplied sessions. A Vellum-owned
@@ -31,10 +31,21 @@ pub fn run_profiled_terminal<T: ServicePort>(
 /// Runs the selected shell with independently supplied presentation peers.
 /// The host routes each event explicitly and acquires no peer semantics.
 pub fn run_multi_peer_terminal<T: ServicePort>(
+    shell: Shell,
+    chronos: Option<Hub>,
+    vellum: Option<ServiceEditor<T>>,
+    agora: Option<agora_tui::Component>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_terminal_with_moira(shell, chronos, vellum, agora, None)
+}
+
+/// Runs the selected shell with an independently supplied Moira peer.
+pub fn run_terminal_with_moira<T: ServicePort>(
     mut shell: Shell,
     mut chronos: Option<Hub>,
     mut vellum: Option<ServiceEditor<T>>,
     mut agora: Option<agora_tui::Component>,
+    mut moira: Option<moira_tui::Component>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut focus = Focus::Chronos;
     let mut notice = String::from("workspace profile loaded");
@@ -49,6 +60,9 @@ pub fn run_multi_peer_terminal<T: ServicePort>(
             if let Some(agora) = &mut agora {
                 agora.poll();
             }
+            if let Some(moira) = &mut moira {
+                moira.poll();
+            }
             if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
                 if let Some(vellum) = &mut vellum
                     && let Err(error) = vellum.poll()
@@ -60,12 +74,15 @@ pub fn run_multi_peer_terminal<T: ServicePort>(
             let height = terminal.size()?.height.saturating_sub(2);
             let vellum_frame = vellum.as_ref().and_then(|editor| editor.frame(height));
             terminal.draw(|frame| {
-                draw_shell(
+                draw_shell_with_moira(
                     frame,
                     &shell,
-                    chronos.as_ref(),
-                    vellum_frame.as_ref(),
-                    agora.as_ref(),
+                    PeerViews {
+                        chronos: chronos.as_ref(),
+                        vellum: vellum_frame.as_ref(),
+                        agora: agora.as_ref(),
+                        moira: moira.as_ref(),
+                    },
                     focus,
                     &notice,
                 )
@@ -115,6 +132,25 @@ pub fn run_multi_peer_terminal<T: ServicePort>(
                         notice = Surface::Agora
                             .gap()
                             .unwrap_or("Agora presentation is unavailable")
+                            .into();
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Moira
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    if let Some(moira) = &mut moira {
+                        if let Some(input) = moira_tui::translate_key(key)
+                            && moira.update(input, true) == moira_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else {
+                        notice = Surface::Moira
+                            .gap()
+                            .unwrap_or("Moira presentation is unavailable")
                             .into();
                     }
                 }

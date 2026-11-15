@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "package": "workbench-tui",
-  "components": ["agora", "chronos", "vellum"],
+  "components": ["agora", "chronos", "vellum", "moira"],
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
@@ -21,6 +21,16 @@
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
       "revision": "f0cf0653ef0636a2665c9349a9194a3e05f310ec",
+      "workingTreeClean": true
+    },
+    "moira": {
+      "repository": "https://github.com/gantbd/moira",
+      "revision": "1408e46b12f7326e987724d867e40696aecf70a3",
+      "workingTreeClean": false
+    },
+    "moiraTui": {
+      "repository": "https://github.com/gantbd/moira-tui",
+      "revision": "62f3626d837e55d12e7381fbb82360455a0fa7a0",
       "workingTreeClean": true
     },
     "vellum": {

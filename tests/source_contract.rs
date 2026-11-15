@@ -11,7 +11,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert_eq!(source["schema"], 2);
     assert_eq!(
         source["components"],
-        serde_json::json!(["agora", "chronos", "vellum"])
+        serde_json::json!(["agora", "chronos", "vellum", "moira"])
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
@@ -25,10 +25,14 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         source["inputs"]["agoraTui"]["revision"],
         "a59c292c39cc17f545859f4c99aad96a7c2e0931"
     );
-    for input in ["agoraTui", "chronosTui", "vellumTui"] {
+    assert_eq!(
+        source["inputs"]["moiraTui"]["revision"],
+        "62f3626d837e55d12e7381fbb82360455a0fa7a0"
+    );
+    for input in ["agoraTui", "chronosTui", "vellumTui", "moiraTui"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["agora", "chronos", "vellum"] {
+    for input in ["agora", "chronos", "vellum", "moira"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
@@ -42,6 +46,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("vellum-sdk-client"));
     assert!(manifest.contains("chronos-tui"));
     assert!(manifest.contains("agora-tui"));
+    assert!(manifest.contains("moira-tui"));
     assert!(!manifest.contains("agora-tui-local-client"));
     assert!(!manifest.contains("chronos-local"));
     for cli_owned in ["main.rs", "profile.rs", "terminal.rs", "hosted.rs"] {
@@ -61,6 +66,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "name = \"workbench-tui\"",
         "workbench-tui =",
         "agora-tui-local-client",
+        "moira-tui-local-client",
         "chronos-local",
         "chronos-standalone",
         "vellum-adapter-local-authentication",

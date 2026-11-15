@@ -35,7 +35,7 @@ impl Surface {
         match self {
             Self::Overview | Self::Workspace => None,
             Self::Agora => Some("Agora has no composable Ratatui presentation peer"),
-            Self::Moira => Some("Moira is inspected through Chronos; no workflow TUI peer exists"),
+            Self::Moira => Some("Moira workflow presentation is not configured"),
             Self::Daimon => {
                 Some("Daimon is inspected through Chronos; no execution TUI peer exists")
             }

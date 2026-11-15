@@ -15,6 +15,7 @@ PROJECTS = (
     "agora-tui",
     "chronos",
     "chronos-tui",
+    "moira-tui",
     "vellum",
     "vellum-tui",
     "moira",
@@ -44,6 +45,8 @@ def main():
     )
     parser.add_argument("--vellum", help="explicit Vellum candidate commit")
     parser.add_argument("--vellum-tui", help="explicit Vellum TUI candidate commit")
+    parser.add_argument("--moira", help="explicit Moira candidate commit")
+    parser.add_argument("--moira-tui", help="explicit Moira TUI candidate commit")
     args = parser.parse_args()
 
     workbench = git(ROOT, "rev-parse", "--verify", f"{args.workbench}^{{commit}}")
@@ -66,9 +69,11 @@ def main():
         "agora-tui": inputs["agoraTui"]["revision"],
         "chronos": args.chronos or inputs["chronos"]["revision"],
         "chronos-tui": tui,
+        "moira": args.moira or inputs["moira"]["revision"],
+        "moira-tui": args.moira_tui or inputs["moiraTui"]["revision"],
         "vellum": args.vellum or inputs["vellum"]["revision"],
         "vellum-tui": args.vellum_tui or inputs["vellumTui"]["revision"],
-        **{peer: tui_receipt["inputs"][peer]["revision"] for peer in ("moira", "daimon")},
+        "daimon": tui_receipt["inputs"]["daimon"]["revision"],
     }
     for name in PROJECTS:
         repo = ROOT.parent / name

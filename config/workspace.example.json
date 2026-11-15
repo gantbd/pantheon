@@ -16,6 +16,10 @@
     "participant": "operator",
     "requires": ["rooms.read.v2"]
   },
+  "moira": {
+    "socket": "../run/moira.sock",
+    "requires": ["sagas.inspect.v1"]
+  },
   "chronos": {
     "deployment": "attach",
     "workstreams": [

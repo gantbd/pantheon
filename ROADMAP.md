@@ -150,7 +150,15 @@ induced partial-shutdown qualification remain open.
 
 ### 5. Extend peer coverage
 
-Integrate Moira, Daimon, Grounding/Dendrite, Aegis, and Hermes only after each
+Moira now has an independent reusable TUI, standalone interactive/headless CLI,
+peer-owned `sagas.inspect.v1` capability, and Workbench attach composition. Its
+read-only component exposes bounded saga and reconciliation projections through
+the public client. Operator reconciliation remains deliberately absent until its
+confirmation, command-scoped authority, revision, durable receipt, and uncertain
+delivery contracts can be preserved end to end. Native Workbench hosting also
+remains open.
+
+Integrate Daimon, Grounding/Dendrite, Aegis, and Hermes only after each
 has a public client plus a reusable TUI component. Track unavailable boundaries
 in `WORKSPACE_GAPS.md`; do not reproduce peer semantics inside Workbench.
 

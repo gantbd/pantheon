@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use agora_client::v2::ClientV2 as AgoraClientV2;
 use agora_tui_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::Workstream;
+use moira_client::SagaReadOnlyClient;
+use moira_protocol::{SagaOutcomeV1, SagaReplyV1};
 use vellum_sdk_client::{
     transport::{
         AuthenticatedUnixConnector, FrameExchange, RemoteTransport, TransportError,
@@ -18,6 +20,8 @@ use crate::profile::AgoraProfile;
 pub struct HeadlessRequest {
     pub workspace: String,
     pub agora: Option<AgoraProfile>,
+    pub moira_socket: Option<PathBuf>,
+    pub moira_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
     pub chronos_requires: Vec<String>,
     pub vellum_socket: Option<PathBuf>,
@@ -40,6 +44,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         negotiate("agora", &profile.requires, agora_tui::CAPABILITIES.headless)?;
     }
     negotiate(
+        "moira",
+        &request.moira_requires,
+        moira_tui::CAPABILITIES.headless,
+    )?;
+    negotiate(
         "chronos",
         &request.chronos_requires,
         chronos_tui::CAPABILITIES.headless,
@@ -54,6 +63,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
 
     if let Some(profile) = request.agora {
         let (observation, current) = observe_agora(profile);
+        peers.push(observation);
+        complete &= current;
+    }
+    if let Some(socket) = request.moira_socket {
+        let (observation, current) = observe_moira(socket);
         peers.push(observation);
         complete &= current;
     }
@@ -75,6 +89,55 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete,
         peers,
     })
+}
+
+fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
+    let capability = moira_tui::CAPABILITIES.headless[0];
+    let port = match moira_tui_local_client::LocalSagaPort::connect(
+        socket,
+        moira_tui_local_client::ClientLimits::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return (
+                peer_failure("moira", capability, "connect_refused", format!("{error:?}")),
+                false,
+            );
+        }
+    };
+    let mut client = SagaReadOnlyClient::new(port);
+    match client.inspect(None, 64) {
+        Ok(SagaReplyV1::Accepted(SagaOutcomeV1::Page(page))) => (
+            serde_json::json!({
+                "peer": "moira",
+                "capability": capability,
+                "status": "current",
+                "sagas": page.entries.len(),
+                "truncated": page.next_after.is_some(),
+            }),
+            true,
+        ),
+        Ok(SagaReplyV1::Refused(reason)) => (
+            peer_failure("moira", capability, "refused", format!("{reason:?}")),
+            false,
+        ),
+        Ok(SagaReplyV1::Accepted(_)) => (
+            peer_failure("moira", capability, "invalid_reply", "unexpected outcome"),
+            false,
+        ),
+        Err(error) => {
+            let status = match error {
+                moira_tui_local_client::ClientError::NotSent(_) => "not_sent",
+                moira_tui_local_client::ClientError::OutcomeUnknown(_) => "outcome_unknown",
+                moira_tui_local_client::ClientError::RequestLimit => "request_limit",
+                _ => "invalid_reply",
+            };
+            (
+                peer_failure("moira", capability, status, "client access failure"),
+                false,
+            )
+        }
+    }
 }
 
 fn negotiate(peer: &str, required: &[String], supported: &[&str]) -> Result<(), String> {
@@ -356,6 +419,8 @@ mod tests {
                 participant: "operator".into(),
                 requires: vec!["messages.read.v2".into()],
             }),
+            moira_socket: None,
+            moira_requires: Vec::new(),
             chronos: Vec::new(),
             chronos_requires: Vec::new(),
             vellum_socket: None,
