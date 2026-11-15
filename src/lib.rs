@@ -122,6 +122,7 @@ pub fn draw_shell(
             moira: None,
             daimon: None,
             hermes: None,
+            aegis: None,
         },
         focus,
         notice,
@@ -135,6 +136,7 @@ pub struct PeerViews<'a> {
     pub moira: Option<&'a moira_tui::Component>,
     pub daimon: Option<&'a daimon_tui::Component>,
     pub hermes: Option<&'a hermes_tui::Component>,
+    pub aegis: Option<&'a aegis_tui::Component>,
 }
 
 /// Draws the shell with an independently hosted Moira workflow peer.
@@ -153,6 +155,7 @@ pub fn draw_shell_with_moira(
         moira,
         daimon,
         hermes,
+        aegis,
     } = peers;
     let [tabs, header, body] = Layout::vertical([
         Constraint::Length(1),
@@ -212,6 +215,7 @@ pub fn draw_shell_with_moira(
                 moira: moira.is_some(),
                 daimon: daimon.is_some(),
                 hermes: hermes.is_some(),
+                aegis: aegis.is_some(),
             },
         ),
         Surface::Agora if agora.is_some() => {
@@ -225,6 +229,9 @@ pub fn draw_shell_with_moira(
         }
         Surface::Hermes if hermes.is_some() => {
             hermes.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Aegis if aegis.is_some() => {
+            aegis.expect("matched above").draw_in(frame, body, true);
         }
         surface => {
             frame.render_widget(
@@ -246,6 +253,7 @@ struct PeerAvailability {
     moira: bool,
     daimon: bool,
     hermes: bool,
+    aegis: bool,
 }
 
 fn draw_overview(
@@ -303,6 +311,14 @@ fn draw_overview(
                 "not configured"
             }
         )),
+        Line::from(format!(
+            "Aegis: {}",
+            if peers.aegis {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
     ];
     for surface in shell.surfaces() {
         if *surface == Surface::Agora && peers.agora {
@@ -315,6 +331,9 @@ fn draw_overview(
             continue;
         }
         if *surface == Surface::Hermes && peers.hermes {
+            continue;
+        }
+        if *surface == Surface::Aegis && peers.aegis {
             continue;
         }
         if let Some(gap) = surface.gap() {
@@ -334,6 +353,11 @@ fn draw_overview(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aegis_client::ServicePort as AegisServicePort;
+    use aegis_protocol::{
+        AuthorityStatusV1, CommandV1 as AegisCommandV1, OutcomeV1 as AegisOutcomeV1,
+        ReplyV1 as AegisReplyV1, SessionHandleV1 as AegisSessionHandleV1,
+    };
     use agora_client::v2::{ClientV2, PortFailureV2, ServicePortV2};
     use agora_protocol::v2::{ClientIdV2, OutcomeV2, ReplyV2, RequestV2, RoomPageV2};
     use daimon_client::ServicePort as DaimonServicePort;
@@ -350,7 +374,35 @@ mod tests {
 
     struct MoiraPort;
     struct DaimonPort;
+    struct AegisPort;
 
+    impl AegisServicePort for AegisPort {
+        type Error = ();
+
+        fn execute(
+            &mut self,
+            _: AegisSessionHandleV1,
+            command: AegisCommandV1,
+        ) -> Result<AegisReplyV1, Self::Error> {
+            let outcome = match command {
+                AegisCommandV1::Status => AegisOutcomeV1::Status(AuthorityStatusV1 {
+                    epoch: 7,
+                    active_grants: 0,
+                    retained_decisions: 0,
+                }),
+                AegisCommandV1::GrantPage { .. } => AegisOutcomeV1::GrantPage {
+                    entries: Vec::new(),
+                    next_after: None,
+                },
+                AegisCommandV1::DecisionPage { .. } => AegisOutcomeV1::DecisionPage {
+                    entries: Vec::new(),
+                    next_after: None,
+                },
+                _ => panic!("read-only Aegis presentation attempted a mutation"),
+            };
+            Ok(AegisReplyV1::Accepted(outcome))
+        }
+    }
     impl DaimonServicePort for DaimonPort {
         type Error = ();
 
@@ -518,6 +570,7 @@ mod tests {
                             moira: Some(&moira),
                             daimon: None,
                             hermes: None,
+                            aegis: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -559,6 +612,7 @@ mod tests {
                             moira: None,
                             daimon: Some(&daimon),
                             hermes: None,
+                            aegis: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -579,6 +633,48 @@ mod tests {
             thread::sleep(Duration::from_millis(1));
         }
         panic!("Daimon peer did not render its accepted presence page");
+    }
+
+    #[test]
+    fn shell_renders_host_supplied_aegis_peer_without_mutation_authority() {
+        let shell = Shell::new(vec![Surface::Aegis]).unwrap();
+        let mut aegis = aegis_tui::Component::new(AegisSessionHandleV1(1), AegisPort);
+        for _ in 0..100 {
+            aegis.poll();
+            let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
+            terminal
+                .draw(|frame| {
+                    draw_shell_with_moira(
+                        frame,
+                        &shell,
+                        PeerViews {
+                            chronos: None,
+                            vellum: None,
+                            agora: None,
+                            moira: None,
+                            daimon: None,
+                            hermes: None,
+                            aegis: Some(&aegis),
+                        },
+                        Focus::Chronos,
+                        "host supplied",
+                    )
+                })
+                .unwrap();
+            let rendered = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            if rendered.contains("epoch: 7") {
+                assert!(!rendered.contains("authority presentation is not configured"));
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("Aegis peer did not render its accepted authority observation");
     }
 
     #[test]

@@ -58,18 +58,41 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
     moira: Option<moira_tui::Component>,
     daimon: Option<daimon_tui::Component>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    run_terminal_with_all_peers(shell, chronos, vellum, agora, moira, daimon, None)
+    run_terminal_with_all_peers(
+        shell,
+        chronos,
+        vellum,
+        OperationalPeers {
+            agora,
+            moira,
+            daimon,
+            hermes: None,
+            aegis: None,
+        },
+    )
+}
+
+pub struct OperationalPeers {
+    pub agora: Option<agora_tui::Component>,
+    pub moira: Option<moira_tui::Component>,
+    pub daimon: Option<daimon_tui::Component>,
+    pub hermes: Option<hermes_tui::Component>,
+    pub aegis: Option<aegis_tui::Component>,
 }
 
 pub fn run_terminal_with_all_peers<T: ServicePort>(
     mut shell: Shell,
     mut chronos: Option<Hub>,
     mut vellum: Option<ServiceEditor<T>>,
-    mut agora: Option<agora_tui::Component>,
-    mut moira: Option<moira_tui::Component>,
-    mut daimon: Option<daimon_tui::Component>,
-    mut hermes: Option<hermes_tui::Component>,
+    peers: OperationalPeers,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let OperationalPeers {
+        mut agora,
+        mut moira,
+        mut daimon,
+        mut hermes,
+        mut aegis,
+    } = peers;
     let mut focus = Focus::Chronos;
     let mut notice = String::from("workspace profile loaded");
     let mut confirming_discard = false;
@@ -92,6 +115,9 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
             if let Some(hermes) = &mut hermes {
                 hermes.poll();
             }
+            if let Some(aegis) = &mut aegis {
+                aegis.poll();
+            }
             if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
                 if let Some(vellum) = &mut vellum
                     && let Err(error) = vellum.poll()
@@ -113,6 +139,7 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                         moira: moira.as_ref(),
                         daimon: daimon.as_ref(),
                         hermes: hermes.as_ref(),
+                        aegis: aegis.as_ref(),
                     },
                     focus,
                     &notice,
@@ -220,6 +247,25 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                         notice = Surface::Hermes
                             .gap()
                             .unwrap_or("Hermes presentation is unavailable")
+                            .into();
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Aegis
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    if let Some(aegis) = &mut aegis {
+                        if let Some(input) = aegis_tui::translate_key(key)
+                            && aegis.update(input, true) == aegis_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else {
+                        notice = Surface::Aegis
+                            .gap()
+                            .unwrap_or("Aegis presentation is unavailable")
                             .into();
                     }
                 }

@@ -3,6 +3,43 @@
 version = 4
 
 [[package]]
+name = "aegis-client"
+version = "0.1.0"
+dependencies = [
+ "aegis-protocol",
+]
+
+[[package]]
+name = "aegis-protocol"
+version = "0.1.0"
+
+[[package]]
+name = "aegis-tui"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "crossterm",
+ "ratatui",
+]
+
+[[package]]
+name = "aegis-tui-local-client"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "aegis-wire",
+]
+
+[[package]]
+name = "aegis-wire"
+version = "0.1.0"
+dependencies = [
+ "aegis-protocol",
+]
+
+[[package]]
 name = "agora-client"
 version = "0.1.0"
 dependencies = [
@@ -1383,6 +1420,9 @@ dependencies = [
 name = "workbench-tui"
 version = "0.1.0"
 dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "aegis-tui",
  "agora-client",
  "agora-protocol",
  "agora-tui",
@@ -1408,6 +1448,10 @@ dependencies = [
 name = "workbench-tui-cli"
 version = "0.1.0"
 dependencies = [
+ "aegis-client",
+ "aegis-tui",
+ "aegis-tui-local-client",
+ "aegis-wire",
  "agora-client",
  "agora-protocol",
  "agora-tui",

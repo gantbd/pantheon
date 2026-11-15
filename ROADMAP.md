@@ -1,5 +1,9 @@
 # Workbench terminal and host roadmap
 
+The normalized cross-repository program and Axon/Engram prior-art ledger live in
+[`docs/composition/`](docs/composition/README.md). This roadmap remains the
+detailed terminal/host implementation record.
+
 Workbench is a product composition root, not a new semantic engine. It may own
 one executable invocation, process lifecycle, terminal, profile, and deployment
 topology while every peer continues to own its protocol, authority, state,
@@ -170,7 +174,13 @@ Stream and cursor detail remains configuration-driven because Hermes exposes no
 global stream catalogue. Append, acknowledge, and compaction remain guarded
 later operations.
 
-Integrate Daimon, Grounding/Dendrite, Aegis, and Hermes only after each
+Aegis now has an independent read-only authority TUI, standalone CLI,
+`authority.observe.v1` bounded status/grant-summary/decision-summary observation,
+and Workbench attachment. Issue, attenuation, authorization, and epoch revocation
+remain excluded until exact confirmation, current-epoch, non-amplification,
+durable receipt, and outcome-unknown laws are qualified.
+
+Integrate Grounding/Dendrite only after it
 has a public client plus a reusable TUI component. Track unavailable boundaries
 in `WORKSPACE_GAPS.md`; do not reproduce peer semantics inside Workbench.
 

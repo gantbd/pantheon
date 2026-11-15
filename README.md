@@ -20,8 +20,9 @@ are live in the standalone binary. A workspace profile may attach Agora through
 the selected private Unix client by supplying its socket and participant claim;
 the daemon authenticates the connected OS peer and remains the authority owner.
 A trusted host can instead supply an independently constructed `agora-tui`
-component through `workbench_tui_cli::run_hosted_terminal_with_agora`. Other configured surfaces
-render their exact integration gap and receive no input. `[` and `]` switch
+component through `workbench_tui_cli::run_hosted_terminal_with_agora`. Moira,
+Daimon, Hermes, and Aegis profiles attach their peer-owned read-only components;
+the Grounding surface still renders its exact integration gap. `[` and `]` switch
 surfaces; Tab switches focus only inside Workspace. See
 [the gap ledger](WORKSPACE_GAPS.md) and [delivery roadmap](ROADMAP.md).
 
@@ -80,7 +81,7 @@ verifier and client claim provider without placing credential material in the
 profile or lifecycle receipt. Tab changes focus and Ctrl-Q requests
 whole-workbench exit.
 Use the explicit `headless` command for a bounded, versioned JSON observation of every configured
-Agora, Chronos, and Vellum peer. Each row names its peer-owned capability and
+Agora, Chronos, Vellum, Moira, Daimon, Hermes, and Aegis peer. Each row names its peer-owned capability and
 truthful status. Healthy rows remain visible when another peer is unavailable,
 but the command refuses aggregate success. `--headless` and `--snapshot` remain
 compatibility aliases for invocations without an explicit command.
@@ -98,6 +99,11 @@ with explicit clean, refused, or outcome-unknown receipts. Agora remains an
 attached or host-injected peer until a deployment supplies its required Aegis
 authentication, policy, clock, and durable-host composition.
 
+The workspace-wide standalone/Workbench pattern, composition taxonomy, current
+parity matrix and Axon/Engram prior-art routing live in
+[`docs/composition/`](docs/composition/README.md). Peer roadmaps continue to own
+their behavior; this repository owns product composition and its evidence.
+
 Local coordinated source layout:
 
 ```text
@@ -108,6 +114,8 @@ gantbd/
   daimon-tui/
   hermes/
   hermes-tui/
+  aegis/
+  aegis-tui/
   moira/
   moira-tui/
   vellum/
@@ -121,7 +129,7 @@ The machine source receipt records the current dirty coordinated closure as
 unqualified; immutable-revision CI is intentionally deferred until those
 inputs are committed and remotely reachable.
 
-The source receipt now pins the committed Agora, Chronos, Daimon, Hermes, Moira, and Vellum TUI
+The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Hermes, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
 The owning engine working trees and remote reachability remain unqualified.

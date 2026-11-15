@@ -28,6 +28,10 @@
     "socket": "../run/hermes.sock",
     "requires": ["ledger.observe.v1"]
   },
+  "aegis": {
+    "socket": "../run/aegis.sock",
+    "requires": ["authority.observe.v1"]
+  },
   "chronos": {
     "deployment": "attach",
     "workstreams": [

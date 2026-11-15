@@ -26,6 +26,8 @@ pub struct HeadlessRequest {
     pub daimon_requires: Vec<String>,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_requires: Vec<String>,
+    pub aegis_socket: Option<PathBuf>,
+    pub aegis_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
     pub chronos_requires: Vec<String>,
     pub vellum_socket: Option<PathBuf>,
@@ -63,6 +65,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         hermes_tui::CAPABILITIES.headless,
     )?;
     negotiate(
+        "aegis",
+        &request.aegis_requires,
+        aegis_tui::CAPABILITIES.headless,
+    )?;
+    negotiate(
         "chronos",
         &request.chronos_requires,
         chronos_tui::CAPABILITIES.headless,
@@ -95,6 +102,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         peers.push(observation);
         complete &= current;
     }
+    if let Some(socket) = request.aegis_socket {
+        let (observation, current) = observe_aegis(socket);
+        peers.push(observation);
+        complete &= current;
+    }
     for workstream in request.chronos {
         let (observation, current) = observe_chronos(workstream);
         peers.push(observation);
@@ -113,6 +125,50 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete,
         peers,
     })
+}
+
+fn observe_aegis(socket: PathBuf) -> (serde_json::Value, bool) {
+    use std::time::Duration;
+
+    let capability = aegis_tui::CAPABILITIES.headless[0];
+    let (session, port) = match aegis_tui_local_client::connect(
+        socket,
+        aegis_wire::LimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => {
+            return (
+                peer_failure("aegis", capability, "connect_refused", format!("{error:?}")),
+                false,
+            );
+        }
+    };
+    let mut client = match aegis_client::ReadOnlyClient::new(session, port, aegis_tui::PAGE_LIMIT) {
+        Ok(client) => client,
+        Err(_) => {
+            return (
+                peer_failure("aegis", capability, "configuration_refused", "page limit"),
+                false,
+            );
+        }
+    };
+    match aegis_tui::observe(&mut client) {
+        Ok(value) => (
+            serde_json::json!({
+                "peer": "aegis", "capability": capability, "status": "current",
+                "epoch": value.status.epoch, "active_grants": value.status.active_grants,
+                "retained_decisions": value.status.retained_decisions,
+                "page_grants": value.grants.len(), "more_grants": value.more_grants,
+                "page_decisions": value.decisions.len(), "more_decisions": value.more_decisions,
+            }),
+            true,
+        ),
+        Err(error) => (
+            peer_failure("aegis", capability, "unavailable", error),
+            false,
+        ),
+    }
 }
 
 fn observe_hermes(socket: PathBuf) -> (serde_json::Value, bool) {
@@ -553,6 +609,8 @@ mod tests {
             daimon_requires: Vec::new(),
             hermes_socket: None,
             hermes_requires: Vec::new(),
+            aegis_socket: None,
+            aegis_requires: Vec::new(),
             chronos: Vec::new(),
             chronos_requires: Vec::new(),
             vellum_socket: None,

@@ -11,7 +11,9 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert_eq!(source["schema"], 2);
     assert_eq!(
         source["components"],
-        serde_json::json!(["agora", "chronos", "vellum", "moira", "daimon", "hermes"])
+        serde_json::json!([
+            "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis"
+        ])
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
@@ -37,6 +39,10 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         source["inputs"]["hermesTui"]["revision"],
         "44154d406570ffe722b58a98dc9af11f2fc8d1db"
     );
+    assert_eq!(
+        source["inputs"]["aegisTui"]["revision"],
+        "1731b84d7f9a0af1c44f58e87e9042e07d40e254"
+    );
     for input in [
         "agoraTui",
         "chronosTui",
@@ -44,10 +50,13 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "moiraTui",
         "daimonTui",
         "hermesTui",
+        "aegisTui",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["agora", "chronos", "vellum", "moira", "daimon", "hermes"] {
+    for input in [
+        "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis",
+    ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
@@ -64,6 +73,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("moira-tui"));
     assert!(manifest.contains("daimon-tui"));
     assert!(manifest.contains("hermes-tui"));
+    assert!(manifest.contains("aegis-tui"));
     assert!(!manifest.contains("agora-tui-local-client"));
     assert!(!manifest.contains("chronos-local"));
     for cli_owned in ["main.rs", "profile.rs", "terminal.rs", "hosted.rs"] {
@@ -86,6 +96,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "moira-tui-local-client",
         "daimon-client",
         "hermes-tui-local-client",
+        "aegis-tui-local-client",
         "chronos-local",
         "chronos-standalone",
         "vellum-adapter-local-authentication",
@@ -198,5 +209,32 @@ fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
     let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");
     for required in ["qualification/agora-host/qualify.sh", "--target-dir"] {
         assert!(gate.contains(required), "Agora live gate omits {required}");
+    }
+}
+
+#[test]
+fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/aegis_attach.sh")).expect("Aegis attach gate");
+    for required in [
+        "real_daemon_fixture",
+        "authority.observe.v1",
+        "headless",
+        "interactive",
+        "epoch: 0",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Aegis attach gate omits {required}"
+        );
+    }
+    for forbidden in ["cargo publish", "git push", "gh release", "curl "] {
+        assert!(
+            !gate.contains(forbidden),
+            "Aegis attach gate performs {forbidden}"
+        );
     }
 }

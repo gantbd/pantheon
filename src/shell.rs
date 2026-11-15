@@ -40,7 +40,7 @@ impl Surface {
             Self::Grounding => {
                 Some("Dendrite exposes MCP; no typed Workbench presentation peer exists")
             }
-            Self::Aegis => Some("Aegis has administrative clients but no guarded TUI peer"),
+            Self::Aegis => Some("Aegis authority presentation is not configured"),
             Self::Hermes => Some("Hermes ledger presentation is not configured"),
         }
     }

@@ -22,6 +22,7 @@ agora-tui = { version = "=0.1.0", path = "../agora-tui" }
 moira-tui = { version = "=0.1.0", path = "../moira-tui" }
 daimon-tui = { version = "=0.1.0", path = "../daimon-tui" }
 hermes-tui = { version = "=0.1.0", path = "../hermes-tui" }
+aegis-tui = { version = "=0.1.0", path = "../aegis-tui" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }
@@ -35,6 +36,8 @@ daimon-client = { version = "=0.1.0", path = "../daimon/crates/daimon-client" }
 daimon-protocol = { version = "=0.1.0", path = "../daimon/crates/daimon-protocol" }
 hermes-client = { version = "=0.1.0", path = "../hermes/crates/hermes-client" }
 hermes-protocol = { version = "=0.1.0", path = "../hermes/crates/hermes-protocol" }
+aegis-client = { version = "=0.1.0", path = "../aegis/crates/aegis-client" }
+aegis-protocol = { version = "=0.1.0", path = "../aegis/crates/aegis-protocol" }
 serde_json = "=1.0.151"
 
 [lints.rust]
