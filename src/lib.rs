@@ -121,6 +121,7 @@ pub fn draw_shell(
             agora,
             moira: None,
             daimon: None,
+            hermes: None,
         },
         focus,
         notice,
@@ -133,6 +134,7 @@ pub struct PeerViews<'a> {
     pub agora: Option<&'a agora_tui::Component>,
     pub moira: Option<&'a moira_tui::Component>,
     pub daimon: Option<&'a daimon_tui::Component>,
+    pub hermes: Option<&'a hermes_tui::Component>,
 }
 
 /// Draws the shell with an independently hosted Moira workflow peer.
@@ -150,6 +152,7 @@ pub fn draw_shell_with_moira(
         agora,
         moira,
         daimon,
+        hermes,
     } = peers;
     let [tabs, header, body] = Layout::vertical([
         Constraint::Length(1),
@@ -208,6 +211,7 @@ pub fn draw_shell_with_moira(
                 agora: agora.is_some(),
                 moira: moira.is_some(),
                 daimon: daimon.is_some(),
+                hermes: hermes.is_some(),
             },
         ),
         Surface::Agora if agora.is_some() => {
@@ -218,6 +222,9 @@ pub fn draw_shell_with_moira(
         }
         Surface::Daimon if daimon.is_some() => {
             daimon.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Hermes if hermes.is_some() => {
+            hermes.expect("matched above").draw_in(frame, body, true);
         }
         surface => {
             frame.render_widget(
@@ -238,6 +245,7 @@ struct PeerAvailability {
     agora: bool,
     moira: bool,
     daimon: bool,
+    hermes: bool,
 }
 
 fn draw_overview(
@@ -287,6 +295,14 @@ fn draw_overview(
                 "not configured"
             }
         )),
+        Line::from(format!(
+            "Hermes: {}",
+            if peers.hermes {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
     ];
     for surface in shell.surfaces() {
         if *surface == Surface::Agora && peers.agora {
@@ -296,6 +312,9 @@ fn draw_overview(
             continue;
         }
         if *surface == Surface::Daimon && peers.daimon {
+            continue;
+        }
+        if *surface == Surface::Hermes && peers.hermes {
             continue;
         }
         if let Some(gap) = surface.gap() {
@@ -498,6 +517,7 @@ mod tests {
                             agora: None,
                             moira: Some(&moira),
                             daimon: None,
+                            hermes: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -538,6 +558,7 @@ mod tests {
                             agora: None,
                             moira: None,
                             daimon: Some(&daimon),
+                            hermes: None,
                         },
                         Focus::Chronos,
                         "host supplied",

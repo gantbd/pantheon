@@ -18,7 +18,7 @@ use workbench_tui_cli::{
     native_host::{ChronosHostOptions, NativeHost},
     profile::{AgoraProfile, DeploymentMode, WorkspaceProfile},
     registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
-    run_terminal_with_operational_peers,
+    run_terminal_with_all_peers,
 };
 
 enum VellumConnector {
@@ -47,6 +47,8 @@ struct Options {
     moira_requires: Vec<String>,
     daimon_socket: Option<PathBuf>,
     daimon_requires: Vec<String>,
+    hermes_socket: Option<PathBuf>,
+    hermes_requires: Vec<String>,
     chronos_streams: Vec<Workstream>,
     chronos_requires: Vec<String>,
     vellum_socket: Option<PathBuf>,
@@ -108,6 +110,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut moira_requires = Vec::new();
     let mut daimon_socket = None;
     let mut daimon_requires = Vec::new();
+    let mut hermes_socket = None;
+    let mut hermes_requires = Vec::new();
     let mut vellum_socket = None;
     let mut vellum_credential = None;
     let mut moira_bindings = Vec::new();
@@ -134,6 +138,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         if let Some(daimon) = profile.daimon {
             daimon_socket = Some(daimon.socket);
             daimon_requires = daimon.requires;
+        }
+        if let Some(hermes) = profile.hermes {
+            hermes_socket = Some(hermes.socket);
+            hermes_requires = hermes.requires;
         }
         if let Some(vellum) = profile.vellum {
             host_vellum = vellum.deployment == DeploymentMode::Hosted;
@@ -305,6 +313,16 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         },
     )?;
     negotiate_capabilities(
+        "hermes",
+        mode,
+        &hermes_requires,
+        if headless {
+            hermes_tui::CAPABILITIES.headless
+        } else {
+            hermes_tui::CAPABILITIES.interactive
+        },
+    )?;
+    negotiate_capabilities(
         "chronos",
         mode,
         &chronos_requires,
@@ -332,6 +350,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_requires,
         daimon_socket,
         daimon_requires,
+        hermes_socket,
+        hermes_requires,
         chronos_streams,
         chronos_requires,
         vellum_socket,
@@ -613,6 +633,19 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let hermes = if let Some(socket) = options.hermes_socket {
+        let port = hermes_tui_local_client::LocalPort::connect(
+            socket,
+            hermes_tui_local_client::ClientLimits::default(),
+        )
+        .map_err(|error| format!("Hermes service refused: {error:?}"))?;
+        Some(hermes_tui::Component::new(
+            hermes_tui_local_client::CONNECTION_SESSION,
+            port,
+        ))
+    } else {
+        None
+    };
     let mut chronos = if options.chronos_streams.is_empty() {
         None
     } else {
@@ -645,7 +678,7 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    run_terminal_with_operational_peers(options.shell, chronos, vellum, agora, moira, daimon)
+    run_terminal_with_all_peers(options.shell, chronos, vellum, agora, moira, daimon, hermes)
 }
 
 fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error::Error>> {
@@ -656,6 +689,8 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         moira_requires: options.moira_requires,
         daimon_socket: options.daimon_socket,
         daimon_requires: options.daimon_requires,
+        hermes_socket: options.hermes_socket,
+        hermes_requires: options.hermes_requires,
         chronos: options.chronos_streams,
         chronos_requires: options.chronos_requires,
         vellum_socket: options.vellum_socket,

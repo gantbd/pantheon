@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "package": "workbench-tui",
-  "components": ["agora", "chronos", "vellum", "moira", "daimon"],
+  "components": ["agora", "chronos", "vellum", "moira", "daimon", "hermes"],
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
@@ -37,6 +37,16 @@
       "repository": "https://github.com/gantbd/moira",
       "revision": "1408e46b12f7326e987724d867e40696aecf70a3",
       "workingTreeClean": false
+    },
+    "hermes": {
+      "repository": "https://github.com/gantbd/hermes",
+      "revision": "91683ec04f7dee00e1a151b75975ef904b7fa82c",
+      "workingTreeClean": false
+    },
+    "hermesTui": {
+      "repository": "https://github.com/gantbd/hermes-tui",
+      "revision": "44154d406570ffe722b58a98dc9af11f2fc8d1db",
+      "workingTreeClean": true
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",

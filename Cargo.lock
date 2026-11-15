@@ -468,6 +468,43 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
+name = "hermes-client"
+version = "0.1.0"
+dependencies = [
+ "hermes-protocol",
+]
+
+[[package]]
+name = "hermes-protocol"
+version = "0.1.0"
+
+[[package]]
+name = "hermes-tui"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "hermes-client",
+ "hermes-protocol",
+ "ratatui",
+]
+
+[[package]]
+name = "hermes-tui-local-client"
+version = "0.1.0"
+dependencies = [
+ "hermes-client",
+ "hermes-protocol",
+ "hermes-wire",
+]
+
+[[package]]
+name = "hermes-wire"
+version = "0.1.0"
+dependencies = [
+ "hermes-protocol",
+]
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1354,6 +1391,9 @@ dependencies = [
  "daimon-client",
  "daimon-protocol",
  "daimon-tui",
+ "hermes-client",
+ "hermes-protocol",
+ "hermes-tui",
  "moira-client",
  "moira-protocol",
  "moira-tui",
@@ -1383,6 +1423,10 @@ dependencies = [
  "daimon-protocol",
  "daimon-tui",
  "daimon-wire",
+ "hermes-client",
+ "hermes-protocol",
+ "hermes-tui",
+ "hermes-tui-local-client",
  "moira-client",
  "moira-protocol",
  "moira-tui",

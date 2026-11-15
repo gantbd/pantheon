@@ -41,7 +41,7 @@ impl Surface {
                 Some("Dendrite exposes MCP; no typed Workbench presentation peer exists")
             }
             Self::Aegis => Some("Aegis has administrative clients but no guarded TUI peer"),
-            Self::Hermes => Some("Hermes has operator clients but no ledger TUI peer"),
+            Self::Hermes => Some("Hermes ledger presentation is not configured"),
         }
     }
 }

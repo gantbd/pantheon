@@ -11,7 +11,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite MCP service over authored Rune material | Typed presentation client and composable Ratatui peer | Explicit unavailable surface |
 | Aegis | Administrative/read clients and local daemon | Guarded authority-administration Ratatui peer | Explicit unavailable surface |
-| Hermes | Ledger/operator clients and local daemon | Ledger operations Ratatui peer | Explicit unavailable surface |
+| Hermes | Ledger/operator clients and local daemon; independent `hermes-tui` status/usage/signals peer | Configured stream/cursor/gap views, guarded mutations, and production Workbench host factory | Attach the read-only ledger peer |
 
 Federation peers and cross-engine adapters remain subordinate to their owning
 engine or workflow presentation. Keystone remains presentation-free.
@@ -19,7 +19,7 @@ engine or workflow presentation. Keystone remains presentation-free.
 ## Current qualification state
 
 The reusable/CLI boundary and versioned headless contract are now aligned for
-Agora, Chronos, Vellum, Moira, Daimon, and Workbench. Each standalone CLI names its public
+Agora, Chronos, Vellum, Moira, Daimon, Hermes, and Workbench. Each standalone CLI names its public
 read capability and constructs no TUI state in headless mode. Workbench attaches
 the same clients and preserves healthy observations beside a failed peer.
 Each peer also owns a closed presentation capability manifest; Workbench
@@ -33,6 +33,7 @@ connection without treating a manifest match as service authorization.
 | Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 | Moira | Reused saga TUI; public-port rendering gate | `sagas.inspect.v1`; real SQLite daemon | Interactive component + aggregate headless; real daemon | Open; attach only |
 | Daimon | Reused redacted presence TUI; public-port rendering gate | `agents.presence.v1`; real durable daemon and roster | Interactive component + aggregate headless; real daemon | Open; attach only |
+| Hermes | Reused ledger TUI | `ledger.observe.v1`; real durable daemon | Interactive component + aggregate headless; real daemon | Open; attach only |
 
 This is qualified local working-tree evidence, not an immutable release
 qualification. The three peer TUI commits are exact and clean in Workbench's
@@ -68,5 +69,6 @@ qualified across all three interactive panes and one aggregate headless report.
    detail; add dispatch/resume only with no-redispatch and uncertainty evidence.
 5. Define a typed Dendrite presentation boundary rather than making MCP the
    Workbench's canonical internal protocol.
-6. Add Aegis and Hermes operator peers only with their existing authorization,
-   uncertainty and content-minimization laws intact.
+6. Extend Hermes with configured stream/cursor/gap views; add ledger mutations
+   and Aegis operator actions only with authorization, uncertainty, and
+   content-minimization laws intact.

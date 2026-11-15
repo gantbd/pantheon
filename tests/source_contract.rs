@@ -11,7 +11,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert_eq!(source["schema"], 2);
     assert_eq!(
         source["components"],
-        serde_json::json!(["agora", "chronos", "vellum", "moira", "daimon"])
+        serde_json::json!(["agora", "chronos", "vellum", "moira", "daimon", "hermes"])
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
@@ -33,16 +33,21 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         source["inputs"]["daimonTui"]["revision"],
         "b4e7412e0d4dcc9f8fce928b83eac41a84bcc6f9"
     );
+    assert_eq!(
+        source["inputs"]["hermesTui"]["revision"],
+        "44154d406570ffe722b58a98dc9af11f2fc8d1db"
+    );
     for input in [
         "agoraTui",
         "chronosTui",
         "vellumTui",
         "moiraTui",
         "daimonTui",
+        "hermesTui",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["agora", "chronos", "vellum", "moira", "daimon"] {
+    for input in ["agora", "chronos", "vellum", "moira", "daimon", "hermes"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
@@ -58,6 +63,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("agora-tui"));
     assert!(manifest.contains("moira-tui"));
     assert!(manifest.contains("daimon-tui"));
+    assert!(manifest.contains("hermes-tui"));
     assert!(!manifest.contains("agora-tui-local-client"));
     assert!(!manifest.contains("chronos-local"));
     for cli_owned in ["main.rs", "profile.rs", "terminal.rs", "hosted.rs"] {
@@ -79,6 +85,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "agora-tui-local-client",
         "moira-tui-local-client",
         "daimon-client",
+        "hermes-tui-local-client",
         "chronos-local",
         "chronos-standalone",
         "vellum-adapter-local-authentication",

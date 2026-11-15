@@ -24,6 +24,8 @@ pub struct HeadlessRequest {
     pub moira_requires: Vec<String>,
     pub daimon_socket: Option<PathBuf>,
     pub daimon_requires: Vec<String>,
+    pub hermes_socket: Option<PathBuf>,
+    pub hermes_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
     pub chronos_requires: Vec<String>,
     pub vellum_socket: Option<PathBuf>,
@@ -56,6 +58,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         daimon_tui::CAPABILITIES.headless,
     )?;
     negotiate(
+        "hermes",
+        &request.hermes_requires,
+        hermes_tui::CAPABILITIES.headless,
+    )?;
+    negotiate(
         "chronos",
         &request.chronos_requires,
         chronos_tui::CAPABILITIES.headless,
@@ -83,6 +90,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         peers.push(observation);
         complete &= current;
     }
+    if let Some(socket) = request.hermes_socket {
+        let (observation, current) = observe_hermes(socket);
+        peers.push(observation);
+        complete &= current;
+    }
     for workstream in request.chronos {
         let (observation, current) = observe_chronos(workstream);
         peers.push(observation);
@@ -101,6 +113,46 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete,
         peers,
     })
+}
+
+fn observe_hermes(socket: PathBuf) -> (serde_json::Value, bool) {
+    let capability = hermes_tui::CAPABILITIES.headless[0];
+    let port = match hermes_tui_local_client::LocalPort::connect(
+        socket,
+        hermes_tui_local_client::ClientLimits::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return (
+                peer_failure(
+                    "hermes",
+                    capability,
+                    "connect_refused",
+                    format!("{error:?}"),
+                ),
+                false,
+            );
+        }
+    };
+    let mut client =
+        hermes_client::ReadOnlyClient::new(hermes_tui_local_client::CONNECTION_SESSION, port);
+    match hermes_tui::observe(&mut client) {
+        Ok(value) => (
+            serde_json::json!({
+                "peer": "hermes", "capability": capability, "status": "current",
+                "storage_revision": value.status.storage_revision,
+                "fenced": value.status.fenced, "streams": value.usage.streams,
+                "events": value.usage.events, "cursors": value.usage.cursors,
+                "commits": value.signals.commits, "conflicts": value.signals.conflicts,
+                "saturated": value.signals.saturated,
+            }),
+            true,
+        ),
+        Err(error) => (
+            peer_failure("hermes", capability, "unavailable", error),
+            false,
+        ),
+    }
 }
 
 fn observe_daimon(socket: PathBuf) -> (serde_json::Value, bool) {
@@ -499,6 +551,8 @@ mod tests {
             moira_requires: Vec::new(),
             daimon_socket: None,
             daimon_requires: Vec::new(),
+            hermes_socket: None,
+            hermes_requires: Vec::new(),
             chronos: Vec::new(),
             chronos_requires: Vec::new(),
             vellum_socket: None,

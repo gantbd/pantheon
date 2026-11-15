@@ -24,6 +24,10 @@
     "socket": "../run/daimon.sock",
     "requires": ["agents.presence.v1"]
   },
+  "hermes": {
+    "socket": "../run/hermes.sock",
+    "requires": ["ledger.observe.v1"]
+  },
   "chronos": {
     "deployment": "attach",
     "workstreams": [

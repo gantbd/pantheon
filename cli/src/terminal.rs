@@ -51,12 +51,24 @@ pub fn run_terminal_with_moira<T: ServicePort>(
 }
 
 pub fn run_terminal_with_operational_peers<T: ServicePort>(
+    shell: Shell,
+    chronos: Option<Hub>,
+    vellum: Option<ServiceEditor<T>>,
+    agora: Option<agora_tui::Component>,
+    moira: Option<moira_tui::Component>,
+    daimon: Option<daimon_tui::Component>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_terminal_with_all_peers(shell, chronos, vellum, agora, moira, daimon, None)
+}
+
+pub fn run_terminal_with_all_peers<T: ServicePort>(
     mut shell: Shell,
     mut chronos: Option<Hub>,
     mut vellum: Option<ServiceEditor<T>>,
     mut agora: Option<agora_tui::Component>,
     mut moira: Option<moira_tui::Component>,
     mut daimon: Option<daimon_tui::Component>,
+    mut hermes: Option<hermes_tui::Component>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut focus = Focus::Chronos;
     let mut notice = String::from("workspace profile loaded");
@@ -76,6 +88,9 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             }
             if let Some(daimon) = &mut daimon {
                 daimon.poll();
+            }
+            if let Some(hermes) = &mut hermes {
+                hermes.poll();
             }
             if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
                 if let Some(vellum) = &mut vellum
@@ -97,6 +112,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
                         agora: agora.as_ref(),
                         moira: moira.as_ref(),
                         daimon: daimon.as_ref(),
+                        hermes: hermes.as_ref(),
                     },
                     focus,
                     &notice,
@@ -185,6 +201,25 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
                         notice = Surface::Daimon
                             .gap()
                             .unwrap_or("Daimon presentation is unavailable")
+                            .into();
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Hermes
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    if let Some(hermes) = &mut hermes {
+                        if let Some(input) = hermes_tui::translate_key(key)
+                            && hermes.update(input, true) == hermes_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else {
+                        notice = Surface::Hermes
+                            .gap()
+                            .unwrap_or("Hermes presentation is unavailable")
                             .into();
                     }
                 }

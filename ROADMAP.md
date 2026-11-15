@@ -164,6 +164,12 @@ initial surface is deliberately redacted to age and stale/current classification
 it neither exposes agent identity nor dispatches a provider. Exact execution
 inspection and guarded execute/resume operations remain later slices.
 
+Hermes now has an independent reusable ledger TUI, standalone CLI,
+`ledger.observe.v1` status/usage/signals observation, and Workbench attachment.
+Stream and cursor detail remains configuration-driven because Hermes exposes no
+global stream catalogue. Append, acknowledge, and compaction remain guarded
+later operations.
+
 Integrate Daimon, Grounding/Dendrite, Aegis, and Hermes only after each
 has a public client plus a reusable TUI component. Track unavailable boundaries
 in `WORKSPACE_GAPS.md`; do not reproduce peer semantics inside Workbench.
