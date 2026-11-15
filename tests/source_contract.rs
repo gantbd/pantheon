@@ -59,6 +59,19 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
             states.contains(mutation),
             "unknown mutation state {mutation}"
         );
+        if let Some(capabilities) = peer.get("mutationCapabilities") {
+            for (capability, state) in capabilities
+                .as_object()
+                .expect("mutation capability matrix")
+            {
+                assert!(!capability.is_empty(), "empty mutation capability");
+                let state = state.as_str().expect("mutation capability state");
+                assert!(
+                    states.contains(state),
+                    "unknown mutation capability state {state}"
+                );
+            }
+        }
 
         for mode in ["interactive", "headless"] {
             if matches!(
@@ -75,6 +88,11 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
             }
         }
     }
+
+    assert_eq!(
+        peers["aegis"]["mutationCapabilities"]["authority.revoke-epoch.v1"],
+        "qualified"
+    );
 
     let capabilities = [
         ("aegis", aegis_tui::CAPABILITIES.headless[0]),

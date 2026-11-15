@@ -11,7 +11,12 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "absent", "headless": "absent" },
-      "mutation": "planned"
+      "mutation": "planned",
+      "mutationCapabilities": {
+        "authority.revoke-epoch.v1": "qualified",
+        "authority.issue.v1": "planned",
+        "authority.attenuate.v1": "planned"
+      }
     },
     "agora": {
       "owner": "agora",
