@@ -143,7 +143,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
-        "aa26f135bb3f2b324c09ffe3e0c86c97c4cb0c3a"
+        "11d75c218e2e9614ae6bef6bde05b9eb96222c62"
     );
     for input in [
         "agoraTui",
