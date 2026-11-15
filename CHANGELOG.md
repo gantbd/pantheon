@@ -27,3 +27,5 @@
   headless report over any configured subset of Agora, Chronos workstreams, and
   Vellum. Reports preserve per-peer capability, truncation, refusal, access
   uncertainty, and partial aggregate failure without constructing TUI state.
+- Advanced the Vellum presentation input to the separately packaged standalone
+  CLI boundary while retaining the reusable root presentation dependency.

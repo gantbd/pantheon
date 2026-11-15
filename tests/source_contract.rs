@@ -15,7 +15,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
-        "d9895823c2f071bc22dbf040893b32aefb77f9cd"
+        "af7b74fde8c77c8e89ed2df91361da497d7a5a00"
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],

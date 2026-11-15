@@ -30,7 +30,7 @@
     },
     "vellumTui": {
       "repository": "https://github.com/gantbd/vellum-tui",
-      "revision": "d9895823c2f071bc22dbf040893b32aefb77f9cd",
+      "revision": "af7b74fde8c77c8e89ed2df91361da497d7a5a00",
       "workingTreeClean": true
     }
   },
