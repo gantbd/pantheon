@@ -61,3 +61,5 @@
   explicit edit/save ceilings, native shutdown control, and joined drain.
 - Delayed hosted headless aggregate success until native shutdown completes and
   included reverse-order per-peer lifecycle receipts in the versioned report.
+- Advanced the Chronos peer input to a manifest-derived versioned failure
+  envelope for malformed headless configuration as well as service uncertainty.

@@ -20,7 +20,7 @@
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
-      "revision": "3928f5bf50db36b66e7b4974deda3527b67b931c",
+      "revision": "f0cf0653ef0636a2665c9349a9194a3e05f310ec",
       "workingTreeClean": true
     },
     "vellum": {
