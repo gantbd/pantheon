@@ -6,18 +6,23 @@
 use std::{
     io::Write,
     os::unix::net::UnixStream,
-    path::{Path, PathBuf},
-    sync::mpsc,
+    path::Path,
     thread::{self, JoinHandle},
 };
+#[cfg(target_os = "macos")]
+use std::{path::PathBuf, sync::mpsc};
 
 use chronos_standalone::{Server, ServerOptions};
+#[cfg(target_os = "macos")]
 use vellum_adapter_local_authentication::{LocalCredentialStoreV1, LocalCredentialVerifierV1};
+#[cfg(target_os = "macos")]
 use vellum_adapter_local_fs::{FilesystemLimits, LocalFilesystemFactory};
+#[cfg(target_os = "macos")]
 use vellum_daemon::{
     DaemonLimits, DaemonServeError, DrainCompletion, DrainTransition, LocalDaemon,
     compose_startup_workspace, request_shutdown,
 };
+#[cfg(target_os = "macos")]
 use vellum_host::authority::{AuthorityActionSetV1, AuthorityActionV1};
 
 use crate::registry::{
@@ -109,6 +114,22 @@ impl NativeHost {
                 };
                 Ok(((), vellum_shutdown(control_path, owner)))
             })
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub fn start_vellum(
+        &mut self,
+        _socket: &Path,
+        _roots: &[std::path::PathBuf],
+        _credential: Option<&Path>,
+        _allow_edit: bool,
+        _allow_save: bool,
+    ) -> Result<(), StartupFailure<String>> {
+        self.registry.start_or_rollback(HostedPeerId::Vellum, || {
+            Err::<((), fn() -> ShutdownDisposition), _>(
+                "native Vellum hosting requires the qualified macOS adapter profile".to_owned(),
+            )
+        })
     }
 
     pub fn shutdown(&mut self) -> Result<TopologyShutdown, RegistryError> {
