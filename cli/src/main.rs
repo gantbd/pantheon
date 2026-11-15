@@ -562,6 +562,11 @@ fn finish_headless(
                 .map(|receipt| {
                     let (peer, instance) = match receipt.peer {
                         HostedPeerId::Agora => ("agora", None),
+                        HostedPeerId::Moira => ("moira", None),
+                        HostedPeerId::Daimon => ("daimon", None),
+                        HostedPeerId::Hermes => ("hermes", None),
+                        HostedPeerId::Aegis => ("aegis", None),
+                        HostedPeerId::Grounding => ("grounding", None),
                         HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
                         HostedPeerId::Vellum => ("vellum", None),
                     };

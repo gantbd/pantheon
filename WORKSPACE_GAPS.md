@@ -16,6 +16,11 @@ authorize Workbench to import an engine or recreate its client semantics.
 Federation peers and cross-engine adapters remain subordinate to their owning
 engine or workflow presentation. Keystone remains presentation-free.
 
+Workbench now has deployment-owned typed lifecycle registration seams for all
+five attach-only peers. Those seams accept an owner factory and return its
+concrete client unchanged. They do not yet provide profile-driven native hosting
+or process supervision, so the host cells below remain open.
+
 ## Current qualification state
 
 The reusable/CLI boundary and versioned headless contract are now aligned for

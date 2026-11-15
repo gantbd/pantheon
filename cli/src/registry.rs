@@ -9,6 +9,11 @@ use std::collections::HashSet;
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum HostedPeerId {
     Agora,
+    Moira,
+    Daimon,
+    Hermes,
+    Aegis,
+    Grounding,
     Chronos(String),
     Vellum,
 }

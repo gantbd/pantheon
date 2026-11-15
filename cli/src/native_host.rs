@@ -116,6 +116,69 @@ impl NativeHost {
         self.registry.start_or_rollback(HostedPeerId::Agora, start)
     }
 
+    /// Starts a deployment-supplied Moira owner. The deployment retains
+    /// responsibility for its durable store, authority adapter and recovery
+    /// policy; Workbench retains only the typed client and shutdown receipt.
+    pub fn start_moira<C, S>(
+        &mut self,
+        start: impl FnOnce() -> Result<(C, S), String>,
+    ) -> Result<C, StartupFailure<String>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry.start_or_rollback(HostedPeerId::Moira, start)
+    }
+
+    /// Starts a deployment-supplied Daimon owner without acquiring provider,
+    /// dispatch, identity or resume policy.
+    pub fn start_daimon<C, S>(
+        &mut self,
+        start: impl FnOnce() -> Result<(C, S), String>,
+    ) -> Result<C, StartupFailure<String>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry.start_or_rollback(HostedPeerId::Daimon, start)
+    }
+
+    /// Starts a deployment-supplied Hermes owner. Retention, authorization,
+    /// compaction and persistence remain inputs to the owning factory.
+    pub fn start_hermes<C, S>(
+        &mut self,
+        start: impl FnOnce() -> Result<(C, S), String>,
+    ) -> Result<C, StartupFailure<String>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry.start_or_rollback(HostedPeerId::Hermes, start)
+    }
+
+    /// Starts a deployment-supplied Aegis owner. Workbench does not construct
+    /// grants, trusted time, peer identity or authority policy.
+    pub fn start_aegis<C, S>(
+        &mut self,
+        start: impl FnOnce() -> Result<(C, S), String>,
+    ) -> Result<C, StartupFailure<String>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry.start_or_rollback(HostedPeerId::Aegis, start)
+    }
+
+    /// Starts a deployment-supplied Grounding/Dendrite owner. The returned
+    /// client remains the typed Grounding presentation boundary; this does not
+    /// turn MCP into a Workbench lifecycle or semantic protocol.
+    pub fn start_grounding<C, S>(
+        &mut self,
+        start: impl FnOnce() -> Result<(C, S), String>,
+    ) -> Result<C, StartupFailure<String>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry
+            .start_or_rollback(HostedPeerId::Grounding, start)
+    }
+
     pub fn seal(&mut self) -> Result<(), RegistryError> {
         self.registry.seal()
     }
@@ -331,6 +394,81 @@ fn chronos_shutdown(
             (_, Ok(Ok(()))) => ShutdownDisposition::Clean,
             (true, Ok(Err(_)) | Err(_)) => ShutdownDisposition::OutcomeUnknown,
             (false, Ok(Err(_)) | Err(_)) => ShutdownDisposition::Refused,
+        }
+    }
+}
+
+#[cfg(test)]
+mod deployment_factory_tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    type TestShutdown = Box<dyn FnMut() -> ShutdownDisposition + Send + 'static>;
+    type TestStart<C> = Result<(C, TestShutdown), String>;
+
+    #[test]
+    fn deployment_owned_peer_factories_keep_typed_clients_and_reverse_drain() {
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let mut host = NativeHost::new();
+
+        let moira: u8 = host
+            .start_moira(factory(1_u8, "moira", order.clone()))
+            .unwrap();
+        let daimon: u16 = host
+            .start_daimon(factory(2_u16, "daimon", order.clone()))
+            .unwrap();
+        let hermes: u32 = host
+            .start_hermes(factory(3_u32, "hermes", order.clone()))
+            .unwrap();
+        let aegis: u64 = host
+            .start_aegis(factory(4_u64, "aegis", order.clone()))
+            .unwrap();
+        let grounding: &'static str = host
+            .start_grounding(factory(
+                "typed-grounding-client",
+                "grounding",
+                order.clone(),
+            ))
+            .unwrap();
+
+        assert_eq!((moira, daimon, hermes, aegis), (1, 2, 3, 4));
+        assert_eq!(grounding, "typed-grounding-client");
+        host.seal().unwrap();
+        let receipt = host.shutdown().unwrap();
+        assert!(receipt.clean());
+        assert_eq!(
+            *order.lock().unwrap(),
+            ["grounding", "aegis", "hermes", "daimon", "moira"]
+        );
+        assert_eq!(
+            receipt
+                .receipts
+                .iter()
+                .map(|receipt| &receipt.peer)
+                .collect::<Vec<_>>(),
+            [
+                &HostedPeerId::Grounding,
+                &HostedPeerId::Aegis,
+                &HostedPeerId::Hermes,
+                &HostedPeerId::Daimon,
+                &HostedPeerId::Moira,
+            ]
+        );
+    }
+
+    fn factory<C: Send + 'static>(
+        client: C,
+        name: &'static str,
+        order: Arc<Mutex<Vec<&'static str>>>,
+    ) -> impl FnOnce() -> TestStart<C> {
+        move || {
+            Ok((
+                client,
+                Box::new(move || {
+                    order.lock().unwrap().push(name);
+                    ShutdownDisposition::Clean
+                }),
+            ))
         }
     }
 }

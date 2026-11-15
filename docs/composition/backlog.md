@@ -28,8 +28,12 @@ read-only input until that repository settles.
   then attach the same component to Workbench.
 - [ ] Extend Grounding with selected surface/read DTOs only after exact content
   disclosure, provenance, freshness and response bounds are fixed.
-- [ ] Add native Moira, Hermes and Aegis host factories only after each owner
-  supplies explicit storage, authentication, recovery and shutdown composition.
+- [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
+  Hermes, Aegis, and Grounding while preserving separate state, authority,
+  recovery and shutdown receipts.
+- [ ] Promote those seams to standalone native or supervised profile factories
+  only after each owner supplies explicit storage, authentication, recovery and
+  shutdown composition and passes real lifecycle qualification.
 
 ## P2 — operational depth
 

@@ -115,6 +115,13 @@ identities for `keystone-storage`; the qualifier derives a scoped local Cargo pa
 the all-three lifecycle without embedding a machine path. Normal production
 builds still require the owning inputs to converge on one source identity.
 
+The registry also exposes explicit deployment-owned factory seams for Moira,
+Daimon, Hermes, Aegis, and Grounding. Each returns its concrete typed client and
+contributes only an operational shutdown callback; Workbench does not construct
+their stores, provider policy, retention policy, grants, trusted time, or MCP
+semantics. These seams are not standalone profile factories and do not close the
+host matrix until real owner lifecycles are qualified in both product modes.
+
 The supported mixed topology is now qualified independently: Workbench can own
 Chronos and Vellum while attaching Agora, and can present and observe all three
 in one interactive or headless invocation. Together with the all-three owner
