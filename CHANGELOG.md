@@ -76,3 +76,5 @@
 - Qualified one process and lock closure owning real Chronos, Vellum, and Agora
   services, with reverse clean drain, using a derived local source-identity
   patch and explicitly test-only Agora authority inputs.
+- Advanced the exact Agora TUI source receipt to its standalone real-daemon
+  interactive and headless qualification revision.

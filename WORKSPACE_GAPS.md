@@ -28,7 +28,7 @@ connection without treating a manifest match as service authorization.
 
 | Core peer | Standalone interactive | Standalone headless | Workbench attach | Workbench host |
 | --- | --- | --- | --- | --- |
-| Agora | Reused TUI over private Unix client | `rooms.read.v2`, protocol fixture | Interactive + headless, protocol fixture | Injected factory; real daemon/public-client lifecycle qualified with test-only authority |
+| Agora | Reused TUI; real-daemon room/message journey | `rooms.read.v2`; real daemon | Interactive + headless, protocol fixture | Injected factory; real daemon/public-client lifecycle qualified with test-only authority |
 | Chronos | Reused TUI; real-service journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service | Native owner; interactive + headless client path; joined drain |
 | Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 

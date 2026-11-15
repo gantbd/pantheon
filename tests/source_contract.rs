@@ -23,7 +23,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "306e89fd1a304720884abbf1f0506d39f1948e3b"
+        "a59c292c39cc17f545859f4c99aad96a7c2e0931"
     );
     for input in ["agoraTui", "chronosTui", "vellumTui"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
