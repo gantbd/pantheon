@@ -10,7 +10,16 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PROJECTS = ("chronos", "chronos-tui", "vellum", "vellum-tui", "moira", "daimon")
+PROJECTS = (
+    "agora",
+    "agora-tui",
+    "chronos",
+    "chronos-tui",
+    "vellum",
+    "vellum-tui",
+    "moira",
+    "daimon",
+)
 
 
 def git(repo, *args):
@@ -53,6 +62,8 @@ def main():
     if tui_receipt.get("schema") != 1 or not tui_receipt.get("immutableSourceQualified"):
         raise SystemExit("Chronos TUI pin must contain its qualified local source receipt")
     pins = {
+        "agora": inputs["agora"]["revision"],
+        "agora-tui": inputs["agoraTui"]["revision"],
         "chronos": args.chronos or inputs["chronos"]["revision"],
         "chronos-tui": tui,
         "vellum": args.vellum or inputs["vellum"]["revision"],

@@ -62,6 +62,10 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     let architecture = fs::read_to_string(root.join("COMPONENT_ARCHITECTURE.md"))
         .expect("component architecture law");
     assert!(architecture.contains("Version: 2"));
+    let qualifier =
+        fs::read_to_string(root.join("scripts/qualify-source.py")).expect("source qualifier");
+    assert!(qualifier.contains("\"agora\","));
+    assert!(qualifier.contains("\"agora-tui\","));
     assert!(
         architecture.contains("github.com/gantbd/keystone/blob/main/COMPONENT_ARCHITECTURE.md")
     );
