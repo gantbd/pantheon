@@ -27,6 +27,7 @@ pub struct HeadlessRequest {
     pub daimon_requires: Vec<String>,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
+    pub hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
     pub hermes_requires: Vec<String>,
     pub aegis_socket: Option<PathBuf>,
     pub aegis_requires: Vec<String>,
@@ -108,7 +109,8 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete &= current;
     }
     if let Some(socket) = request.hermes_socket {
-        let (observation, current) = observe_hermes(socket, request.hermes_stream);
+        let (observation, current) =
+            observe_hermes(socket, request.hermes_stream, request.hermes_consumer);
         peers.push(observation);
         complete &= current;
     }
@@ -257,6 +259,7 @@ fn observe_aegis(socket: PathBuf) -> (serde_json::Value, bool) {
 fn observe_hermes(
     socket: PathBuf,
     configured_stream: Option<hermes_protocol::StreamIdV1>,
+    configured_consumer: Option<hermes_protocol::ConsumerIdV1>,
 ) -> (serde_json::Value, bool) {
     let capability = hermes_tui::CAPABILITIES.headless[0];
     let port = match hermes_tui_local_client::LocalPort::connect(
@@ -278,7 +281,7 @@ fn observe_hermes(
     };
     let mut client =
         hermes_client::ReadOnlyClient::new(hermes_tui_local_client::CONNECTION_SESSION, port);
-    match hermes_tui::observe_configured(&mut client, configured_stream) {
+    match hermes_tui::observe_selected(&mut client, configured_stream, configured_consumer) {
         Ok(value) => {
             let stream = value.configured_stream.map(|selection| match selection {
                 hermes_tui::ConfiguredStreamObservation::Missing => {
@@ -293,6 +296,23 @@ fn observe_hermes(
                     "max_consumer_backlog": stream.max_consumer_backlog,
                 }),
             });
+            let cursor = value.configured_cursor.map(|selection| match selection {
+                hermes_tui::ConfiguredCursorObservation::Missing => {
+                    serde_json::json!({"status": "absent"})
+                }
+                hermes_tui::ConfiguredCursorObservation::Current(cursor) => {
+                    let stream = match value.configured_stream {
+                        Some(hermes_tui::ConfiguredStreamObservation::Current(stream)) => stream,
+                        _ => unreachable!("current cursor requires current stream"),
+                    };
+                    serde_json::json!({
+                        "status": "current",
+                        "next_sequence": cursor.next_sequence.0,
+                        "backlog": hermes_tui::cursor_backlog(stream, cursor),
+                        "behind_retention": cursor.next_sequence < stream.retained_from,
+                    })
+                }
+            });
             (
                 serde_json::json!({
                 "peer": "hermes", "capability": capability, "status": "current",
@@ -302,6 +322,7 @@ fn observe_hermes(
                 "commits": value.signals.commits, "conflicts": value.signals.conflicts,
                 "saturated": value.signals.saturated,
                 "configured_stream": stream,
+                "configured_cursor": cursor,
                 }),
                 true,
             )
@@ -748,6 +769,7 @@ mod tests {
             daimon_requires: Vec::new(),
             hermes_socket: None,
             hermes_stream: None,
+            hermes_consumer: None,
             hermes_requires: Vec::new(),
             aegis_socket: None,
             aegis_requires: Vec::new(),

@@ -60,6 +60,7 @@ pub struct DaimonProfile {
 pub struct HermesProfile {
     pub socket: PathBuf,
     pub stream: Option<String>,
+    pub consumer: Option<String>,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -243,6 +244,14 @@ impl WorkspaceProfile {
                 && hermes_tui::parse_stream_id(stream).is_none()
             {
                 return Err("Hermes stream must be 32 hexadecimal digits");
+            }
+            if let Some(consumer) = &hermes.consumer {
+                if hermes.stream.is_none() {
+                    return Err("Hermes consumer requires a stream");
+                }
+                if hermes_tui::parse_consumer_id(consumer).is_none() {
+                    return Err("Hermes consumer must be 32 hexadecimal digits");
+                }
             }
             validate_required_capabilities(&hermes.requires)?;
         }
@@ -461,21 +470,31 @@ mod tests {
     }
 
     #[test]
-    fn profile_accepts_one_exact_opaque_hermes_stream_selector() {
+    fn profile_accepts_exact_opaque_hermes_stream_and_consumer_selectors() {
         let valid = br#"{
           "version":1,"name":"Hermes","surfaces":["hermes"],
-          "hermes":{"socket":"hermes.sock","stream":"05050505050505050505050505050505"}
+          "hermes":{"socket":"hermes.sock","stream":"05050505050505050505050505050505","consumer":"06060606060606060606060606060606"}
         }"#;
         let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let hermes = profile.hermes.unwrap();
         assert_eq!(
-            profile.hermes.unwrap().stream.as_deref(),
+            hermes.stream.as_deref(),
             Some("05050505050505050505050505050505")
+        );
+        assert_eq!(
+            hermes.consumer.as_deref(),
+            Some("06060606060606060606060606060606")
         );
         let invalid = br#"{
           "version":1,"name":"Hermes","surfaces":["hermes"],
           "hermes":{"socket":"hermes.sock","stream":"not-an-opaque-id"}
         }"#;
         assert!(WorkspaceProfile::parse(invalid, Path::new(".")).is_err());
+        let consumer_without_stream = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"socket":"hermes.sock","stream":null,"consumer":"06060606060606060606060606060606"}
+        }"#;
+        assert!(WorkspaceProfile::parse(consumer_without_stream, Path::new(".")).is_err());
     }
 
     #[test]

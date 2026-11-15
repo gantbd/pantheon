@@ -190,6 +190,11 @@ headless mode and the same reusable component's bounded selected-saga evidence
 and operator receipts interactively. The gate uses only `SagaReadOnlyClient`;
 it grants Workbench no reconciliation authority.
 
+Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
+configured consumer's content-free cursor/backlog through Hermes's read-only
+facade. Exact opaque selectors are profile inputs and are never catalogued or
+echoed; Workbench receives no append, acknowledge, or compaction authority.
+
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one
 Workbench headless invocation. This coexistence gate exercises only the five

@@ -43,11 +43,11 @@ read-only input until that repository settles.
 - [ ] Moira: keep reconciliation mutation guarded until exact confirmation,
   current authority, revision, durable receipt, and outcome-unknown recovery
   are public and qualified end to end.
-- [ ] Hermes: configured-stream health now has standalone/Workbench parity; add
-  a read-only cursor observation facade plus an exact opaque consumer selector;
-  do not acquire the acknowledgement-capable consumer facade. Add gap views
-  only with explicit event-content disclosure and response bounds, without
-  inventing a global stream catalogue.
+- [x] Hermes: carry a read-only cursor observation plus exact opaque stream and
+  consumer selectors through standalone and Workbench without acquiring the
+  acknowledgement-capable consumer facade.
+- [ ] Hermes: add event gap views only with explicit content-disclosure and
+  response bounds, without inventing a global stream or consumer catalogue.
 - [ ] Aegis: guarded issue/attenuate/revoke administration with exact epoch,
   resource/action confirmation and outcome-unknown fencing.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and

@@ -209,6 +209,7 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
         daimon_requires: Vec::new(),
         hermes_socket: None,
         hermes_stream: None,
+        hermes_consumer: None,
         hermes_requires: Vec::new(),
         aegis_socket: None,
         aegis_requires: Vec::new(),

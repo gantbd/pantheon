@@ -45,7 +45,7 @@
     },
     "hermesTui": {
       "repository": "https://github.com/gantbd/hermes-tui",
-      "revision": "982a04abe359156571ad9d7004307033a3d41dea",
+      "revision": "a3180f80f85a005452a6ebf7e171fd5bdb295f4f",
       "workingTreeClean": true
     },
     "aegis": {

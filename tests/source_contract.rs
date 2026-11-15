@@ -135,7 +135,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "982a04abe359156571ad9d7004307033a3d41dea"
+        "a3180f80f85a005452a6ebf7e171fd5bdb295f4f"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
@@ -387,7 +387,11 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
     for required in [
         "ledger.observe.v1",
         "05050505050505050505050505050505",
+        "06060606060606060606060606060606",
         "retained_events",
+        "configured_cursor",
+        "next_sequence",
+        "backlog",
     ] {
         assert!(
             gate.contains(required),
@@ -455,6 +459,7 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "authority.observe.v1",
         "grounding.observe.v1",
         "configured_stream",
+        "configured_cursor",
         "05050505050505050505050505050505",
         "one Workbench headless composition",
         "--locked",

@@ -50,6 +50,7 @@ struct Options {
     daimon_requires: Vec<String>,
     hermes_socket: Option<PathBuf>,
     hermes_stream: Option<hermes_protocol::StreamIdV1>,
+    hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
     hermes_requires: Vec<String>,
     aegis_socket: Option<PathBuf>,
     aegis_requires: Vec<String>,
@@ -119,6 +120,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut daimon_requires = Vec::new();
     let mut hermes_socket = None;
     let mut hermes_stream = None;
+    let mut hermes_consumer = None;
     let mut hermes_requires = Vec::new();
     let mut aegis_socket = None;
     let mut aegis_requires = Vec::new();
@@ -158,6 +160,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                 .stream
                 .as_deref()
                 .and_then(hermes_tui::parse_stream_id);
+            hermes_consumer = hermes
+                .consumer
+                .as_deref()
+                .and_then(hermes_tui::parse_consumer_id);
             hermes_requires = hermes.requires;
         }
         if let Some(aegis) = profile.aegis {
@@ -398,6 +404,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_requires,
         hermes_socket,
         hermes_stream,
+        hermes_consumer,
         hermes_requires,
         aegis_socket,
         aegis_requires,
@@ -696,10 +703,11 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
             hermes_tui_local_client::ClientLimits::default(),
         )
         .map_err(|error| format!("Hermes service refused: {error:?}"))?;
-        Some(hermes_tui::Component::new_with_stream(
+        Some(hermes_tui::Component::new_with_selection(
             hermes_tui_local_client::CONNECTION_SESSION,
             port,
             options.hermes_stream,
+            options.hermes_consumer,
         ))
     } else {
         None
@@ -788,6 +796,7 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         daimon_requires: options.daimon_requires,
         hermes_socket: options.hermes_socket,
         hermes_stream: options.hermes_stream,
+        hermes_consumer: options.hermes_consumer,
         hermes_requires: options.hermes_requires,
         aegis_socket: options.aegis_socket,
         aegis_requires: options.aegis_requires,

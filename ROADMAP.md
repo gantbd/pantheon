@@ -182,8 +182,11 @@ Hermes now has an independent reusable ledger TUI, standalone CLI,
 `ledger.observe.v1` status/usage/signals observation, and Workbench attachment.
 An exact opaque profile selector now carries content-free stream health through
 the same standalone and Workbench component without inventing a global stream
-catalogue or echoing the identifier. Configured cursor/gap detail and append,
-acknowledge, and compaction remain guarded later operations.
+catalogue or echoing the identifier. A second exact opaque selector now carries
+one consumer's content-free cursor position, backlog, and retention-gap status
+through the read-only facade in both products; the presentation never acquires
+acknowledgement authority. Event-gap disclosure and append, acknowledge, and
+compaction remain guarded later operations.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
