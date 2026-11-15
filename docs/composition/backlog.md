@@ -49,8 +49,9 @@ read-only input until that repository settles.
 - [x] Hermes: carry a read-only cursor observation plus exact opaque stream and
   consumer selectors through standalone and Workbench without acquiring the
   acknowledgement-capable consumer facade.
-- [ ] Hermes: add event gap views only with explicit content-disclosure and
-  response bounds, without inventing a global stream or consumer catalogue.
+- [x] Hermes: add exact-confirmed event disclosure through a separate read-only
+  facade, bounded to 16 events and the negotiated frame ceiling, with explicit
+  retention/publication gaps and no global stream or consumer catalogue.
 - [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
   one-attempt epoch revocation in standalone and Workbench, preserving
   `outcome_unknown` without retry.

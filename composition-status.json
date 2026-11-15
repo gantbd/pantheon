@@ -61,7 +61,10 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "absent", "headless": "absent" },
-      "mutation": "planned"
+      "mutation": "planned",
+      "disclosureCapabilities": {
+        "ledger.events.disclose.v1": "qualified"
+      }
     },
     "moira": {
       "owner": "moira",

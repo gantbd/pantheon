@@ -185,7 +185,10 @@ the same standalone and Workbench component without inventing a global stream
 catalogue or echoing the identifier. A second exact opaque selector now carries
 one consumer's content-free cursor position, backlog, and retention-gap status
 through the read-only facade in both products; the presentation never acquires
-acknowledgement authority. Event-gap disclosure and append, acknowledge, and
+acknowledgement authority. A separate `ledger.events.disclose.v1` command now
+reuses Hermes's `DisclosureClient` and exact stream/start/limit guard in both
+standalone and Workbench, bounded to 16 events plus the negotiated frame and
+reporting retention/publication gaps explicitly. Append, acknowledge, and
 compaction remain guarded later operations.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,

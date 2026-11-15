@@ -72,6 +72,16 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
                 );
             }
         }
+        if let Some(capabilities) = peer.get("disclosureCapabilities") {
+            for (capability, state) in capabilities
+                .as_object()
+                .expect("disclosure capability matrix")
+            {
+                assert!(!capability.is_empty(), "empty disclosure capability");
+                let state = state.as_str().expect("disclosure capability state");
+                assert!(states.contains(state), "unknown disclosure state {state}");
+            }
+        }
 
         for mode in ["interactive", "headless"] {
             if matches!(
@@ -91,6 +101,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
 
     assert_eq!(
         peers["aegis"]["mutationCapabilities"]["authority.revoke-epoch.v1"],
+        "qualified"
+    );
+    assert_eq!(
+        peers["hermes"]["disclosureCapabilities"]["ledger.events.disclose.v1"],
         "qualified"
     );
 
@@ -153,7 +167,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "a3180f80f85a005452a6ebf7e171fd5bdb295f4f"
+        "91b6e0fd8e92f013a9c7d0d802a138344fa573e4"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
@@ -412,6 +426,9 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
         fs::read_to_string(root.join("tests/live/hermes_attach.sh")).expect("Hermes attach gate");
     for required in [
         "ledger.observe.v1",
+        "ledger.events.disclose.v1",
+        "DISCLOSE HERMES STREAM 05050505050505050505050505050505 FROM 0 LIMIT 1",
+        "confirmation_refused",
         "05050505050505050505050505050505",
         "06060606060606060606060606060606",
         "retained_events",

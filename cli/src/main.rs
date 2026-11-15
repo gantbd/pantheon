@@ -450,7 +450,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. The Aegis command reuses its peer-owned exact-confirmation guard and never retries an uncertain outcome. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards: Aegis never retries an uncertain revocation, and Hermes discloses at most 16 events within the negotiated frame ceiling. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -473,6 +473,12 @@ fn vellum_connector(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "hermes-disclose-events")
+    {
+        return hermes_disclose_events(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "aegis-revoke-epoch")
@@ -505,6 +511,134 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn hermes_disclose_events(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let stream = args
+        .next()
+        .and_then(|value| hermes_tui::parse_stream_id(&value.to_string_lossy()))
+        .ok_or("stream must be 32 hexadecimal digits")?;
+    let start = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .and_then(|value| value.parse::<u64>().ok())
+        .ok_or_else(usage)?;
+    let limit = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .and_then(|value| value.parse::<u64>().ok())
+        .ok_or_else(usage)?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let port = match hermes_tui_local_client::LocalPort::connect(
+        socket,
+        hermes_tui_local_client::ClientLimits::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => return hermes_command_failure("not_sent", &format!("{error:?}"), None),
+    };
+    let request = hermes_disclosure_command::DisclosureRequest {
+        stream,
+        start: hermes_protocol::EventSequenceV1(start),
+        limit,
+    };
+    match hermes_disclosure_command::disclose(
+        hermes_tui_local_client::CONNECTION_SESSION,
+        port,
+        request,
+        &confirmation,
+    ) {
+        Ok(batch) => {
+            let events = batch
+                .events
+                .into_iter()
+                .map(|event| {
+                    serde_json::json!({
+                        "sequence": event.sequence.0,
+                        "producer": hermes_disclosure_command::hex(&event.envelope.producer.0),
+                        "schema": hermes_disclosure_command::hex(&event.envelope.schema.0),
+                        "idempotency_key": hermes_disclosure_command::hex(&event.envelope.idempotency_key.0),
+                        "correlation": hermes_disclosure_command::hex(&event.envelope.correlation.0),
+                        "causation": event.envelope.causation.map(|value| hermes_disclosure_command::hex(&value.0)),
+                        "payload_hex": hermes_disclosure_command::hex(&event.envelope.payload),
+                    })
+                })
+                .collect::<Vec<_>>();
+            let gap = batch.gap.map(|gap| match gap {
+                hermes_protocol::ReadGapV1::BeforeRetention { requested, retained_from } => {
+                    serde_json::json!({"kind":"before_retention", "requested":requested.0, "retained_from":retained_from.0})
+                }
+                hermes_protocol::ReadGapV1::AheadOfPublication { requested, next_sequence } => {
+                    serde_json::json!({"kind":"ahead_of_publication", "requested":requested.0, "next_sequence":next_sequence.0})
+                }
+            });
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "hermes",
+                    "capability": hermes_disclosure_command::CAPABILITY,
+                    "complete": true,
+                    "status": "current",
+                    "start": start,
+                    "limit": limit,
+                    "retained_from": batch.retained_from.0,
+                    "published_edge": batch.published_edge.map(|value| value.0),
+                    "gap": gap,
+                    "events": events,
+                }))?
+            );
+            Ok(())
+        }
+        Err(hermes_disclosure_command::DisclosureError::ConfirmationMismatch { required }) => {
+            hermes_command_failure(
+                "confirmation_refused",
+                "exact disclosure confirmation required",
+                Some(&required),
+            )
+        }
+        Err(hermes_disclosure_command::DisclosureError::InvalidLimit) => hermes_command_failure(
+            "limit_refused",
+            "event limit must be between 1 and 16",
+            None,
+        ),
+        Err(hermes_disclosure_command::DisclosureError::Transport(
+            hermes_tui_local_client::ClientError::OutcomeUnknown(error),
+        )) => hermes_command_failure("outcome_unknown", &format!("{error:?}"), None),
+        Err(hermes_disclosure_command::DisclosureError::Refused(refusal)) => {
+            hermes_command_failure("refused", &format!("{refusal:?}"), None)
+        }
+        Err(error) => hermes_command_failure("unavailable", &format!("{error:?}"), None),
+    }
+}
+
+fn hermes_command_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "hermes",
+            "capability": hermes_disclosure_command::CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation,
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn aegis_revoke_epoch(

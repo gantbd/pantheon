@@ -197,7 +197,10 @@ it grants Workbench no reconciliation authority.
 Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
 configured consumer's content-free cursor/backlog through Hermes's read-only
 facade. Exact opaque selectors are profile inputs and are never catalogued or
-echoed; Workbench receives no append, acknowledge, or compaction authority.
+echoed. The same gate separately qualifies `ledger.events.disclose.v1` with an
+exact stream/start/limit confirmation, a 16-event ceiling, and the negotiated
+frame bound. Routine observation remains content-free; Workbench receives no
+append, acknowledge, or compaction authority.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one

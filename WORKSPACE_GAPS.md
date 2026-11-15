@@ -11,7 +11,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation and production Workbench host factory | Attach the typed read-only Grounding peer; MCP remains agent-facing only |
 | Aegis | Administrative/read clients and local daemon; independent `aegis-tui` bounded status, navigable redacted pages, and exact-confirmed epoch revocation in standalone and Workbench | Long-lived guarded issue/attenuation and production Workbench host factory | Attach the read-only peer; invoke the separate revocation command only with exact current-epoch confirmation |
-| Hermes | Ledger/operator clients and local daemon; independent `hermes-tui` status/usage/signals peer; standalone and Workbench configured content-free stream health plus selected consumer cursor/backlog | Bounded event-gap disclosure, guarded mutations, and production Workbench host factory | Attach the read-only ledger peer with optional exact opaque stream/consumer selectors |
+| Hermes | Ledger/operator clients and local daemon; independent content-free observation/cursor peer plus exact-confirmed disclosure bounded to 16 events and the negotiated frame | Guarded append/acknowledge/compact and production Workbench host factory | Attach the read-only ledger peer; invoke payload disclosure separately with exact stream/start/limit confirmation |
 
 Federation peers and cross-engine adapters remain subordinate to their owning
 engine or workflow presentation. Keystone remains presentation-free.
@@ -83,9 +83,9 @@ qualified across all three interactive panes and one aggregate headless report.
 5. Extend the typed Dendrite presentation boundary with selected surface/read
    DTOs only after their content disclosure, provenance, freshness, and bounds
    are fixed; MCP remains outside Workbench's internal protocol.
-6. Add Hermes event-gap views through the same standalone/Workbench selector
-   pattern only after content disclosure is bounded. Add ledger mutations and Aegis operator actions only with
-   authorization, uncertainty, and content-minimization laws intact.
+6. Keep Hermes payload disclosure separate from routine observation and retain
+   its exact selector and bounds. Add ledger mutations only with authorization,
+   uncertainty, retention and content-minimization laws intact.
 7. Keep Aegis issue and attenuation unavailable until a long-lived session can
    preserve its handles and reconcile a lost reply to an exact operation;
    epoch revocation already reuses the qualified exact-confirmation,
