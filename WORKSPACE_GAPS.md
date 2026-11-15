@@ -61,6 +61,11 @@ the same compatible checkpoint/commit subset, name, and version. Cargo refuses b
 identities in one ordinary lockfile. The nested qualification derives a scoped
 source patch at runtime and now proves one process can own and reverse-drain all
 three peers from one lock closure without changing standalone source policy.
+Pointing Chronos directly at the sibling checkout was tested and rejected by
+its no-outward-path, relocatable source-profile gate. Production convergence
+therefore requires one immutable remotely retrievable Keystone revision or
+published artifact consumed by both owners; it must not replace the current
+patch with a workspace-only path assumption.
 The mixed deployment that owns Chronos and Vellum while attaching Agora is also
 qualified across all three interactive panes and one aggregate headless report.
 
