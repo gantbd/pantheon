@@ -182,10 +182,11 @@ remain excluded until exact confirmation, current-epoch, non-amplification,
 durable receipt, and outcome-unknown laws are qualified.
 
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
-place for one headless Workbench invocation. Its current qualification rerun is
-waiting for Daimon's active wire refactor to return to a buildable state; until
-then, isolated peer qualifications remain the evidence and coexistence is not a
-closed claim. The gate does not imply native hosting or shared mutation authority.
+place for one headless Workbench invocation and now also observes Grounding
+through Dendrite's typed endpoint. The current qualification rerun passes
+against all five real services in the active working trees. This is local
+working-tree evidence; it does not imply native hosting, immutable source
+closure, or shared mutation authority.
 
 Grounding now has a typed authenticated Dendrite presentation endpoint,
 independent reusable TUI and standalone CLI, `grounding.observe.v1` provenance
