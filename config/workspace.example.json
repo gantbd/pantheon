@@ -32,6 +32,11 @@
     "socket": "../run/aegis.sock",
     "requires": ["authority.observe.v1"]
   },
+  "grounding": {
+    "endpoint": "127.0.0.1:4499",
+    "token": "../run/dendrite.token",
+    "requires": ["grounding.observe.v1"]
+  },
   "chronos": {
     "deployment": "attach",
     "workstreams": [

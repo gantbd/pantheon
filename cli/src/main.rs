@@ -52,6 +52,9 @@ struct Options {
     hermes_requires: Vec<String>,
     aegis_socket: Option<PathBuf>,
     aegis_requires: Vec<String>,
+    grounding_endpoint: Option<std::net::SocketAddr>,
+    grounding_token: Option<PathBuf>,
+    grounding_requires: Vec<String>,
     chronos_streams: Vec<Workstream>,
     chronos_requires: Vec<String>,
     vellum_socket: Option<PathBuf>,
@@ -117,6 +120,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut hermes_requires = Vec::new();
     let mut aegis_socket = None;
     let mut aegis_requires = Vec::new();
+    let mut grounding_endpoint = None;
+    let mut grounding_token = None;
+    let mut grounding_requires = Vec::new();
     let mut vellum_socket = None;
     let mut vellum_credential = None;
     let mut moira_bindings = Vec::new();
@@ -151,6 +157,11 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         if let Some(aegis) = profile.aegis {
             aegis_socket = Some(aegis.socket);
             aegis_requires = aegis.requires;
+        }
+        if let Some(grounding) = profile.grounding {
+            grounding_endpoint = Some(grounding.endpoint);
+            grounding_token = grounding.token;
+            grounding_requires = grounding.requires;
         }
         if let Some(vellum) = profile.vellum {
             host_vellum = vellum.deployment == DeploymentMode::Hosted;
@@ -342,6 +353,16 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         },
     )?;
     negotiate_capabilities(
+        "grounding",
+        mode,
+        &grounding_requires,
+        if headless {
+            grounding_tui::CAPABILITIES.headless
+        } else {
+            grounding_tui::CAPABILITIES.interactive
+        },
+    )?;
+    negotiate_capabilities(
         "chronos",
         mode,
         &chronos_requires,
@@ -373,6 +394,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         hermes_requires,
         aegis_socket,
         aegis_requires,
+        grounding_endpoint,
+        grounding_token,
+        grounding_requires,
         chronos_streams,
         chronos_requires,
         vellum_socket,
@@ -678,6 +702,22 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let grounding = if let Some(endpoint) = options.grounding_endpoint {
+        let token = options
+            .grounding_token
+            .as_ref()
+            .map(read_grounding_token)
+            .transpose()?;
+        let port = grounding_tui_local_client::LocalPort::new(
+            endpoint,
+            token,
+            std::time::Duration::from_secs(5),
+        )
+        .map_err(|error| format!("Grounding service refused: {error:?}"))?;
+        Some(grounding_tui::Component::new(port))
+    } else {
+        None
+    };
     let mut chronos = if options.chronos_streams.is_empty() {
         None
     } else {
@@ -720,6 +760,7 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
             daimon,
             hermes,
             aegis,
+            grounding,
         },
     )
 }
@@ -736,6 +777,9 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         hermes_requires: options.hermes_requires,
         aegis_socket: options.aegis_socket,
         aegis_requires: options.aegis_requires,
+        grounding_endpoint: options.grounding_endpoint,
+        grounding_token: options.grounding_token,
+        grounding_requires: options.grounding_requires,
         chronos: options.chronos_streams,
         chronos_requires: options.chronos_requires,
         vellum_socket: options.vellum_socket,
@@ -743,4 +787,16 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         vellum_requires: options.vellum_requires,
     })
     .map_err(|error| error.into())
+}
+
+fn read_grounding_token(path: &std::path::PathBuf) -> Result<String, Box<dyn std::error::Error>> {
+    if std::fs::metadata(path)?.len() > 8 * 1024 {
+        return Err("Grounding token exceeds 8 KiB".into());
+    }
+    let token = std::fs::read_to_string(path)?;
+    let token = token.trim_end().to_owned();
+    if token.is_empty() {
+        return Err("Grounding token is empty".into());
+    }
+    Ok(token)
 }

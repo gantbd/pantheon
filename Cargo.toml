@@ -23,6 +23,7 @@ moira-tui = { version = "=0.1.0", path = "../moira-tui" }
 daimon-tui = { version = "=0.1.0", path = "../daimon-tui" }
 hermes-tui = { version = "=0.1.0", path = "../hermes-tui" }
 aegis-tui = { version = "=0.1.0", path = "../aegis-tui" }
+grounding-tui = { version = "=0.1.0", path = "../grounding-tui" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }

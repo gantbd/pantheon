@@ -51,6 +51,8 @@ aegis-tui = { version = "=0.1.0", path = "../../aegis-tui" }
 aegis-tui-local-client = { version = "=0.1.0", path = "../../aegis-tui/local-client" }
 aegis-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-client" }
 aegis-wire = { version = "=0.1.0", path = "../../aegis/crates/aegis-wire" }
+grounding-tui = { version = "=0.1.0", path = "../../grounding-tui" }
+grounding-tui-local-client = { version = "=0.1.0", path = "../../grounding-tui/local-client" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }

@@ -1,5 +1,6 @@
 use std::{
     fs,
+    net::SocketAddr,
     path::{Path, PathBuf},
 };
 
@@ -24,6 +25,7 @@ pub struct WorkspaceProfile {
     pub daimon: Option<DaimonProfile>,
     pub hermes: Option<HermesProfile>,
     pub aegis: Option<AegisProfile>,
+    pub grounding: Option<GroundingProfile>,
     pub chronos: Option<ChronosProfile>,
     pub vellum: Option<VellumProfile>,
 }
@@ -65,6 +67,15 @@ pub struct HermesProfile {
 #[serde(deny_unknown_fields)]
 pub struct AegisProfile {
     pub socket: PathBuf,
+    #[serde(default)]
+    pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct GroundingProfile {
+    pub endpoint: SocketAddr,
+    pub token: Option<PathBuf>,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -159,6 +170,11 @@ impl WorkspaceProfile {
         if let Some(aegis) = &mut profile.aegis {
             aegis.socket = resolve(base, &aegis.socket);
         }
+        if let Some(grounding) = &mut profile.grounding
+            && let Some(token) = &mut grounding.token
+        {
+            *token = resolve(base, token);
+        }
         if let Some(chronos) = &mut profile.chronos {
             for workstream in &mut chronos.workstreams {
                 workstream.directory = resolve(base, &workstream.directory);
@@ -230,6 +246,18 @@ impl WorkspaceProfile {
             }
             validate_path(&aegis.socket)?;
             validate_required_capabilities(&aegis.requires)?;
+        }
+        if let Some(grounding) = &self.grounding {
+            if !self.surfaces.contains(&Surface::Grounding) {
+                return Err("Grounding configuration requires the Grounding surface");
+            }
+            if !grounding.endpoint.ip().is_loopback() {
+                return Err("Grounding endpoint must be loopback");
+            }
+            if let Some(token) = &grounding.token {
+                validate_path(token)?;
+            }
+            validate_required_capabilities(&grounding.requires)?;
         }
         if self.surfaces.contains(&Surface::Workspace)
             && self.chronos.is_none()

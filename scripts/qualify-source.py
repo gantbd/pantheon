@@ -19,12 +19,14 @@ PROJECTS = (
     "daimon-tui",
     "hermes-tui",
     "aegis-tui",
+    "grounding-tui",
     "vellum",
     "vellum-tui",
     "moira",
     "daimon",
     "hermes",
     "aegis",
+    "dendrite",
 )
 
 
@@ -58,6 +60,8 @@ def main():
     parser.add_argument("--hermes-tui", help="explicit Hermes TUI candidate commit")
     parser.add_argument("--aegis", help="explicit Aegis candidate commit")
     parser.add_argument("--aegis-tui", help="explicit Aegis TUI candidate commit")
+    parser.add_argument("--dendrite", help="explicit Dendrite candidate commit")
+    parser.add_argument("--grounding-tui", help="explicit Grounding TUI candidate commit")
     args = parser.parse_args()
 
     workbench = git(ROOT, "rev-parse", "--verify", f"{args.workbench}^{{commit}}")
@@ -88,6 +92,8 @@ def main():
         "hermes-tui": args.hermes_tui or inputs["hermesTui"]["revision"],
         "aegis": args.aegis or inputs["aegis"]["revision"],
         "aegis-tui": args.aegis_tui or inputs["aegisTui"]["revision"],
+        "dendrite": args.dendrite or inputs["dendrite"]["revision"],
+        "grounding-tui": args.grounding_tui or inputs["groundingTui"]["revision"],
         "vellum": args.vellum or inputs["vellum"]["revision"],
         "vellum-tui": args.vellum_tui or inputs["vellumTui"]["revision"],
     }

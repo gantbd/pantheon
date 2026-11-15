@@ -1,5 +1,96 @@
 use serde_json::Value;
+use std::collections::BTreeSet;
 use std::{fs, path::Path};
+
+#[test]
+fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let status: Value = serde_json::from_str(
+        &fs::read_to_string(root.join("composition-status.json"))
+            .expect("composition status contract"),
+    )
+    .expect("composition status JSON");
+    assert_eq!(status["schema"], 1);
+    assert_eq!(status["owner"], "workbench-tui");
+    assert_eq!(status["priorArt"], serde_json::json!(["axon", "engram"]));
+
+    let states = status["states"]
+        .as_array()
+        .expect("closed state vocabulary")
+        .iter()
+        .map(|state| state.as_str().expect("state string"))
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        states,
+        BTreeSet::from([
+            "absent",
+            "implemented",
+            "planned",
+            "qualified",
+            "release-qualified",
+        ])
+    );
+
+    let peers = status["peers"].as_object().expect("peer matrix");
+    assert_eq!(
+        peers.keys().map(String::as_str).collect::<BTreeSet<_>>(),
+        BTreeSet::from([
+            "aegis",
+            "agora",
+            "chronos",
+            "daimon",
+            "grounding",
+            "hermes",
+            "moira",
+            "vellum",
+        ])
+    );
+    for peer in peers.values() {
+        for topology in ["standalone", "attach", "host"] {
+            for mode in ["interactive", "headless"] {
+                let state = peer[topology][mode]
+                    .as_str()
+                    .unwrap_or_else(|| panic!("{topology}.{mode} state"));
+                assert!(states.contains(state), "unknown state {state}");
+            }
+        }
+        let mutation = peer["mutation"].as_str().expect("mutation state");
+        assert!(
+            states.contains(mutation),
+            "unknown mutation state {mutation}"
+        );
+
+        for mode in ["interactive", "headless"] {
+            if matches!(
+                peer["attach"][mode].as_str(),
+                Some("qualified" | "release-qualified")
+            ) {
+                assert!(
+                    matches!(
+                        peer["standalone"][mode].as_str(),
+                        Some("qualified" | "release-qualified")
+                    ),
+                    "qualified attach must retain standalone parity"
+                );
+            }
+        }
+    }
+
+    let capabilities = [
+        ("aegis", aegis_tui::CAPABILITIES.headless[0]),
+        ("agora", agora_tui::CAPABILITIES.headless[0]),
+        ("chronos", chronos_tui::CAPABILITIES.headless[0]),
+        ("daimon", daimon_tui::CAPABILITIES.headless[0]),
+        ("hermes", hermes_tui::CAPABILITIES.headless[0]),
+        ("grounding", grounding_tui::CAPABILITIES.headless[0]),
+        ("moira", moira_tui::CAPABILITIES.headless[0]),
+        ("vellum", vellum_tui::CAPABILITIES.headless[0]),
+    ];
+    for (peer, capability) in capabilities {
+        assert_eq!(peers[peer]["readCapability"], capability);
+    }
+    assert_eq!(peers["grounding"]["presentation"], "grounding-tui");
+}
 
 #[test]
 fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_dependency() {
@@ -12,7 +103,14 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert_eq!(
         source["components"],
         serde_json::json!([
-            "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis"
+            "agora",
+            "chronos",
+            "vellum",
+            "moira",
+            "daimon",
+            "hermes",
+            "aegis",
+            "grounding"
         ])
     );
     assert_eq!(
@@ -43,6 +141,10 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         source["inputs"]["aegisTui"]["revision"],
         "d432f5b7796ab91bd2a0febc0b29dc580c693644"
     );
+    assert_eq!(
+        source["inputs"]["groundingTui"]["revision"],
+        "aa26f135bb3f2b324c09ffe3e0c86c97c4cb0c3a"
+    );
     for input in [
         "agoraTui",
         "chronosTui",
@@ -51,11 +153,12 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "daimonTui",
         "hermesTui",
         "aegisTui",
+        "groundingTui",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
     for input in [
-        "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis",
+        "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis", "dendrite",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
@@ -74,6 +177,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("daimon-tui"));
     assert!(manifest.contains("hermes-tui"));
     assert!(manifest.contains("aegis-tui"));
+    assert!(manifest.contains("grounding-tui"));
     assert!(!manifest.contains("agora-tui-local-client"));
     assert!(!manifest.contains("chronos-local"));
     for cli_owned in ["main.rs", "profile.rs", "terminal.rs", "hosted.rs"] {
@@ -97,6 +201,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "daimon-client",
         "hermes-tui-local-client",
         "aegis-tui-local-client",
+        "grounding-tui-local-client",
         "chronos-local",
         "chronos-standalone",
         "vellum-adapter-local-authentication",
@@ -235,6 +340,69 @@ fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
         assert!(
             !gate.contains(forbidden),
             "Aegis attach gate performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn grounding_live_gate_uses_typed_dendrite_boundary_in_both_workbench_modes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/grounding_attach.sh"))
+        .expect("Grounding attach gate");
+    for required in [
+        "grounding_fixture.exs",
+        "grounding.observe.v1",
+        "headless",
+        "interactive",
+        "fixture/sample",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Grounding live gate omits {required}"
+        );
+    }
+    for forbidden in [
+        "tools/call",
+        "jsonrpc",
+        "cargo publish",
+        "git push",
+        "gh release",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Grounding live gate performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn operational_live_gate_composes_all_read_only_peer_daemons() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/operational_attach.sh"))
+        .expect("operational attach gate");
+    for required in [
+        "moira-tui-cli",
+        "daimon-tui-cli",
+        "hermes-tui-cli",
+        "aegis-tui-cli",
+        "grounding_fixture.exs",
+        "sagas.inspect.v1",
+        "agents.presence.v1",
+        "ledger.observe.v1",
+        "authority.observe.v1",
+        "grounding.observe.v1",
+        "one Workbench headless composition",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(gate.contains(required), "operational gate omits {required}");
+    }
+    for forbidden in ["cargo publish", "git push", "gh release", "curl "] {
+        assert!(
+            !gate.contains(forbidden),
+            "operational gate performs {forbidden}"
         );
     }
 }

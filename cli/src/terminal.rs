@@ -68,6 +68,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             daimon,
             hermes: None,
             aegis: None,
+            grounding: None,
         },
     )
 }
@@ -78,6 +79,7 @@ pub struct OperationalPeers {
     pub daimon: Option<daimon_tui::Component>,
     pub hermes: Option<hermes_tui::Component>,
     pub aegis: Option<aegis_tui::Component>,
+    pub grounding: Option<grounding_tui::Component>,
 }
 
 pub fn run_terminal_with_all_peers<T: ServicePort>(
@@ -92,6 +94,7 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
         mut daimon,
         mut hermes,
         mut aegis,
+        mut grounding,
     } = peers;
     let mut focus = Focus::Chronos;
     let mut notice = String::from("workspace profile loaded");
@@ -118,6 +121,9 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
             if let Some(aegis) = &mut aegis {
                 aegis.poll();
             }
+            if let Some(grounding) = &mut grounding {
+                grounding.poll();
+            }
             if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
                 if let Some(vellum) = &mut vellum
                     && let Err(error) = vellum.poll()
@@ -140,6 +146,7 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                         daimon: daimon.as_ref(),
                         hermes: hermes.as_ref(),
                         aegis: aegis.as_ref(),
+                        grounding: grounding.as_ref(),
                     },
                     focus,
                     &notice,
@@ -266,6 +273,26 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                         notice = Surface::Aegis
                             .gap()
                             .unwrap_or("Aegis presentation is unavailable")
+                            .into();
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Grounding
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    if let Some(grounding) = &mut grounding {
+                        if let Some(input) = grounding_tui::translate_key(key)
+                            && grounding.update(input, true)
+                                == grounding_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else {
+                        notice = Surface::Grounding
+                            .gap()
+                            .unwrap_or("Grounding presentation is unavailable")
                             .into();
                     }
                 }

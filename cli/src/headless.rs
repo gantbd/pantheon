@@ -1,5 +1,6 @@
 //! Headless peer observation shared by the standalone CLI and deployments.
 
+use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use agora_client::v2::ClientV2 as AgoraClientV2;
@@ -28,6 +29,9 @@ pub struct HeadlessRequest {
     pub hermes_requires: Vec<String>,
     pub aegis_socket: Option<PathBuf>,
     pub aegis_requires: Vec<String>,
+    pub grounding_endpoint: Option<SocketAddr>,
+    pub grounding_token: Option<PathBuf>,
+    pub grounding_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
     pub chronos_requires: Vec<String>,
     pub vellum_socket: Option<PathBuf>,
@@ -70,6 +74,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         aegis_tui::CAPABILITIES.headless,
     )?;
     negotiate(
+        "grounding",
+        &request.grounding_requires,
+        grounding_tui::CAPABILITIES.headless,
+    )?;
+    negotiate(
         "chronos",
         &request.chronos_requires,
         chronos_tui::CAPABILITIES.headless,
@@ -107,6 +116,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         peers.push(observation);
         complete &= current;
     }
+    if let Some(endpoint) = request.grounding_endpoint {
+        let (observation, current) = observe_grounding(endpoint, request.grounding_token.as_ref());
+        peers.push(observation);
+        complete &= current;
+    }
     for workstream in request.chronos {
         let (observation, current) = observe_chronos(workstream);
         peers.push(observation);
@@ -125,6 +139,74 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete,
         peers,
     })
+}
+
+fn observe_grounding(
+    endpoint: SocketAddr,
+    token_path: Option<&PathBuf>,
+) -> (serde_json::Value, bool) {
+    use grounding_tui::GroundingPort;
+    use std::time::Duration;
+
+    let capability = grounding_tui::CAPABILITIES.headless[0];
+    let token = match token_path.map(read_token).transpose() {
+        Ok(token) => token,
+        Err(error) => {
+            return (
+                peer_failure("grounding", capability, "configuration_refused", error),
+                false,
+            );
+        }
+    };
+    let mut port =
+        match grounding_tui_local_client::LocalPort::new(endpoint, token, Duration::from_secs(5)) {
+            Ok(port) => port,
+            Err(error) => {
+                return (
+                    peer_failure(
+                        "grounding",
+                        capability,
+                        "configuration_refused",
+                        format!("{error:?}"),
+                    ),
+                    false,
+                );
+            }
+        };
+    match port.observe(grounding_tui::OBSERVATION_LIMIT) {
+        Ok(value) => {
+            let current = value.complete && value.status == "current";
+            (
+                serde_json::json!({
+                    "peer": "grounding", "capability": capability,
+                    "status": value.status, "complete": value.complete,
+                    "entries": value.entries.iter().map(|entry| serde_json::json!({
+                        "load_id": entry.load_id, "state": entry.state,
+                        "freshness": entry.freshness, "sha256": entry.sha256
+                    })).collect::<Vec<_>>(),
+                    "truncated": value.truncated,
+                }),
+                current,
+            )
+        }
+        Err(error) => (
+            peer_failure("grounding", capability, "unavailable", format!("{error:?}")),
+            false,
+        ),
+    }
+}
+
+fn read_token(path: &PathBuf) -> Result<String, String> {
+    let metadata = std::fs::metadata(path).map_err(|error| error.to_string())?;
+    if metadata.len() > 8 * 1024 {
+        return Err("Grounding token exceeds 8 KiB".into());
+    }
+    let token = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
+    let token = token.trim_end().to_owned();
+    if token.is_empty() {
+        return Err("Grounding token is empty".into());
+    }
+    Ok(token)
 }
 
 fn observe_aegis(socket: PathBuf) -> (serde_json::Value, bool) {
@@ -611,6 +693,9 @@ mod tests {
             hermes_requires: Vec::new(),
             aegis_socket: None,
             aegis_requires: Vec::new(),
+            grounding_endpoint: None,
+            grounding_token: None,
+            grounding_requires: Vec::new(),
             chronos: Vec::new(),
             chronos_requires: Vec::new(),
             vellum_socket: None,

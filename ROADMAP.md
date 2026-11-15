@@ -176,13 +176,23 @@ later operations.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
-and Workbench attachment. Issue, attenuation, authorization, and epoch revocation
+and Workbench attachment qualified against the real durable daemon in both
+interactive and headless modes. Issue, attenuation, authorization, and epoch revocation
 remain excluded until exact confirmation, current-epoch, non-amplification,
 durable receipt, and outcome-unknown laws are qualified.
 
-Integrate Grounding/Dendrite only after it
-has a public client plus a reusable TUI component. Track unavailable boundaries
-in `WORKSPACE_GAPS.md`; do not reproduce peer semantics inside Workbench.
+The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
+place for one headless Workbench invocation. Its current qualification rerun is
+waiting for Daimon's active wire refactor to return to a buildable state; until
+then, isolated peer qualifications remain the evidence and coexistence is not a
+closed claim. The gate does not imply native hosting or shared mutation authority.
+
+Grounding now has a typed authenticated Dendrite presentation endpoint,
+independent reusable TUI and standalone CLI, `grounding.observe.v1` provenance
+and freshness observation, and Workbench attachment qualified against a real
+Dendrite fixture in interactive and headless modes. MCP remains an agent-facing
+surface and is not Workbench's internal protocol. Selected content navigation
+and native hosting remain later guarded slices.
 
 ## Qualification matrix
 

@@ -21,8 +21,9 @@ the selected private Unix client by supplying its socket and participant claim;
 the daemon authenticates the connected OS peer and remains the authority owner.
 A trusted host can instead supply an independently constructed `agora-tui`
 component through `workbench_tui_cli::run_hosted_terminal_with_agora`. Moira,
-Daimon, Hermes, and Aegis profiles attach their peer-owned read-only components;
-the Grounding surface still renders its exact integration gap. `[` and `]` switch
+Daimon, Hermes, Aegis, and Grounding profiles attach their peer-owned read-only
+components. Grounding uses Dendrite's typed presentation endpoint rather than
+MCP tool envelopes or text. `[` and `]` switch
 surfaces; Tab switches focus only inside Workspace. See
 [the gap ledger](WORKSPACE_GAPS.md) and [delivery roadmap](ROADMAP.md).
 
@@ -102,7 +103,8 @@ authentication, policy, clock, and durable-host composition.
 The workspace-wide standalone/Workbench pattern, composition taxonomy, current
 parity matrix and Axon/Engram prior-art routing live in
 [`docs/composition/`](docs/composition/README.md). Peer roadmaps continue to own
-their behavior; this repository owns product composition and its evidence.
+their behavior; this repository owns product composition and its evidence. The
+closed machine-readable parity matrix is [`composition-status.json`](composition-status.json).
 
 Local coordinated source layout:
 
@@ -116,6 +118,8 @@ gantbd/
   hermes-tui/
   aegis/
   aegis-tui/
+  dendrite/
+  grounding-tui/
   moira/
   moira-tui/
   vellum/
@@ -129,7 +133,7 @@ The machine source receipt records the current dirty coordinated closure as
 unqualified; immutable-revision CI is intentionally deferred until those
 inputs are committed and remotely reachable.
 
-The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Hermes, Moira, and Vellum TUI
+The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Grounding, Hermes, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
 The owning engine working trees and remote reachability remain unqualified.
@@ -170,3 +174,19 @@ Chronos standalone and Agora resolve the compatible checkpoint/commit subset of
 `keystone-storage` from different local identities. It qualifies the all-three lifecycle graph,
 but not the production Agora authority factory or a normal unpatched release
 build.
+
+Run `sh tests/live/aegis_attach.sh` to qualify the independently packaged
+read-only Aegis peer through the real durable daemon in both Workbench headless
+and interactive attachment. The gate exercises `authority.observe.v1` only; it
+does not grant Workbench issue, attenuation, authorization or revocation power.
+
+Run `sh tests/live/grounding_attach.sh` to qualify the independently packaged
+Grounding peer through Dendrite's typed authenticated observation endpoint in
+both Workbench modes. This uses `grounding.observe.v1`, not Dendrite's agent-facing
+MCP boundary.
+
+Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
+Hermes, and Aegis daemons attached to one Workbench headless invocation after
+Daimon's active refactor settles. This coexistence gate exercises only the four
+peer-owned observation capabilities; it does not claim native hosting or
+mutation authority for those peers.

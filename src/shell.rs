@@ -37,9 +37,7 @@ impl Surface {
             Self::Agora => Some("Agora has no composable Ratatui presentation peer"),
             Self::Moira => Some("Moira workflow presentation is not configured"),
             Self::Daimon => Some("Daimon operations presentation is not configured"),
-            Self::Grounding => {
-                Some("Dendrite exposes MCP; no typed Workbench presentation peer exists")
-            }
+            Self::Grounding => Some("Grounding presentation is not configured"),
             Self::Aegis => Some("Aegis authority presentation is not configured"),
             Self::Hermes => Some("Hermes ledger presentation is not configured"),
         }

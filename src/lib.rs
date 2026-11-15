@@ -123,6 +123,7 @@ pub fn draw_shell(
             daimon: None,
             hermes: None,
             aegis: None,
+            grounding: None,
         },
         focus,
         notice,
@@ -137,6 +138,7 @@ pub struct PeerViews<'a> {
     pub daimon: Option<&'a daimon_tui::Component>,
     pub hermes: Option<&'a hermes_tui::Component>,
     pub aegis: Option<&'a aegis_tui::Component>,
+    pub grounding: Option<&'a grounding_tui::Component>,
 }
 
 /// Draws the shell with an independently hosted Moira workflow peer.
@@ -156,6 +158,7 @@ pub fn draw_shell_with_moira(
         daimon,
         hermes,
         aegis,
+        grounding,
     } = peers;
     let [tabs, header, body] = Layout::vertical([
         Constraint::Length(1),
@@ -216,6 +219,7 @@ pub fn draw_shell_with_moira(
                 daimon: daimon.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
+                grounding: grounding.is_some(),
             },
         ),
         Surface::Agora if agora.is_some() => {
@@ -232,6 +236,9 @@ pub fn draw_shell_with_moira(
         }
         Surface::Aegis if aegis.is_some() => {
             aegis.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Grounding if grounding.is_some() => {
+            grounding.expect("matched above").draw_in(frame, body, true);
         }
         surface => {
             frame.render_widget(
@@ -254,6 +261,7 @@ struct PeerAvailability {
     daimon: bool,
     hermes: bool,
     aegis: bool,
+    grounding: bool,
 }
 
 fn draw_overview(
@@ -262,7 +270,25 @@ fn draw_overview(
     shell: &Shell,
     peers: PeerAvailability,
 ) {
-    let mut lines = vec![
+    // Profile-selected gaps are actionable composition evidence. Keep them
+    // ahead of the complete peer inventory so a short terminal cannot hide a
+    // configured-but-unavailable surface as new peers are added.
+    let mut lines = Vec::new();
+    for surface in shell.surfaces() {
+        let attached = match surface {
+            Surface::Agora => peers.agora,
+            Surface::Moira => peers.moira,
+            Surface::Daimon => peers.daimon,
+            Surface::Hermes => peers.hermes,
+            Surface::Aegis => peers.aegis,
+            Surface::Grounding => peers.grounding,
+            Surface::Overview | Surface::Workspace => true,
+        };
+        if !attached && let Some(gap) = surface.gap() {
+            lines.push(Line::from(format!("{}: gap — {gap}", surface.label())));
+        }
+    }
+    lines.extend([
         Line::from(format!(
             "Chronos: {}",
             if peers.chronos {
@@ -319,27 +345,15 @@ fn draw_overview(
                 "not configured"
             }
         )),
-    ];
-    for surface in shell.surfaces() {
-        if *surface == Surface::Agora && peers.agora {
-            continue;
-        }
-        if *surface == Surface::Moira && peers.moira {
-            continue;
-        }
-        if *surface == Surface::Daimon && peers.daimon {
-            continue;
-        }
-        if *surface == Surface::Hermes && peers.hermes {
-            continue;
-        }
-        if *surface == Surface::Aegis && peers.aegis {
-            continue;
-        }
-        if let Some(gap) = surface.gap() {
-            lines.push(Line::from(format!("{}: gap — {gap}", surface.label())));
-        }
-    }
+        Line::from(format!(
+            "Grounding: {}",
+            if peers.grounding {
+                "attached"
+            } else {
+                "not configured"
+            }
+        )),
+    ]);
     frame.render_widget(
         Paragraph::new(lines).block(
             Block::default()
@@ -571,6 +585,7 @@ mod tests {
                             daimon: None,
                             hermes: None,
                             aegis: None,
+                            grounding: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -613,6 +628,7 @@ mod tests {
                             daimon: Some(&daimon),
                             hermes: None,
                             aegis: None,
+                            grounding: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -655,6 +671,7 @@ mod tests {
                             daimon: None,
                             hermes: None,
                             aegis: Some(&aegis),
+                            grounding: None,
                         },
                         Focus::Chronos,
                         "host supplied",
