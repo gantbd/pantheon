@@ -141,8 +141,12 @@ Status: attached read parity is qualified for Agora, Chronos, and Vellum,
 including one unavailable Chronos workstream alongside healthy peers. Hosted
 Chronos/Vellum read parity and clean reverse shutdown are qualified in both
 product modes; their headless aggregate publishes lifecycle receipts before
-claiming success. Agora hosting, mutation routing, restart, and induced
-partial-shutdown qualification remain open.
+claiming success. An injected, deployment-owned Agora factory is also qualified
+against the real daemon in the same process as the Chronos and Vellum owners,
+including reusable interactive rendering, the shared headless observer, and
+clean reverse shutdown. Production credential-to-principal/participant/subject
+binding, live Aegis grant issuance, trusted time, mutation routing, restart, and
+induced partial-shutdown qualification remain open.
 
 ### 5. Extend peer coverage
 
@@ -165,8 +169,18 @@ outcome unknown, recovery, and orderly/partial shutdown cases.
 
 Current status: the standalone and Workbench-attach read cells pass for Agora,
 Chronos, and Vellum with explicit capability IDs and versioned configuration or
-service failure envelopes. Agora's passing evidence uses the selected private
-client against a bounded protocol fixture; Chronos and Vellum use their real
-services. The Workbench-host row passes for Chronos and Vellum in both modes;
-Agora's authority-bearing hosted cell remains open and is not implied by
-attachment success.
+service failure envelopes. All three standalone paths have real-service gates.
+The Workbench-host row passes for Chronos and Vellum in both modes. Agora's
+hosted lifecycle, public client, reusable rendering, and headless observation
+pass through an injected factory against its real daemon; the factory's test
+authority is not production credential provenance and is not promoted by this
+evidence.
+
+Presentation and invocation parity are therefore closed for the current
+read-only peer surfaces: each peer supplies a reusable component, a separate
+standalone CLI, an explicit headless path, a peer-owned capability manifest,
+and both Workbench attach and host composition. Production activation is a
+separate deployment claim. It remains gated by an Agora-owned or
+deployment-owned authenticator/clock composition and by convergence on one
+Keystone source identity; Workbench must not absorb either policy merely to
+make the matrix appear complete.

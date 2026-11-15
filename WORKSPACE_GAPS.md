@@ -37,8 +37,14 @@ qualification. The three peer TUI commits are exact and clean in Workbench's
 source receipt, but several engine trees differ from their recorded revisions,
 remote reachability is unqualified, and Agora still lacks a production
 standalone factory. The joint Chronos/Vellum hosted graph is locally qualified;
-the full production three-peer hosted profile remains open rather than being
-inferred from successful attachment. Chronos standalone resolves a vendored
+the all-three graph is locally qualified with an injected explicitly test-only
+Agora authority factory, while the full production three-peer hosted profile
+remains open rather than being inferred from that evidence. Agora's daemon
+requires its application to bind each accepted connection to an exact
+participant, verified subject, Aegis session/grant, and trusted time. Aegis has
+a qualified Unix peer authenticator and Unix client port, but neither boundary
+defines that deployment mapping; Workbench must not invent it. Chronos
+standalone resolves a vendored
 `keystone-storage` package while Agora's daemon resolves a sibling package with
 the same compatible checkpoint/commit subset, name, and version. Cargo refuses both
 identities in one ordinary lockfile. The nested qualification derives a scoped
