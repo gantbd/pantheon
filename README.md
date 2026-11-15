@@ -49,6 +49,11 @@ cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interac
 Profiles contain connection configuration, presentation selection and explicit
 cross-service scope mappings. They cannot enable Chronos writes or carry grant
 handles. Continue to pass `--chronos-allow-writes` at launch when intended.
+Chronos and Vellum profiles may select `"deployment":"hosted"`. Workbench then
+owns their real local service lifecycles while the same peer clients and TUI
+components are used. Hosted Vellum requires a bounded non-empty `roots` list;
+attached profiles must not include roots. Edit and save authority remain
+launch-only through `--vellum-allow-edit` and `--vellum-allow-save`.
 Each configured peer may also carry a bounded `requires` list. Workbench checks
 those exact identifiers against the peer-owned TUI manifest for the selected
 interactive or headless mode before connecting. A match describes composition
@@ -70,18 +75,28 @@ controls. `--chronos-planning PATH` loads the same read-only Gantt source as
 the standalone Chronos Hub. Press **7** to view the plan.
 `--chronos-cancel-receipts` selects V3 cancellation on a writable
 atomic service. Add `--vellum-credential PATH` for Vellum's optional local credential
-handshake. Tab changes focus and Ctrl-Q requests whole-workbench exit. Add
+handshake. In hosted mode the same private record configures both the daemon
+verifier and client claim provider without placing credential material in the
+profile or lifecycle receipt. Tab changes focus and Ctrl-Q requests
+whole-workbench exit.
 Use the explicit `headless` command for a bounded, versioned JSON observation of every configured
 Agora, Chronos, and Vellum peer. Each row names its peer-owned capability and
 truthful status. Healthy rows remain visible when another peer is unavailable,
 but the command refuses aggregate success. `--headless` and `--snapshot` remain
 compatibility aliases for invocations without an explicit command.
 
-A Vellum-owned integration host can call `workbench_tui_cli::run_hosted_terminal`
+A Vellum-owned integration host can also call `workbench_tui_cli::run_hosted_terminal`
 with a Chronos `Hub` and a factory for the Vellum service and handoff handler.
 Editor commands and handoff requests share one service owner. The host resolves
 the document association and authorizes capture, publication, and review.
 The standalone socket CLI starts with handoff controls disabled.
+
+The Workbench executable can natively host Chronos and Vellum together in
+interactive or headless mode. Services bind before clients are constructed;
+startup refusal rolls back earlier owners, and shutdown drains in reverse order
+with explicit clean, refused, or outcome-unknown receipts. Agora remains an
+attached or host-injected peer until a deployment supplies its required Aegis
+authentication, policy, clock, and durable-host composition.
 
 Local coordinated source layout:
 

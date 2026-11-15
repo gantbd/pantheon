@@ -56,3 +56,6 @@
 - Added profile- and launch-selected native Chronos hosting for interactive and
   headless Workbench runs, using the real service owner, ordinary local client,
   native drain signal, joined shutdown, and exact lifecycle receipts.
+- Added profile- and launch-selected native Vellum hosting with persistent
+  identity, bounded workspace discovery, optional principal authentication,
+  explicit edit/save ceilings, native shutdown control, and joined drain.

@@ -81,8 +81,12 @@ pub struct DaimonBinding {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct VellumProfile {
+    #[serde(default)]
+    pub deployment: DeploymentMode,
     pub socket: PathBuf,
     pub credential: Option<PathBuf>,
+    #[serde(default)]
+    pub roots: Vec<PathBuf>,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -125,6 +129,9 @@ impl WorkspaceProfile {
             vellum.socket = resolve(base, &vellum.socket);
             if let Some(path) = &mut vellum.credential {
                 *path = resolve(base, path);
+            }
+            for root in &mut vellum.roots {
+                *root = resolve(base, root);
             }
         }
         Ok(profile)
@@ -216,6 +223,18 @@ impl WorkspaceProfile {
             validate_required_capabilities(&vellum.requires)?;
             if let Some(path) = &vellum.credential {
                 validate_path(path)?;
+            }
+            if vellum.roots.len() > 16 {
+                return Err("Vellum root count exceeds the supported range");
+            }
+            for root in &vellum.roots {
+                validate_path(root)?;
+            }
+            if vellum.deployment == DeploymentMode::Hosted && vellum.roots.is_empty() {
+                return Err("hosted Vellum requires at least one workspace root");
+            }
+            if vellum.deployment == DeploymentMode::Attach && !vellum.roots.is_empty() {
+                return Err("attached Vellum cannot declare hosted workspace roots");
             }
         }
         Ok(())
@@ -367,5 +386,19 @@ mod tests {
           "chronos":null,"vellum":null
         }"#;
         assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn profile_requires_hosted_vellum_roots_and_rejects_attached_roots() {
+        let hosted_without_roots = br#"{
+          "version":1,"name":"x","surfaces":["workspace"],"agora":null,"chronos":null,
+          "vellum":{"deployment":"hosted","socket":"v.sock","credential":null,"roots":[]}
+        }"#;
+        assert!(WorkspaceProfile::parse(hosted_without_roots, Path::new(".")).is_err());
+        let attached_with_roots = br#"{
+          "version":1,"name":"x","surfaces":["workspace"],"agora":null,"chronos":null,
+          "vellum":{"deployment":"attach","socket":"v.sock","credential":null,"roots":["a"]}
+        }"#;
+        assert!(WorkspaceProfile::parse(attached_with_roots, Path::new(".")).is_err());
     }
 }

@@ -1,4 +1,4 @@
-use std::{fs, path::Path, process::Command};
+use std::{fs, os::unix::fs::PermissionsExt, path::Path, process::Command};
 
 #[test]
 fn example_workspace_profile_passes_bounded_check_without_connecting() {
@@ -56,17 +56,19 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
 }
 
 #[test]
-fn headless_profile_can_host_and_drain_real_chronos() {
+fn headless_profile_can_host_and_drain_real_chronos_and_vellum() {
     let scratch =
         Path::new("/private/tmp").join(format!("workbench-hosted-chronos-{}", std::process::id()));
     if scratch.exists() {
         fs::remove_dir_all(&scratch).unwrap();
     }
     fs::create_dir(&scratch).unwrap();
+    fs::set_permissions(&scratch, fs::Permissions::from_mode(0o700)).unwrap();
+    fs::write(scratch.join("source.txt"), "hosted Vellum").unwrap();
     let profile = scratch.join("workspace.json");
     fs::write(
         &profile,
-        r#"{"version":1,"name":"Hosted","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
+        r#"{"version":1,"name":"Hosted","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}"#,
     )
     .unwrap();
 
@@ -84,7 +86,12 @@ fn headless_profile_can_host_and_drain_real_chronos() {
     assert_eq!(report["complete"], true);
     assert_eq!(report["peers"][0]["peer"], "chronos");
     assert_eq!(report["peers"][0]["status"], "current");
+    assert_eq!(report["peers"][1]["peer"], "vellum");
+    assert_eq!(report["peers"][1]["status"], "current");
+    assert_eq!(report["peers"][1]["documents"], 1);
     assert!(!scratch.join("chronos/chronos.sock").exists());
     assert!(!scratch.join("chronos/chronos.control.sock").exists());
+    assert!(!scratch.join("vellum.sock").exists());
+    assert!(!scratch.join("vellum.sock.control").exists());
     fs::remove_dir_all(scratch).unwrap();
 }

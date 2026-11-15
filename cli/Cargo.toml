@@ -18,6 +18,10 @@ workbench-tui = { version = "=0.1.0", path = ".." }
 vellum-tui = { version = "=0.1.0", path = "../../vellum-tui" }
 vellum-sdk-client = { version = "=0.1.0", path = "../../vellum/sdk/client" }
 vellum-adapter-local-authentication = { version = "=0.1.0", path = "../../vellum/adapters/local-authentication" }
+vellum-adapter-local-fs = { version = "=0.1.0", path = "../../vellum/adapters/local-fs" }
+vellum-daemon = { version = "=0.1.0", path = "../../vellum/applications/vellum-daemon" }
+vellum-host = { version = "=0.1.0", path = "../../vellum/host/vellum-host" }
+vellum-workspace = { version = "=0.1.0", path = "../../vellum/host/vellum-workspace" }
 chronos-tui = { version = "=0.1.0", path = "../../chronos-tui" }
 chronos-client = { version = "=0.1.0", path = "../../chronos/client/chronos-client" }
 chronos-protocol = { version = "=0.1.0", path = "../../chronos/protocol/chronos-protocol" }

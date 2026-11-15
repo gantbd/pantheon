@@ -51,6 +51,10 @@ struct Options {
     chronos_planning: Option<PathBuf>,
     chronos_cancel_receipts: bool,
     host_chronos: bool,
+    host_vellum: bool,
+    vellum_roots: Vec<PathBuf>,
+    vellum_allow_edit: bool,
+    vellum_allow_save: bool,
     moira_bindings: Vec<(String, PathBuf, String)>,
     daimon_bindings: Vec<(String, PathBuf)>,
     check_profile: bool,
@@ -100,6 +104,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut agora_requires = Vec::new();
     let mut chronos_requires = Vec::new();
     let mut host_chronos = false;
+    let mut host_vellum = false;
+    let mut vellum_roots = Vec::new();
     let mut vellum_requires = Vec::new();
     let mut chronos_streams = if workspace_profile {
         let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
@@ -110,9 +116,11 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             agora_requires = configured.requires.clone();
         });
         if let Some(vellum) = profile.vellum {
+            host_vellum = vellum.deployment == DeploymentMode::Hosted;
             vellum_requires = vellum.requires;
             vellum_socket = Some(vellum.socket);
             vellum_credential = vellum.credential;
+            vellum_roots = vellum.roots;
         }
         if let Some(chronos) = profile.chronos {
             host_chronos = chronos.deployment == DeploymentMode::Hosted;
@@ -154,6 +162,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut chronos_scheduling = false;
     let mut chronos_cancel_receipts = false;
     let mut check_profile = false;
+    let mut vellum_allow_edit = false;
+    let mut vellum_allow_save = false;
     while let Some(argument) = args.next() {
         if argument == "--vellum-service" && vellum_socket.is_none() {
             vellum_socket = Some(PathBuf::from(
@@ -173,6 +183,14 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             chronos_cancel_receipts = true;
         } else if argument == "--host-chronos" && !host_chronos {
             host_chronos = true;
+        } else if argument == "--host-vellum" && !host_vellum {
+            host_vellum = true;
+        } else if argument == "--vellum-root" {
+            vellum_roots.push(required_arg(&mut args, "--vellum-root requires PATH")?.into());
+        } else if argument == "--vellum-allow-edit" && !vellum_allow_edit {
+            vellum_allow_edit = true;
+        } else if argument == "--vellum-allow-save" && !vellum_allow_save {
+            vellum_allow_save = true;
         } else if argument == "--chronos-planning" && chronos_planning.is_none() {
             chronos_planning =
                 Some(required_arg(&mut args, "--chronos-planning requires PATH")?.into());
@@ -223,6 +241,18 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if vellum_credential.is_some() && vellum_socket.is_none() {
         return Err("--vellum-credential requires --vellum-service".into());
     }
+    if host_vellum && vellum_socket.is_none() {
+        return Err("--host-vellum requires --vellum-service or a Vellum profile".into());
+    }
+    if host_vellum && vellum_roots.is_empty() {
+        return Err("hosted Vellum requires at least one --vellum-root or profile root".into());
+    }
+    if !host_vellum && !vellum_roots.is_empty() {
+        return Err("--vellum-root requires hosted Vellum".into());
+    }
+    if (vellum_allow_edit || vellum_allow_save) && !host_vellum {
+        return Err("Vellum authority ceiling flags require hosted Vellum".into());
+    }
     let mode = if headless { "headless" } else { "interactive" };
     negotiate_capabilities(
         "agora",
@@ -268,6 +298,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         chronos_planning,
         chronos_cancel_receipts,
         host_chronos,
+        host_vellum,
+        vellum_roots,
+        vellum_allow_edit,
+        vellum_allow_save,
         moira_bindings,
         daimon_bindings,
         check_profile,
@@ -291,7 +325,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--vellum-credential PATH] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos uses the same workstream directories and native client while Workbench owns service startup and drain. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -352,7 +386,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn std::error::Error>> {
-    if !options.host_chronos {
+    if !options.host_chronos && !options.host_vellum {
         return Ok(None);
     }
     if options.chronos_streams.is_empty() {
@@ -360,6 +394,9 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     }
     let mut host = NativeHost::new();
     for workstream in &options.chronos_streams {
+        if !options.host_chronos {
+            break;
+        }
         host.start_chronos(
             workstream.name.clone(),
             &workstream.directory,
@@ -371,6 +408,19 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
             },
         )
         .map_err(|failure| format!("hosted Chronos startup refused: {failure:?}"))?;
+    }
+    if options.host_vellum {
+        host.start_vellum(
+            options
+                .vellum_socket
+                .as_deref()
+                .expect("validated Vellum socket"),
+            &options.vellum_roots,
+            options.vellum_credential.as_deref(),
+            options.vellum_allow_edit,
+            options.vellum_allow_save,
+        )
+        .map_err(|failure| format!("hosted Vellum startup refused: {failure:?}"))?;
     }
     host.seal()
         .map_err(|error| format!("hosted topology seal refused: {error:?}"))?;

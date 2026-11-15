@@ -62,7 +62,9 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "workbench-tui =",
         "agora-tui-local-client",
         "chronos-local",
+        "chronos-standalone",
         "vellum-adapter-local-authentication",
+        "vellum-daemon",
     ] {
         assert!(cli_manifest.contains(required), "CLI omits {required}");
     }

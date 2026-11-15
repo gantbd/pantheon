@@ -29,15 +29,16 @@ connection without treating a manifest match as service authorization.
 | Core peer | Standalone interactive | Standalone headless | Workbench attach | Workbench host |
 | --- | --- | --- | --- | --- |
 | Agora | Reused TUI over private Unix client | `rooms.read.v2`, protocol fixture | Interactive + headless, protocol fixture | Host-supplied component only |
-| Chronos | Reused TUI; real-service journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service | Open |
-| Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Generic helper only |
+| Chronos | Reused TUI; real-service journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service | Native owner; interactive + headless client path; joined drain |
+| Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 
 This is qualified local working-tree evidence, not an immutable release
 qualification. The three peer TUI commits are exact and clean in Workbench's
 source receipt, but several engine trees differ from their recorded revisions,
 remote reachability is unqualified, and Agora still lacks a packaged standalone
-daemon journey. A single hosted Workbench service/client graph therefore remains
-open rather than being inferred from successful attachment.
+daemon journey. The joint Chronos/Vellum hosted graph is locally qualified; the
+full three-peer hosted graph remains open rather than being inferred from
+successful attachment.
 
 ## Reconciliation order
 

@@ -530,7 +530,17 @@ version = "0.0.1"
 source = "git+https://github.com/gantbd/keystone?rev=3486252cdbaeb2d784756076f43ef6157ed0b7f8#3486252cdbaeb2d784756076f43ef6157ed0b7f8"
 
 [[package]]
+name = "keystone-lifecycle"
+version = "0.0.1"
+source = "git+https://github.com/gantbd/keystone?rev=3486252cdbaeb2d784756076f43ef6157ed0b7f8#3486252cdbaeb2d784756076f43ef6157ed0b7f8"
+
+[[package]]
 name = "keystone-observe"
+version = "0.0.1"
+source = "git+https://github.com/gantbd/keystone?rev=3486252cdbaeb2d784756076f43ef6157ed0b7f8#3486252cdbaeb2d784756076f43ef6157ed0b7f8"
+
+[[package]]
+name = "keystone-replay"
 version = "0.0.1"
 source = "git+https://github.com/gantbd/keystone?rev=3486252cdbaeb2d784756076f43ef6157ed0b7f8#3486252cdbaeb2d784756076f43ef6157ed0b7f8"
 
@@ -1102,10 +1112,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "vellum-adapter-local-fs"
+version = "0.1.0"
+dependencies = [
+ "rustix",
+ "vellum-engine",
+ "vellum-host",
+ "vellum-protocol",
+]
+
+[[package]]
 name = "vellum-client"
 version = "0.1.0"
 dependencies = [
  "vellum-protocol",
+]
+
+[[package]]
+name = "vellum-daemon"
+version = "0.1.0"
+dependencies = [
+ "keystone-lifecycle",
+ "keystone-observe",
+ "rustix",
+ "signal-hook",
+ "vellum-adapter-local-authentication",
+ "vellum-adapter-local-fs",
+ "vellum-host",
+ "vellum-protocol",
+ "vellum-service",
+ "vellum-transport",
+ "vellum-wire",
+ "vellum-workspace",
 ]
 
 [[package]]
@@ -1152,6 +1190,18 @@ dependencies = [
  "vellum-transport",
  "vellum-wire",
  "vellum-workspace-client",
+]
+
+[[package]]
+name = "vellum-service"
+version = "0.1.0"
+dependencies = [
+ "keystone-replay",
+ "vellum-engine",
+ "vellum-host",
+ "vellum-protocol",
+ "vellum-wire",
+ "vellum-workspace",
 ]
 
 [[package]]
@@ -1291,8 +1341,12 @@ dependencies = [
  "serde",
  "serde_json",
  "vellum-adapter-local-authentication",
+ "vellum-adapter-local-fs",
+ "vellum-daemon",
+ "vellum-host",
  "vellum-sdk-client",
  "vellum-tui",
+ "vellum-workspace",
  "workbench-tui",
 ]
 

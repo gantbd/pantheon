@@ -41,8 +41,10 @@
     "planning": null
   },
   "vellum": {
+    "deployment": "attach",
     "socket": "../run/vellum.sock",
     "credential": null,
+    "roots": [],
     "requires": ["workspace.inventory.v1"]
   }
 }
