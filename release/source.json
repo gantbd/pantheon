@@ -45,7 +45,7 @@
     },
     "hermesTui": {
       "repository": "https://github.com/gantbd/hermes-tui",
-      "revision": "44154d406570ffe722b58a98dc9af11f2fc8d1db",
+      "revision": "d4f92b194b7d335386dae80b7a8304a006acc8db",
       "workingTreeClean": true
     },
     "aegis": {
@@ -70,7 +70,7 @@
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "62f3626d837e55d12e7381fbb82360455a0fa7a0",
+      "revision": "2a9c7f2cee0c706802413fcb9b79d83fa5c0534e",
       "workingTreeClean": true
     },
     "vellum": {

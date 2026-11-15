@@ -26,6 +26,7 @@ pub struct HeadlessRequest {
     pub daimon_socket: Option<PathBuf>,
     pub daimon_requires: Vec<String>,
     pub hermes_socket: Option<PathBuf>,
+    pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
     pub hermes_requires: Vec<String>,
     pub aegis_socket: Option<PathBuf>,
     pub aegis_requires: Vec<String>,
@@ -107,7 +108,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete &= current;
     }
     if let Some(socket) = request.hermes_socket {
-        let (observation, current) = observe_hermes(socket);
+        let (observation, current) = observe_hermes(socket, request.hermes_stream);
         peers.push(observation);
         complete &= current;
     }
@@ -253,7 +254,10 @@ fn observe_aegis(socket: PathBuf) -> (serde_json::Value, bool) {
     }
 }
 
-fn observe_hermes(socket: PathBuf) -> (serde_json::Value, bool) {
+fn observe_hermes(
+    socket: PathBuf,
+    configured_stream: Option<hermes_protocol::StreamIdV1>,
+) -> (serde_json::Value, bool) {
     let capability = hermes_tui::CAPABILITIES.headless[0];
     let port = match hermes_tui_local_client::LocalPort::connect(
         socket,
@@ -274,18 +278,34 @@ fn observe_hermes(socket: PathBuf) -> (serde_json::Value, bool) {
     };
     let mut client =
         hermes_client::ReadOnlyClient::new(hermes_tui_local_client::CONNECTION_SESSION, port);
-    match hermes_tui::observe(&mut client) {
-        Ok(value) => (
-            serde_json::json!({
+    match hermes_tui::observe_configured(&mut client, configured_stream) {
+        Ok(value) => {
+            let stream = value.configured_stream.map(|selection| match selection {
+                hermes_tui::ConfiguredStreamObservation::Missing => {
+                    serde_json::json!({"status": "absent"})
+                }
+                hermes_tui::ConfiguredStreamObservation::Current(stream) => serde_json::json!({
+                    "status": "current", "retained_from": stream.retained_from.0,
+                    "published_edge": stream.published_edge.map(|edge| edge.0),
+                    "retained_events": stream.retained_events,
+                    "consumer_count": stream.consumer_count,
+                    "stalled_consumers": stream.stalled_consumers,
+                    "max_consumer_backlog": stream.max_consumer_backlog,
+                }),
+            });
+            (
+                serde_json::json!({
                 "peer": "hermes", "capability": capability, "status": "current",
                 "storage_revision": value.status.storage_revision,
                 "fenced": value.status.fenced, "streams": value.usage.streams,
                 "events": value.usage.events, "cursors": value.usage.cursors,
                 "commits": value.signals.commits, "conflicts": value.signals.conflicts,
                 "saturated": value.signals.saturated,
-            }),
-            true,
-        ),
+                "configured_stream": stream,
+                }),
+                true,
+            )
+        }
         Err(error) => (
             peer_failure("hermes", capability, "unavailable", error),
             false,
@@ -373,16 +393,48 @@ fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
     };
     let mut client = SagaReadOnlyClient::new(port);
     match client.inspect(None, 64) {
-        Ok(SagaReplyV1::Accepted(SagaOutcomeV1::Page(page))) => (
-            serde_json::json!({
+        Ok(SagaReplyV1::Accepted(SagaOutcomeV1::Page(page))) => {
+            let census = match client.census() {
+                Ok(SagaReplyV1::Accepted(SagaOutcomeV1::Census(census))) => census,
+                Ok(SagaReplyV1::Refused(reason)) => {
+                    return (
+                        peer_failure("moira", capability, "refused", format!("{reason:?}")),
+                        false,
+                    );
+                }
+                Ok(SagaReplyV1::Accepted(_)) => {
+                    return (
+                        peer_failure(
+                            "moira",
+                            capability,
+                            "invalid_reply",
+                            "unexpected census outcome",
+                        ),
+                        false,
+                    );
+                }
+                Err(error) => return moira_client_failure(capability, error),
+            };
+            (
+                serde_json::json!({
                 "peer": "moira",
                 "capability": capability,
                 "status": "current",
                 "sagas": page.entries.len(),
                 "truncated": page.next_after.is_some(),
-            }),
-            true,
-        ),
+                "census": {
+                    "total": census.total,
+                    "runnable_effects": census.runnable_effects,
+                    "awaiting_decision": census.awaiting_decision,
+                    "fenced": census.fenced,
+                    "terminal": census.terminal,
+                    "retries_consumed": census.retries_consumed,
+                    "saturated": census.saturated,
+                },
+                }),
+                true,
+            )
+        }
         Ok(SagaReplyV1::Refused(reason)) => (
             peer_failure("moira", capability, "refused", format!("{reason:?}")),
             false,
@@ -391,19 +443,24 @@ fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
             peer_failure("moira", capability, "invalid_reply", "unexpected outcome"),
             false,
         ),
-        Err(error) => {
-            let status = match error {
-                moira_tui_local_client::ClientError::NotSent(_) => "not_sent",
-                moira_tui_local_client::ClientError::OutcomeUnknown(_) => "outcome_unknown",
-                moira_tui_local_client::ClientError::RequestLimit => "request_limit",
-                _ => "invalid_reply",
-            };
-            (
-                peer_failure("moira", capability, status, "client access failure"),
-                false,
-            )
-        }
+        Err(error) => moira_client_failure(capability, error),
     }
+}
+
+fn moira_client_failure(
+    capability: &str,
+    error: moira_tui_local_client::ClientError,
+) -> (serde_json::Value, bool) {
+    let status = match error {
+        moira_tui_local_client::ClientError::NotSent(_) => "not_sent",
+        moira_tui_local_client::ClientError::OutcomeUnknown(_) => "outcome_unknown",
+        moira_tui_local_client::ClientError::RequestLimit => "request_limit",
+        _ => "invalid_reply",
+    };
+    (
+        peer_failure("moira", capability, status, "client access failure"),
+        false,
+    )
 }
 
 fn negotiate(peer: &str, required: &[String], supported: &[&str]) -> Result<(), String> {
@@ -690,6 +747,7 @@ mod tests {
             daimon_socket: None,
             daimon_requires: Vec::new(),
             hermes_socket: None,
+            hermes_stream: None,
             hermes_requires: Vec::new(),
             aegis_socket: None,
             aegis_requires: Vec::new(),

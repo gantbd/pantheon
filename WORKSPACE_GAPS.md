@@ -7,11 +7,11 @@ authorize Workbench to import an engine or recreate its client semantics.
 | Surface | Available boundary | Missing boundary | Current fallback |
 | --- | --- | --- | --- |
 | Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory | Production peer-provenance, Aegis grant/time, and durable-host factory for the standalone Workbench profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
-| Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench headless observation | Guarded operator reconciliation actions and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
+| Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench census | Selected-saga evidence/operator-receipt depth, guarded operator reconciliation actions, and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation and production Workbench host factory | Attach the typed read-only Grounding peer; MCP remains agent-facing only |
 | Aegis | Administrative/read clients and local daemon; independent `aegis-tui` bounded status/grant-summary/decision-summary peer | Guarded issue, attenuation, authorization, revocation, and production Workbench host factory | Attach the read-only authority peer |
-| Hermes | Ledger/operator clients and local daemon; independent `hermes-tui` status/usage/signals peer | Configured stream/cursor/gap views, guarded mutations, and production Workbench host factory | Attach the read-only ledger peer |
+| Hermes | Ledger/operator clients and local daemon; independent `hermes-tui` status/usage/signals peer; standalone and Workbench configured content-free stream health | Configured cursor/gap views, guarded mutations, and production Workbench host factory | Attach the read-only ledger peer with an optional exact opaque stream selector |
 
 Federation peers and cross-engine adapters remain subordinate to their owning
 engine or workflow presentation. Keystone remains presentation-free.
@@ -38,8 +38,9 @@ connection without treating a manifest match as service authorization.
 | Grounding | Reused typed Grounding TUI | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Open; attach only |
 
 This is qualified local working-tree evidence, not an immutable release
-qualification. The seven peer TUI commits are exact and clean in Workbench's
-source receipt, but several engine trees differ from their recorded revisions,
+qualification. The eight peer TUI source revisions are pinned in Workbench's
+source receipt and clean, but several engine trees differ from their recorded
+revisions,
 remote reachability is unqualified, and Agora still lacks a production
 standalone factory. The joint Chronos/Vellum hosted graph is locally qualified;
 the all-three graph is locally qualified with an injected explicitly test-only
@@ -64,17 +65,17 @@ qualified across all three interactive panes and one aggregate headless report.
    qualified all-three owner graph builds without a local source patch.
 2. Supply Agora's production peer-provenance, Aegis grant/time, and durable-host
    factory without moving those authority semantics into Workbench.
-3. Extend Moira's read-only trace with census, evidence, and operator receipts;
-   expose reconciliation actions only with exact confirmation, current authority,
-   durable receipts, and outcome-unknown recovery.
+3. Extend Moira's census-qualified read-only trace with selected-saga evidence
+   and operator receipts; expose reconciliation actions only with exact
+   confirmation, current authority, durable receipts, and outcome-unknown recovery.
 4. Extend Daimon's peer from redacted roster observation to exact-ID execution
    detail; add dispatch/resume only with no-redispatch and uncertainty evidence.
 5. Extend the typed Dendrite presentation boundary with selected surface/read
    DTOs only after their content disclosure, provenance, freshness, and bounds
    are fixed; MCP remains outside Workbench's internal protocol.
-6. Extend Hermes with configured stream/cursor/gap views; add ledger mutations
-   and Aegis operator actions only with authorization, uncertainty, and
-   content-minimization laws intact.
+6. Add Hermes configured cursor/gap views through the same standalone/Workbench
+   selector pattern. Add ledger mutations and Aegis operator actions only with
+   authorization, uncertainty, and content-minimization laws intact.
 7. Extend Aegis with separately guarded authority-bearing commands only after
    current-epoch confirmation, non-amplification, durable receipt, recovery, and
    outcome-unknown qualification.

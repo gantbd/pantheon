@@ -11,10 +11,8 @@ read-only input until that repository settles.
   current owners.
 - [x] Close Aegis interactive and headless Workbench attachment qualification
   using the existing `authority.observe.v1` peer and real durable daemon.
-- [ ] Qualify Moira, Daimon, Hermes, Aegis and Grounding real-service observation together
-  in one Workbench invocation, not only as isolated peer attachments. The gate
-  exists; its current rerun is waiting for Daimon's active wire refactor to
-  return to a buildable state.
+- [x] Qualify Moira, Daimon, Hermes, Aegis and Grounding real-service observation
+  together in one Workbench invocation, not only as isolated peer attachments.
 - [x] Keep the root repository inventory synchronized with all presentation
   peers and current source state.
 - [ ] Converge Chronos and Agora on one immutable Keystone source identity so
@@ -35,10 +33,12 @@ read-only input until that repository settles.
 
 ## P2 — operational depth
 
-- [ ] Moira: census, effect evidence and operator-receipt projections; guarded
-  reconciliation only after the complete authority/receipt contract is public.
-- [ ] Hermes: configured stream, cursor and gap views; never invent a global
-  stream catalogue.
+- [ ] Moira: census now has standalone/Workbench parity; add selected-saga
+  effect evidence and operator-receipt projections. Guard reconciliation until
+  the complete authority/receipt contract is public.
+- [ ] Hermes: configured-stream health now has standalone/Workbench parity; add
+  explicit configured cursor and gap views without inventing a global stream
+  catalogue.
 - [ ] Aegis: guarded issue/attenuate/revoke administration with exact epoch,
   resource/action confirmation and outcome-unknown fencing.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and

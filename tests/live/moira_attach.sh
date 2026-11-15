@@ -49,3 +49,5 @@ printf '%s\n' "$output" | grep '"complete": true' >/dev/null
 printf '%s\n' "$output" | grep '"peer": "moira"' >/dev/null
 printf '%s\n' "$output" | grep '"capability": "sagas.inspect.v1"' >/dev/null
 printf '%s\n' "$output" | grep '"sagas": 1' >/dev/null
+printf '%s\n' "$output" | grep '"total": 1' >/dev/null
+printf '%s\n' "$output" | grep '"runnable_effects": 1' >/dev/null

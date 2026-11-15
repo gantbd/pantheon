@@ -6,8 +6,9 @@ workspace=$(CDPATH= cd -- "$repo/.." && pwd -P)
 scratch=$(mktemp -d /tmp/wb-grounding.XXXXXX)
 chmod 700 "$scratch"
 target="$scratch/target"
-workbench="$target/debug/workbench-tui"
+workbench=${WORKBENCH_BIN:-"$target/debug/workbench-tui"}
 profile="$scratch/workspace.json"
+mixed_profile="$scratch/mixed-workspace.json"
 pid=
 
 cleanup() {
@@ -19,9 +20,11 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-cargo build --manifest-path "$repo/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui \
-  --locked --offline --target-dir "$target"
+if [ -z "${WORKBENCH_BIN:-}" ]; then
+  cargo build --manifest-path "$repo/Cargo.toml" \
+    --package workbench-tui-cli --bin workbench-tui \
+    --locked --offline --target-dir "$target"
+fi
 
 (cd "$workspace/dendrite" && \
   DENDRITE_GROUNDING_PORT_FILE="$scratch/port" MIX_ENV=test \
@@ -58,6 +61,35 @@ assert peer["peer"] == "grounding" and peer["capability"] == "grounding.observe.
 assert peer["status"] == "current" and peer["entries"][0]["load_id"] == "fixture/sample"
 '
 
+printf '%s\n' \
+  '{' \
+  '  "version": 1,' \
+  '  "name": "Grounding partial-failure qualification",' \
+  '  "surfaces": ["overview", "aegis", "grounding"],' \
+  "  \"aegis\": {\"socket\": \"$scratch/missing-aegis.sock\", \"requires\": [\"authority.observe.v1\"]}," \
+  "  \"grounding\": {\"endpoint\": \"$endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
+  '}' >"$mixed_profile"
+
+set +e
+mixed_snapshot=$("$workbench" headless --workspace-profile "$mixed_profile" 2>"$scratch/mixed.err")
+mixed_status=$?
+set -e
+if [ "$mixed_status" -eq 0 ]; then
+  echo 'FAIL: partial peer observation reported aggregate success' >&2
+  exit 1
+fi
+printf '%s' "$mixed_snapshot" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["version"] == 1 and report["mode"] == "headless"
+assert not report["complete"]
+assert [(peer["peer"], peer["status"]) for peer in report["peers"]] == [
+    ("aegis", "connect_refused"),
+    ("grounding", "current"),
+]
+assert report["peers"][1]["entries"][0]["load_id"] == "fixture/sample"
+'
+
 python3 - "$scratch" "$workbench" "$profile" <<'PYTHON'
 from pathlib import Path
 import shlex, subprocess, sys, time
@@ -91,5 +123,5 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo 'PASS: typed Dendrite Grounding endpoint -> Workbench headless and interactive attach'
+echo 'PASS: typed Dendrite Grounding endpoint -> Workbench headless and interactive attach; healthy Grounding evidence survives failed Aegis peer'
 

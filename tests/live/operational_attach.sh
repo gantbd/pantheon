@@ -87,7 +87,7 @@ printf '%s\n' \
   '  "surfaces": ["overview", "moira", "daimon", "hermes", "aegis", "grounding"],' \
   "  \"moira\": {\"socket\": \"$scratch/moira.sock\", \"requires\": [\"sagas.inspect.v1\"]}," \
   "  \"daimon\": {\"socket\": \"$scratch/daimon.sock\", \"requires\": [\"agents.presence.v1\"]}," \
-  "  \"hermes\": {\"socket\": \"$scratch/hermes.sock\", \"requires\": [\"ledger.observe.v1\"]}," \
+  "  \"hermes\": {\"socket\": \"$scratch/hermes.sock\", \"stream\": \"05050505050505050505050505050505\", \"requires\": [\"ledger.observe.v1\"]}," \
   "  \"aegis\": {\"socket\": \"$scratch/aegis.sock\", \"requires\": [\"authority.observe.v1\"]}," \
   "  \"grounding\": {\"endpoint\": \"$grounding_endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
   '}' >"$scratch/workspace.json"
@@ -121,6 +121,12 @@ expected = [
 actual = [(peer["peer"], peer["capability"]) for peer in report["peers"]]
 assert actual == expected, actual
 assert all(peer["status"] == "current" for peer in report["peers"])
+moira = next(peer for peer in report["peers"] if peer["peer"] == "moira")
+assert moira["census"]["total"] == 1
+assert moira["census"]["runnable_effects"] == 1
+hermes = next(peer for peer in report["peers"] if peer["peer"] == "hermes")
+assert hermes["configured_stream"]["status"] == "current"
+assert hermes["configured_stream"]["retained_events"] == 1
 '
 
 echo 'PASS: Moira + Daimon + Hermes + Aegis + Grounding real services -> one Workbench headless composition'

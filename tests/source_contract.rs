@@ -127,7 +127,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "62f3626d837e55d12e7381fbb82360455a0fa7a0"
+        "2a9c7f2cee0c706802413fcb9b79d83fa5c0534e"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -135,7 +135,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "44154d406570ffe722b58a98dc9af11f2fc8d1db"
+        "d4f92b194b7d335386dae80b7a8304a006acc8db"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
@@ -355,6 +355,8 @@ fn grounding_live_gate_uses_typed_dendrite_boundary_in_both_workbench_modes() {
         "headless",
         "interactive",
         "fixture/sample",
+        "healthy Grounding evidence survives failed Aegis peer",
+        "connect_refused",
         "--locked",
         "--offline",
     ] {
@@ -378,6 +380,29 @@ fn grounding_live_gate_uses_typed_dendrite_boundary_in_both_workbench_modes() {
 }
 
 #[test]
+fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/hermes_attach.sh")).expect("Hermes attach gate");
+    for required in [
+        "ledger.observe.v1",
+        "05050505050505050505050505050505",
+        "retained_events",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Hermes attach gate omits {required}"
+        );
+    }
+    for forbidden in ["AppendClient", "ConsumerClient", "OperatorClient"] {
+        assert!(
+            !gate.contains(forbidden),
+            "Hermes attach gate acquires {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn operational_live_gate_composes_all_read_only_peer_daemons() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/operational_attach.sh"))
@@ -389,10 +414,13 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "aegis-tui-cli",
         "grounding_fixture.exs",
         "sagas.inspect.v1",
+        "runnable_effects",
         "agents.presence.v1",
         "ledger.observe.v1",
         "authority.observe.v1",
         "grounding.observe.v1",
+        "configured_stream",
+        "05050505050505050505050505050505",
         "one Workbench headless composition",
         "--locked",
         "--offline",

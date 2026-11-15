@@ -82,7 +82,7 @@ verifier and client claim provider without placing credential material in the
 profile or lifecycle receipt. Tab changes focus and Ctrl-Q requests
 whole-workbench exit.
 Use the explicit `headless` command for a bounded, versioned JSON observation of every configured
-Agora, Chronos, Vellum, Moira, Daimon, Hermes, and Aegis peer. Each row names its peer-owned capability and
+Agora, Chronos, Vellum, Moira, Daimon, Hermes, Aegis, and Grounding peer. Each row names its peer-owned capability and
 truthful status. Healthy rows remain visible when another peer is unavailable,
 but the command refuses aggregate success. `--headless` and `--snapshot` remain
 compatibility aliases for invocations without an explicit command.
@@ -186,7 +186,7 @@ both Workbench modes. This uses `grounding.observe.v1`, not Dendrite's agent-fac
 MCP boundary.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
-Hermes, and Aegis daemons attached to one Workbench headless invocation after
-Daimon's active refactor settles. This coexistence gate exercises only the four
+Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one
+Workbench headless invocation. This coexistence gate exercises only the five
 peer-owned observation capabilities; it does not claim native hosting or
 mutation authority for those peers.

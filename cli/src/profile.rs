@@ -59,6 +59,7 @@ pub struct DaimonProfile {
 #[serde(deny_unknown_fields)]
 pub struct HermesProfile {
     pub socket: PathBuf,
+    pub stream: Option<String>,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -238,6 +239,11 @@ impl WorkspaceProfile {
                 return Err("Hermes configuration requires the Hermes surface");
             }
             validate_path(&hermes.socket)?;
+            if let Some(stream) = &hermes.stream
+                && hermes_tui::parse_stream_id(stream).is_none()
+            {
+                return Err("Hermes stream must be 32 hexadecimal digits");
+            }
             validate_required_capabilities(&hermes.requires)?;
         }
         if let Some(aegis) = &self.aegis {
@@ -452,6 +458,24 @@ mod tests {
         assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
         let authority = br#"{"version":1,"name":"x","surfaces":["overview"],"agora":null,"chronos":null,"vellum":null,"allow_writes":true}"#;
         assert!(WorkspaceProfile::parse(authority, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn profile_accepts_one_exact_opaque_hermes_stream_selector() {
+        let valid = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"socket":"hermes.sock","stream":"05050505050505050505050505050505"}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        assert_eq!(
+            profile.hermes.unwrap().stream.as_deref(),
+            Some("05050505050505050505050505050505")
+        );
+        let invalid = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"socket":"hermes.sock","stream":"not-an-opaque-id"}
+        }"#;
+        assert!(WorkspaceProfile::parse(invalid, Path::new(".")).is_err());
     }
 
     #[test]

@@ -380,7 +380,7 @@ mod tests {
         SessionHandleV1 as DaimonSessionHandleV1,
     };
     use moira_client::SagaServicePort;
-    use moira_protocol::{SagaCommandV1, SagaOutcomeV1, SagaPageV1, SagaReplyV1};
+    use moira_protocol::{SagaCensusV1, SagaCommandV1, SagaOutcomeV1, SagaPageV1, SagaReplyV1};
     use ratatui::{Terminal, backend::TestBackend};
     use std::{thread, time::Duration};
 
@@ -437,11 +437,23 @@ mod tests {
         type Error = ();
 
         fn execute(&mut self, command: SagaCommandV1) -> Result<SagaReplyV1, Self::Error> {
-            assert!(matches!(command, SagaCommandV1::Inspect { .. }));
-            Ok(SagaReplyV1::Accepted(SagaOutcomeV1::Page(SagaPageV1 {
-                entries: Vec::new(),
-                next_after: None,
-            })))
+            let outcome = match command {
+                SagaCommandV1::Inspect { .. } => SagaOutcomeV1::Page(SagaPageV1 {
+                    entries: Vec::new(),
+                    next_after: None,
+                }),
+                SagaCommandV1::Census => SagaOutcomeV1::Census(SagaCensusV1 {
+                    total: 0,
+                    runnable_effects: 0,
+                    awaiting_decision: 0,
+                    fenced: 0,
+                    terminal: 0,
+                    retries_consumed: 0,
+                    saturated: false,
+                }),
+                _ => panic!("read-only Moira presentation attempted an unexpected command"),
+            };
+            Ok(SagaReplyV1::Accepted(outcome))
         }
     }
 

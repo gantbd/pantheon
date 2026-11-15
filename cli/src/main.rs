@@ -49,6 +49,7 @@ struct Options {
     daimon_socket: Option<PathBuf>,
     daimon_requires: Vec<String>,
     hermes_socket: Option<PathBuf>,
+    hermes_stream: Option<hermes_protocol::StreamIdV1>,
     hermes_requires: Vec<String>,
     aegis_socket: Option<PathBuf>,
     aegis_requires: Vec<String>,
@@ -117,6 +118,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut daimon_socket = None;
     let mut daimon_requires = Vec::new();
     let mut hermes_socket = None;
+    let mut hermes_stream = None;
     let mut hermes_requires = Vec::new();
     let mut aegis_socket = None;
     let mut aegis_requires = Vec::new();
@@ -152,6 +154,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         }
         if let Some(hermes) = profile.hermes {
             hermes_socket = Some(hermes.socket);
+            hermes_stream = hermes
+                .stream
+                .as_deref()
+                .and_then(hermes_tui::parse_stream_id);
             hermes_requires = hermes.requires;
         }
         if let Some(aegis) = profile.aegis {
@@ -391,6 +397,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_socket,
         daimon_requires,
         hermes_socket,
+        hermes_stream,
         hermes_requires,
         aegis_socket,
         aegis_requires,
@@ -684,9 +691,10 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
             hermes_tui_local_client::ClientLimits::default(),
         )
         .map_err(|error| format!("Hermes service refused: {error:?}"))?;
-        Some(hermes_tui::Component::new(
+        Some(hermes_tui::Component::new_with_stream(
             hermes_tui_local_client::CONNECTION_SESSION,
             port,
+            options.hermes_stream,
         ))
     } else {
         None
@@ -774,6 +782,7 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         daimon_socket: options.daimon_socket,
         daimon_requires: options.daimon_requires,
         hermes_socket: options.hermes_socket,
+        hermes_stream: options.hermes_stream,
         hermes_requires: options.hermes_requires,
         aegis_socket: options.aegis_socket,
         aegis_requires: options.aegis_requires,

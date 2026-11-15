@@ -155,7 +155,8 @@ induced partial-shutdown qualification remain open.
 ### 5. Extend peer coverage
 
 Moira now has an independent reusable TUI, standalone interactive/headless CLI,
-peer-owned `sagas.inspect.v1` capability, and Workbench attach composition. Its
+peer-owned `sagas.inspect.v1` capability, content-free aggregate census, and
+Workbench attach composition through the same read-only client. Its
 read-only component exposes bounded saga and reconciliation projections through
 the public client. Operator reconciliation remains deliberately absent until its
 confirmation, command-scoped authority, revision, durable receipt, and uncertain
@@ -170,9 +171,10 @@ inspection and guarded execute/resume operations remain later slices.
 
 Hermes now has an independent reusable ledger TUI, standalone CLI,
 `ledger.observe.v1` status/usage/signals observation, and Workbench attachment.
-Stream and cursor detail remains configuration-driven because Hermes exposes no
-global stream catalogue. Append, acknowledge, and compaction remain guarded
-later operations.
+An exact opaque profile selector now carries content-free stream health through
+the same standalone and Workbench component without inventing a global stream
+catalogue or echoing the identifier. Configured cursor/gap detail and append,
+acknowledge, and compaction remain guarded later operations.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
@@ -183,10 +185,11 @@ durable receipt, and outcome-unknown laws are qualified.
 
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
 place for one headless Workbench invocation and now also observes Grounding
-through Dendrite's typed endpoint. The current qualification rerun passes
-against all five real services in the active working trees. This is local
-working-tree evidence; it does not imply native hosting, immutable source
-closure, or shared mutation authority.
+through Dendrite's typed endpoint. The current qualification passes against all
+five real services, including Hermes's configured-stream and Moira's census
+projections. This remains local working-tree evidence;
+it does not imply native hosting, immutable source closure, or shared mutation
+authority.
 
 Grounding now has a typed authenticated Dendrite presentation endpoint,
 independent reusable TUI and standalone CLI, `grounding.observe.v1` provenance
