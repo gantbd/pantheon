@@ -46,3 +46,7 @@
 - Added the hosted-topology lifecycle core: concrete typed clients remain with
   peer integrations while a bounded registry owns reverse-order shutdown and
   explicit clean, refused, or outcome-unknown receipts.
+- Advanced the Agora and Vellum standalone headless inputs to versioned failure
+  envelopes that preserve refusal, not-sent, outcome-unknown, invalid reply or
+  projection, and uncertain disconnect states instead of collapsing them into
+  unstructured stderr.
