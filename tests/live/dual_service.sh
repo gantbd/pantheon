@@ -183,4 +183,70 @@ vellum_pid=
 "$chronos_bin" --shutdown "$chronos_dir" >/dev/null
 wait "$chronos_pid"
 chronos_pid=
-echo 'PASS: real Chronos + Vellum services -> one workbench composition'
+echo 'PASS: attached Chronos + Vellum services -> one workbench composition'
+
+hosted_profile="$scratch/hosted-workspace.json"
+printf '%s\n' \
+  '{"version":1,"name":"Hosted gate","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}' \
+  >"$hosted_profile"
+
+hosted_snapshot=$("$workbench_bin" headless --workspace-profile "$hosted_profile")
+printf '%s' "$hosted_snapshot" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"] and report["mode"] == "headless"
+assert [(peer["peer"], peer["status"]) for peer in report["peers"]] == [
+    ("chronos", "current"), ("vellum", "current")
+]
+'
+
+python3 - "$scratch" "$workbench_bin" "$hosted_profile" <<'PYTHON'
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+import time
+
+scratch, binary, profile = sys.argv[1:]
+socket = str(Path(scratch) / "hosted-tmux.sock")
+command = shlex.join([binary, "interactive", "--workspace-profile", profile])
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", socket, "-f", "/dev/null", *args],
+        capture_output=True, text=True, check=check, timeout=5,
+    )
+
+try:
+    tmux("new-session", "-d", "-x", "200", "-y", "32", "-s", "hosted", command)
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
+        if "Chronos  ·  revision" in screen and "alpha" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Hosted Workbench panes not ready:\n{screen}")
+    tmux("send-keys", "-t", "hosted", "C-q")
+    deadline = time.monotonic() + 5
+    while tmux("has-session", "-t", "hosted", check=False).returncode == 0:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Hosted Workbench did not exit")
+        time.sleep(0.025)
+finally:
+    tmux("kill-server", check=False)
+PYTHON
+
+for endpoint in \
+  "$chronos_dir/chronos.sock" \
+  "$chronos_dir/chronos.control.sock" \
+  "$vellum_socket" \
+  "$vellum_socket.control"
+do
+  if [ -e "$endpoint" ]; then
+    echo "FAIL: hosted shutdown retained endpoint $endpoint" >&2
+    exit 1
+  fi
+done
+
+echo 'PASS: hosted Chronos + Vellum -> headless and interactive Workbench composition'

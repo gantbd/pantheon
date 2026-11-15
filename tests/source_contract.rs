@@ -117,6 +117,8 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
         "--status",
         "--headless",
         "--shutdown",
+        "\"deployment\":\"hosted\"",
+        "hosted Chronos + Vellum",
         "--locked",
         "--offline",
     ] {
