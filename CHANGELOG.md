@@ -40,3 +40,6 @@
   `rooms.read.v2` and `workspace.inventory.v1` headless contracts.
 - Recorded the qualified core-peer parity matrix separately from the still-open
   hosted service topology and immutable engine-source closure.
+- Added mode-specific capability negotiation from bounded profile requirements
+  to peer-owned Agora, Chronos, and Vellum presentation manifests before any
+  service connection.

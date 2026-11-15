@@ -73,6 +73,9 @@ uses their public clients directly, and refuses aggregate success on partial
 failure. The executable, profile parser, terminal lifecycle, and hosted-service
 helpers now live in the separate `workbench-tui-cli` package; the root package
 contains the reusable shell and peer-presentation composition only.
+Profiles may require bounded peer-owned capability identifiers. Workbench
+negotiates them against the selected mode before any connection while leaving
+runtime authorization and refusal with the owning service.
 
 ### 3. Add composite service hosting
 

@@ -15,15 +15,15 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
-        "11f1acd68b6daa0eceae353dbd4c9ed764550c94"
+        "a152d3537a7632132445494e8dccdbe714bb1a56"
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "a1358561817c2712dcf915b1ff95a20d6980b60a"
+        "3928f5bf50db36b66e7b4974deda3527b67b931c"
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "cdef63d07423403a06c7933683d7d177c10f7f4d"
+        "b919457608a9a809084e2b8df646e37f17a6d597"
     );
     for input in ["agoraTui", "chronosTui", "vellumTui"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
@@ -65,6 +65,17 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "vellum-adapter-local-authentication",
     ] {
         assert!(cli_manifest.contains(required), "CLI omits {required}");
+    }
+    let cli_entry = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI entry point");
+    for peer_manifest in [
+        "agora_tui::CAPABILITIES",
+        "chronos_tui::CAPABILITIES",
+        "vellum_tui::CAPABILITIES",
+    ] {
+        assert!(
+            cli_entry.contains(peer_manifest),
+            "CLI does not negotiate {peer_manifest}"
+        );
     }
     for forbidden in [
         "vellum-engine",

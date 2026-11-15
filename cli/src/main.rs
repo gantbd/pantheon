@@ -95,17 +95,24 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut moira_bindings = Vec::new();
     let mut daimon_bindings = Vec::new();
     let mut chronos_planning = None;
+    let mut agora_requires = Vec::new();
+    let mut chronos_requires = Vec::new();
+    let mut vellum_requires = Vec::new();
     let mut chronos_streams = if workspace_profile {
         let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
         let profile = WorkspaceProfile::load(std::path::Path::new(&path))?;
         workspace_name = profile.name.clone();
         shell = profile.shell()?;
-        agora = profile.agora;
+        agora = profile.agora.inspect(|configured| {
+            agora_requires = configured.requires.clone();
+        });
         if let Some(vellum) = profile.vellum {
+            vellum_requires = vellum.requires;
             vellum_socket = Some(vellum.socket);
             vellum_credential = vellum.credential;
         }
         if let Some(chronos) = profile.chronos {
+            chronos_requires = chronos.requires;
             chronos_planning = chronos.planning;
             moira_bindings = chronos
                 .moira
@@ -210,6 +217,37 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if vellum_credential.is_some() && vellum_socket.is_none() {
         return Err("--vellum-credential requires --vellum-service".into());
     }
+    let mode = if headless { "headless" } else { "interactive" };
+    negotiate_capabilities(
+        "agora",
+        mode,
+        &agora_requires,
+        if headless {
+            agora_tui::CAPABILITIES.headless
+        } else {
+            agora_tui::CAPABILITIES.interactive
+        },
+    )?;
+    negotiate_capabilities(
+        "chronos",
+        mode,
+        &chronos_requires,
+        if headless {
+            chronos_tui::CAPABILITIES.headless
+        } else {
+            chronos_tui::CAPABILITIES.interactive
+        },
+    )?;
+    negotiate_capabilities(
+        "vellum",
+        mode,
+        &vellum_requires,
+        if headless {
+            vellum_tui::CAPABILITIES.headless
+        } else {
+            vellum_tui::CAPABILITIES.interactive
+        },
+    )?;
     Ok(Options {
         workspace_name,
         shell,
@@ -227,6 +265,22 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_bindings,
         check_profile,
     })
+}
+
+fn negotiate_capabilities(
+    peer: &str,
+    mode: &str,
+    required: &[String],
+    supported: &[&str],
+) -> Result<(), Box<dyn std::error::Error>> {
+    for capability in required {
+        if !supported.contains(&capability.as_str()) {
+            return Err(
+                format!("{peer} does not support required {mode} capability {capability}").into(),
+            );
+        }
+    }
+    Ok(())
 }
 
 fn usage() -> &'static str {
@@ -354,6 +408,7 @@ fn headless(options: Options) -> Result<(), Box<dyn std::error::Error>> {
 fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
     use agora_client::v2::ClientErrorV2;
     use agora_protocol::v2::{CommandV2, OutcomeV2, ReplyV2};
+    let capability = agora_tui::CAPABILITIES.headless[0];
 
     let (client_id, port) = match AgoraLocalServicePort::connect(
         &profile.socket,
@@ -363,12 +418,7 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
         Ok(connection) => connection,
         Err(error) => {
             return (
-                peer_failure(
-                    "agora",
-                    "rooms.read.v2",
-                    "connect_refused",
-                    format!("{error:?}"),
-                ),
+                peer_failure("agora", capability, "connect_refused", format!("{error:?}")),
                 false,
             );
         }
@@ -381,7 +431,7 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
         Ok(ReplyV2::Accepted(OutcomeV2::Rooms(page))) => (
             serde_json::json!({
                 "peer": "agora",
-                "capability": "rooms.read.v2",
+                "capability": capability,
                 "status": "current",
                 "revision": page.revision,
                 "rooms": page.rooms.len(),
@@ -390,16 +440,11 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
             true,
         ),
         Ok(ReplyV2::Refused(reason)) => (
-            peer_failure("agora", "rooms.read.v2", "refused", format!("{reason:?}")),
+            peer_failure("agora", capability, "refused", format!("{reason:?}")),
             false,
         ),
         Ok(ReplyV2::Accepted(_)) => (
-            peer_failure(
-                "agora",
-                "rooms.read.v2",
-                "invalid_reply",
-                "unexpected outcome",
-            ),
+            peer_failure("agora", capability, "invalid_reply", "unexpected outcome"),
             false,
         ),
         Err(error) => {
@@ -410,7 +455,7 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
                 ClientErrorV2::RequestIdExhausted => "request_id_exhausted",
             };
             (
-                peer_failure("agora", "rooms.read.v2", status, "client access failure"),
+                peer_failure("agora", capability, status, "client access failure"),
                 false,
             )
         }
@@ -419,6 +464,7 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
 
 fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
     use chronos_client::observer::{Observer, ObserverLimits, RefreshError};
+    let capability = chronos_tui::CAPABILITIES.headless[0];
 
     let mut observer = Observer::new(ObserverLimits {
         page_size: 32,
@@ -437,7 +483,7 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
                 serde_json::json!({
                     "peer": "chronos",
                     "instance": workstream.name,
-                    "capability": "tasks.observe.v1",
+                    "capability": capability,
                     "status": "current",
                     "revision": format!("{:?}", view.revision),
                     "tasks": view.entries.len(),
@@ -464,7 +510,7 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
                 serde_json::json!({
                     "peer": "chronos",
                     "instance": workstream.name,
-                    "capability": "tasks.observe.v1",
+                    "capability": capability,
                     "status": status,
                 }),
                 false,
@@ -475,6 +521,7 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
 
 fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json::Value, bool) {
     use vellum_sdk_client::{protocol::ServiceAccessErrorV1, workspace::WorkspaceClientErrorV1};
+    let capability = vellum_tui::CAPABILITIES.headless[0];
 
     let connector = match vellum_connector(socket, credential) {
         Ok(connector) => connector,
@@ -482,7 +529,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
             return (
                 peer_failure(
                     "vellum",
-                    "workspace.inventory.v1",
+                    capability,
                     "configuration_refused",
                     error.to_string(),
                 ),
@@ -496,7 +543,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
             return (
                 peer_failure(
                     "vellum",
-                    "workspace.inventory.v1",
+                    capability,
                     "transport_refused",
                     format!("{error:?}"),
                 ),
@@ -510,7 +557,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
             return (
                 peer_failure(
                     "vellum",
-                    "workspace.inventory.v1",
+                    capability,
                     "connect_refused",
                     format!("{error:?}"),
                 ),
@@ -527,7 +574,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
             (
                 serde_json::json!({
                     "peer": "vellum",
-                    "capability": "workspace.inventory.v1",
+                    "capability": capability,
                     "status": "current",
                     "documents": inventory.documents.len(),
                     "roots": inventory.roots.len(),
@@ -548,12 +595,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
                 WorkspaceClientErrorV1::Projection(_) => "invalid_projection",
             };
             (
-                peer_failure(
-                    "vellum",
-                    "workspace.inventory.v1",
-                    status,
-                    "client access failure",
-                ),
+                peer_failure("vellum", capability, status, "client access failure"),
                 false,
             )
         }
@@ -563,7 +605,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
         Err(failure) => (
             peer_failure(
                 "vellum",
-                "workspace.inventory.v1",
+                capability,
                 "disconnect_refused",
                 format!("{:?}", failure.error()),
             ),

@@ -13,7 +13,8 @@
   ],
   "agora": {
     "socket": "../run/agora.sock",
-    "participant": "operator"
+    "participant": "operator",
+    "requires": ["rooms.read.v2"]
   },
   "chronos": {
     "workstreams": [
@@ -22,6 +23,7 @@
         "directory": "../state/chronos-atlas"
       }
     ],
+    "requires": ["tasks.observe.v1"],
     "moira": [
       {
         "workstream": "Atlas / Delivery",
@@ -39,6 +41,7 @@
   },
   "vellum": {
     "socket": "../run/vellum.sock",
-    "credential": null
+    "credential": null,
+    "requires": ["workspace.inventory.v1"]
   }
 }

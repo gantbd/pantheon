@@ -49,6 +49,10 @@ cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interac
 Profiles contain connection configuration, presentation selection and explicit
 cross-service scope mappings. They cannot enable Chronos writes or carry grant
 handles. Continue to pass `--chronos-allow-writes` at launch when intended.
+Each configured peer may also carry a bounded `requires` list. Workbench checks
+those exact identifiers against the peer-owned TUI manifest for the selected
+interactive or headless mode before connecting. A match describes composition
+support only; the service still owns authorization and may refuse the request.
 The Agora participant value is an identity claim checked against the daemon's
 authenticated peer context; it is neither a credential nor authority.
 Unknown fields, versions, duplicate surfaces, control characters, excessive

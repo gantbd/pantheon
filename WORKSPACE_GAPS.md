@@ -22,6 +22,9 @@ The reusable/CLI boundary and versioned headless contract are now aligned for
 Agora, Chronos, Vellum, and Workbench. Each standalone CLI names its public
 read capability and constructs no TUI state in headless mode. Workbench attaches
 the same clients and preserves healthy observations beside a failed peer.
+Each peer also owns a closed presentation capability manifest; Workbench
+negotiates bounded profile requirements against the selected mode before any
+connection without treating a manifest match as service authorization.
 
 | Core peer | Standalone interactive | Standalone headless | Workbench attach | Workbench host |
 | --- | --- | --- | --- | --- |

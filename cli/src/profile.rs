@@ -10,6 +10,8 @@ use workbench_tui::{Shell, Surface};
 const MAX_PROFILE_BYTES: u64 = 64 * 1024;
 const MAX_WORKSTREAMS: usize = 16;
 const MAX_BINDINGS: usize = 16;
+const MAX_REQUIRED_CAPABILITIES: usize = 16;
+const MAX_CAPABILITY_BYTES: usize = 64;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -27,12 +29,16 @@ pub struct WorkspaceProfile {
 pub struct AgoraProfile {
     pub socket: PathBuf,
     pub participant: String,
+    #[serde(default)]
+    pub requires: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ChronosProfile {
     pub workstreams: Vec<WorkstreamProfile>,
+    #[serde(default)]
+    pub requires: Vec<String>,
     #[serde(default)]
     pub moira: Vec<MoiraBinding>,
     #[serde(default)]
@@ -67,6 +73,8 @@ pub struct DaimonBinding {
 pub struct VellumProfile {
     pub socket: PathBuf,
     pub credential: Option<PathBuf>,
+    #[serde(default)]
+    pub requires: Vec<String>,
 }
 
 impl WorkspaceProfile {
@@ -128,6 +136,7 @@ impl WorkspaceProfile {
             }
             validate_path(&agora.socket)?;
             validate_text(&agora.participant, "Agora participant")?;
+            validate_required_capabilities(&agora.requires)?;
         }
         if self.surfaces.contains(&Surface::Workspace)
             && self.chronos.is_none()
@@ -136,6 +145,7 @@ impl WorkspaceProfile {
             return Err("workspace surface requires Chronos or Vellum configuration");
         }
         if let Some(chronos) = &self.chronos {
+            validate_required_capabilities(&chronos.requires)?;
             if chronos.workstreams.is_empty() || chronos.workstreams.len() > MAX_WORKSTREAMS {
                 return Err("Chronos workstream count is outside the supported range");
             }
@@ -193,12 +203,33 @@ impl WorkspaceProfile {
         }
         if let Some(vellum) = &self.vellum {
             validate_path(&vellum.socket)?;
+            validate_required_capabilities(&vellum.requires)?;
             if let Some(path) = &vellum.credential {
                 validate_path(path)?;
             }
         }
         Ok(())
     }
+}
+
+fn validate_required_capabilities(values: &[String]) -> Result<(), &'static str> {
+    if values.len() > MAX_REQUIRED_CAPABILITIES {
+        return Err("required capability count exceeds the supported range");
+    }
+    for (index, value) in values.iter().enumerate() {
+        if value.is_empty()
+            || value.len() > MAX_CAPABILITY_BYTES
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.')
+        {
+            return Err("required capability identifier is invalid");
+        }
+        if values[..index].contains(value) {
+            return Err("required capabilities must be unique");
+        }
+    }
+    Ok(())
 }
 
 fn validate_binding<'a>(
@@ -252,18 +283,20 @@ mod tests {
           "version": 1,
           "name": "Local federation",
           "surfaces": ["overview", "workspace", "agora"],
-          "agora": {"socket":"agora.sock", "participant":"alice"},
+          "agora": {"socket":"agora.sock", "participant":"alice", "requires":["rooms.read.v2"]},
           "chronos": {
             "workstreams": [{"name":"Atlas", "directory":"chronos"}],
+            "requires": ["tasks.observe.v1"],
             "moira": [{"workstream":"Atlas", "socket":"moira.sock", "scope":"atlas"}],
             "daimon": [],
             "planning": "plan.json"
           },
-          "vellum": {"socket":"vellum.sock", "credential":null}
+          "vellum": {"socket":"vellum.sock", "credential":null, "requires":["workspace.inventory.v1"]}
         }"#;
         let profile =
             WorkspaceProfile::parse(bytes, Path::new("/tmp/workbench")).expect("valid profile");
         assert_eq!(profile.surfaces[2], Surface::Agora);
+        assert_eq!(profile.agora.as_ref().unwrap().requires, ["rooms.read.v2"]);
         assert_eq!(
             profile.agora.as_ref().unwrap().socket,
             Path::new("/tmp/workbench/agora.sock")
@@ -308,5 +341,21 @@ mod tests {
           "chronos":null,"vellum":null
         }"#;
         assert!(WorkspaceProfile::parse(hidden_agora, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn profile_refuses_invalid_or_duplicate_capability_requirements() {
+        let invalid = br#"{
+          "version":1,"name":"x","surfaces":["agora"],
+          "agora":{"socket":"a.sock","participant":"alice","requires":["Rooms Read"]},
+          "chronos":null,"vellum":null
+        }"#;
+        assert!(WorkspaceProfile::parse(invalid, Path::new(".")).is_err());
+        let duplicate = br#"{
+          "version":1,"name":"x","surfaces":["agora"],
+          "agora":{"socket":"a.sock","participant":"alice","requires":["rooms.read.v2","rooms.read.v2"]},
+          "chronos":null,"vellum":null
+        }"#;
+        assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
     }
 }
