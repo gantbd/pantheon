@@ -16,6 +16,7 @@ use workbench_tui::Shell;
 use workbench_tui_cli::{
     native_host::NativeHost,
     profile::{AgoraProfile, DeploymentMode, WorkspaceProfile},
+    registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
     run_multi_peer_terminal,
 };
 
@@ -357,16 +358,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let mut native_host = start_native_host(&options)?;
-    let result = if options.headless {
-        headless(options)
-    } else {
-        interactive(options)
-    };
-    let shutdown = native_host
+    if options.headless {
+        let observation = headless(options);
+        let shutdown = shutdown_native_host(&mut native_host);
+        return finish_headless(observation, shutdown);
+    }
+    let result = interactive(options);
+    let shutdown = shutdown_native_host(&mut native_host);
+    finish_interactive(result, shutdown)
+}
+
+fn shutdown_native_host(
+    native_host: &mut Option<NativeHost>,
+) -> Result<Option<TopologyShutdown>, String> {
+    native_host
         .as_mut()
         .map(NativeHost::shutdown)
         .transpose()
-        .map_err(|error| format!("hosted topology shutdown refused: {error:?}"));
+        .map_err(|error| format!("hosted topology shutdown refused: {error:?}"))
+}
+
+fn finish_interactive(
+    result: Result<(), Box<dyn std::error::Error>>,
+    shutdown: Result<Option<TopologyShutdown>, String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     match (result, shutdown) {
         (Ok(()), Ok(Some(receipt))) if !receipt.clean() => Err(format!(
             "hosted topology shutdown incomplete: {:?}",
@@ -382,6 +397,76 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (Err(error), Ok(_)) => Err(error),
         (Ok(()), Err(error)) => Err(error.into()),
         (Err(error), Err(shutdown)) => Err(format!("{error}; {shutdown}").into()),
+    }
+}
+
+struct HeadlessObservation {
+    workspace: String,
+    complete: bool,
+    peers: Vec<serde_json::Value>,
+}
+
+fn finish_headless(
+    observation: Result<HeadlessObservation, Box<dyn std::error::Error>>,
+    shutdown: Result<Option<TopologyShutdown>, String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let observation = match observation {
+        Ok(observation) => observation,
+        Err(error) => return finish_interactive(Err(error), shutdown),
+    };
+    let (shutdown_report, shutdown_clean) = match shutdown {
+        Ok(None) => (serde_json::Value::Null, true),
+        Ok(Some(receipt)) => {
+            let clean = receipt.clean();
+            let receipts = receipt
+                .receipts
+                .into_iter()
+                .map(|receipt| {
+                    let (peer, instance) = match receipt.peer {
+                        HostedPeerId::Agora => ("agora", None),
+                        HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
+                        HostedPeerId::Vellum => ("vellum", None),
+                    };
+                    serde_json::json!({
+                        "peer": peer,
+                        "instance": instance,
+                        "disposition": match receipt.disposition {
+                            ShutdownDisposition::Clean => "clean",
+                            ShutdownDisposition::Refused => "refused",
+                            ShutdownDisposition::OutcomeUnknown => "outcome_unknown",
+                        },
+                    })
+                })
+                .collect::<Vec<_>>();
+            (
+                serde_json::json!({
+                    "status": if clean { "clean" } else { "incomplete" },
+                    "receipts": receipts,
+                }),
+                clean,
+            )
+        }
+        Err(error) => (
+            serde_json::json!({"status":"refused", "detail":error}),
+            false,
+        ),
+    };
+    let complete = observation.complete && shutdown_clean;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "workspace": observation.workspace,
+            "mode": "headless",
+            "complete": complete,
+            "peers": observation.peers,
+            "hosted_shutdown": shutdown_report,
+        }))?
+    );
+    if complete {
+        Ok(())
+    } else {
+        Err("one or more peer observations or hosted shutdowns were incomplete".into())
     }
 }
 
@@ -476,7 +561,7 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     run_multi_peer_terminal(options.shell, chronos, vellum, agora)
 }
 
-fn headless(options: Options) -> Result<(), Box<dyn std::error::Error>> {
+fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error::Error>> {
     let mut peers = Vec::new();
     let mut complete = true;
 
@@ -498,21 +583,11 @@ fn headless(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     if peers.is_empty() {
         return Err("--headless requires at least one configured peer".into());
     }
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&serde_json::json!({
-            "version": 1,
-            "workspace": options.workspace_name,
-            "mode": "headless",
-            "complete": complete,
-            "peers": peers,
-        }))?
-    );
-    if complete {
-        Ok(())
-    } else {
-        Err("one or more headless peer observations were not current".into())
-    }
+    Ok(HeadlessObservation {
+        workspace: options.workspace_name,
+        complete,
+        peers,
+    })
 }
 
 fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {

@@ -59,3 +59,5 @@
 - Added profile- and launch-selected native Vellum hosting with persistent
   identity, bounded workspace discovery, optional principal authentication,
   explicit edit/save ceilings, native shutdown control, and joined drain.
+- Delayed hosted headless aggregate success until native shutdown completes and
+  included reverse-order per-peer lifecycle receipts in the versioned report.

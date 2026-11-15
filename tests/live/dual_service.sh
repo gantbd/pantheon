@@ -198,6 +198,10 @@ assert report["complete"] and report["mode"] == "headless"
 assert [(peer["peer"], peer["status"]) for peer in report["peers"]] == [
     ("chronos", "current"), ("vellum", "current")
 ]
+assert report["hosted_shutdown"]["status"] == "clean"
+assert [receipt["peer"] for receipt in report["hosted_shutdown"]["receipts"]] == [
+    "vellum", "chronos"
+]
 '
 
 python3 - "$scratch" "$workbench_bin" "$hosted_profile" <<'PYTHON'

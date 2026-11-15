@@ -111,8 +111,10 @@ from presentation or process state.
 
 Status: attached read parity is qualified for Agora, Chronos, and Vellum,
 including one unavailable Chronos workstream alongside healthy peers. Hosted
-service parity, mutation routing, restart, and partial-shutdown qualification
-remain open.
+Chronos/Vellum read parity and clean reverse shutdown are qualified in both
+product modes; their headless aggregate publishes lifecycle receipts before
+claiming success. Agora hosting, mutation routing, restart, and induced
+partial-shutdown qualification remain open.
 
 ### 5. Extend peer coverage
 

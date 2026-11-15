@@ -89,6 +89,9 @@ fn headless_profile_can_host_and_drain_real_chronos_and_vellum() {
     assert_eq!(report["peers"][1]["peer"], "vellum");
     assert_eq!(report["peers"][1]["status"], "current");
     assert_eq!(report["peers"][1]["documents"], 1);
+    assert_eq!(report["hosted_shutdown"]["status"], "clean");
+    assert_eq!(report["hosted_shutdown"]["receipts"][0]["peer"], "vellum");
+    assert_eq!(report["hosted_shutdown"]["receipts"][1]["peer"], "chronos");
     assert!(!scratch.join("chronos/chronos.sock").exists());
     assert!(!scratch.join("chronos/chronos.control.sock").exists());
     assert!(!scratch.join("vellum.sock").exists());
