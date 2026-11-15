@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 mod hosted;
+pub mod native_host;
 pub mod profile;
 pub mod registry;
 mod terminal;

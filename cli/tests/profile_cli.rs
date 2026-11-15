@@ -54,3 +54,37 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
 
     fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn headless_profile_can_host_and_drain_real_chronos() {
+    let scratch =
+        Path::new("/private/tmp").join(format!("workbench-hosted-chronos-{}", std::process::id()));
+    if scratch.exists() {
+        fs::remove_dir_all(&scratch).unwrap();
+    }
+    fs::create_dir(&scratch).unwrap();
+    let profile = scratch.join("workspace.json");
+    fs::write(
+        &profile,
+        r#"{"version":1,"name":"Hosted","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+        .args(["headless", "--workspace-profile"])
+        .arg(&profile)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["complete"], true);
+    assert_eq!(report["peers"][0]["peer"], "chronos");
+    assert_eq!(report["peers"][0]["status"], "current");
+    assert!(!scratch.join("chronos/chronos.sock").exists());
+    assert!(!scratch.join("chronos/chronos.control.sock").exists());
+    fs::remove_dir_all(scratch).unwrap();
+}

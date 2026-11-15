@@ -36,6 +36,8 @@ pub struct AgoraProfile {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct ChronosProfile {
+    #[serde(default)]
+    pub deployment: DeploymentMode,
     pub workstreams: Vec<WorkstreamProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
@@ -44,6 +46,14 @@ pub struct ChronosProfile {
     #[serde(default)]
     pub daimon: Vec<DaimonBinding>,
     pub planning: Option<PathBuf>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum DeploymentMode {
+    #[default]
+    Attach,
+    Hosted,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]

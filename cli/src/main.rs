@@ -14,7 +14,8 @@ use vellum_sdk_client::{
 use vellum_tui::ServiceEditor;
 use workbench_tui::Shell;
 use workbench_tui_cli::{
-    profile::{AgoraProfile, WorkspaceProfile},
+    native_host::NativeHost,
+    profile::{AgoraProfile, DeploymentMode, WorkspaceProfile},
     run_multi_peer_terminal,
 };
 
@@ -49,6 +50,7 @@ struct Options {
     chronos_scheduling: bool,
     chronos_planning: Option<PathBuf>,
     chronos_cancel_receipts: bool,
+    host_chronos: bool,
     moira_bindings: Vec<(String, PathBuf, String)>,
     daimon_bindings: Vec<(String, PathBuf)>,
     check_profile: bool,
@@ -97,6 +99,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut chronos_planning = None;
     let mut agora_requires = Vec::new();
     let mut chronos_requires = Vec::new();
+    let mut host_chronos = false;
     let mut vellum_requires = Vec::new();
     let mut chronos_streams = if workspace_profile {
         let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
@@ -112,6 +115,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             vellum_credential = vellum.credential;
         }
         if let Some(chronos) = profile.chronos {
+            host_chronos = chronos.deployment == DeploymentMode::Hosted;
             chronos_requires = chronos.requires;
             chronos_planning = chronos.planning;
             moira_bindings = chronos
@@ -167,6 +171,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             chronos_scheduling = true;
         } else if argument == "--chronos-cancel-receipts" && !chronos_cancel_receipts {
             chronos_cancel_receipts = true;
+        } else if argument == "--host-chronos" && !host_chronos {
+            host_chronos = true;
         } else if argument == "--chronos-planning" && chronos_planning.is_none() {
             chronos_planning =
                 Some(required_arg(&mut args, "--chronos-planning requires PATH")?.into());
@@ -261,6 +267,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         chronos_scheduling,
         chronos_planning,
         chronos_cancel_receipts,
+        host_chronos,
         moira_bindings,
         daimon_bindings,
         check_profile,
@@ -284,7 +291,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--vellum-service SOCKET] [--vellum-credential PATH] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--vellum-credential PATH] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos uses the same workstream directories and native client while Workbench owns service startup and drain. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -315,9 +322,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         return Ok(());
     }
-    if options.headless {
-        return headless(options);
+    let mut native_host = start_native_host(&options)?;
+    let result = if options.headless {
+        headless(options)
+    } else {
+        interactive(options)
+    };
+    let shutdown = native_host
+        .as_mut()
+        .map(NativeHost::shutdown)
+        .transpose()
+        .map_err(|error| format!("hosted topology shutdown refused: {error:?}"));
+    match (result, shutdown) {
+        (Ok(()), Ok(Some(receipt))) if !receipt.clean() => Err(format!(
+            "hosted topology shutdown incomplete: {:?}",
+            receipt.receipts
+        )
+        .into()),
+        (Ok(()), Ok(_)) => Ok(()),
+        (Err(error), Ok(Some(receipt))) if !receipt.clean() => Err(format!(
+            "{error}; hosted topology shutdown incomplete: {:?}",
+            receipt.receipts
+        )
+        .into()),
+        (Err(error), Ok(_)) => Err(error),
+        (Ok(()), Err(error)) => Err(error.into()),
+        (Err(error), Err(shutdown)) => Err(format!("{error}; {shutdown}").into()),
     }
+}
+
+fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn std::error::Error>> {
+    if !options.host_chronos {
+        return Ok(None);
+    }
+    if options.chronos_streams.is_empty() {
+        return Err("--host-chronos requires at least one Chronos workstream".into());
+    }
+    let mut host = NativeHost::new();
+    for workstream in &options.chronos_streams {
+        host.start_chronos(
+            workstream.name.clone(),
+            &workstream.directory,
+            chronos_standalone::ServerOptions {
+                allow_writes: options.chronos_writes,
+                atomic_state: options.chronos_watch || options.chronos_cancel_receipts,
+                observer_history: options.chronos_watch,
+                allocation_receipts: false,
+            },
+        )
+        .map_err(|failure| format!("hosted Chronos startup refused: {failure:?}"))?;
+    }
+    host.seal()
+        .map_err(|error| format!("hosted topology seal refused: {error:?}"))?;
+    Ok(Some(host))
+}
+
+fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     let agora = if let Some(profile) = options.agora {
         let (client_id, port) = AgoraLocalServicePort::connect(
             &profile.socket,

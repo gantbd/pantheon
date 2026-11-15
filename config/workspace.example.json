@@ -17,6 +17,7 @@
     "requires": ["rooms.read.v2"]
   },
   "chronos": {
+    "deployment": "attach",
     "workstreams": [
       {
         "name": "Atlas / Delivery",

@@ -99,10 +99,39 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
+name = "chronos-adapter-checkpoint"
+version = "0.1.0"
+dependencies = [
+ "chronos-engine",
+ "chronos-host",
+]
+
+[[package]]
+name = "chronos-adapter-native"
+version = "0.1.0"
+dependencies = [
+ "chronos-client",
+ "chronos-engine",
+ "chronos-host",
+ "chronos-wire",
+]
+
+[[package]]
 name = "chronos-client"
 version = "0.1.0"
 dependencies = [
  "chronos-protocol",
+]
+
+[[package]]
+name = "chronos-engine"
+version = "0.3.0"
+
+[[package]]
+name = "chronos-host"
+version = "0.1.0"
+dependencies = [
+ "chronos-engine",
 ]
 
 [[package]]
@@ -127,6 +156,30 @@ name = "chronos-protocol"
 version = "0.1.0"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "chronos-service"
+version = "0.1.0"
+dependencies = [
+ "chronos-engine",
+ "chronos-host",
+ "keystone-storage",
+]
+
+[[package]]
+name = "chronos-standalone"
+version = "0.1.0"
+dependencies = [
+ "chronos-adapter-checkpoint",
+ "chronos-adapter-native",
+ "chronos-engine",
+ "chronos-host",
+ "chronos-local",
+ "chronos-service",
+ "chronos-wire",
+ "rustix",
+ "signal-hook",
 ]
 
 [[package]]
@@ -480,6 +533,10 @@ source = "git+https://github.com/gantbd/keystone?rev=3486252cdbaeb2d784756076f43
 name = "keystone-observe"
 version = "0.0.1"
 source = "git+https://github.com/gantbd/keystone?rev=3486252cdbaeb2d784756076f43ef6157ed0b7f8#3486252cdbaeb2d784756076f43ef6157ed0b7f8"
+
+[[package]]
+name = "keystone-storage"
+version = "0.0.1"
 
 [[package]]
 name = "libc"
@@ -1227,6 +1284,7 @@ dependencies = [
  "chronos-client",
  "chronos-local",
  "chronos-protocol",
+ "chronos-standalone",
  "chronos-tui",
  "crossterm",
  "ratatui",

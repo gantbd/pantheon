@@ -89,13 +89,14 @@ runtime authorization and refusal with the owning service.
 Exit check: one Workbench invocation hosts all three services, drives their
 reused TUIs, and shuts them down in a bounded order without an external daemon.
 
-Status: the CLI package now contains a typed-client host registry. It returns
+Status: the CLI package now contains a typed-client host registry and a native
+Chronos owner used by both interactive and headless execution. The registry returns
 each peer's concrete client to its owning integration, retains only operational
 shutdown callbacks, refuses duplicate/post-seal starts, drains in reverse order,
 preserves refused or outcome-unknown shutdown receipts, and rolls back partial
 assembly with exact receipts when a guarded factory start fails. Concrete
-Agora, Chronos, and Vellum service factories plus a hosted CLI/profile mode
-remain open.
+Vellum and Agora service factories plus full hosted CLI/profile coverage remain
+open.
 
 ### 4. Qualify headless parity
 

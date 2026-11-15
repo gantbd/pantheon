@@ -53,3 +53,6 @@
 - Added guarded hosted-topology assembly that rolls back already-started peers
   in reverse order and returns exact clean, refused, or outcome-unknown receipts
   when a later factory refuses startup.
+- Added profile- and launch-selected native Chronos hosting for interactive and
+  headless Workbench runs, using the real service owner, ordinary local client,
+  native drain signal, joined shutdown, and exact lifecycle receipts.
