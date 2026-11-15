@@ -82,6 +82,44 @@ assert peer["page_decisions"] == 4 and peer["more_decisions"]
 '
 
 start_fixture
+if refusal=$("$workbench" aegis-revoke-epoch "$socket" 0 'revoke aegis epoch 0' 2>"$scratch/revoke-confirmation.err"); then
+  echo 'FAIL: Workbench accepted an inexact Aegis revocation confirmation' >&2
+  exit 1
+fi
+finish_fixture
+printf '%s' "$refusal" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "aegis"
+assert not value["complete"] and value["status"] == "confirmation_refused"
+assert value["required_confirmation"] == "REVOKE AEGIS EPOCH 0"
+'
+
+start_fixture
+if refusal=$("$workbench" aegis-revoke-epoch "$socket" 1 'REVOKE AEGIS EPOCH 1' 2>"$scratch/revoke-stale.err"); then
+  echo 'FAIL: Workbench accepted a stale Aegis revocation epoch' >&2
+  exit 1
+fi
+finish_fixture
+printf '%s' "$refusal" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert not value["complete"] and value["status"] == "stale_epoch"
+'
+
+start_fixture
+revoked=$("$workbench" aegis-revoke-epoch "$socket" 0 'REVOKE AEGIS EPOCH 0')
+finish_fixture
+printf '%s' "$revoked" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "aegis"
+assert value["complete"] and value["status"] == "accepted"
+assert value["capability"] == "authority.revoke-epoch.v1"
+assert value["expected_epoch"] == 0 and value["epoch"] == 1
+'
+
+start_fixture
 python3 - "$scratch" "$workbench" "$profile" <<'PYTHON'
 from pathlib import Path
 import shlex
@@ -128,4 +166,4 @@ finally:
 PYTHON
 finish_fixture
 
-echo 'PASS: real Aegis daemon -> bounded authority pages -> Workbench headless and interactive attach'
+echo 'PASS: real Aegis daemon -> bounded pages and exact-confirmed revocation -> Workbench'

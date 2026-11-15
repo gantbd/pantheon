@@ -450,7 +450,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. The Aegis command reuses its peer-owned exact-confirmation guard and never retries an uncertain outcome. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -473,6 +473,12 @@ fn vellum_connector(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "aegis-revoke-epoch")
+    {
+        return aegis_revoke_epoch(std::env::args_os().skip(2));
+    }
     let explicit_headless = std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "headless");
@@ -499,6 +505,92 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn aegis_revoke_epoch(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let expected_epoch = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .and_then(|value| value.parse::<u64>().ok())
+        .ok_or_else(usage)?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let (session, port) = match aegis_tui_local_client::connect(
+        socket,
+        aegis_wire::LimitsV1::default(),
+        std::time::Duration::from_secs(5),
+    ) {
+        Ok(value) => value,
+        Err(error) => return aegis_command_failure("not_sent", &format!("{error:?}"), None),
+    };
+    match aegis_admin_command::revoke_epoch(
+        session,
+        port,
+        aegis_admin_command::RevokeEpoch { expected_epoch },
+        &confirmation,
+    ) {
+        Ok(epoch) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "aegis",
+                    "capability": aegis_admin_command::CAPABILITY,
+                    "complete": true,
+                    "status": "accepted",
+                    "expected_epoch": expected_epoch,
+                    "epoch": epoch
+                }))?
+            );
+            Ok(())
+        }
+        Err(aegis_admin_command::RevokeError::ConfirmationMismatch { required }) => {
+            aegis_command_failure(
+                "confirmation_refused",
+                "exact confirmation required",
+                Some(&required),
+            )
+        }
+        Err(aegis_admin_command::RevokeError::StaleEpoch { actual, .. }) => {
+            aegis_command_failure("stale_epoch", &format!("current epoch is {actual}"), None)
+        }
+        Err(aegis_admin_command::RevokeError::MutationTransport(
+            aegis_tui_local_client::ClientError::OutcomeUnknown(error),
+        )) => aegis_command_failure("outcome_unknown", &error.to_string(), None),
+        Err(aegis_admin_command::RevokeError::MutationRefused(refusal)) => {
+            aegis_command_failure("refused", &format!("{refusal:?}"), None)
+        }
+        Err(error) => aegis_command_failure("unavailable", &format!("{error:?}"), None),
+    }
+}
+
+fn aegis_command_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "aegis",
+            "capability": aegis_admin_command::CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn workbench_headless_configuration_failure(

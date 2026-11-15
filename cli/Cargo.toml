@@ -48,6 +48,7 @@ hermes-tui-local-client = { version = "=0.1.0", path = "../../hermes-tui/local-c
 hermes-client = { version = "=0.1.0", path = "../../hermes/crates/hermes-client" }
 hermes-protocol = { version = "=0.1.0", path = "../../hermes/crates/hermes-protocol" }
 aegis-tui = { version = "=0.1.0", path = "../../aegis-tui" }
+aegis-admin-command = { version = "=0.1.0", path = "../../aegis-tui/admin-command" }
 aegis-tui-local-client = { version = "=0.1.0", path = "../../aegis-tui/local-client" }
 aegis-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-client" }
 aegis-wire = { version = "=0.1.0", path = "../../aegis/crates/aegis-wire" }

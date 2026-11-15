@@ -51,8 +51,12 @@ read-only input until that repository settles.
   acknowledgement-capable consumer facade.
 - [ ] Hermes: add event gap views only with explicit content-disclosure and
   response bounds, without inventing a global stream or consumer catalogue.
-- [ ] Aegis: guarded issue/attenuate/revoke administration with exact epoch,
-  resource/action confirmation and outcome-unknown fencing.
+- [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
+  one-attempt epoch revocation in standalone and Workbench, preserving
+  `outcome_unknown` without retry.
+- [ ] Aegis: guarded long-lived issue/attenuate administration with exact
+  resource/action confirmation and reconcilable operation identity. One-shot
+  commands are invalid because grant handles are session-local.
 - [x] Aegis: preserve bounded redacted grant/decision pagination through the
   same read-only component in standalone and Workbench interactive paths.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and

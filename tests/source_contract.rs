@@ -139,7 +139,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "ff2b887db243c8fd35b5179c2746e146d019b0f6"
+        "52681dc6a2c43f37ef9cfb3871c3da88af3b2ee2"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
@@ -325,6 +325,10 @@ fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
     for required in [
         "real_daemon_fixture",
         "authority.observe.v1",
+        "authority.revoke-epoch.v1",
+        "REVOKE AEGIS EPOCH 0",
+        "confirmation_refused",
+        "stale_epoch",
         "headless",
         "interactive",
         "epoch: 0",

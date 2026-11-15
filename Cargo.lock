@@ -3,6 +3,14 @@
 version = 4
 
 [[package]]
+name = "aegis-admin-command"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+]
+
+[[package]]
 name = "aegis-client"
 version = "0.1.0"
 dependencies = [
@@ -1466,6 +1474,7 @@ dependencies = [
 name = "workbench-tui-cli"
 version = "0.1.0"
 dependencies = [
+ "aegis-admin-command",
  "aegis-client",
  "aegis-tui",
  "aegis-tui-local-client",

@@ -193,10 +193,12 @@ Aegis now has an independent read-only authority TUI, standalone CLI,
 and Workbench attachment qualified against the real durable daemon in both
 interactive and headless modes. The shared component now navigates forward and
 backward across bounded redacted grant/decision pages while headless observation
-retains one bounded page plus explicit continuation evidence. Issue,
-attenuation, authorization, and epoch revocation
-remain excluded until exact confirmation, current-epoch, non-amplification,
-durable receipt, and outcome-unknown laws are qualified.
+retains one bounded page plus explicit continuation evidence. Standalone and
+Workbench also reuse Aegis's peer-owned `authority.revoke-epoch.v1` guard: exact
+literal confirmation, same-connection current-epoch observation, one mutation
+attempt, and preserved outcome uncertainty are qualified against the real
+daemon. Issue and attenuation remain excluded because their handles are
+session-local and lost replies cannot yet be reconciled to an exact grant.
 
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
 place for one headless Workbench invocation and now also observes Grounding

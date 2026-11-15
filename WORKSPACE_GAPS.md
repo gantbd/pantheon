@@ -10,7 +10,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 | Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench census plus bounded selected-saga evidence/operator receipts | Guarded operator reconciliation actions and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation and production Workbench host factory | Attach the typed read-only Grounding peer; MCP remains agent-facing only |
-| Aegis | Administrative/read clients and local daemon; independent `aegis-tui` bounded status plus navigable redacted grant/decision summary pages in standalone and Workbench | Guarded issue, attenuation, authorization, revocation, and production Workbench host factory | Attach the read-only authority peer |
+| Aegis | Administrative/read clients and local daemon; independent `aegis-tui` bounded status, navigable redacted pages, and exact-confirmed epoch revocation in standalone and Workbench | Long-lived guarded issue/attenuation and production Workbench host factory | Attach the read-only peer; invoke the separate revocation command only with exact current-epoch confirmation |
 | Hermes | Ledger/operator clients and local daemon; independent `hermes-tui` status/usage/signals peer; standalone and Workbench configured content-free stream health plus selected consumer cursor/backlog | Bounded event-gap disclosure, guarded mutations, and production Workbench host factory | Attach the read-only ledger peer with optional exact opaque stream/consumer selectors |
 
 Federation peers and cross-engine adapters remain subordinate to their owning
@@ -39,7 +39,7 @@ connection without treating a manifest match as service authorization.
 | Moira | Reused saga TUI; real-daemon census/evidence/receipt journey | `sagas.inspect.v1`; real SQLite daemon | Interactive evidence/receipt component + aggregate census; real daemon | Open; attach only |
 | Daimon | Reused redacted presence TUI; public-port rendering gate | `agents.presence.v1`; real durable daemon and roster | Interactive component + aggregate headless; real daemon | Open; attach only |
 | Hermes | Reused ledger TUI | `ledger.observe.v1`; real durable daemon | Interactive component + aggregate headless; real daemon | Open; attach only |
-| Aegis | Reused read-only authority TUI | `authority.observe.v1`; real durable daemon | Interactive component + aggregate headless; real daemon | Open; attach only |
+| Aegis | Reused read-only authority TUI plus peer-owned epoch-revocation guard | `authority.observe.v1` and `authority.revoke-epoch.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed one-attempt revocation command | Native host and long-lived issue/attenuate remain open |
 | Grounding | Reused typed Grounding TUI | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Open; attach only |
 
 This is qualified local working-tree evidence, not an immutable release
@@ -86,6 +86,7 @@ qualified across all three interactive panes and one aggregate headless report.
 6. Add Hermes event-gap views through the same standalone/Workbench selector
    pattern only after content disclosure is bounded. Add ledger mutations and Aegis operator actions only with
    authorization, uncertainty, and content-minimization laws intact.
-7. Extend Aegis with separately guarded authority-bearing commands only after
-   current-epoch confirmation, non-amplification, durable receipt, recovery, and
-   outcome-unknown qualification.
+7. Keep Aegis issue and attenuation unavailable until a long-lived session can
+   preserve its handles and reconcile a lost reply to an exact operation;
+   epoch revocation already reuses the qualified exact-confirmation,
+   current-epoch and no-retry guard.
