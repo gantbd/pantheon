@@ -68,6 +68,15 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     ] {
         assert!(cli_manifest.contains(required), "CLI omits {required}");
     }
+    assert!(cli_manifest.contains("default = [\"native-chronos\"]"));
+    assert!(cli_manifest.contains("chronos-standalone = {"));
+    assert!(cli_manifest.contains("optional = true"));
+    let agora_qualifier = fs::read_to_string(root.join("qualification/agora-host/Cargo.toml"))
+        .expect("isolated Agora host qualifier");
+    assert!(agora_qualifier.contains("[workspace]"));
+    assert!(agora_qualifier.contains("default-features = false"));
+    assert!(agora_qualifier.contains("agora-local-daemon"));
+    assert!(manifest.contains("exclude = [\"qualification/agora-host\"]"));
     let cli_entry = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI entry point");
     for peer_manifest in [
         "agora_tui::CAPABILITIES",
@@ -126,5 +135,19 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
     }
     for forbidden in ["cargo publish", "git push", "gh release", "curl "] {
         assert!(!gate.contains(forbidden), "live gate performs {forbidden}");
+    }
+}
+
+#[test]
+fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");
+    for required in [
+        "qualification/agora-host/Cargo.toml",
+        "--all-targets",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(gate.contains(required), "Agora live gate omits {required}");
     }
 }

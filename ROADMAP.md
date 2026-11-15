@@ -96,9 +96,14 @@ Chronos and Vellum owners used by both interactive and headless execution. The r
 each peer's concrete client to its owning integration, retains only operational
 shutdown callbacks, refuses duplicate/post-seal starts, drains in reverse order,
 preserves refused or outcome-unknown shutdown receipts, and rolls back partial
-assembly with exact receipts when a guarded factory start fails. Concrete
-Agora's authority-bearing service factory plus full three-peer hosted
-qualification remain open.
+assembly with exact receipts when a guarded factory start fails. An injected
+Agora authority factory is qualified against the real daemon and public client;
+the standalone Workbench profile still lacks a production peer-provenance,
+Aegis grant/time, and durable-host factory. Full three-peer hosted qualification
+therefore remains open. Chronos standalone and Agora daemon also currently
+select different source identities for `keystone-storage`; the real-Agora
+lifecycle qualification is isolated in its own lock closure until those inputs
+converge rather than masking Cargo's all-three collision.
 
 ### 4. Qualify headless parity
 

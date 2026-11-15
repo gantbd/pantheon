@@ -145,3 +145,11 @@ to check workstream switching, offline recovery, focus routing, and exit. It
 then restarts both peers under Workbench ownership, qualifies the joint headless
 snapshot and interactive panes, and proves reverse shutdown removes every data
 and control endpoint.
+
+Run `cargo test --manifest-path qualification/agora-host/Cargo.toml --locked
+--offline` to qualify Workbench's deployment-owned Agora lifecycle seam against
+the real local daemon and public Unix client. This nested lock closure uses an
+explicitly test-only authority composition and disables native Chronos hosting.
+It is intentionally separate while Chronos standalone and Agora resolve
+different source identities for `keystone-storage`; it does not qualify the
+production Agora authority factory or the all-three native graph.

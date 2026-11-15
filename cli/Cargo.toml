@@ -8,6 +8,10 @@ repository = "https://github.com/gantbd/workbench-tui"
 publish = false
 description = "Standalone interactive and headless application for Workbench terminal composition"
 
+[features]
+default = ["native-chronos"]
+native-chronos = ["dep:chronos-standalone"]
+
 [[bin]]
 name = "workbench-tui"
 path = "src/main.rs"
@@ -26,7 +30,7 @@ chronos-tui = { version = "=0.1.0", path = "../../chronos-tui" }
 chronos-client = { version = "=0.1.0", path = "../../chronos/client/chronos-client" }
 chronos-protocol = { version = "=0.1.0", path = "../../chronos/protocol/chronos-protocol" }
 chronos-local = { version = "=0.1.0", path = "../../chronos/transport/chronos-local" }
-chronos-standalone = { version = "=0.1.0", path = "../../chronos/applications/chronos-daemon" }
+chronos-standalone = { version = "=0.1.0", path = "../../chronos/applications/chronos-daemon", optional = true }
 agora-tui = { version = "=0.1.0", path = "../../agora-tui" }
 agora-tui-local-client = { version = "=0.1.0", path = "../../agora-tui/local-client" }
 agora-client = { version = "=0.1.0", path = "../../agora/client/agora-client" }

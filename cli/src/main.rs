@@ -14,7 +14,7 @@ use vellum_sdk_client::{
 use vellum_tui::ServiceEditor;
 use workbench_tui::Shell;
 use workbench_tui_cli::{
-    native_host::NativeHost,
+    native_host::{ChronosHostOptions, NativeHost},
     profile::{AgoraProfile, DeploymentMode, WorkspaceProfile},
     registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
     run_multi_peer_terminal,
@@ -512,7 +512,7 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
         host.start_chronos(
             workstream.name.clone(),
             &workstream.directory,
-            chronos_standalone::ServerOptions {
+            ChronosHostOptions {
                 allow_writes: options.chronos_writes,
                 atomic_state: options.chronos_watch || options.chronos_cancel_receipts,
                 observer_history: options.chronos_watch,

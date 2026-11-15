@@ -1,0 +1,28 @@
+[package]
+name = "workbench-agora-host-qualification"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+resolver = "3"
+
+[dependencies]
+workbench-tui-cli = { path = "../../cli", default-features = false }
+agora-tui-local-client = { path = "../../../agora-tui/local-client" }
+agora-client = { path = "../../../agora/client/agora-client" }
+agora-protocol = { path = "../../../agora/protocol/agora-protocol" }
+agora-wire = { path = "../../../agora/protocol/agora-wire" }
+agora-aegis-verifier = { path = "../../../agora/adapters/agora-aegis-verifier" }
+agora-engine = { path = "../../../agora/engine/agora-engine" }
+agora-host = { path = "../../../agora/host/agora-host" }
+agora-local-daemon = { path = "../../../agora/applications/agora-local-daemon" }
+agora-service = { path = "../../../agora/service/agora-service" }
+aegis-client = { path = "../../../aegis/crates/aegis-client" }
+aegis-protocol = { path = "../../../aegis/crates/aegis-protocol" }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"

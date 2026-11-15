@@ -3,16 +3,16 @@
 //! This module owns only operational lifecycle. Each peer keeps its own
 //! service, protocol, state root, authority configuration, and concrete client.
 
-use std::{
-    io::Write,
-    os::unix::net::UnixStream,
-    path::Path,
-    thread::{self, JoinHandle},
-};
+#[cfg(any(feature = "native-chronos", target_os = "macos"))]
+use std::thread::JoinHandle;
+#[cfg(feature = "native-chronos")]
+use std::{io::Write, os::unix::net::UnixStream};
+use std::{path::Path, thread};
 #[cfg(target_os = "macos")]
 use std::{path::PathBuf, sync::mpsc};
 
-use chronos_standalone::{Server, ServerOptions};
+#[cfg(feature = "native-chronos")]
+use chronos_standalone::Server;
 #[cfg(target_os = "macos")]
 use vellum_adapter_local_authentication::{LocalCredentialStoreV1, LocalCredentialVerifierV1};
 #[cfg(target_os = "macos")]
@@ -32,6 +32,15 @@ use crate::registry::{
 
 pub struct NativeHost {
     registry: HostRegistry,
+}
+
+/// Deployment-neutral options for a Workbench-owned Chronos service.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct ChronosHostOptions {
+    pub allow_writes: bool,
+    pub atomic_state: bool,
+    pub observer_history: bool,
+    pub allocation_receipts: bool,
 }
 
 impl Default for NativeHost {
@@ -54,21 +63,57 @@ impl NativeHost {
         &mut self,
         name: impl Into<String>,
         directory: &Path,
-        options: ServerOptions,
+        options: ChronosHostOptions,
     ) -> Result<(), StartupFailure<String>> {
-        let name = name.into();
-        self.registry
-            .start_or_rollback(HostedPeerId::Chronos(name), || -> Result<_, String> {
-                let mut server =
-                    Server::bind_with_options(directory, options).map_err(ToOwned::to_owned)?;
-                let (wake, writer) = UnixStream::pair()
-                    .map_err(|error| format!("Chronos shutdown channel refused: {error}"))?;
-                let owner = thread::Builder::new()
-                    .name("workbench-chronos-owner".into())
-                    .spawn(move || server.run_with_shutdown(&wake))
-                    .map_err(|error| format!("Chronos owner thread refused: {error}"))?;
-                Ok(((), chronos_shutdown(writer, owner)))
-            })
+        #[cfg(feature = "native-chronos")]
+        {
+            let name = name.into();
+            self.registry
+                .start_or_rollback(HostedPeerId::Chronos(name), || -> Result<_, String> {
+                    let mut server = Server::bind_with_options(
+                        directory,
+                        chronos_standalone::ServerOptions {
+                            allow_writes: options.allow_writes,
+                            atomic_state: options.atomic_state,
+                            observer_history: options.observer_history,
+                            allocation_receipts: options.allocation_receipts,
+                        },
+                    )
+                    .map_err(ToOwned::to_owned)?;
+                    let (wake, writer) = UnixStream::pair()
+                        .map_err(|error| format!("Chronos shutdown channel refused: {error}"))?;
+                    let owner = thread::Builder::new()
+                        .name("workbench-chronos-owner".into())
+                        .spawn(move || server.run_with_shutdown(&wake))
+                        .map_err(|error| format!("Chronos owner thread refused: {error}"))?;
+                    Ok(((), chronos_shutdown(writer, owner)))
+                })
+        }
+        #[cfg(not(feature = "native-chronos"))]
+        {
+            let name = name.into();
+            let _ = (directory, options);
+            self.registry
+                .start_or_rollback(HostedPeerId::Chronos(name), || {
+                    Err::<((), fn() -> ShutdownDisposition), _>(
+                        "native Chronos hosting is not compiled into this deployment".to_owned(),
+                    )
+                })
+        }
+    }
+
+    /// Starts an Agora owner supplied by the deployment and returns its
+    /// concrete client or presentation input unchanged. Workbench owns only
+    /// lifecycle registration; the factory remains responsible for Aegis
+    /// authentication, policy, trusted time, Host selection, and durability.
+    pub fn start_agora<C, S>(
+        &mut self,
+        start: impl FnOnce() -> Result<(C, S), String>,
+    ) -> Result<C, StartupFailure<String>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry.start_or_rollback(HostedPeerId::Agora, start)
     }
 
     pub fn seal(&mut self) -> Result<(), RegistryError> {
@@ -271,6 +316,7 @@ fn vellum_shutdown(
     }
 }
 
+#[cfg(feature = "native-chronos")]
 fn chronos_shutdown(
     mut writer: UnixStream,
     owner: JoinHandle<Result<(), &'static str>>,
@@ -289,7 +335,7 @@ fn chronos_shutdown(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "native-chronos"))]
 mod tests {
     use super::*;
     use chronos_client::observer::{Observer, ObserverLimits};
@@ -306,7 +352,7 @@ mod tests {
             fs::remove_dir_all(&directory).unwrap();
         }
         let mut host = NativeHost::new();
-        host.start_chronos("Atlas", &directory, ServerOptions::default())
+        host.start_chronos("Atlas", &directory, ChronosHostOptions::default())
             .unwrap();
         host.seal().unwrap();
 

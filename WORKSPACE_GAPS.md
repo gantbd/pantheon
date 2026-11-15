@@ -6,7 +6,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 
 | Surface | Available boundary | Missing boundary | Current fallback |
 | --- | --- | --- | --- |
-| Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty | Packaged standalone daemon executable and real-daemon Workbench journey | A profile can attach an existing socket; a trusted host can inject the peer |
+| Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory | Production peer-provenance, Aegis grant/time, and durable-host factory for the standalone Workbench profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
 | Moira | Native read/reconciliation clients and local daemon | Workflow trace and guarded reconciliation Ratatui peer | Attempt receipt inspection through Chronos |
 | Daimon | Execution/status clients, local daemon and supervisor census | Execution and agent-operations Ratatui peer | Attempt and roster inspection through Chronos |
 | Grounding | Dendrite MCP service over authored Rune material | Typed presentation client and composable Ratatui peer | Explicit unavailable surface |
@@ -28,25 +28,34 @@ connection without treating a manifest match as service authorization.
 
 | Core peer | Standalone interactive | Standalone headless | Workbench attach | Workbench host |
 | --- | --- | --- | --- | --- |
-| Agora | Reused TUI over private Unix client | `rooms.read.v2`, protocol fixture | Interactive + headless, protocol fixture | Host-supplied component only |
+| Agora | Reused TUI over private Unix client | `rooms.read.v2`, protocol fixture | Interactive + headless, protocol fixture | Injected factory; real daemon/public-client lifecycle qualified with test-only authority |
 | Chronos | Reused TUI; real-service journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service | Native owner; interactive + headless client path; joined drain |
 | Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 
 This is qualified local working-tree evidence, not an immutable release
 qualification. The three peer TUI commits are exact and clean in Workbench's
 source receipt, but several engine trees differ from their recorded revisions,
-remote reachability is unqualified, and Agora still lacks a packaged standalone
-daemon journey. The joint Chronos/Vellum hosted graph is locally qualified; the
-full three-peer hosted graph remains open rather than being inferred from
-successful attachment.
+remote reachability is unqualified, and Agora still lacks a production
+standalone factory. The joint Chronos/Vellum hosted graph is locally qualified;
+the full three-peer hosted graph remains open rather than being inferred from
+successful attachment. Its immediate build blocker is source convergence:
+Chronos standalone currently resolves a vendored `keystone-storage` package,
+while Agora's daemon resolves the sibling Keystone package with the same name
+and version. Cargo refuses both package identities in one lockfile. The Agora
+owner qualification therefore has an explicit nested lock closure and disables
+the optional native-Chronos owner; this is evidence for the lifecycle seam, not
+evidence that the all-three deployment graph resolves.
 
 ## Reconciliation order
 
-1. Qualify the selected Agora client against a packaged real daemon composition.
-2. Add a Moira workflow trace before exposing operator reconciliation actions.
-3. Promote Daimon attempt and roster inspection into a peer without removing
+1. Converge Chronos and Agora on one Keystone source identity, then qualify all
+   three native owners in one Workbench process and lock closure.
+2. Supply Agora's production peer-provenance, Aegis grant/time, and durable-host
+   factory without moving those authority semantics into Workbench.
+3. Add a Moira workflow trace before exposing operator reconciliation actions.
+4. Promote Daimon attempt and roster inspection into a peer without removing
    the task-local Chronos route.
-4. Define a typed Dendrite presentation boundary rather than making MCP the
+5. Define a typed Dendrite presentation boundary rather than making MCP the
    Workbench's canonical internal protocol.
-5. Add Aegis and Hermes operator peers only with their existing authorization,
+6. Add Aegis and Hermes operator peers only with their existing authorization,
    uncertainty and content-minimization laws intact.

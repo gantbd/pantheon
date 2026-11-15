@@ -68,3 +68,6 @@
   interactive presentation path.
 - Made explicit Workbench headless profile, capability, and syntax refusals use
   the aggregate versioned envelope before any service or presentation startup.
+- Added a typed deployment-owned Agora factory seam and qualified its lifecycle
+  registry against the real local daemon and public Unix client under an
+  explicitly test-only injected authority composition.
