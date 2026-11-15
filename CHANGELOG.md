@@ -63,3 +63,6 @@
   included reverse-order per-peer lifecycle receipts in the versioned report.
 - Advanced the Chronos peer input to a manifest-derived versioned failure
   envelope for malformed headless configuration as well as service uncertainty.
+- Advanced Agora and Vellum so selecting headless mode always yields one
+  versioned refusal on malformed configuration and never falls through to an
+  interactive presentation path.
