@@ -12,8 +12,8 @@ use vellum_sdk_client::{
     workspace::WorkspaceClientV1,
 };
 use vellum_tui::ServiceEditor;
-use workbench_tui::{
-    Shell,
+use workbench_tui::Shell;
+use workbench_tui_cli::{
     profile::{AgoraProfile, WorkspaceProfile},
     run_multi_peer_terminal,
 };

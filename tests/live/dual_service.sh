@@ -45,7 +45,7 @@ cargo build --manifest-path "$chronos/Cargo.toml" --package chronos-standalone \
   --bin chronos-service --locked --offline --target-dir "$chronos_target"
 cargo build --manifest-path "$vellum/Cargo.toml" --package vellum-daemon \
   --bin vellum-daemon --locked --offline --target-dir "$vellum_target"
-cargo build --manifest-path "$repo/Cargo.toml" --bin workbench-tui \
+cargo build --manifest-path "$repo/Cargo.toml" --package workbench-tui-cli --bin workbench-tui \
   --locked --offline --target-dir "$workbench_target"
 
 "$chronos_bin" "$chronos_dir" --atomic-state --observer-history --allow-writes >"$chronos_log" 2>&1 &

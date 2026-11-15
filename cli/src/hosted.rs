@@ -8,7 +8,8 @@ use vellum_sdk_client::{
 };
 use vellum_tui::ServiceEditor;
 
-use crate::{Shell, Surface, run_multi_peer_terminal, run_terminal};
+use crate::{run_multi_peer_terminal, run_terminal};
+use workbench_tui::{Shell, Surface};
 
 enum Request {
     Connect(mpsc::SyncSender<Result<ClientId, ServiceControlErrorV1>>),

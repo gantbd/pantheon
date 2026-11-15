@@ -8,9 +8,9 @@ Required local gate:
 
 ```sh
 cargo fmt --check
-cargo test --all-targets --locked --offline
-cargo clippy --all-targets --locked --offline -- -D warnings
-RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --locked --offline
+cargo test --workspace --all-targets --locked --offline
+cargo clippy --workspace --all-targets --locked --offline -- -D warnings
+RUSTDOCFLAGS='-D warnings' cargo doc --workspace --no-deps --locked --offline
 ```
 
 Keep failures content-safe, bounds explicit, and uncertain outcomes typed. Do

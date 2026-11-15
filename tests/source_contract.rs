@@ -42,8 +42,30 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("vellum-sdk-client"));
     assert!(manifest.contains("chronos-tui"));
     assert!(manifest.contains("agora-tui"));
-    assert!(manifest.contains("agora-tui-local-client"));
-    assert!(manifest.contains("chronos-local"));
+    assert!(!manifest.contains("agora-tui-local-client"));
+    assert!(!manifest.contains("chronos-local"));
+    for cli_owned in ["main.rs", "profile.rs", "terminal.rs", "hosted.rs"] {
+        assert!(
+            !root.join("src").join(cli_owned).exists(),
+            "reusable package retains CLI-owned {cli_owned}"
+        );
+        assert!(
+            root.join("cli/src").join(cli_owned).is_file(),
+            "CLI package omits {cli_owned}"
+        );
+    }
+    let cli_manifest =
+        fs::read_to_string(root.join("cli/Cargo.toml")).expect("CLI package manifest");
+    for required in [
+        "name = \"workbench-tui-cli\"",
+        "name = \"workbench-tui\"",
+        "workbench-tui =",
+        "agora-tui-local-client",
+        "chronos-local",
+        "vellum-adapter-local-authentication",
+    ] {
+        assert!(cli_manifest.contains(required), "CLI omits {required}");
+    }
     for forbidden in [
         "vellum-engine",
         "vellum-host",

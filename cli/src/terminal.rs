@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use vellum_sdk_client::protocol::ServicePort;
 use vellum_tui::{ServiceAction, ServiceEditor, ServiceInput, translate_service_input};
 
-use crate::{
+use workbench_tui::{
     ExitDecision, Focus, RoutedInput, Shell, ShellInput, Surface, decide_exit, draw_shell,
     route_key, shell_input,
 };

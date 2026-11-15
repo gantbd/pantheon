@@ -2,7 +2,9 @@ use std::{path::Path, process::Command};
 
 #[test]
 fn example_workspace_profile_passes_bounded_check_without_connecting() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("CLI package is nested under the workspace root");
     let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
         .arg("--workspace-profile")
         .arg(root.join("config/workspace.example.json"))

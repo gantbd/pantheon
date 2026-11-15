@@ -8,7 +8,8 @@ use agora_protocol::v2::{
 use vellum_sdk_client::protocol::{
     ClientId, ReplyV1, RequestV1, ServiceAccessErrorV1, ServiceControlErrorV1, ServicePort,
 };
-use workbench_tui::{Shell, Surface, run_multi_peer_terminal};
+use workbench_tui::{Shell, Surface};
+use workbench_tui_cli::run_multi_peer_terminal;
 
 struct FixtureAgora;
 

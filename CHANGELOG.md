@@ -29,3 +29,6 @@
   uncertainty, and partial aggregate failure without constructing TUI state.
 - Advanced the Vellum presentation input to the separately packaged standalone
   CLI boundary while retaining the reusable root presentation dependency.
+- Extracted Workbench's executable, profile parser, terminal lifecycle, and
+  hosted-service helpers into `workbench-tui-cli`; the root package is now the
+  reusable shell and peer-presentation composition boundary.

@@ -1,14 +1,9 @@
 //! Host-owned layout and focus routing for independent engine presentations.
 #![forbid(unsafe_code)]
 
-mod hosted;
-pub mod profile;
 mod shell;
-mod terminal;
 
-pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
 pub use shell::{Shell, ShellInput, Surface, shell_input};
-pub use terminal::{run_multi_peer_terminal, run_profiled_terminal, run_terminal};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{

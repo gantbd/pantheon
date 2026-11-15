@@ -5,7 +5,7 @@ use std::{
 
 use serde::Deserialize;
 
-use crate::{Shell, Surface};
+use workbench_tui::{Shell, Surface};
 
 const MAX_PROFILE_BYTES: u64 = 64 * 1024;
 const MAX_WORKSTREAMS: usize = 16;

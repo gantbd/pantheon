@@ -1,9 +1,11 @@
 # Workbench TUI
 
-`workbench-tui` is an unpublished terminal presentation host for independent
-workspace peers. One executable owns terminal lifecycle, navigation, layout,
-focus and global exit routing. Each attached peer renders only inside its
-assigned rectangle and retains its own input and service authority.
+`workbench-tui` is an unpublished reusable terminal presentation host for
+independent workspace peers. The sibling `workbench-tui-cli` package owns the
+standalone executable, profile parsing, terminal lifecycle, and process exit;
+the root package owns navigation, layout, focus, and global input routing. Each
+attached peer renders only inside its assigned rectangle and retains its own
+input and service authority.
 
 The binary attaches a Chronos Hub and one Vellum Unix service socket. Add
 `--chronos-workstream NAME DIRECTORY` for each extra Chronos service. With
@@ -18,13 +20,13 @@ are live in the standalone binary. A workspace profile may attach Agora through
 the selected private Unix client by supplying its socket and participant claim;
 the daemon authenticates the connected OS peer and remains the authority owner.
 A trusted host can instead supply an independently constructed `agora-tui`
-component through `run_hosted_terminal_with_agora`. Other configured surfaces
+component through `workbench_tui_cli::run_hosted_terminal_with_agora`. Other configured surfaces
 render their exact integration gap and receive no input. `[` and `]` switch
 surfaces; Tab switches focus only inside Workspace. See
 [the gap ledger](WORKSPACE_GAPS.md) and [delivery roadmap](ROADMAP.md).
 
 ```sh
-cargo run --locked --offline -- \
+cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- \
   /private/tmp/chronos-service-directory \
   --vellum-service /private/tmp/vellum.sock
 ```
@@ -33,14 +35,14 @@ To load a bounded workspace profile instead, copy
 `config/workspace.example.json`, adjust its relative service paths, and run:
 
 ```sh
-cargo run --locked --offline -- \
+cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- \
   --workspace-profile config/workspace.json
 ```
 
 Validate profile structure and path resolution without contacting a service:
 
 ```sh
-cargo run --locked --offline -- \
+cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- \
   --workspace-profile config/workspace.json --check-profile
 ```
 
@@ -71,7 +73,7 @@ truthful status. Healthy rows remain visible when another peer is unavailable,
 but the command refuses aggregate success. `--snapshot` remains a compatibility
 alias.
 
-A Vellum-owned integration host can call `workbench_tui::run_hosted_terminal`
+A Vellum-owned integration host can call `workbench_tui_cli::run_hosted_terminal`
 with a Chronos `Hub` and a factory for the Vellum service and handoff handler.
 Editor commands and handoff requests share one service owner. The host resolves
 the document association and authorizes capture, publication, and review.
@@ -88,7 +90,7 @@ gantbd/
   workbench-tui/
 ```
 
-Run `cargo test --all-targets --locked --offline`. Nothing is published to
+Run `cargo test --workspace --all-targets --locked --offline`. Nothing is published to
 crates.io and no remote, release, signing or activation action is performed.
 The machine source receipt records the current dirty coordinated closure as
 unqualified; immutable-revision CI is intentionally deferred until those

@@ -70,7 +70,9 @@ Status: the current CLI has explicit interactive behavior and a `--headless`
 mode (with `--snapshot` compatibility alias). Headless emits a versioned JSON
 report for any configured subset of Agora, Chronos workstreams, and Vellum,
 uses their public clients directly, and refuses aggregate success on partial
-failure. Moving the CLI into a separate package remains open.
+failure. The executable, profile parser, terminal lifecycle, and hosted-service
+helpers now live in the separate `workbench-tui-cli` package; the root package
+contains the reusable shell and peer-presentation composition only.
 
 ### 3. Add composite service hosting
 

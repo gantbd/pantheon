@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+// Protocol fixture for the standalone Workbench application package.
+
 use std::{
     fs,
     io::{self, Read, Write},

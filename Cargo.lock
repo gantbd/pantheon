@@ -1206,6 +1206,22 @@ dependencies = [
  "agora-client",
  "agora-protocol",
  "agora-tui",
+ "chronos-tui",
+ "crossterm",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "vellum-sdk-client",
+ "vellum-tui",
+]
+
+[[package]]
+name = "workbench-tui-cli"
+version = "0.1.0"
+dependencies = [
+ "agora-client",
+ "agora-protocol",
+ "agora-tui",
  "agora-tui-local-client",
  "agora-wire",
  "chronos-client",
@@ -1219,6 +1235,7 @@ dependencies = [
  "vellum-adapter-local-authentication",
  "vellum-sdk-client",
  "vellum-tui",
+ "workbench-tui",
 ]
 
 [[package]]
