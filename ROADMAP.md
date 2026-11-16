@@ -211,10 +211,10 @@ classification. An explicit opaque profile selector now reuses
 `agents.session.inspect.v1` in standalone and Workbench modes for stable phase,
 provider-profile digest, capability and bounded event evidence without exposing
 a session catalogue. Separate operator commands now reuse Daimon-owned guards
-for exact active-turn advance and digest-bound prompt dispatch in standalone and
-Workbench. The reusable component still cannot dispatch, prompt, decide
+for exact active-turn advance, digest-bound prompt dispatch, and cursor-bound
+permission decisions in standalone and Workbench. The reusable component still cannot dispatch, prompt, decide
 permission, advance, cancel, close, resume or reattach a provider session.
-Permission, cancel, close, reattach and native hosting remain later slices.
+Cancel, close, reattach and native hosting remain later slices.
 
 Hermes now has an independent reusable ledger TUI, standalone CLI,
 `ledger.observe.v1` status/usage/signals observation, and Workbench attachment.

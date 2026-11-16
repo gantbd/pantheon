@@ -277,6 +277,13 @@ their digest and the canonical digest of the entire execution envelope. The
 guard fences the ready revision on the mutation connection, dispatches once,
 and leaves transport uncertainty for retained-session reconciliation.
 
+Run `sh tests/live/daimon_permission.sh` to qualify
+`agents.session.permission.v1`. Both shells reuse the owner parser and guard to
+select one cursor-identified challenge, exact request and option. Confirmation
+binds digests of the complete provider challenge and separately authorized
+execution envelope; changed provider text, turn, options or cursor refuse before
+mutation, and uncertain decision delivery is never retried.
+
 Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
 configured consumer's content-free cursor/backlog through Hermes's read-only
 facade. Exact opaque selectors are profile inputs and are never catalogued or

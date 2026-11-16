@@ -144,6 +144,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         peers["daimon"]["mutationCapabilities"]["agents.session.prompt.v1"],
         "qualified"
     );
+    assert_eq!(
+        peers["daimon"]["mutationCapabilities"]["agents.session.permission.v1"],
+        "qualified"
+    );
 
     let capabilities = [
         ("aegis", aegis_tui::CAPABILITIES.headless[0]),
@@ -204,7 +208,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "0b79a2b717e0a16726cb39c5908f2cf8a99baa15"
+        "228d87e1ea3106d78a3a55e92d3f85a617a09267"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
@@ -228,7 +232,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "ca7bbde4afdc0234031306571b1613ebf7288351"
+        "c3f7bd01fa51dee91d50e9024edc67adcb8b29b9"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -800,6 +804,34 @@ fn daimon_prompt_reuses_the_owner_guard_and_document_in_both_shells() {
     assert!(cli.contains("daimon_agent_command::prompt"));
     assert!(cli.contains("parse_prompt_document"));
     assert!(!cli.contains("AgentCommandV1::Prompt"));
+}
+
+#[test]
+fn daimon_permission_reuses_the_owner_guard_and_exact_challenge_in_both_shells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_permission.sh"))
+        .expect("Daimon permission gate");
+    for required in [
+        "agent_permission_fixture",
+        "daimon-tui",
+        "workbench-tui",
+        "daimon-agent-permission",
+        "agents.session.permission.v1",
+        "request.json",
+        "standalone.marker",
+        "workbench.marker",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon permission gate omits {required}"
+        );
+    }
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(cli.contains("daimon_agent_command::decide_permission"));
+    assert!(cli.contains("parse_permission_document"));
+    assert!(!cli.contains("AgentCommandV1::DecidePermission"));
 }
 
 #[test]
