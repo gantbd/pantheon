@@ -177,9 +177,10 @@ including reusable interactive rendering, the shared headless observer, and
 clean reverse shutdown. The same lifecycle seam also qualifies scheduled
 publish/observe through Agora's public composition client under test-only
 authority. Durable Agora restart now passes through the exact standalone
-process in both standalone and Workbench-supervised journeys. Induced
-partial-shutdown qualification remains
-open; grant provisioning stays owner-side and outside Workbench.
+process in both standalone and Workbench-supervised journeys. An induced
+non-clean Agora receipt now proves aggregate refusal, continued reverse drain
+of Aegis, and durable reopen. Abrupt owner death and an outcome-unknown drain
+remain open; grant provisioning stays owner-side and outside Workbench.
 
 Chronos's selected guarded-write profile is also qualified through the hosted
 Workbench path using the peer-owned public Hub: task creation, receipted

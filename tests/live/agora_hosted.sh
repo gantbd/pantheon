@@ -35,6 +35,7 @@ run_profile() {
   epoch=$2
   incarnation=$3
   operation=${4:-headless}
+  agora_executable=${5:-$agora}
   grant_now=$(( $(date +%s) * 1000 ))
   grant_expires_at=$(( grant_now + 600000 ))
   config="$scratch/agora-$mode.conf"
@@ -93,7 +94,7 @@ run_profile() {
     '    "participant": "alice",' \
     '    "requires": ["rooms.read.v2"],' \
     '    "host": {' \
-    "      \"executable\": \"$agora\"," \
+    "      \"executable\": \"$agora_executable\"," \
     "      \"config\": \"$config\"" \
     '    }' \
     '  },' \
@@ -261,4 +262,50 @@ assert report["hosted_shutdown"]["status"] == "clean"
 [ ! -e "$scratch/agora.sock" ]
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: Workbench-hosted Aegis -> exact Agora standalone process -> public client -> headless/interactive clean durable reopen'
+cleanup_proxy="$root/tests/fixtures/agora_cleanup_proxy.py"
+partial_profile=$(run_profile open 4 0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d prepare "$cleanup_proxy")
+partial_report="$scratch/partial-shutdown-report.json"
+if WORKBENCH_AGORA_REAL_EXECUTABLE="$agora" \
+  "$workbench" headless --workspace-profile "$partial_profile" \
+    >"$partial_report" 2>"$scratch/partial-shutdown.err"; then
+  echo 'FAIL: Workbench accepted a non-clean Agora shutdown receipt' >&2
+  exit 1
+fi
+grep -q 'one or more peer observations or hosted shutdowns were incomplete' \
+  "$scratch/partial-shutdown.err"
+python3 - "$partial_report" <<'PYTHON'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    report = json.load(source)
+assert not report["complete"]
+peers = {peer["peer"]: peer for peer in report["peers"]}
+assert peers["agora"]["status"] == "current"
+assert peers["agora"]["rooms"] == 1
+assert peers["aegis"]["status"] == "current"
+assert report["hosted_shutdown"] == {
+    "status": "incomplete",
+    "receipts": [
+        {"peer": "agora", "instance": None, "disposition": "refused"},
+        {"peer": "aegis", "instance": None, "disposition": "clean"},
+    ],
+}
+PYTHON
+[ ! -e "$scratch/agora.sock" ]
+[ ! -e "$scratch/aegis.sock" ]
+
+after_partial=$(run_profile open 5 0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e)
+printf '%s' "$after_partial" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"]
+peers = {peer["peer"]: peer for peer in report["peers"]}
+assert peers["agora"]["rooms"] == 1
+assert peers["aegis"]["epoch"] == 5
+assert report["hosted_shutdown"]["status"] == "clean"
+'
+[ ! -e "$scratch/agora.sock" ]
+[ ! -e "$scratch/aegis.sock" ]
+
+echo 'PASS: Workbench-hosted Aegis -> exact Agora process -> clean and refused shutdown receipts -> continued reverse drain -> durable reopen'

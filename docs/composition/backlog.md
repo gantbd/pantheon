@@ -36,8 +36,8 @@ read-only input until that repository settles.
   deployment-owned grant selector only on the exact live Aegis session. Agora's
   concrete provisioner now issues one exact conversation or
   scheduled-composition scope using deployment-supplied authority epoch,
-  lifetime, resource, subject, and administrator credential mapping. Remaining
-  The owner factory now orders durable create, clean open, and exact endpoint
+  lifetime, resource, subject, and administrator credential mapping. The owner
+  factory now orders durable create, clean open, and exact endpoint
   residue recovery, and the shared owner loop returns an exact cleanup receipt
   after explicit shutdown and drain. The bounded standalone configuration and
   POSIX signal entrypoint reuse that owner. The real Aegis/Agora standalone
@@ -45,6 +45,9 @@ read-only input until that repository settles.
   and reopens retained state. Workbench supervises the exact same binary from
   an opaque config, uses the routed public Protocol V2 client in headless and
   interactive modes, drains Agora before Aegis, and qualifies durable reopen.
+  A test-only cleanup-receipt proxy proves a non-clean Agora result refuses
+  aggregate success without suppressing the later Aegis drain, followed by an
+  exact durable reopen. Abrupt owner death and outcome-unknown drain remain open.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,
