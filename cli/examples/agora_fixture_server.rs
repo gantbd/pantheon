@@ -81,10 +81,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => break,
             Err(error) => return Err(error.into()),
         };
-        let WireRequestV2::Execute { client, request } =
-            decode_request_v2(&frame, limits()).map_err(|_| "request decode")?
-        else {
-            return Err("execute expected".into());
+        let request = decode_request_v2(&frame, limits()).map_err(|_| "request decode")?;
+        let (client, request) = match request {
+            WireRequestV2::Execute { client, request } => (client, request),
+            WireRequestV2::Disconnect(client) => {
+                if client != ClientIdV2(4) {
+                    return Err("unexpected client".into());
+                }
+                write_frame(
+                    &mut stream,
+                    &encode_reply_v2(&WireReplyV2::Disconnected, limits())
+                        .map_err(|_| "disconnect encode")?,
+                )?;
+                break;
+            }
+            _ => return Err("execute or disconnect expected".into()),
         };
         if client != ClientIdV2(4) {
             return Err("unexpected client".into());

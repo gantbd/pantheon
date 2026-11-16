@@ -74,7 +74,11 @@ start_agora() {
 }
 
 finish_agora() {
-  wait "$agora_pid"
+  if ! wait "$agora_pid"; then
+    sed -n '1,120p' "$agora_log" >&2
+    echo 'FAIL: Agora fixture exited uncleanly' >&2
+    exit 1
+  fi
   agora_pid=
   rm -f "$agora_socket"
 }
