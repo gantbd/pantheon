@@ -129,6 +129,11 @@ read-only input until that repository settles.
 
 ## P3 — cross-engine completion
 
+- [x] Record Hermes append at its actual owner boundaries rather than inventing
+  a Workbench command: Moira qualifies its workflow-event schema and
+  `agora-hermes-adapter` qualifies minimized-wake append/replay. Generic append
+  is not a presentation-parity requirement.
+
 - [x] Close Agora–Chronos's adapter-owned Aegis mapping through five explicit
   session-local grant selections: Chronos Submit/Observe/Modify and Agora
   Execute/Observe over the opaque publication resource. The public-client

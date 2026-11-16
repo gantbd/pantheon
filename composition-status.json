@@ -96,6 +96,18 @@
         "ledger.acknowledge.v1": "qualified",
         "ledger.compact.v1": "qualified"
       },
+      "producerIntegrations": {
+        "moira.workflow-event.v1": {
+          "owner": "moira",
+          "state": "qualified",
+          "evidence": "moira/qualification/hermes-process-delivery"
+        },
+        "agora.minimized-wake.v1": {
+          "owner": "agora-hermes-adapter",
+          "state": "qualified",
+          "evidence": "agora-hermes-adapter/scripts/check-qualification.sh"
+        }
+      },
       "disclosureCapabilities": {
         "ledger.events.disclose.v1": "qualified"
       }

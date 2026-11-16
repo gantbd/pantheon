@@ -141,6 +141,18 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         "qualified"
     );
     assert_eq!(
+        peers["hermes"]["producerIntegrations"]["moira.workflow-event.v1"]["state"],
+        "qualified"
+    );
+    assert_eq!(
+        peers["hermes"]["producerIntegrations"]["agora.minimized-wake.v1"]["state"],
+        "qualified"
+    );
+    assert_eq!(
+        peers["hermes"]["producerIntegrations"]["agora.minimized-wake.v1"]["owner"],
+        "agora-hermes-adapter"
+    );
+    assert_eq!(
         peers["daimon"]["mutationCapabilities"]["agents.session.prompt.v1"],
         "qualified"
     );

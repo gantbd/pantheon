@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Normalized Hermes producer delivery as adapter-owned integration evidence:
+  Moira workflow events and Agora minimized wake are qualified profiles, while
+  generic Workbench append is explicitly not a presentation capability.
 - Added exact-confirmed Daimon detached-session reattach to standalone and
   Workbench through one owner parser and guard, with full execution-envelope
   binding, exact revision fencing and no retry after uncertain delivery.

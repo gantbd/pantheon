@@ -227,8 +227,8 @@ through the read-only facade in both products; the presentation never acquires
 acknowledgement authority. A separate `ledger.events.disclose.v1` command now
 reuses Hermes's `DisclosureClient` and exact stream/start/limit guard in both
 standalone and Workbench, bounded to 16 events plus the negotiated frame and
-reporting retention/publication gaps explicitly. Append and compaction remain
-guarded later operations.
+reporting retention/publication gaps explicitly. Producer append remains
+outside presentation; compaction is qualified through its owner guard below.
 
 Hermes now also supplies the shutdown-aware accept loop and explicit observer
 and exact-stream operator daemon profiles. Workbench owns that sovereign process
@@ -238,7 +238,8 @@ combining Hermes and Chronos engine graphs or masking their distinct
 `keystone-storage` sources with a product Cargo patch. Headless create/reopen
 lifecycle is qualified. The interactive Workbench path now renders the same
 public-client observation, drains the owner on shell exit, removes the socket,
-and proves a subsequent headless reopen. Append remains producer-specific.
+and proves a subsequent headless reopen. Append remains producer-specific and
+therefore outside the Workbench presentation/application command surface.
 
 Hermes acknowledgement now has one deliberately narrow authority-bearing path.
 The standalone and Workbench commands reuse the same owner guard: exact
@@ -246,8 +247,7 @@ confirmation precedes traffic, the current cursor is observed and compared on
 the same connection, and one acknowledgement is attempted. A stale cursor
 prevents mutation and a post-send transport failure remains outcome-unknown
 without retry. The reusable component retains no consumer authority; hosted
-consumer authority requires the explicit exact-stream operator profile. Generic
-append remains open.
+consumer authority requires the explicit exact-stream operator profile.
 
 Hermes compaction follows the same pattern through a distinct owner guard. The
 standalone and Workbench commands observe the retained frontier and published
@@ -255,8 +255,11 @@ edge, compare both with exact operator expectations, and attempt one confirmed
 compaction on the same connection. Stale state prevents mutation and uncertain
 delivery is never retried. `OperatorClient` remains outside the reusable
 component; any hosted operator authority is an explicit exact-stream Hermes
-process input. Generic append remains open because its domain envelope belongs
-to a producer-specific integration.
+process input. Generic append is deliberately not a Workbench capability because
+its domain envelope belongs to a producer-specific integration. Moira's
+workflow-event publisher and Agora's minimized-wake adapter already qualify two
+such public-client profiles; Agora's concrete endpoint/deployment profile stays
+open in `agora-hermes-adapter`.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
