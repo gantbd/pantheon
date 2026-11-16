@@ -216,14 +216,20 @@ read-only input until that repository settles.
   completed replay makes no peer call. The wider ingress/execution/event fault
   chain remains Moira-owned roadmap work rather than part of this peer-effect
   composition cell.
-- [ ] Complete physical authority/transport/revocation composition for Chronos
-  and Vellum federation. Chronos and Vellum now own transport-neutral connection
-  lifecycles that revalidate current session trust, make revocation terminal,
-  hide revoked sessions, and close the injected transport exactly once;
-  Vellum applies the same rule to disclosure downgrade. Physical authenticated
-  transports, runtime revalidation cadence, and integrated qualification remain
-  open, so this cell is not yet closed. Agora federation's immutable release
-  qualification is complete: its exact source candidate and Aegis, Agora,
+- [x] Complete physical authority/transport/revocation composition for Chronos
+  and Vellum federation. Each federation now owns a peer-specific TLS 1.3
+  adapter with mandatory mutual certificates, distinct ALPN and exporter
+  labels, canonical hello exchange on the authenticated channel, and an
+  exporter-bound session. Their transport-neutral connection owners revalidate
+  current trust immediately before every selected transport use, make
+  revocation terminal, hide revoked sessions, and send close notification
+  exactly once before refusing the operation; Vellum applies the same rule to
+  disclosure downgrade. Full repository gates qualify peer EOF after live
+  revocation. Listener supervision, reconnect/backoff, certificate lifecycle,
+  and the broader graph/result or replication/edit data planes remain
+  federation/deployment work rather than claims of this cell. Agora
+  federation's immutable release qualification is complete: its exact source
+  candidate and Aegis, Agora,
   remote-transport, and Keystone inputs are reconstructed from Git archives,
   the full physical mutual-TLS/current-policy/durable gate passes, and an
   evidence-only follow-up records that candidate without changing it.
