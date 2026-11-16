@@ -35,7 +35,7 @@ build_fixture daimon daimon-tui-cli
 build_fixture hermes hermes-tui-cli
 build_fixture aegis aegis-tui-cli
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui \
+  --package pantheon-cli --bin pantheon \
   --locked --offline
 
 "$workspace/moira-tui/target/debug/examples/real_daemon_fixture" \
@@ -92,7 +92,7 @@ printf '%s\n' \
   "  \"grounding\": {\"endpoint\": \"$grounding_endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
   '}' >"$scratch/workspace.json"
 
-report=$("$root/target/debug/workbench-tui" \
+report=$("$root/target/debug/pantheon" \
   headless --workspace-profile "$scratch/workspace.json")
 
 wait "$moira_pid"; moira_pid=
@@ -132,4 +132,4 @@ assert hermes["configured_cursor"]["next_sequence"] == 1
 assert hermes["configured_cursor"]["backlog"] == 0
 '
 
-echo 'PASS: Moira + Daimon + Hermes + Aegis + Grounding real services -> one Workbench headless composition'
+echo 'PASS: Moira + Daimon + Hermes + Aegis + Grounding real services -> one Pantheon headless composition'

@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use vellum_sdk_client::protocol::ServicePort;
 use vellum_tui::{ServiceAction, ServiceEditor, ServiceInput, translate_service_input};
 
-use workbench_tui::{
+use pantheon::{
     ExitDecision, Focus, PeerViews, RoutedInput, Shell, ShellInput, Surface, decide_exit,
     draw_shell_with_moira, route_key, shell_input,
 };
@@ -81,7 +81,7 @@ pub struct OperationalPeers {
     pub daimon_agent: Option<daimon_tui::AgentComponent>,
     pub hermes: Option<hermes_tui::Component>,
     pub aegis: Option<aegis_tui::Component>,
-    pub grounding: Option<grounding_tui::Component>,
+    pub grounding: Option<tellus::Component>,
 }
 
 pub fn run_terminal_with_all_peers<T: ServicePort>(
@@ -296,9 +296,8 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.code == KeyCode::Char('q')) =>
                 {
                     if let Some(grounding) = &mut grounding {
-                        if let Some(input) = grounding_tui::translate_key(key)
-                            && grounding.update(input, true)
-                                == grounding_tui::Lifecycle::CloseRequested
+                        if let Some(input) = tellus::translate_key(key)
+                            && grounding.update(input, true) == tellus::Lifecycle::CloseRequested
                         {
                             notice = "Use Ctrl-Q to exit the complete workbench".into();
                         }

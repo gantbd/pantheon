@@ -10,10 +10,10 @@ chmod 700 "$scratch"
 cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
   --package aegis-daemon --bin aegis-daemon --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui --locked --offline
+  --package pantheon-cli --bin pantheon --locked --offline
 
 daemon="$workspace/aegis/target/debug/aegis-daemon"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 uid=$(id -u)
 gid=$(id -g)
 
@@ -104,7 +104,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "aegis", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Interactive Workbench did not drain hosted Aegis")
+            raise AssertionError("Interactive Pantheon did not drain hosted Aegis")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -121,4 +121,4 @@ assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: owner Aegis daemon -> same public client -> hosted headless and interactive Workbench -> clean reopen'
+echo 'PASS: owner Aegis daemon -> same public client -> hosted headless and interactive Pantheon -> clean reopen'

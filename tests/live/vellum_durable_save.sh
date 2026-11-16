@@ -28,11 +28,11 @@ cargo build --manifest-path "$workspace/vellum/Cargo.toml" \
 cargo build --manifest-path "$workspace/vellum-tui/Cargo.toml" \
   --package vellum-tui-cli --bin vellum-tui --locked --offline --target-dir "$target"
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui --locked --offline --target-dir "$target"
+  --package pantheon-cli --bin pantheon --locked --offline --target-dir "$target"
 
 daemon="$target/debug/vellum-daemon"
 standalone="$target/debug/vellum-tui"
-workbench="$target/debug/workbench-tui"
+workbench="$target/debug/pantheon"
 
 printf 'durable source\n' >"$source_file"
 "$daemon" --provision-credential "$credential"
@@ -74,7 +74,7 @@ if ! workbench_result=$(
 ); then
   printf '%s\n' "$workbench_result" >&2
   cat "$daemon_log" >&2
-  echo 'FAIL: Workbench durable save lookup refused' >&2
+  echo 'FAIL: Pantheon durable save lookup refused' >&2
   exit 1
 fi
 printf '%s\n' "$workbench_result"
@@ -89,4 +89,4 @@ daemon_pid=''
 [ ! -e "$socket" ]
 [ ! -e "$control" ]
 grep -Fq 'durable source' "$source_file"
-echo 'PASS: standalone durable save and Workbench historical lookup reused Vellum public authority'
+echo 'PASS: standalone durable save and Pantheon historical lookup reused Vellum public authority'

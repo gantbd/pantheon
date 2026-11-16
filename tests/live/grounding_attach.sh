@@ -6,7 +6,7 @@ workspace=$(CDPATH= cd -- "$repo/.." && pwd -P)
 scratch=$(mktemp -d /tmp/wb-grounding.XXXXXX)
 chmod 700 "$scratch"
 target="$scratch/target"
-workbench=${WORKBENCH_BIN:-"$target/debug/workbench-tui"}
+workbench=${WORKBENCH_BIN:-"$target/debug/pantheon"}
 profile="$scratch/workspace.json"
 mixed_profile="$scratch/mixed-workspace.json"
 pid=
@@ -22,7 +22,7 @@ trap cleanup EXIT HUP INT TERM
 
 if [ -z "${WORKBENCH_BIN:-}" ]; then
   cargo build --manifest-path "$repo/Cargo.toml" \
-    --package workbench-tui-cli --bin workbench-tui \
+    --package pantheon-cli --bin pantheon \
     --locked --offline --target-dir "$target"
 fi
 
@@ -117,11 +117,11 @@ try:
     tmux("send-keys", "-t", "workbench", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
-        if time.monotonic() >= deadline: raise AssertionError("Workbench did not exit")
+        if time.monotonic() >= deadline: raise AssertionError("Pantheon did not exit")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo 'PASS: typed Dendrite Grounding endpoint -> Workbench headless and interactive attach; healthy Grounding evidence survives failed Aegis peer'
+echo 'PASS: typed Dendrite Grounding endpoint -> Pantheon headless and interactive attach; healthy Grounding evidence survives failed Aegis peer'
 

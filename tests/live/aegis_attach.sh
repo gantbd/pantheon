@@ -8,7 +8,7 @@ scratch=$(mktemp -d /tmp/wb-aegis.XXXXXX)
 chmod 700 "$scratch"
 target="$scratch/target"
 fixture="$target/debug/examples/real_daemon_fixture"
-workbench="$target/debug/workbench-tui"
+workbench="$target/debug/pantheon"
 daemon="$target/debug/aegis-daemon"
 socket="$scratch/aegis.sock"
 authority="$scratch/authority"
@@ -29,7 +29,7 @@ cargo build --manifest-path "$aegis_tui/Cargo.toml" \
   --package aegis-tui-cli --example real_daemon_fixture \
   --locked --offline --target-dir "$target"
 cargo build --manifest-path "$repo/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui \
+  --package pantheon-cli --bin pantheon \
   --locked --offline --target-dir "$target"
 cargo build --manifest-path "$aegis/Cargo.toml" \
   --package aegis-daemon --bin aegis-daemon \
@@ -88,7 +88,7 @@ assert peer["page_decisions"] == 4 and peer["more_decisions"]
 
 start_fixture
 if refusal=$("$workbench" aegis-revoke-epoch "$socket" 0 'revoke aegis epoch 0' 2>"$scratch/revoke-confirmation.err"); then
-  echo 'FAIL: Workbench accepted an inexact Aegis revocation confirmation' >&2
+  echo 'FAIL: Pantheon accepted an inexact Aegis revocation confirmation' >&2
   exit 1
 fi
 finish_fixture
@@ -102,7 +102,7 @@ assert value["required_confirmation"] == "REVOKE AEGIS EPOCH 0"
 
 start_fixture
 if refusal=$("$workbench" aegis-revoke-epoch "$socket" 1 'REVOKE AEGIS EPOCH 1' 2>"$scratch/revoke-stale.err"); then
-  echo 'FAIL: Workbench accepted a stale Aegis revocation epoch' >&2
+  echo 'FAIL: Pantheon accepted a stale Aegis revocation epoch' >&2
   exit 1
 fi
 finish_fixture
@@ -205,7 +205,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Workbench did not exit")
+            raise AssertionError("Pantheon did not exit")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -266,4 +266,4 @@ if [ -e "$owner_socket" ]; then
   exit 1
 fi
 
-echo 'PASS: real Aegis daemon -> bounded pages, managed private-handle session, authority journey, and revocation -> Workbench'
+echo 'PASS: real Aegis daemon -> bounded pages, managed private-handle session, authority journey, and revocation -> Pantheon'

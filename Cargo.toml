@@ -4,15 +4,15 @@ exclude = ["qualification/agora-host"]
 resolver = "3"
 
 [package]
-name = "workbench-tui"
+name = "pantheon"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/gantbd/workbench-tui"
+repository = "https://github.com/gantbd/pantheon"
 readme = "README.md"
 publish = false
-description = "Terminal presentation host for independent workspace peers"
+description = "Pantheon: terminal composition host for independent workspace peers"
 
 [dependencies]
 vellum-tui = { version = "=0.1.0", path = "../vellum-tui" }
@@ -23,7 +23,7 @@ moira-tui = { version = "=0.1.0", path = "../moira-tui" }
 daimon-tui = { version = "=0.1.0", path = "../daimon-tui" }
 hermes-tui = { version = "=0.1.0", path = "../hermes-tui" }
 aegis-tui = { version = "=0.1.0", path = "../aegis-tui" }
-grounding-tui = { version = "=0.1.0", path = "../grounding-tui" }
+tellus = { version = "=0.1.0", path = "../tellus" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }

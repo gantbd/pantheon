@@ -140,7 +140,7 @@ pub struct PeerViews<'a> {
     pub daimon_agent: Option<&'a daimon_tui::AgentComponent>,
     pub hermes: Option<&'a hermes_tui::Component>,
     pub aegis: Option<&'a aegis_tui::Component>,
-    pub grounding: Option<&'a grounding_tui::Component>,
+    pub grounding: Option<&'a tellus::Component>,
 }
 
 /// Draws the shell with an independently hosted Moira workflow peer.
@@ -185,7 +185,7 @@ pub fn draw_shell_with_moira(
         Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(body);
     frame.render_widget(
         Paragraph::new(format!(
-            "Workbench | [/] surfaces | focus={focus:?} | Tab switches | Ctrl-Q exits | {notice}"
+            "Pantheon | [/] surfaces | focus={focus:?} | Tab switches | Ctrl-Q exits | {notice}"
         )),
         header,
     );

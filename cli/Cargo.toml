@@ -1,24 +1,24 @@
 [package]
-name = "workbench-tui-cli"
+name = "pantheon-cli"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/gantbd/workbench-tui"
+repository = "https://github.com/gantbd/pantheon"
 publish = false
-description = "Standalone interactive and headless application for Workbench terminal composition"
+description = "Standalone interactive and headless application for Pantheon terminal composition"
 
 [features]
 default = ["native-chronos"]
 native-chronos = ["dep:chronos-standalone"]
 
 [[bin]]
-name = "workbench-tui"
+name = "pantheon"
 path = "src/main.rs"
 doc = false
 
 [dependencies]
-workbench-tui = { version = "=0.1.0", path = ".." }
+pantheon = { version = "=0.1.0", path = ".." }
 vellum-tui = { version = "=0.1.0", path = "../../vellum-tui" }
 vellum-sdk-client = { version = "=0.1.0", path = "../../vellum/sdk/client" }
 vellum-adapter-local-authentication = { version = "=0.1.0", path = "../../vellum/adapters/local-authentication" }
@@ -58,8 +58,8 @@ aegis-admin-session = { version = "=0.1.0", path = "../../aegis/applications/aeg
 aegis-local-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-local-client" }
 aegis-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-client" }
 aegis-wire = { version = "=0.1.0", path = "../../aegis/crates/aegis-wire" }
-grounding-tui = { version = "=0.1.0", path = "../../grounding-tui" }
-grounding-tui-local-client = { version = "=0.1.0", path = "../../grounding-tui/local-client" }
+tellus = { version = "=0.1.0", path = "../../tellus" }
+tellus-local-client = { version = "=0.1.0", path = "../../tellus/local-client" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }

@@ -11,7 +11,7 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
     )
     .expect("composition status JSON");
     assert_eq!(status["schema"], 1);
-    assert_eq!(status["owner"], "workbench-tui");
+    assert_eq!(status["owner"], "pantheon");
     assert_eq!(status["priorArt"], serde_json::json!(["axon", "engram"]));
 
     let states = status["states"]
@@ -170,14 +170,14 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         ("chronos", chronos_tui::CAPABILITIES.headless[0]),
         ("daimon", daimon_tui::CAPABILITIES.headless[0]),
         ("hermes", hermes_tui::CAPABILITIES.headless[0]),
-        ("grounding", grounding_tui::CAPABILITIES.headless[0]),
+        ("grounding", tellus::CAPABILITIES.headless[0]),
         ("moira", moira_tui::CAPABILITIES.headless[0]),
         ("vellum", vellum_tui::CAPABILITIES.headless[0]),
     ];
     for (peer, capability) in capabilities {
         assert_eq!(peers[peer]["readCapability"], capability);
     }
-    assert_eq!(peers["grounding"]["presentation"], "grounding-tui");
+    assert_eq!(peers["grounding"]["presentation"], "tellus");
 }
 
 #[test]
@@ -319,7 +319,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(manifest.contains("daimon-tui"));
     assert!(manifest.contains("hermes-tui"));
     assert!(manifest.contains("aegis-tui"));
-    assert!(manifest.contains("grounding-tui"));
+    assert!(manifest.contains("tellus"));
     assert!(!manifest.contains("agora-tui-local-client"));
     assert!(!manifest.contains("chronos-local"));
     for cli_owned in ["main.rs", "profile.rs", "terminal.rs", "hosted.rs"] {
@@ -335,16 +335,16 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     let cli_manifest =
         fs::read_to_string(root.join("cli/Cargo.toml")).expect("CLI package manifest");
     for required in [
-        "name = \"workbench-tui-cli\"",
-        "name = \"workbench-tui\"",
-        "workbench-tui =",
+        "name = \"pantheon-cli\"",
+        "name = \"pantheon\"",
+        "pantheon =",
         "agora-local-client",
         "moira-tui-local-client",
         "daimon-client",
         "hermes-local-client",
         "aegis-local-client",
         "aegis-admin-session",
-        "grounding-tui-local-client",
+        "tellus-local-client",
         "chronos-local",
         "chronos-standalone",
         "vellum-adapter-local-authentication",
@@ -361,8 +361,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     let agora_qualifier = fs::read_to_string(root.join("qualification/agora-host/Cargo.toml"))
         .expect("isolated Agora host qualifier");
     assert!(agora_qualifier.contains("[workspace]"));
-    assert!(agora_qualifier.contains("workbench-tui-cli = { path = \"../../cli\" }"));
-    assert!(agora_qualifier.contains("workbench-tui = { path = \"../..\" }"));
+    assert!(agora_qualifier.contains("pantheon-cli = { path = \"../../cli\" }"));
+    assert!(agora_qualifier.contains("pantheon = { path = \"../..\" }"));
     assert!(agora_qualifier.contains("agora-tui ="));
     assert!(agora_qualifier.contains("agora-local-daemon"));
     assert!(agora_qualifier.contains("agora-local-client"));
@@ -416,7 +416,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         assert!(!manifest.contains(forbidden), "imports {forbidden}");
     }
     assert!(manifest.contains("publish = false"));
-    assert!(manifest.contains("repository = \"https://github.com/gantbd/workbench-tui\""));
+    assert!(manifest.contains("repository = \"https://github.com/gantbd/pantheon\""));
     assert!(manifest.contains("readme = \"README.md\""));
     assert!(manifest.contains("resolver = \"3\""));
     let architecture = fs::read_to_string(root.join("COMPONENT_ARCHITECTURE.md"))
@@ -458,7 +458,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     for required in [
         "aarch64-apple-darwin",
         "unsigned",
-        "initial supported Workbench artifact",
+        "initial supported Pantheon artifact",
         "owns no durable engine",
         "unknown schema is refused",
     ] {
@@ -480,7 +480,7 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
     for required in [
         "chronos-service",
         "vellum-daemon",
-        "workbench-tui",
+        "pantheon",
         "--status",
         "--headless",
         "--shutdown",
@@ -505,7 +505,7 @@ fn chronos_mutation_gate_uses_the_peer_component_and_proves_durable_reopen() {
         .expect("Chronos mutation live gate");
     for required in [
         "chronos-service",
-        "workbench-tui",
+        "pantheon",
         "--host-chronos",
         "--chronos-allow-writes",
         "--chronos-scheduling",
@@ -560,7 +560,7 @@ fn agora_mutation_gate_reuses_the_owner_guard_in_both_shells() {
             "Agora mutation gate omits {required}"
         );
     }
-    let shell = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let shell = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(shell.contains("agora_client::room_command"));
     for forbidden in [
         "agora_engine::",
@@ -591,7 +591,7 @@ fn vellum_mutation_gate_reuses_the_editor_and_preserves_service_authority() {
         "Dirty",
         "Clean",
         "Refused",
-        "denied Workbench Vellum save changed source bytes",
+        "denied Pantheon Vellum save changed source bytes",
         "--locked",
         "--offline",
     ] {
@@ -639,7 +639,7 @@ fn vellum_durable_save_gate_reuses_the_peer_guard_and_exact_historical_receipt()
             "Vellum durable-save gate omits {required}"
         );
     }
-    let shell = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let shell = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(shell.contains("run_durable_save_v1"));
     for forbidden in [
         "vellum_engine::",
@@ -907,7 +907,7 @@ fn moira_hosting_uses_the_sovereign_owner_and_peer_public_client() {
     for forbidden in ["max_database_pages", "max_sagas", "OperatorAuthorizer"] {
         assert!(
             !host.contains(forbidden),
-            "Workbench acquired Moira owner policy through {forbidden}"
+            "Pantheon acquired Moira owner policy through {forbidden}"
         );
     }
     let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI main");
@@ -965,7 +965,7 @@ fn moira_reconciliation_reuses_the_owner_guard_in_both_shells() {
     }
     let manifest = fs::read_to_string(root.join("cli/Cargo.toml")).expect("CLI manifest");
     assert!(manifest.contains("moira-reconciliation-command"));
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("moira_reconciliation_command::{PrepareError, prepare}"));
     assert!(cli.contains("moira_reconciliation_command::{ConfirmError, confirm}"));
     assert!(cli.contains("moira_reconciliation_command::{RecoverError, recover}"));
@@ -1026,7 +1026,7 @@ fn daimon_hosting_uses_the_owner_supervisor_without_importing_provider_policy() 
     ] {
         assert!(
             !host.contains(forbidden),
-            "Workbench acquired Daimon owner policy through {forbidden}"
+            "Pantheon acquired Daimon owner policy through {forbidden}"
         );
     }
     let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI main");
@@ -1066,7 +1066,7 @@ fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     for required in [
         "agent_advance_fixture",
         "daimon-tui",
-        "workbench-tui",
+        "pantheon",
         "daimon-agent-advance",
         "agents.session.advance.v1",
         "ADVANCE DAIMON SESSION",
@@ -1080,7 +1080,7 @@ fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
             "Daimon advance gate omits {required}"
         );
     }
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("daimon_agent_command::advance"));
     assert!(!cli.contains("AgentCommandV1::Advance"));
 }
@@ -1093,7 +1093,7 @@ fn daimon_cancel_reuses_the_owner_guard_in_standalone_and_workbench() {
     for required in [
         "agent_cancel_fixture",
         "daimon-tui",
-        "workbench-tui",
+        "pantheon",
         "daimon-agent-cancel",
         "agents.session.cancel.v1",
         "CANCEL DAIMON SESSION",
@@ -1107,7 +1107,7 @@ fn daimon_cancel_reuses_the_owner_guard_in_standalone_and_workbench() {
             "Daimon cancel gate omits {required}"
         );
     }
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("daimon_agent_command::cancel"));
     assert!(!cli.contains("AgentCommandV1::Cancel"));
 }
@@ -1120,7 +1120,7 @@ fn daimon_close_reuses_the_owner_guard_in_standalone_and_workbench() {
     for required in [
         "agent_close_fixture",
         "daimon-tui",
-        "workbench-tui",
+        "pantheon",
         "daimon-agent-close",
         "agents.session.close.v1",
         "CLOSE DAIMON SESSION",
@@ -1134,7 +1134,7 @@ fn daimon_close_reuses_the_owner_guard_in_standalone_and_workbench() {
             "Daimon close gate omits {required}"
         );
     }
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("daimon_agent_command::close"));
     assert!(!cli.contains("AgentCommandV1::Close"));
 }
@@ -1147,7 +1147,7 @@ fn daimon_reattach_reuses_the_owner_guard_and_document_in_both_shells() {
     for required in [
         "agent_reattach_fixture",
         "daimon-tui",
-        "workbench-tui",
+        "pantheon",
         "daimon-agent-reattach",
         "agents.session.reattach.v1",
         "request.json",
@@ -1161,7 +1161,7 @@ fn daimon_reattach_reuses_the_owner_guard_and_document_in_both_shells() {
             "Daimon reattach gate omits {required}"
         );
     }
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("daimon_agent_command::reattach"));
     assert!(cli.contains("parse_reattach_document"));
     assert!(!cli.contains("AgentCommandV1::Reattach"));
@@ -1175,7 +1175,7 @@ fn daimon_prompt_reuses_the_owner_guard_and_document_in_both_shells() {
     for required in [
         "agent_prompt_fixture",
         "daimon-tui",
-        "workbench-tui",
+        "pantheon",
         "daimon-agent-prompt",
         "agents.session.prompt.v1",
         "prompt.txt",
@@ -1190,7 +1190,7 @@ fn daimon_prompt_reuses_the_owner_guard_and_document_in_both_shells() {
             "Daimon prompt gate omits {required}"
         );
     }
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("daimon_agent_command::prompt"));
     assert!(cli.contains("parse_prompt_document"));
     assert!(!cli.contains("AgentCommandV1::Prompt"));
@@ -1204,7 +1204,7 @@ fn daimon_permission_reuses_the_owner_guard_and_exact_challenge_in_both_shells()
     for required in [
         "agent_permission_fixture",
         "daimon-tui",
-        "workbench-tui",
+        "pantheon",
         "daimon-agent-permission",
         "agents.session.permission.v1",
         "request.json",
@@ -1218,7 +1218,7 @@ fn daimon_permission_reuses_the_owner_guard_and_exact_challenge_in_both_shells()
             "Daimon permission gate omits {required}"
         );
     }
-    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
     assert!(cli.contains("daimon_agent_command::decide_permission"));
     assert!(cli.contains("parse_permission_document"));
     assert!(!cli.contains("AgentCommandV1::DecidePermission"));
@@ -1244,7 +1244,7 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "configured_stream",
         "configured_cursor",
         "05050505050505050505050505050505",
-        "one Workbench headless composition",
+        "one Pantheon headless composition",
         "--locked",
         "--offline",
     ] {

@@ -8,8 +8,8 @@ publish = false
 resolver = "3"
 
 [dependencies]
-workbench-tui-cli = { path = "../../cli" }
-workbench-tui = { path = "../.." }
+pantheon-cli = { path = "../../cli" }
+pantheon = { path = "../.." }
 chronos-tui = { path = "../../../chronos-tui" }
 agora-tui = { path = "../../../agora-tui" }
 agora-client = { path = "../../../agora/client/agora-client" }

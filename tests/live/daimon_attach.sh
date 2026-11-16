@@ -22,10 +22,10 @@ cargo build --quiet --manifest-path "$workspace/daimon-tui/Cargo.toml" \
   -p daimon-tui-cli --example real_daemon_fixture --example agent_daemon_fixture \
   --locked --offline
 cargo build --quiet --manifest-path "$root/Cargo.toml" \
-  -p workbench-tui-cli --bin workbench-tui --locked --offline
+  -p pantheon-cli --bin pantheon --locked --offline
 presence_fixture="$workspace/daimon-tui/target/debug/examples/real_daemon_fixture"
 agent_fixture="$workspace/daimon-tui/target/debug/examples/agent_daemon_fixture"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 agent_session=07070707070707070707070707070707
 
 start_fixtures() {
@@ -102,12 +102,12 @@ try:
             break
         time.sleep(0.025)
     else:
-        raise AssertionError(f"Workbench did not render Daimon agent evidence:\n{screen}")
+        raise AssertionError(f"Pantheon did not render Daimon agent evidence:\n{screen}")
     tmux("send-keys", "-t", "workbench", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Workbench did not exit")
+            raise AssertionError("Pantheon did not exit")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -115,4 +115,4 @@ PYTHON
 wait "$presence_pid"; presence_pid=
 wait "$agent_pid"; agent_pid=
 
-echo 'PASS: real Daimon presence and exact configured agent-session evidence -> Workbench headless and interactive attach'
+echo 'PASS: real Daimon presence and exact configured agent-session evidence -> Pantheon headless and interactive attach'

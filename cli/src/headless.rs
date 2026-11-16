@@ -80,7 +80,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
     negotiate(
         "grounding",
         &request.grounding_requires,
-        grounding_tui::CAPABILITIES.headless,
+        tellus::CAPABILITIES.headless,
     )?;
     negotiate(
         "chronos",
@@ -154,10 +154,10 @@ fn observe_grounding(
     endpoint: SocketAddr,
     token_path: Option<&PathBuf>,
 ) -> (serde_json::Value, bool) {
-    use grounding_tui::GroundingPort;
     use std::time::Duration;
+    use tellus::GroundingPort;
 
-    let capability = grounding_tui::CAPABILITIES.headless[0];
+    let capability = tellus::CAPABILITIES.headless[0];
     let token = match token_path.map(read_token).transpose() {
         Ok(token) => token,
         Err(error) => {
@@ -168,7 +168,7 @@ fn observe_grounding(
         }
     };
     let mut port =
-        match grounding_tui_local_client::LocalPort::new(endpoint, token, Duration::from_secs(5)) {
+        match tellus_local_client::LocalPort::new(endpoint, token, Duration::from_secs(5)) {
             Ok(port) => port,
             Err(error) => {
                 return (
@@ -182,7 +182,7 @@ fn observe_grounding(
                 );
             }
         };
-    match port.observe(grounding_tui::OBSERVATION_LIMIT) {
+    match port.observe(tellus::OBSERVATION_LIMIT) {
         Ok(value) => {
             let current = value.complete && value.status == "current";
             (

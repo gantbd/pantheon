@@ -1,4 +1,4 @@
-//! Operational lifecycle registry for a hosted Workbench topology.
+//! Operational lifecycle registry for a hosted Pantheon topology.
 //!
 //! The registry erases only shutdown callbacks. Service clients are returned
 //! to the caller with their concrete types, so peer protocols, authority, and

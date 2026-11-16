@@ -6,7 +6,7 @@ use std::{
 
 use serde::Deserialize;
 
-use workbench_tui::{Shell, Surface};
+use pantheon::{Shell, Surface};
 
 const MAX_PROFILE_BYTES: u64 = 64 * 1024;
 const MAX_WORKSTREAMS: usize = 16;

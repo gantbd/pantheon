@@ -17,7 +17,7 @@ vellum_target="$scratch/vellum-target"
 workbench_target="$scratch/workbench-target"
 chronos_bin="$chronos_target/debug/chronos-service"
 vellum_bin="$vellum_target/debug/vellum-daemon"
-workbench_bin="$workbench_target/debug/workbench-tui"
+workbench_bin="$workbench_target/debug/pantheon"
 agora_bin="$workbench_target/debug/examples/agora_fixture_server"
 agora_socket="$scratch/agora.sock"
 chronos_log="$scratch/chronos.log"
@@ -53,7 +53,7 @@ cargo build --manifest-path "$chronos/Cargo.toml" --package chronos-standalone \
   --bin chronos-service --locked --offline --target-dir "$chronos_target"
 cargo build --manifest-path "$vellum/Cargo.toml" --package vellum-daemon \
   --bin vellum-daemon --locked --offline --target-dir "$vellum_target"
-cargo build --manifest-path "$repo/Cargo.toml" --package workbench-tui-cli --bin workbench-tui \
+cargo build --manifest-path "$repo/Cargo.toml" --package pantheon-cli --bin pantheon \
   --example agora_fixture_server \
   --locked --offline --target-dir "$workbench_target"
 
@@ -225,7 +225,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Workbench did not exit")
+            raise AssertionError("Pantheon did not exit")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -288,7 +288,7 @@ try:
             break
         time.sleep(0.025)
     else:
-        raise AssertionError(f"Hosted Workbench panes not ready:\n{screen}")
+        raise AssertionError(f"Hosted Pantheon panes not ready:\n{screen}")
     tmux("send-keys", "-t", "hosted", "]")
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
@@ -302,7 +302,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "hosted", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Hosted Workbench did not exit")
+            raise AssertionError("Hosted Pantheon did not exit")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -321,4 +321,4 @@ do
   fi
 done
 
-echo 'PASS: hosted Chronos + Vellum with attached Agora -> headless and interactive Workbench composition'
+echo 'PASS: hosted Chronos + Vellum with attached Agora -> headless and interactive Pantheon composition'

@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-// Protocol fixture for the standalone Workbench application package.
+// Protocol fixture for the standalone Pantheon application package.
 
 use std::{
     fs,

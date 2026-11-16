@@ -1,4 +1,4 @@
-"""Test an explicit local Workbench source closure, without changing any checkout."""
+"""Test an explicit local Pantheon source closure, without changing any checkout."""
 
 import argparse
 import gzip
@@ -25,7 +25,7 @@ PROJECTS = (
     "daimon-tui",
     "hermes-tui",
     "aegis-tui",
-    "grounding-tui",
+    "tellus",
     "vellum",
     "vellum-tui",
     "moira",
@@ -68,7 +68,7 @@ def archive(repo, revision, output):
 
 def run_live_evidence(stage, environment):
     status = json.loads(
-        (stage / "workbench-tui" / "composition-status.json").read_text()
+        (stage / "pantheon" / "composition-status.json").read_text()
     )
     evidence = []
     for peer in sorted(status["peers"]):
@@ -197,7 +197,7 @@ def write_deterministic_tar_gz(source, destination):
                         info.mode = 0o755
                         bundle.addfile(info)
                     else:
-                        info.mode = 0o755 if relative.parts[-2:] == ("bin", "workbench-tui") else 0o644
+                        info.mode = 0o755 if relative.parts[-2:] == ("bin", "pantheon") else 0o644
                         with path.open("rb") as payload:
                             bundle.addfile(info, payload)
 
@@ -268,9 +268,9 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
             "build",
             "--release",
             "--package",
-            "workbench-tui-cli",
+            "pantheon-cli",
             "--bin",
-            "workbench-tui",
+            "pantheon",
             "--locked",
             "--offline",
         ],
@@ -278,9 +278,9 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
         env=release_environment,
         check=True,
     )
-    binary = stage / ".release-target" / "release" / "workbench-tui"
+    binary = stage / ".release-target" / "release" / "pantheon"
     if not binary.is_file():
-        raise SystemExit("release build did not produce workbench-tui")
+        raise SystemExit("release build did not produce pantheon")
 
     metadata = json.loads(
         subprocess.check_output(
@@ -322,14 +322,14 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
             )
         )
 
-    package_name = f"workbench-tui-0.1.0-{host}"
+    package_name = f"pantheon-0.1.0-{host}"
     package_root = stage / package_name
     (package_root / "bin").mkdir(parents=True)
-    documentation = package_root / "share" / "doc" / "workbench-tui"
+    documentation = package_root / "share" / "doc" / "pantheon"
     documentation.mkdir(parents=True)
-    configuration = package_root / "share" / "workbench-tui"
+    configuration = package_root / "share" / "pantheon"
     configuration.mkdir(parents=True)
-    shutil.copy2(binary, package_root / "bin" / "workbench-tui")
+    shutil.copy2(binary, package_root / "bin" / "pantheon")
     for name in (
         "README.md",
         "CHANGELOG.md",
@@ -405,19 +405,19 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
     with tarfile.open(archive_path, "r:gz") as bundle:
         bundle.extractall(install_root, filter="data")
     installed = install_root / package_name
-    installed_binary = installed / "bin" / "workbench-tui"
+    installed_binary = installed / "bin" / "pantheon"
     profile_path = stage / "operator-profile.json"
     shutil.copy2(
-        installed / "share" / "workbench-tui" / "workspace.example.json",
+        installed / "share" / "pantheon" / "workspace.example.json",
         profile_path,
     )
     profile_digest = sha256(profile_path)
     deployment = stage / "deployment"
     deployment.mkdir()
-    replacement = deployment / ".workbench-tui.new"
+    replacement = deployment / ".pantheon.new"
     shutil.copy2(installed_binary, replacement)
     replacement.chmod(0o755)
-    deployed_binary = deployment / "workbench-tui"
+    deployed_binary = deployment / "pantheon"
     os.replace(replacement, deployed_binary)
     check_profile(deployed_binary, profile_path, release_environment, True)
     shutil.copy2(installed_binary, replacement)
@@ -450,7 +450,7 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("workbench", help="Workbench commit")
+    parser.add_argument("workbench", help="Pantheon commit")
     parser.add_argument("--live", action="store_true", help="run the local socket and tmux gate")
     parser.add_argument(
         "--local-release",
@@ -462,7 +462,7 @@ def main():
         help="copy the qualified local release tarball to this path",
     )
     parser.add_argument(
-        "--chronos", help="explicit Chronos candidate commit to test with Workbench"
+        "--chronos", help="explicit Chronos candidate commit to test with Pantheon"
     )
     parser.add_argument("--vellum", help="explicit Vellum candidate commit")
     parser.add_argument("--vellum-tui", help="explicit Vellum TUI candidate commit")
@@ -475,7 +475,7 @@ def main():
     parser.add_argument("--aegis", help="explicit Aegis candidate commit")
     parser.add_argument("--aegis-tui", help="explicit Aegis TUI candidate commit")
     parser.add_argument("--dendrite", help="explicit Dendrite candidate commit")
-    parser.add_argument("--grounding-tui", help="explicit Grounding TUI candidate commit")
+    parser.add_argument("--tellus", help="explicit Tellus candidate commit")
     args = parser.parse_args()
     if args.artifact and not args.local_release:
         parser.error("--artifact requires --local-release")
@@ -483,7 +483,7 @@ def main():
     workbench = git(ROOT, "rev-parse", "--verify", f"{args.workbench}^{{commit}}")
     receipt = json.loads(git(ROOT, "show", f"{workbench}:release/source.json"))
     if receipt.get("schema") != 2:
-        raise SystemExit("Workbench candidate must contain a schema 2 source receipt")
+        raise SystemExit("Pantheon candidate must contain a schema 2 source receipt")
     inputs = receipt["inputs"]
     if inputs.get("agoraTui", {}).get("revision") is None:
         raise SystemExit(
@@ -510,7 +510,7 @@ def main():
         "aegis-tui": args.aegis_tui or inputs["aegisTui"]["revision"],
         "dendrite": args.dendrite or inputs["dendrite"]["revision"],
         "keystone": inputs["keystone"]["revision"],
-        "grounding-tui": args.grounding_tui or inputs["groundingTui"]["revision"],
+        "tellus": args.tellus or inputs["groundingTui"]["revision"],
         "vellum": args.vellum or inputs["vellum"]["revision"],
         "vellum-tui": args.vellum_tui or inputs["vellumTui"]["revision"],
     }
@@ -530,10 +530,10 @@ def main():
         # macOS commonly exposes /tmp as a symlink to /private/tmp. Canonicalize
         # once so containment checks compare one path identity.
         stage = Path(tmp).resolve()
-        archive(ROOT, workbench, stage / "workbench-tui")
+        archive(ROOT, workbench, stage / "pantheon")
         for name in PROJECTS:
             archive(ROOT.parent / name, pins[name], stage / name)
-        directory = stage / "workbench-tui"
+        directory = stage / "pantheon"
         validate_direct_path_closure(directory, stage)
         environment = prepare_cargo_source_closure(
             stage, directory, keystone_git
@@ -551,7 +551,7 @@ def main():
         if args.live:
             prepare_live_dependency_closure(stage, environment)
             run_live_evidence(stage, environment)
-    result = {"workbench-tui": workbench, **pins, "keystone-git": keystone_git}
+    result = {"pantheon": workbench, **pins, "keystone-git": keystone_git}
     if local_release is not None:
         result["localRelease"] = local_release
     print(json.dumps(result, indent=2, sort_keys=True))

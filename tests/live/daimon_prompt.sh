@@ -15,11 +15,11 @@ trap cleanup EXIT INT TERM
 
 cargo build --quiet --manifest-path "$root/daimon-tui/Cargo.toml" \
   -p daimon-tui-cli --bin daimon-tui --example agent_prompt_fixture --locked --offline
-cargo build --quiet --manifest-path "$root/workbench-tui/Cargo.toml" \
-  -p workbench-tui-cli --bin workbench-tui --locked --offline
+cargo build --quiet --manifest-path "$root/pantheon/Cargo.toml" \
+  -p pantheon-cli --bin pantheon --locked --offline
 fixture="$root/daimon-tui/target/debug/examples/agent_prompt_fixture"
 standalone="$root/daimon-tui/target/debug/daimon-tui"
-workbench="$root/workbench-tui/target/debug/workbench-tui"
+workbench="$root/pantheon/target/debug/pantheon"
 
 printf '%s' 'review the boundary' >"$tmp/prompt.txt"
 printf '%s\n' \
@@ -102,4 +102,4 @@ printf '%s\n' "$workbench_output" | grep '"capability": "agents.session.prompt.v
 printf '%s\n' "$workbench_output" | grep '"status": "dispatched"' >/dev/null
 test "$(cat "$tmp/workbench.marker")" = prompted
 
-echo 'PASS: standalone and Workbench reuse one exact-state Daimon prompt guard and request document'
+echo 'PASS: standalone and Pantheon reuse one exact-state Daimon prompt guard and request document'

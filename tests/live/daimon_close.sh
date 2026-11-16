@@ -15,11 +15,11 @@ trap cleanup EXIT INT TERM
 
 cargo build --quiet --manifest-path "$root/daimon-tui/Cargo.toml" \
   -p daimon-tui-cli --bin daimon-tui --example agent_close_fixture --locked --offline
-cargo build --quiet --manifest-path "$root/workbench-tui/Cargo.toml" \
-  -p workbench-tui-cli --bin workbench-tui --locked --offline
+cargo build --quiet --manifest-path "$root/pantheon/Cargo.toml" \
+  -p pantheon-cli --bin pantheon --locked --offline
 fixture="$root/daimon-tui/target/debug/examples/agent_close_fixture"
 standalone="$root/daimon-tui/target/debug/daimon-tui"
-workbench="$root/workbench-tui/target/debug/workbench-tui"
+workbench="$root/pantheon/target/debug/pantheon"
 session=07070707070707070707070707070707
 key=09090909090909090909090909090909
 confirmation="CLOSE DAIMON SESSION $session REVISION 12 KEY $key AT 34"
@@ -62,4 +62,4 @@ printf '%s\n' "$workbench_output" | grep '"capability": "agents.session.close.v1
 printf '%s\n' "$workbench_output" | grep '"status": "closed"' >/dev/null
 test "$(cat "$tmp/workbench.marker")" = closed
 
-echo 'PASS: standalone and Workbench reuse one exact-ready Daimon close guard'
+echo 'PASS: standalone and Pantheon reuse one exact-ready Daimon close guard'

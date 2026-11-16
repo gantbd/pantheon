@@ -1,4 +1,4 @@
-//! Native peer-service ownership for one Workbench process.
+//! Native peer-service ownership for one Pantheon process.
 //!
 //! This module owns only operational lifecycle. Each peer keeps its own
 //! service, protocol, state root, authority configuration, and concrete client.
@@ -151,7 +151,7 @@ fn stop_process(child: &mut Child) -> ShutdownDisposition {
     ShutdownDisposition::OutcomeUnknown
 }
 
-/// Deployment-neutral options for a Workbench-owned Chronos service.
+/// Deployment-neutral options for a Pantheon-owned Chronos service.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ChronosHostOptions {
     pub allow_writes: bool,
@@ -160,7 +160,7 @@ pub struct ChronosHostOptions {
     pub allocation_receipts: bool,
 }
 
-/// Explicit deployment inputs for a Workbench-owned, sovereign Hermes daemon.
+/// Explicit deployment inputs for a Pantheon-owned, sovereign Hermes daemon.
 #[cfg(unix)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct HermesProcessOptions {
@@ -196,8 +196,8 @@ pub struct MoiraProcessOptions {
     pub socket: PathBuf,
 }
 
-/// Explicit deployment inputs for a Workbench-owned, sovereign Aegis daemon.
-/// These values are passed to Aegis unchanged; Workbench does not interpret
+/// Explicit deployment inputs for a Pantheon-owned, sovereign Aegis daemon.
+/// These values are passed to Aegis unchanged; Pantheon does not interpret
 /// the authority namespace, principal, session namespace, or role as grants.
 #[cfg(unix)]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -215,7 +215,7 @@ pub struct AegisProcessOptions {
 }
 
 /// Opaque deployment inputs for Agora's sovereign private-local application.
-/// The config remains Agora-owned; Workbench uses the socket only for
+/// The config remains Agora-owned; Pantheon uses the socket only for
 /// readiness and ordinary public-client attachment.
 #[cfg(unix)]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -285,7 +285,7 @@ impl NativeHost {
     }
 
     /// Starts an Agora owner supplied by the deployment and returns its
-    /// concrete client or presentation input unchanged. Workbench owns only
+    /// concrete client or presentation input unchanged. Pantheon owns only
     /// lifecycle registration; the factory remains responsible for Aegis
     /// authentication, policy, trusted time, Host selection, and durability.
     pub fn start_agora<C, S>(
@@ -299,7 +299,7 @@ impl NativeHost {
     }
 
     /// Starts Agora's standalone private-local application unchanged.
-    /// Workbench owns only readiness and process drain. Authority, bootstrap,
+    /// Pantheon owns only readiness and process drain. Authority, bootstrap,
     /// trusted time, durable storage, and grant selection stay in Agora's
     /// opaque deployment config, and clients attach to the public socket.
     #[cfg(unix)]
@@ -332,7 +332,7 @@ impl NativeHost {
 
     /// Starts a deployment-supplied Moira owner. The deployment retains
     /// responsibility for its durable store, authority adapter and recovery
-    /// policy; Workbench retains only the typed client and shutdown receipt.
+    /// policy; Pantheon retains only the typed client and shutdown receipt.
     pub fn start_moira<C, S>(
         &mut self,
         start: impl FnOnce() -> Result<(C, S), String>,
@@ -344,7 +344,7 @@ impl NativeHost {
     }
 
     /// Starts Moira's production saga application as a sovereign process.
-    /// Workbench owns only readiness and the exact one-byte drain channel; it
+    /// Pantheon owns only readiness and the exact one-byte drain channel; it
     /// attaches through Moira's ordinary public saga client.
     #[cfg(unix)]
     pub fn start_moira_process(
@@ -385,7 +385,7 @@ impl NativeHost {
     }
 
     /// Starts Daimon's production local-agent application in its owner-defined
-    /// supervised mode. Workbench owns readiness and drain only and attaches
+    /// supervised mode. Pantheon owns readiness and drain only and attaches
     /// through the ordinary public agent client.
     #[cfg(unix)]
     pub fn start_daimon_process(
@@ -426,7 +426,7 @@ impl NativeHost {
     }
 
     /// Starts the owner-supplied selected Hermes application as a sovereign
-    /// process. Workbench owns readiness and shutdown only; all ledger,
+    /// process. Pantheon owns readiness and shutdown only; all ledger,
     /// authentication, authorization, persistence and wire behavior remains in
     /// Hermes, and ordinary Hermes clients attach to the configured socket.
     #[cfg(unix)]
@@ -468,7 +468,7 @@ impl NativeHost {
         })
     }
 
-    /// Starts a deployment-supplied Aegis owner. Workbench does not construct
+    /// Starts a deployment-supplied Aegis owner. Pantheon does not construct
     /// grants, trusted time, peer identity or authority policy.
     pub fn start_aegis<C, S>(
         &mut self,
@@ -481,7 +481,7 @@ impl NativeHost {
     }
 
     /// Starts the owner-supplied Aegis application as a sovereign process.
-    /// Workbench owns readiness and shutdown only; Aegis retains authority,
+    /// Pantheon owns readiness and shutdown only; Aegis retains authority,
     /// authentication, role, persistence, session and wire behavior.
     #[cfg(unix)]
     pub fn start_aegis_process(
@@ -521,7 +521,7 @@ impl NativeHost {
 
     /// Starts a deployment-supplied Grounding/Dendrite owner. The returned
     /// client remains the typed Grounding presentation boundary; this does not
-    /// turn MCP into a Workbench lifecycle or semantic protocol.
+    /// turn MCP into a Pantheon lifecycle or semantic protocol.
     pub fn start_grounding<C, S>(
         &mut self,
         start: impl FnOnce() -> Result<(C, S), String>,

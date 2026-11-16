@@ -6,20 +6,20 @@ notarized, universal-macOS, Linux, Windows, or GUI distribution claim.
 
 ## Release unit
 
-The release unit is the `workbench-tui` executable plus its operator profile
-example, source receipt, Workbench license texts, security and change records,
+The release unit is the `pantheon` executable plus its operator profile
+example, source receipt, Pantheon license texts, security and change records,
 an exact selected-target package/license inventory, available third-party legal
 texts and their package mapping, and a SHA-256 file manifest. The
-source qualifier reconstructs Workbench and every direct peer from the full Git
+source qualifier reconstructs Pantheon and every direct peer from the full Git
 commits in `release/source.json`, separately seeds the lock-pinned Keystone Git
 identity from its exact declared object, switches Cargo offline, tests the
 archive closure, and builds the optimized executable from that closure.
 
-Run the immutable candidate gate with a full Workbench commit:
+Run the immutable candidate gate with a full Pantheon commit:
 
 ```text
 python3 scripts/qualify-source.py FULL_COMMIT --local-release \
-  --artifact /tmp/workbench-tui-aarch64-apple-darwin.tar.gz
+  --artifact /tmp/pantheon-aarch64-apple-darwin.tar.gz
 ```
 
 The output receipt names the artifact digest, target, qualified host, reviewed
@@ -29,7 +29,7 @@ and is suitable only for deliberate local installation on the selected host.
 ## Install and replace
 
 Extract the archive into an operator-owned directory, verify `SHA256SUMS`, and
-place `bin/workbench-tui` at the desired local executable path. Installation
+place `bin/pantheon` at the desired local executable path. Installation
 does not create services, credentials, peer data, profiles, shell startup
 entries, or filesystem authority. Those remain deployment inputs.
 
@@ -42,12 +42,12 @@ not a peer-state migration.
 
 ## Upgrade and migration boundary
 
-This is the initial supported Workbench artifact, so there is no earlier
-released Workbench state schema to migrate. Workbench owns no durable engine
+This is the initial supported Pantheon artifact, so there is no earlier
+released Pantheon state schema to migrate. Pantheon owns no durable engine
 state: Chronos, Vellum, Agora, Moira, Daimon, Hermes, Aegis, and Dendrite retain
 their own storage, migration, authentication, and recovery contracts.
 
-Workbench owns only the versioned operator profile contract. Schema version 1
+Pantheon owns only the versioned operator profile contract. Schema version 1
 is accepted without rewriting it; an unknown schema is refused before peer
 connection. A future release that changes the profile schema must add an
 explicit old-to-new migration and rollback fixture before extending this claim.

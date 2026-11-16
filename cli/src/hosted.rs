@@ -9,7 +9,7 @@ use vellum_sdk_client::{
 use vellum_tui::ServiceEditor;
 
 use crate::{run_multi_peer_terminal, run_terminal};
-use workbench_tui::{Shell, Surface};
+use pantheon::{Shell, Surface};
 
 enum Request {
     Connect(mpsc::SyncSender<Result<ClientId, ServiceControlErrorV1>>),
@@ -59,7 +59,7 @@ impl ServicePort for HostPort {
     }
 }
 
-/// Launches Workbench with one Vellum-owned service and handoff handler.
+/// Launches Pantheon with one Vellum-owned service and handoff handler.
 /// The factory creates both on the service's owner thread. The handler can
 /// capture the live editor state through that same service. For an export,
 /// transport uncertainty is reported as an unknown publication outcome.

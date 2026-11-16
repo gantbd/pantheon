@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "package": "workbench-tui",
+  "package": "pantheon",
   "components": ["agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis", "grounding"],
   "inputs": {
     "agora": {
@@ -64,7 +64,7 @@
       "workingTreeClean": true
     },
     "groundingTui": {
-      "repository": "https://github.com/gantbd/grounding-tui",
+      "repository": "https://github.com/gantbd/tellus",
       "revision": "11d75c218e2e9614ae6bef6bde05b9eb96222c62",
       "workingTreeClean": true
     },
@@ -101,7 +101,7 @@
     "qualifiedHost": "Darwin 25.6.0 arm64",
     "artifact": "unsigned tar.gz with SHA-256 manifest",
     "profileSchema": 1,
-    "migration": "initial release; Workbench owns no durable peer state; exact-schema profiles are preserved across atomic same-version replacement and unknown schemas fail closed"
+    "migration": "initial release; Pantheon owns no durable peer state; exact-schema profiles are preserved across atomic same-version replacement and unknown schemas fail closed"
   },
   "ci": {
     "qualified": false,

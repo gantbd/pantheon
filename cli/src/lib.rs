@@ -1,4 +1,4 @@
-//! Workbench application lifecycle for interactive and headless composition.
+//! Pantheon application lifecycle for interactive and headless composition.
 #![forbid(unsafe_code)]
 
 pub mod headless;

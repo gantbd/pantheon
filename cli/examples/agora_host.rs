@@ -5,11 +5,11 @@ use agora_protocol::v2::{
     AdmissionPolicyV2, ClientIdV2, CommandV2, MessagePageV2, MessageV2, OutcomeV2, ReplyV2,
     RequestV2, RoleV2, RoomPageV2, RoomSummaryV2,
 };
+use pantheon::{Shell, Surface};
+use pantheon_cli::run_multi_peer_terminal;
 use vellum_sdk_client::protocol::{
     ClientId, ReplyV1, RequestV1, ServiceAccessErrorV1, ServiceControlErrorV1, ServicePort,
 };
-use workbench_tui::{Shell, Surface};
-use workbench_tui_cli::run_multi_peer_terminal;
 
 struct FixtureAgora;
 
@@ -42,7 +42,7 @@ impl ServicePortV2 for FixtureAgora {
                     sequence: 1,
                     author: "Ada".into(),
                     logical_time: 1,
-                    body: "Workbench Agora peer is live".into(),
+                    body: "Pantheon Agora peer is live".into(),
                     addressed_to: Vec::new(),
                 }],
                 oldest_retained_sequence: 1,

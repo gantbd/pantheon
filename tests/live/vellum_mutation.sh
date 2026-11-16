@@ -17,9 +17,9 @@ cleanup() {
 trap cleanup EXIT HUP INT TERM
 
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui \
+  --package pantheon-cli --bin pantheon \
   --locked --offline --target-dir "$target"
-workbench="$target/debug/workbench-tui"
+workbench="$target/debug/pantheon"
 
 write_profile() {
   printf '%s\n' \
@@ -59,7 +59,7 @@ run_journey() {
       sleep 0.025
     done
     printf '%s\n' "$screen" >&2
-    echo "FAIL: Workbench Vellum journey omitted $marker" >&2
+    echo "FAIL: Pantheon Vellum journey omitted $marker" >&2
     exit 1
   }
 
@@ -85,7 +85,7 @@ run_journey() {
   attempt=0
   while tmux -S "$tmux_socket" has-session -t "$session" 2>/dev/null; do
     if [ "$attempt" -eq 240 ]; then
-      echo 'FAIL: Workbench Vellum journey did not exit' >&2
+      echo 'FAIL: Pantheon Vellum journey did not exit' >&2
       exit 1
     fi
     attempt=$((attempt + 1))
@@ -97,19 +97,19 @@ write_profile
 printf 'alpha' >"$source_file"
 run_journey save
 [ "$(cat "$source_file")" = 'Xalpha' ] || {
-  echo 'FAIL: Workbench Vellum save did not publish exact source bytes' >&2
+  echo 'FAIL: Pantheon Vellum save did not publish exact source bytes' >&2
   exit 1
 }
 [ ! -e "$socket" ]
 [ ! -e "$socket.control" ]
-echo 'PASS: Workbench hosted Vellum edit/save returned clean durable state'
+echo 'PASS: Pantheon hosted Vellum edit/save returned clean durable state'
 
 printf 'alpha' >"$source_file"
 run_journey deny
 [ "$(cat "$source_file")" = 'alpha' ] || {
-  echo 'FAIL: denied Workbench Vellum save changed source bytes' >&2
+  echo 'FAIL: denied Pantheon Vellum save changed source bytes' >&2
   exit 1
 }
 [ ! -e "$socket" ]
 [ ! -e "$socket.control" ]
-echo 'PASS: Workbench hosted Vellum denied save without persistence authority'
+echo 'PASS: Pantheon hosted Vellum denied save without persistence authority'

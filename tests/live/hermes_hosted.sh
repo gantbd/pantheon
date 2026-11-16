@@ -12,10 +12,10 @@ cargo build --manifest-path "$workspace/hermes/Cargo.toml" \
 cargo build --manifest-path "$workspace/hermes-tui/Cargo.toml" \
   --package hermes-tui-cli --example seed_operator_ledger --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui --locked --offline
+  --package pantheon-cli --bin pantheon --locked --offline
 
 daemon="$workspace/hermes/target/debug/hermes-daemon"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 uid=$(id -u)
 gid=$(id -g)
 
@@ -107,7 +107,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "hermes", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Interactive Workbench did not drain hosted Hermes")
+            raise AssertionError("Interactive Pantheon did not drain hosted Hermes")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -230,7 +230,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "hermes-operator", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Interactive Workbench did not drain hosted Hermes operator")
+            raise AssertionError("Interactive Pantheon did not drain hosted Hermes operator")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -250,4 +250,4 @@ assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$scratch/operator.sock" ]
 
-echo 'PASS: selected Hermes observer/operator daemon -> same public clients and owner guards -> hosted Workbench -> clean reopen'
+echo 'PASS: selected Hermes observer/operator daemon -> same public clients and owner guards -> hosted Pantheon -> clean reopen'

@@ -30,14 +30,14 @@ if [ "${WORKBENCH_SKIP_BUILD:-0}" != 1 ]; then
   cargo build --manifest-path "$workspace/moira-tui/Cargo.toml" \
     --package moira-tui-cli --bin moira-tui --locked --offline
   cargo build --manifest-path "$root/Cargo.toml" \
-    --package workbench-tui-cli --bin workbench-tui --locked --offline
+    --package pantheon-cli --bin pantheon --locked --offline
 fi
 
 aegis="$workspace/aegis/target/debug/aegis-daemon"
 owner="$workspace/moira/target/debug/moira-saga-local"
 seed="$workspace/moira/target/debug/examples/seed_uncertain_sagas"
 moira_tui="$workspace/moira-tui/target/debug/moira-tui"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 uid=$(id -u)
 gid=$(id -g)
 
@@ -129,7 +129,7 @@ value = json.load(sys.stdin)
 assert value == {"storage_revision": 6, "sagas": [0, 1, 2]}
 '
 
-# Standalone prepares; Workbench confirms and recovers through the same owner guard.
+# Standalone prepares; Pantheon confirms and recovers through the same owner guard.
 challenge0=$("$moira_tui" reconciliation-view "$scratch/moira.sock" 0 keep-uncertain)
 revision0=$(printf '%s' "$challenge0" | json_field storage_revision)
 action0=$(printf '%s' "$challenge0" | json_field action)
@@ -154,7 +154,7 @@ assert value["capability"] == "sagas.reconciliation.recovery.v1"
 assert value["saga"] == 0 and value["authority_epoch"] == 0
 '
 
-# Workbench prepares; standalone confirms and recovers through that same guard.
+# Pantheon prepares; standalone confirms and recovers through that same guard.
 challenge1=$("$workbench" moira-reconciliation-view \
   "$scratch/moira.sock" 1 keep-uncertain)
 revision1=$(printf '%s' "$challenge1" | json_field storage_revision)
@@ -199,7 +199,7 @@ unchanged2=$("$workbench" moira-reconciliation-view \
 [ "$(printf '%s' "$unchanged2" | json_field storage_revision)" = "$revision2" ]
 stop_owner
 
-# Workbench receives only the opaque owner config and proves durable hosted reopen.
+# Pantheon receives only the opaque owner config and proves durable hosted reopen.
 cat >"$scratch/profile.json" <<EOF
 {
   "version": 1,

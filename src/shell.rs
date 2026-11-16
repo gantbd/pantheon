@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use serde::{Deserialize, Serialize};
 
-/// Closed presentation surfaces known by this Workbench revision.
+/// Closed presentation surfaces known by this Pantheon revision.
 ///
 /// This is host navigation, not a universal component or semantic protocol.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]

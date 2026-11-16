@@ -634,7 +634,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "grounding-tui"
+name = "tellus"
 version = "0.1.0"
 dependencies = [
  "crossterm",
@@ -642,10 +642,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "grounding-tui-local-client"
+name = "tellus-local-client"
 version = "0.1.0"
 dependencies = [
- "grounding-tui",
+ "tellus",
  "serde",
  "serde_json",
 ]
@@ -1649,12 +1649,12 @@ dependencies = [
  "agora-wire",
  "chronos-tui",
  "ratatui",
- "workbench-tui",
- "workbench-tui-cli",
+ "pantheon",
+ "pantheon-cli",
 ]
 
 [[package]]
-name = "workbench-tui"
+name = "pantheon"
 version = "0.1.0"
 dependencies = [
  "aegis-tui",
@@ -1662,7 +1662,7 @@ dependencies = [
  "chronos-tui",
  "crossterm",
  "daimon-tui",
- "grounding-tui",
+ "tellus",
  "hermes-tui",
  "moira-tui",
  "ratatui",
@@ -1672,7 +1672,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "workbench-tui-cli"
+name = "pantheon-cli"
 version = "0.1.0"
 dependencies = [
  "aegis-admin-command",
@@ -1696,8 +1696,8 @@ dependencies = [
  "daimon-protocol",
  "daimon-tui",
  "daimon-wire",
- "grounding-tui",
- "grounding-tui-local-client",
+ "tellus",
+ "tellus-local-client",
  "hermes-client",
  "hermes-consumer-command",
  "hermes-disclosure-command",
@@ -1720,7 +1720,7 @@ dependencies = [
  "vellum-sdk-client",
  "vellum-tui",
  "vellum-workspace",
- "workbench-tui",
+ "pantheon",
 ]
 
 [[package]]

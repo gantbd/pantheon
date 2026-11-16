@@ -1,1 +1,1 @@
-//! Isolated qualification closure for Workbench-owned Agora lifecycle.
+//! Isolated qualification closure for Pantheon-owned Agora lifecycle.

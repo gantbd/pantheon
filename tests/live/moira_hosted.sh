@@ -20,11 +20,11 @@ cargo build --manifest-path "$workspace/moira/Cargo.toml" \
   --package moira-saga-local --bin moira-saga-local --example admit_saga \
   --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui --locked --offline
+  --package pantheon-cli --bin pantheon --locked --offline
 
 owner="$workspace/moira/target/debug/moira-saga-local"
 admit="$workspace/moira/target/debug/examples/admit_saga"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 socket="$scratch/moira.sock"
 uid=$(id -u)
 gid=$(id -g)
@@ -144,7 +144,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "moira", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Interactive Workbench did not drain hosted Moira")
+            raise AssertionError("Interactive Pantheon did not drain hosted Moira")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -169,4 +169,4 @@ assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$socket" ]
 
-echo 'PASS: production Moira owner -> public-client mutation -> Workbench hosted headless and interactive durable reopen -> clean drain'
+echo 'PASS: production Moira owner -> public-client mutation -> Pantheon hosted headless and interactive durable reopen -> clean drain'

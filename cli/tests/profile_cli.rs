@@ -5,7 +5,7 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("CLI package is nested under the workspace root");
-    let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
         .arg("interactive")
         .arg("--workspace-profile")
         .arg(root.join("config/workspace.example.json"))
@@ -32,7 +32,7 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
     )
     .unwrap();
 
-    let interactive = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+    let interactive = Command::new(env!("CARGO_BIN_EXE_pantheon"))
         .args(["interactive", "--workspace-profile"])
         .arg(&path)
         .arg("--check-profile")
@@ -40,7 +40,7 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
         .unwrap();
     assert!(interactive.status.success());
 
-    let headless = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+    let headless = Command::new(env!("CARGO_BIN_EXE_pantheon"))
         .args(["headless", "--workspace-profile"])
         .arg(&path)
         .arg("--check-profile")
@@ -63,7 +63,7 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
 
 #[test]
 fn explicit_headless_syntax_failure_is_versioned_json() {
-    let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
         .arg("headless")
         .output()
         .unwrap();
@@ -93,7 +93,7 @@ fn headless_profile_can_host_and_drain_real_chronos_and_vellum() {
     )
     .unwrap();
 
-    let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
         .args(["headless", "--workspace-profile"])
         .arg(&profile)
         .output()

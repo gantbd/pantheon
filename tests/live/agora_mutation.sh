@@ -23,11 +23,11 @@ cargo build --manifest-path "$workspace/agora-tui/Cargo.toml" \
   --package agora-tui-cli --example real_daemon_fixture \
   --locked --offline --target-dir "$target"
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui \
+  --package pantheon-cli --bin pantheon \
   --locked --offline --target-dir "$target"
 
 daemon="$target/debug/examples/real_daemon_fixture"
-workbench="$target/debug/workbench-tui"
+workbench="$target/debug/pantheon"
 
 start_daemon() {
   rm -f "$socket"
@@ -54,7 +54,7 @@ missing="$scratch/missing.sock"
 if "$workbench" agora-create-room "$missing" operator conversation delivery-room \
   'Delivery Room' invite-only 3 'CREATE SOMETHING ELSE' \
   >"$scratch/confirmation.json" 2>"$scratch/confirmation.err"; then
-  echo 'FAIL: Workbench accepted an inexact Agora confirmation' >&2
+  echo 'FAIL: Pantheon accepted an inexact Agora confirmation' >&2
   exit 1
 fi
 python3 - "$scratch/confirmation.json" <<'PYTHON'
@@ -68,14 +68,14 @@ assert report["required_confirmation"] == (
     "ADMISSION INVITE ONLY AT REVISION 3"
 )
 PYTHON
-echo 'PASS: Workbench refused inexact Agora confirmation before connection'
+echo 'PASS: Pantheon refused inexact Agora confirmation before connection'
 
 start_daemon
 if "$workbench" agora-create-room "$socket" operator conversation stale-room \
   'Stale Room' invite-only 2 \
   'CREATE AGORA ROOM stale-room NAMED Stale Room ADMISSION INVITE ONLY AT REVISION 2' \
   >"$scratch/stale.json" 2>"$scratch/stale.err"; then
-  echo 'FAIL: Workbench accepted stale Agora room creation' >&2
+  echo 'FAIL: Pantheon accepted stale Agora room creation' >&2
   exit 1
 fi
 finish_daemon
@@ -86,7 +86,7 @@ assert not report["complete"]
 assert report["capability"] == "rooms.create.v2"
 assert report["status"] == "refused"
 PYTHON
-echo 'PASS: real Agora daemon refused stale Workbench room creation'
+echo 'PASS: real Agora daemon refused stale Pantheon room creation'
 
 start_daemon
 created=$("$workbench" agora-create-room "$socket" operator conversation delivery-room \
@@ -106,4 +106,4 @@ assert report == {
     "revision": 4,
 }
 '
-echo 'PASS: real Agora daemon -> exact-confirmed Workbench room creation'
+echo 'PASS: real Agora daemon -> exact-confirmed Pantheon room creation'

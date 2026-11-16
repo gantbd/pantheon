@@ -35,8 +35,8 @@ use agora_scheduled_publication_port::{
 use agora_service::v2::{ServiceLimitsV2, ServiceV2};
 use agora_wire::WireLimits;
 use ratatui::{Terminal, backend::TestBackend};
-use workbench_tui::{Focus, Shell, Surface, draw_shell};
-use workbench_tui_cli::{
+use pantheon::{Focus, Shell, Surface, draw_shell};
+use pantheon_cli::{
     headless::{HeadlessRequest, observe as observe_headless},
     native_host::{ChronosHostOptions, NativeHost},
     profile::AgoraProfile,
@@ -139,7 +139,7 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
             room_id: RoomId::from("operator-room"),
             author: ParticipantId::from("operator"),
             at: LogicalTime(1),
-            body: "All three owners reached the Workbench surface".into(),
+            body: "All three owners reached the Pantheon surface".into(),
         })
         .unwrap();
     let host = HostV2::new(
@@ -205,8 +205,8 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     let observation = observe_headless(HeadlessRequest {
         workspace: "All peers".into(),
         agora: Some(AgoraProfile {
-            deployment: workbench_tui_cli::profile::DeploymentMode::Attach,
-            transport: workbench_tui_cli::profile::AgoraTransportProfile::Conversation,
+            deployment: pantheon_cli::profile::DeploymentMode::Attach,
+            transport: pantheon_cli::profile::AgoraTransportProfile::Conversation,
             socket: socket.clone(),
             participant: "operator".into(),
             host: None,
@@ -298,12 +298,12 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     component.update(agora_tui::Input::Open, true);
     for _ in 0..200 {
         component.poll();
-        if render(&component).contains("All three owners reached the Workbench surface") {
+        if render(&component).contains("All three owners reached the Pantheon surface") {
             break;
         }
         thread::sleep(Duration::from_millis(1));
     }
-    assert!(render(&component).contains("All three owners reached the Workbench surface"));
+    assert!(render(&component).contains("All three owners reached the Pantheon surface"));
     drop(component);
 
     let receipt = native.shutdown().unwrap();
@@ -418,7 +418,7 @@ fn workbench_lifecycle_returns_the_same_public_scheduled_client() {
         intent: ScheduledPublicationIntentV1::new(
             "scheduled-room",
             2,
-            "same public client under Workbench lifecycle",
+            "same public client under Pantheon lifecycle",
         ),
     };
     let accepted = client.publish_scheduled(request.clone()).unwrap().unwrap();

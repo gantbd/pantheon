@@ -15,11 +15,11 @@ trap cleanup EXIT INT TERM
 
 cargo build --quiet --manifest-path "$root/daimon-tui/Cargo.toml" \
   -p daimon-tui-cli --bin daimon-tui --example agent_permission_fixture --locked --offline
-cargo build --quiet --manifest-path "$root/workbench-tui/Cargo.toml" \
-  -p workbench-tui-cli --bin workbench-tui --locked --offline
+cargo build --quiet --manifest-path "$root/pantheon/Cargo.toml" \
+  -p pantheon-cli --bin pantheon --locked --offline
 fixture="$root/daimon-tui/target/debug/examples/agent_permission_fixture"
 standalone="$root/daimon-tui/target/debug/daimon-tui"
-workbench="$root/workbench-tui/target/debug/workbench-tui"
+workbench="$root/pantheon/target/debug/pantheon"
 
 printf '%s\n' \
   '{' \
@@ -101,4 +101,4 @@ printf '%s\n' "$workbench_output" | grep '"capability": "agents.session.permissi
 printf '%s\n' "$workbench_output" | grep '"status": "decided"' >/dev/null
 test "$(cat "$tmp/workbench.marker")" = decided
 
-echo 'PASS: standalone and Workbench bind one exact Daimon permission challenge and owner guard'
+echo 'PASS: standalone and Pantheon bind one exact Daimon permission challenge and owner guard'

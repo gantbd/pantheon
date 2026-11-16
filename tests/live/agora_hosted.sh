@@ -21,12 +21,12 @@ if [ "${WORKBENCH_SKIP_BUILD:-0}" != 1 ]; then
   cargo build --manifest-path "$workspace/agora/Cargo.toml" \
     --package agora-private-local --bin agora-private-local --locked --offline
   cargo build --manifest-path "$root/Cargo.toml" \
-    --package workbench-tui-cli --bin workbench-tui --locked --offline
+    --package pantheon-cli --bin pantheon --locked --offline
 fi
 
 aegis="$workspace/aegis/target/debug/aegis-daemon"
 agora="$workspace/agora/target/debug/agora-private-local"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 uid=$(id -u)
 gid=$(id -g)
 
@@ -261,7 +261,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "agora", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Interactive Workbench did not drain hosted Agora")
+            raise AssertionError("Interactive Pantheon did not drain hosted Agora")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -291,7 +291,7 @@ partial_report="$scratch/partial-shutdown-report.json"
 if WORKBENCH_AGORA_REAL_EXECUTABLE="$agora" \
   "$workbench" headless --workspace-profile "$partial_profile" \
     >"$partial_report" 2>"$scratch/partial-shutdown.err"; then
-  echo 'FAIL: Workbench accepted a non-clean Agora shutdown receipt' >&2
+  echo 'FAIL: Pantheon accepted a non-clean Agora shutdown receipt' >&2
   exit 1
 fi
 grep -q 'one or more peer observations or hosted shutdowns were incomplete' \
@@ -324,7 +324,7 @@ if WORKBENCH_AGORA_REAL_EXECUTABLE="$agora" \
   WORKBENCH_AGORA_PROXY_MODE=kill-on-shutdown \
   "$workbench" headless --workspace-profile "$abrupt_profile" \
     >"$abrupt_report" 2>"$scratch/abrupt-shutdown.err"; then
-  echo 'FAIL: Workbench accepted an abruptly stopped Agora owner' >&2
+  echo 'FAIL: Pantheon accepted an abruptly stopped Agora owner' >&2
   exit 1
 fi
 grep -q 'one or more peer observations or hosted shutdowns were incomplete' \
@@ -373,7 +373,7 @@ if WORKBENCH_AGORA_REAL_EXECUTABLE="$agora" \
   WORKBENCH_AGORA_PROXY_MODE=hang-after-child-kill \
   "$workbench" headless --workspace-profile "$unknown_profile" \
     >"$unknown_report" 2>"$scratch/unknown-shutdown.err"; then
-  echo 'FAIL: Workbench accepted an Agora owner without a terminal receipt' >&2
+  echo 'FAIL: Pantheon accepted an Agora owner without a terminal receipt' >&2
   exit 1
 fi
 grep -q 'one or more peer observations or hosted shutdowns were incomplete' \
@@ -415,4 +415,4 @@ assert report["hosted_shutdown"]["status"] == "clean"
 [ ! -e "$scratch/agora.sock" ]
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: Workbench-hosted Aegis -> exact Agora process -> refused, abrupt, and outcome-unknown cuts -> continued reverse drain -> exact residue recovery'
+echo 'PASS: Pantheon-hosted Aegis -> exact Agora process -> refused, abrupt, and outcome-unknown cuts -> continued reverse drain -> exact residue recovery'

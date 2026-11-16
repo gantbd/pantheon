@@ -10,9 +10,9 @@ chmod 700 "$scratch"
 cargo build --manifest-path "$workspace/chronos/Cargo.toml" \
   --package chronos-standalone --bin chronos-service --locked --offline
 cargo build --manifest-path "$repo/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui --locked --offline
+  --package pantheon-cli --bin pantheon --locked --offline
 
-python3 - "$scratch" "$repo/target/debug/workbench-tui" \
+python3 - "$scratch" "$repo/target/debug/pantheon" \
   "$workspace/chronos/target/debug/chronos-service" <<'PYTHON'
 from pathlib import Path
 import json
@@ -125,7 +125,7 @@ try:
     deadline = time.monotonic() + 10
     while tmux("has-session", "-t", "chronos", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Workbench did not drain hosted Chronos")
+            raise AssertionError("Pantheon did not drain hosted Chronos")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -186,4 +186,4 @@ if owner.returncode != 0:
     raise AssertionError(f"Chronos reopen exited with {owner.returncode}")
 PYTHON
 
-echo 'PASS: hosted Chronos -> Workbench peer component guarded writes -> clean shutdown -> exact durable reopen'
+echo 'PASS: hosted Chronos -> Pantheon peer component guarded writes -> clean shutdown -> exact durable reopen'

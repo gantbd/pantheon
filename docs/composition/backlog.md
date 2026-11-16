@@ -6,24 +6,24 @@ read-only input until that repository settles.
 
 ## P0 — evidence and current parity
 
-- [x] Define the standalone/Workbench pattern and on-disk taxonomy.
+- [x] Define the standalone/Pantheon pattern and on-disk taxonomy.
 - [x] Classify Axon and Engram as prior art and route their useful patterns to
   current owners.
-- [x] Close Aegis interactive and headless Workbench attachment qualification
+- [x] Close Aegis interactive and headless Pantheon attachment qualification
   using the existing `authority.observe.v1` peer and real durable daemon.
 - [x] Qualify Moira, Daimon, Hermes, Aegis and Grounding real-service observation
-  together in one Workbench invocation, not only as isolated peer attachments.
+  together in one Pantheon invocation, not only as isolated peer attachments.
 - [x] Keep the root repository inventory synchronized with all presentation
   peers and current source state.
 - [x] Move reusable Hermes, Agora, and Aegis Unix transport clients into their
   owner repositories; reduce TUI packages to compatibility re-exports and make
-  Workbench consume the owner clients directly. Defer Moira and Grounding until
+  Pantheon consume the owner clients directly. Defer Moira and Grounding until
   their active owner boundaries settle.
-- [x] Keep Hermes hosting out of the mixed engine graph: Workbench now owns the
+- [x] Keep Hermes hosting out of the mixed engine graph: Pantheon now owns the
   owner-supplied standalone daemon process and attaches the same public client,
   preserving Hermes authentication, authorization, storage and shutdown.
 - [x] Resolve the Chronos/Agora Keystone source collision without forcing an
-  unselected topology: production Workbench keeps Chronos native and supervises
+  unselected topology: production Pantheon keeps Chronos native and supervises
   Agora's exact standalone process, so the source graphs remain separate. The
   patched all-three in-process qualifier stays test-only. Any future in-process
   product must first select one immutable remotely retrievable Keystone source;
@@ -32,7 +32,7 @@ read-only input until that repository settles.
 ## P1 — production composition
 
 - [x] Complete Agora's production durable owner factory without putting
-  credential policy in Workbench. Agora now owns the qualified single-principal
+  credential policy in Pantheon. Agora now owns the qualified single-principal
   private-endpoint authenticator, non-regressing Unix-epoch clock, and an
   adopted `agora-private-local` bounded create-time participant/room bootstrap.
   Aegis now supplies a service-free `aegis-local-client`; Agora connects through
@@ -46,7 +46,7 @@ read-only input until that repository settles.
   after explicit shutdown and drain. The bounded standalone configuration and
   POSIX signal entrypoint reuse that owner. The real Aegis/Agora standalone
   journey now publishes/observes through the public scheduled client, drains,
-  and reopens retained state. Workbench supervises the exact same binary from
+  and reopens retained state. Pantheon supervises the exact same binary from
   an opaque config, uses the routed public Protocol V2 client in headless and
   interactive modes, drains Agora before Aegis, and qualifies durable reopen.
   A test-only cleanup-receipt proxy proves a non-clean Agora result refuses
@@ -57,74 +57,74 @@ read-only input until that repository settles.
   `outcome_unknown`, continued Aegis drain, and the same exact recovery.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
-- [x] Add `grounding-tui` and its standalone interactive/headless application,
-  then attach the same component to Workbench.
+- [x] Add `tellus` and its standalone interactive/headless application,
+  then attach the same component to Pantheon.
 - [x] Keep Grounding observation-only for this program. Selected surface/read
   DTOs are deliberately unselected until Dendrite owns exact content
   disclosure, provenance, freshness and response bounds; the current typed
-  observation and standalone/Workbench attach contract is complete without
+  observation and standalone/Pantheon attach contract is complete without
   importing its MCP authority.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
   Hermes, Aegis, and Grounding while preserving separate state, authority,
   recovery and shutdown receipts.
 - [x] Promote Moira through its owner-supplied sovereign `moira-saga-local`
   profile after explicit storage, Aegis authentication, recovery and shutdown
-  composition passed the standalone and Workbench real-process lifecycle
-  qualification. Workbench supervises the exact owner binary from an opaque
+  composition passed the standalone and Pantheon real-process lifecycle
+  qualification. Pantheon supervises the exact owner binary from an opaque
   profile and cannot upgrade its reconciliation authority. Grounding remains
   attach-only by design: Dendrite retains its IDE/agent bridge lifecycle.
 - [x] Promote Daimon's production local-agent application to an explicit
   supervised profile factory after the owner supplied an opaque configuration,
-  exact public agent socket and one-byte drain contract. Workbench does not
+  exact public agent socket and one-byte drain contract. Pantheon does not
   acquire provider, credential, authority, attempt, storage or recovery policy.
-- [x] Hermes: qualify the owner-supplied selected daemon under Workbench
+- [x] Hermes: qualify the owner-supplied selected daemon under Pantheon
   lifecycle for explicit creation, recovery, public-client observation and clean
   signal drain without linking engine or substrate internals. The selected
   operator gate also qualifies exact-confirmed acknowledgement and compaction,
   followed by durable reopen, through the same public clients.
-- [x] Aegis: qualify the owner-supplied daemon under Workbench lifecycle with
+- [x] Aegis: qualify the owner-supplied daemon under Pantheon lifecycle with
   explicit authority/principal/session/role facts, create/open recovery, the
-  ordinary public client and clean signal drain. Workbench retains no grant,
+  ordinary public client and clean signal drain. Pantheon retains no grant,
   clock, authentication or authority policy.
 
 ## P2 — operational depth
 
 - [x] Moira: carry bounded selected-saga effect evidence and operator receipts
-  through the same read-only component in standalone and Workbench interactive
+  through the same read-only component in standalone and Pantheon interactive
   paths.
 - [x] Moira: keep reconciliation mutation guarded until exact confirmation,
   current authority, revision, durable receipt, and outcome-unknown recovery
   are public and qualified end to end.
 - [x] Hermes: carry a read-only cursor observation plus exact opaque stream and
-  consumer selectors through standalone and Workbench without acquiring the
+  consumer selectors through standalone and Pantheon without acquiring the
   acknowledgement-capable consumer facade.
 - [x] Hermes: add exact-confirmed event disclosure through a separate read-only
   facade, bounded to 16 events and the negotiated frame ceiling, with explicit
   retention/publication gaps and no global stream or consumer catalogue.
 - [x] Hermes: reuse the peer-owned same-connection consumer guard for one
-  exact-confirmed acknowledgement in standalone and Workbench, fencing stale
+  exact-confirmed acknowledgement in standalone and Pantheon, fencing stale
   cursors and never retrying an uncertain mutation.
 - [x] Hermes: reuse the peer-owned exact-stream-state guard for one compaction
-  in standalone and Workbench, keeping operator authority out of the reusable
+  in standalone and Pantheon, keeping operator authority out of the reusable
   component and selecting any hosted operator authority explicitly at the
   Hermes process boundary.
 - [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
-  one-attempt epoch revocation in standalone and Workbench, preserving
+  one-attempt epoch revocation in standalone and Pantheon, preserving
   `outcome_unknown` without retry.
 - [x] Aegis: reuse the owner-supplied bounded administration-session protocol
-  for named issue/attenuate/authorize/list/close in standalone and Workbench;
+  for named issue/attenuate/authorize/list/close in standalone and Pantheon;
   grant handles remain session-local and private to the shared manager.
 - [x] Aegis: qualify explicit disconnect/reconnect abandonment and deliberate
-  rebuild under a new operation name in both standalone and Workbench shells.
+  rebuild under a new operation name in both standalone and Pantheon shells.
   Durable grant replay and lost-reply reconciliation remain nonclaims.
 - [x] Aegis: preserve bounded redacted grant/decision pagination through the
-  same read-only component in standalone and Workbench interactive paths.
+  same read-only component in standalone and Pantheon interactive paths.
 - [x] Chronos: reuse its public Hub and owner service for task creation,
   receipted cancellation, scheduling enablement, global/task pause, capacity,
-  and not-before controls through Workbench; prove clean drain and exact
+  and not-before controls through Pantheon; prove clean drain and exact
   independent durable reopen without importing mutation semantics.
 - [x] Daimon: reuse exact configured agent-session/provider evidence through
-  standalone and Workbench without exposing a session catalogue or mutation
+  standalone and Pantheon without exposing a session catalogue or mutation
   client.
 - [x] Daimon: add guarded prompt, advance, permission, cancellation, close and
   reattach only with
@@ -133,25 +133,25 @@ read-only input until that repository settles.
 - [x] Daimon: close the integrated hosted lifecycle gate across the production
   owner process, ordinary public client, clean drain and durable reopen.
 - [x] Chronos: qualify the selected task and scheduling mutation profile through
-  the same public Hub and owner service in standalone and Workbench paths,
+  the same public Hub and owner service in standalone and Pantheon paths,
   preserving peer-owned receipts, clean drain and exact durable reopen.
 - [x] Vellum: qualify the implemented `workspace.edit.v1` and
-  `workspace.save.v1` path in standalone and Workbench. Real-owner gates
+  `workspace.save.v1` path in standalone and Pantheon. Real-owner gates
   preserve revision witnesses, dirty/clean/indeterminate projection, save
   authority refusal, exact persisted bytes and exact replay after a deliberately
   discarded accepted reply. Newer durable operations remain a separate adapter
   selection item.
 - [x] Agora: qualify selected `rooms.create.v2` through one owner-client guard
-  in standalone and Workbench. The command binds the exact room facts and
+  in standalone and Pantheon. The command binds the exact room facts and
   current revision, refuses an inexact confirmation before connection, returns
   the durable owner receipt, and resolves a discarded reply only by replaying
   the identical retained request identity. Broader Agora mutations remain
-  unclaimed rather than becoming generic Workbench commands.
+  unclaimed rather than becoming generic Pantheon commands.
 
 ## P3 — cross-engine completion
 
 - [x] Record Hermes append at its actual owner boundaries rather than inventing
-  a Workbench command: Moira qualifies its workflow-event schema and
+  a Pantheon command: Moira qualifies its workflow-event schema and
   `agora-hermes-adapter` qualifies minimized-wake append/replay. Generic append
   is not a presentation-parity requirement.
 
@@ -176,11 +176,11 @@ read-only input until that repository settles.
 - [x] Deploy Agora publish/observation through private-local composition
   handshake profile 4 and the public `ScheduledLocalClientV1`; ordinary
   participant Wire V2 remains unchanged. The Agora–Chronos adapter wraps the
-  same transport-neutral client for standalone and Workbench use, preserves
+  same transport-neutral client for standalone and Pantheon use, preserves
   pre-send versus outcome-unknown evidence, and keeps its Dispatch/InspectAgora
   decisions separate from Agora's owner-side Execute/Observe enforcement.
   The isolated host qualification also returns this exact client from
-  `NativeHost` and proves publish/observe under Workbench lifecycle with
+  `NativeHost` and proves publish/observe under Pantheon lifecycle with
   explicitly test-only authority. Supplying the production owner factory
   remains part of the P1 Agora provenance/grant/time/durability item. The
   adapter's local release profile is separately closed over pinned clean Aegis,
@@ -239,11 +239,11 @@ read-only input until that repository settles.
 - [x] Install Vellum's selected newer durable operation only through its owner
   authority and platform adapter. `workspace.durable-save.execute.v1` and
   `workspace.durable-save.lookup.v1` share one Vellum-TUI guard over the public
-  Vellum client in standalone and Workbench. The caller persists the operation
+  Vellum client in standalone and Pantheon. The caller persists the operation
   reference, while the authenticated daemon resolves the exact current
   document, enforces its Persist ceiling, performs filesystem work, and owns
   receipt truth. A real-daemon gate executes in standalone and recovers the
-  exact receipt through Workbench. Save As submission, receipt retirement,
+  exact receipt through Pantheon. Save As submission, receipt retirement,
   arbitrary destinations and other durable intents remain unselected and are
   not implied by this cell.
 
@@ -257,14 +257,14 @@ read-only input until that repository settles.
   Darwin 25.6.0 arm64 host, emits a SHA-256 file manifest and exact reviewed
   transitive license inventory, and qualifies initial install plus atomic
   same-version replacement without modifying the external version-1 profile.
-  Workbench owns no peer durable state and refuses unknown profile schemas;
+  Pantheon owns no peer durable state and refuses unknown profile schemas;
   remote publication, wider platforms, signing and notarization are outside
   the selected local artifact claim.
-- [x] Qualify the Workbench GUI local dependency closure across clean committed
+- [x] Qualify the Pantheon GUI local dependency closure across clean committed
   Chronos/Vellum engines and GUI peers.
-- [x] Defer Workbench GUI distribution, signing and notarization by explicit
+- [x] Defer Pantheon GUI distribution, signing and notarization by explicit
   product decision. Immutable prepared-artifact
-  qualification is complete at Workbench GUI commit
+  qualification is complete at Pantheon GUI commit
   `fdf4287dbe694f7230085c6017727bc512b63a9e`: the Apple-silicon `.app`
   reconstructs exact Chronos/Vellum engine and GUI inputs, carries a SHA-256
   manifest plus 204-package/118-text legal closure, and exposes a fail-closed
@@ -273,7 +273,7 @@ read-only input until that repository settles.
   Application identity or notarization profile. No signed-distribution claim
   is made, and the prepared gate remains ready for a future program.
 - [x] Defer remote deployment and wider GUI coverage. They are outside the
-  selected local standalone-and-Workbench delivery and may be reopened only by
+  selected local standalone-and-Pantheon delivery and may be reopened only by
   a later product decision with concrete deployment, credential, signing and
   support profiles.
 

@@ -8,7 +8,7 @@ fn create_room_refuses_bad_confirmation_before_connecting() {
         "workbench-agora-create-missing-{}",
         std::process::id()
     ));
-    let output = Command::new(env!("CARGO_BIN_EXE_workbench-tui"))
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
         .args([
             "agora-create-room",
             missing.to_str().unwrap(),

@@ -21,7 +21,7 @@ trap cleanup EXIT HUP INT TERM
 sh "$repo/qualification/agora-host/qualify.sh" \
   --target-dir "$target/agora-owner"
 
-cargo build --manifest-path "$repo/Cargo.toml" --package workbench-tui-cli --bin workbench-tui \
+cargo build --manifest-path "$repo/Cargo.toml" --package pantheon-cli --bin pantheon \
   --example agora_host --example agora_fixture_server \
   --locked --offline --target-dir "$target"
 
@@ -47,7 +47,7 @@ expect() {
 expect 'AGORA · rooms · revision 7'
 expect 'Atlas Room'
 tmux -S "$tmux_socket" send-keys -t "$session" Enter
-expect 'Workbench Agora peer is live'
+expect 'Pantheon Agora peer is live'
 tmux -S "$tmux_socket" send-keys -t "$session" q
 expect 'Use Ctrl-Q to exit the complete workbench'
 tmux -S "$tmux_socket" send-keys -t "$session" C-q
@@ -55,14 +55,14 @@ tmux -S "$tmux_socket" send-keys -t "$session" C-q
 attempt=0
 while tmux -S "$tmux_socket" has-session -t "$session" 2>/dev/null; do
   if [ "$attempt" -eq 200 ]; then
-    echo 'FAIL: Agora Workbench host did not exit' >&2
+    echo 'FAIL: Agora Pantheon host did not exit' >&2
     exit 1
   fi
   attempt=$((attempt + 1))
   sleep 0.025
 done
 
-echo 'PASS: host-supplied Agora peer -> Workbench surface'
+echo 'PASS: host-supplied Agora peer -> Pantheon surface'
 
 session=workbench-agora-profile
 agora_socket="$scratch/agora.sock"
@@ -86,7 +86,7 @@ while [ ! -S "$agora_socket" ]; do
 done
 
 tmux -S "$tmux_socket" -f /dev/null new-session -d -x 120 -y 24 \
-  -s "$session" "$target/debug/workbench-tui --workspace-profile $profile"
+  -s "$session" "$target/debug/pantheon --workspace-profile $profile"
 expect 'AGORA · rooms · revision 11'
 expect 'Profile Room'
 tmux -S "$tmux_socket" send-keys -t "$session" Enter
@@ -96,7 +96,7 @@ tmux -S "$tmux_socket" send-keys -t "$session" C-q
 attempt=0
 while tmux -S "$tmux_socket" has-session -t "$session" 2>/dev/null; do
   if [ "$attempt" -eq 200 ]; then
-    echo 'FAIL: profile-driven Agora Workbench did not exit' >&2
+    echo 'FAIL: profile-driven Agora Pantheon did not exit' >&2
     exit 1
   fi
   attempt=$((attempt + 1))
@@ -105,7 +105,7 @@ done
 wait "$server_pid"
 server_pid=
 
-echo 'PASS: profile-driven Agora Unix client -> Workbench surface'
+echo 'PASS: profile-driven Agora Unix client -> Pantheon surface'
 
 rm -f "$agora_socket"
 "$target/debug/examples/agora_fixture_server" "$agora_socket" >"$server_log" 2>&1 &
@@ -120,7 +120,7 @@ while [ ! -S "$agora_socket" ]; do
   attempt=$((attempt + 1))
   sleep 0.025
 done
-headless=$("$target/debug/workbench-tui" headless --workspace-profile "$profile")
+headless=$("$target/debug/pantheon" headless --workspace-profile "$profile")
 printf '%s' "$headless" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)
@@ -137,4 +137,4 @@ assert report["peers"] == [{
 wait "$server_pid"
 server_pid=
 
-echo 'PASS: profile-driven Agora Unix client -> Workbench headless observation'
+echo 'PASS: profile-driven Agora Unix client -> Pantheon headless observation'

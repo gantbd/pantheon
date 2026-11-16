@@ -26,13 +26,13 @@ cargo build --manifest-path "$workspace/daimon/Cargo.toml" \
   --package daimon-local-agent --bin daimon-local-agent \
   --example qualification_chronos --example qualification_seed --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui --locked --offline
+  --package pantheon-cli --bin pantheon --locked --offline
 
 aegis="$workspace/aegis/target/debug/aegis-daemon"
 agent="$workspace/daimon/target/debug/daimon-local-agent"
 chronos="$workspace/daimon/target/debug/examples/qualification_chronos"
 seed="$workspace/daimon/target/debug/examples/qualification_seed"
-workbench="$root/target/debug/workbench-tui"
+workbench="$root/target/debug/pantheon"
 provider_fixture="$workspace/daimon/adapters/daimon-acp/tests/support/fake_acp_agent.sh"
 uid=$(id -u)
 gid=$(id -g)
@@ -184,7 +184,7 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "daimon", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Interactive Workbench did not drain hosted Daimon")
+            raise AssertionError("Interactive Pantheon did not drain hosted Daimon")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -196,4 +196,4 @@ wait "$aegis_pid"
 aegis_pid=
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: production Daimon agent -> durable session -> Workbench hosted headless and interactive reopen -> clean drain'
+echo 'PASS: production Daimon agent -> durable session -> Pantheon hosted headless and interactive reopen -> clean drain'

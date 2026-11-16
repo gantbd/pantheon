@@ -1,6 +1,6 @@
-# Workbench composition program
+# Pantheon composition program
 
-Workbench is the product composition root for independently useful peers. It
+Pantheon is the product composition root for independently useful peers. It
 owns product navigation, layout, focus, profile selection, deployment topology
 and aggregate lifecycle. It does not merge peer authority, invent a universal
 semantic protocol or require every peer to use an identical interaction model.
@@ -14,7 +14,7 @@ or Moira roadmaps.
 ## Required pattern
 
 A peer is reasonably standalone when users or operators benefit from using it
-without the rest of Workbench. Such a peer should provide, as its domain earns
+without the rest of Pantheon. Such a peer should provide, as its domain earns
 the layers:
 
 1. a public client contract with in-process and/or transport interpretations;
@@ -24,15 +24,15 @@ the layers:
    form and armed/disarmed confirmation state;
 4. a standalone application shell for terminal/window lifecycle, arguments,
    headless operation and process exit;
-5. Workbench attachment through the same client, command guards and presentation component;
-6. optional Workbench hosting when production adapter, authority, recovery and
+5. Pantheon attachment through the same client, command guards and presentation component;
+6. optional Pantheon hosting when production adapter, authority, recovery and
    shutdown composition are explicit.
 
 Concrete transport clients belong with the peer that owns the protocol, not
-with a TUI or Workbench. A presentation repository may retain a thin re-export
+with a TUI or Pantheon. A presentation repository may retain a thin re-export
 facade for source compatibility, but it must not retain framing, endpoint
 validation, certainty classification, authentication, or lifecycle policy.
-Standalone shells and Workbench should consume the owner client directly when
+Standalone shells and Pantheon should consume the owner client directly when
 compatibility no longer requires the facade. Hermes, Agora, Aegis, and Moira
 currently enforce this shape. Grounding remains deferred while Dendrite's
 owning typed boundary is active.
@@ -45,7 +45,7 @@ commands, confirmations, projections and failure vocabulary stay peer-owned.
 
 Headless mode is a first-class peer interface, not a hidden TUI invocation. It
 uses the same public client, constructs no cursor/focus/widget state and emits a
-versioned peer-owned result. Workbench may aggregate those results but cannot
+versioned peer-owned result. Pantheon may aggregate those results but cannot
 turn partial peer success into aggregate success.
 
 ## Composition states
@@ -68,9 +68,9 @@ implies production credential provenance.
 
 ## Current parity matrix
 
-| Peer | Standalone interactive/headless | Workbench attach | Workbench host | Next boundary |
+| Peer | Standalone interactive/headless | Pantheon attach | Pantheon host | Next boundary |
 | --- | --- | --- | --- | --- |
-| Agora | qualified read plus exact-confirmed room creation and production-shaped durable process | qualified read plus the same guarded room creation | qualified sovereign process with real Aegis | immutable/release provenance; broader domain mutations remain peer-selected rather than generic Workbench commands |
+| Agora | qualified read plus exact-confirmed room creation and production-shaped durable process | qualified read plus the same guarded room creation | qualified sovereign process with real Aegis | immutable/release provenance; broader domain mutations remain peer-selected rather than generic Pantheon commands |
 | Chronos | qualified read and selected guarded writes | qualified, including the selected guarded-write profile | qualified local owner with exact durable mutation reopen | mutations beyond the selected task/scheduling profile; Agora remains a supervised process rather than a merged Cargo graph |
 | Vellum | qualified inventory, witnessed edit/save, and selected restart-stable Save execute/lookup | qualified read/editor plus the same durable-save guard and public client | qualified local owner with save-authority refusal, exact persisted bytes and authenticated durable receipt recovery | Save As/retirement/other durable intents and release-qualified platform composition |
 | Moira | qualified read/reconciliation, census, evidence, exact-confirmed mutation and durable receipt recovery over the peer-owned Unix client | qualified attach plus the same Moira-owned reconciliation guard | qualified sovereign saga owner in both modes with durable mutation/reopen and clean drain | no selected-profile parity gap; broader process-separated Agora/Vellum workflows remain owner/adapter work |
@@ -84,11 +84,11 @@ delivery sequence is in `backlog.md`; Axon and Engram adoption decisions are in
 `prior-art.md`. The checked cell classification is
 [`composition-status.json`](../../composition-status.json); prose must not claim
 a stronger state than that file. Each peer entry names the exact public contract
-and concrete connection client used by standalone and Workbench paths. An
+and concrete connection client used by standalone and Pantheon paths. An
 `ownership` value of `presentation-deferred` is an explicit normalization gap,
 not evidence that transport mechanics belong to presentation. The `evidence`
 list names executable real-service gates for the claimed standalone and
-Workbench cells; deleting or renaming a gate invalidates the root check.
+Pantheon cells; deleting or renaming a gate invalidates the root check.
 
 ## On-disk routing
 
@@ -103,6 +103,6 @@ Workbench cells; deleting or renaming a gate invalidates the root check.
 | What did Axon/Engram teach us? | `prior-art.md` |
 | What is next? | `backlog.md`, linked to the owning detailed roadmap |
 
-This prevents the root from becoming a product backlog, Workbench from becoming
+This prevents the root from becoming a product backlog, Pantheon from becoming
 a semantic engine and Keystone from becoming a presentation or integration
 dumping ground.

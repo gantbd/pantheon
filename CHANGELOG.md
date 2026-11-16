@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Closed the 50-item selected local composition program across standalone and
-  Workbench presentations. Grounding surface/read DTOs, signed GUI
+  Pantheon presentations. Grounding surface/read DTOs, signed GUI
   distribution, remote delivery, and wider GUI/platform coverage are explicit
   future product decisions rather than incomplete claims of this release.
 - Added the selected unsigned local `aarch64-apple-darwin` release gate. It
@@ -11,30 +11,30 @@
   with a reviewed transitive license inventory, preserves the operator profile
   across atomic same-version replacement, and refuses unknown profile schemas.
 - Qualified Vellum's restart-stable Save execute and historical lookup through
-  one peer-owned public-client guard in standalone and Workbench.
+  one peer-owned public-client guard in standalone and Pantheon.
 - Qualified Vellum's ordinary witnessed edit/save path through the same
-  reusable editor in standalone and hosted Workbench, including exact persisted
+  reusable editor in standalone and hosted Pantheon, including exact persisted
   bytes, save-authority refusal and exact replay of an indeterminate save.
-- Qualified selected Agora room creation across the standalone and Workbench
+- Qualified selected Agora room creation across the standalone and Pantheon
   shells through one owner-client guard. The real-daemon gates cover zero-contact
   confirmation refusal, stale revision refusal, durable receipt publication and
   exact retained-request replay after a deliberately discarded reply.
 - Qualified Moira's explicit Aegis-backed operator profile and shared
-  reconciliation guard across standalone and Workbench. Exact server-prepared
+  reconciliation guard across standalone and Pantheon. Exact server-prepared
   confirmations are submitted once, unselected sagas are refused without
   revision movement, and indeterminate outcomes recover only from exact durable
   receipts retained across hosted reopen.
-- Added Moira's sovereign durable saga owner to Workbench hosting. Standalone
-  and Workbench now reuse Moira's peer-owned reconnectable Unix saga client;
+- Added Moira's sovereign durable saga owner to Pantheon hosting. Standalone
+  and Pantheon now reuse Moira's peer-owned reconnectable Unix saga client;
   durable mutation/reopen and clean headless/interactive drain are qualified,
   while operator reconciliation remains explicitly unauthorized.
 - Normalized Hermes producer delivery as adapter-owned integration evidence:
   Moira workflow events and Agora minimized wake are qualified profiles, while
-  generic Workbench append is explicitly not a presentation capability.
+  generic Pantheon append is explicitly not a presentation capability.
 - Added exact-confirmed Daimon detached-session reattach to standalone and
-  Workbench through one owner parser and guard, with full execution-envelope
+  Pantheon through one owner parser and guard, with full execution-envelope
   binding, exact revision fencing and no retry after uncertain delivery.
-- Normalized the Vellum and Workbench source closures on the workspace's exact
+- Normalized the Vellum and Pantheon source closures on the workspace's exact
   Keystone revision. Archived qualification now materializes that immutable
   local Git object under the declared GitHub identity in a private Cargo home,
   removing ambient-cache dependence without claiming remote reachability.
@@ -65,12 +65,12 @@
   uncertainty, and partial aggregate failure without constructing TUI state.
 - Advanced the Vellum presentation input to the separately packaged standalone
   CLI boundary while retaining the reusable root presentation dependency.
-- Extracted Workbench's executable, profile parser, terminal lifecycle, and
-  hosted-service helpers into `workbench-tui-cli`; the root package is now the
+- Extracted Pantheon's executable, profile parser, terminal lifecycle, and
+  hosted-service helpers into `pantheon-cli`; the root package is now the
   reusable shell and peer-presentation composition boundary.
 - Advanced the Chronos peer input to its explicit, versioned,
   multi-workstream standalone headless contract.
-- Added explicit `interactive` and `headless` Workbench commands while retaining
+- Added explicit `interactive` and `headless` Pantheon commands while retaining
   the historical headless flags as compatibility aliases.
 - Advanced the Agora and Vellum peer inputs to their versioned standalone
   `rooms.read.v2` and `workspace.inventory.v1` headless contracts.
@@ -90,7 +90,7 @@
   in reverse order and returns exact clean, refused, or outcome-unknown receipts
   when a later factory refuses startup.
 - Added profile- and launch-selected native Chronos hosting for interactive and
-  headless Workbench runs, using the real service owner, ordinary local client,
+  headless Pantheon runs, using the real service owner, ordinary local client,
   native drain signal, joined shutdown, and exact lifecycle receipts.
 - Added profile- and launch-selected native Vellum hosting with persistent
   identity, bounded workspace discovery, optional principal authentication,
@@ -102,22 +102,22 @@
 - Advanced Agora and Vellum so selecting headless mode always yields one
   versioned refusal on malformed configuration and never falls through to an
   interactive presentation path.
-- Made explicit Workbench headless profile, capability, and syntax refusals use
+- Made explicit Pantheon headless profile, capability, and syntax refusals use
   the aggregate versioned envelope before any service or presentation startup.
 - Added a typed deployment-owned Agora factory seam and qualified its lifecycle
   registry against the real local daemon and public Unix client under an
   explicitly test-only injected authority composition.
 - Qualified a single interactive and headless mixed topology with attached
-  Agora plus Workbench-owned Chronos and Vellum.
+  Agora plus Pantheon-owned Chronos and Vellum.
 - Qualified one process and lock closure owning real Chronos, Vellum, and Agora
   services, with reverse clean drain, using a derived local source-identity
   patch and explicitly test-only Agora authority inputs.
 - Advanced the exact Agora TUI source receipt to its standalone real-daemon
   interactive and headless qualification revision.
-- Extracted Workbench headless aggregation from CLI-private code into a typed
+- Extracted Pantheon headless aggregation from CLI-private code into a typed
   application-library API and qualified it against all three live native owners
   in one process.
 - Extended the same three-owner qualification through the real Agora component
-  and Workbench shell rendering boundary for room and message projections.
+  and Pantheon shell rendering boundary for room and message projections.
 - Made reusable headless composition fail closed on unsupported Agora, Chronos,
   or Vellum requirements before any peer connection, matching CLI negotiation.

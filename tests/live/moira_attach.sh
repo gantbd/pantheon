@@ -7,7 +7,7 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/workbench-moira.XXXXXX")
 chmod 700 "$scratch"
 target="$scratch/target"
 fixture="$target/debug/examples/real_daemon_fixture"
-workbench="$target/debug/workbench-tui"
+workbench="$target/debug/pantheon"
 socket="$scratch/moira.sock"
 database="$scratch/moira.db"
 profile="$scratch/workspace.json"
@@ -27,7 +27,7 @@ cargo build --manifest-path "$moira_tui/Cargo.toml" \
   --package moira-tui-cli --example real_daemon_fixture \
   --locked --offline --target-dir "$target"
 cargo build --manifest-path "$repo/Cargo.toml" \
-  --package workbench-tui-cli --bin workbench-tui \
+  --package pantheon-cli --bin pantheon \
   --locked --offline --target-dir "$target"
 
 printf '%s\n' \
@@ -110,11 +110,11 @@ try:
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Workbench did not exit")
+            raise AssertionError("Pantheon did not exit")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
 PYTHON
 finish_fixture
 
-echo 'PASS: real Moira daemon -> census plus selected-saga evidence and operator receipts -> Workbench headless and interactive attach'
+echo 'PASS: real Moira daemon -> census plus selected-saga evidence and operator receipts -> Pantheon headless and interactive attach'
