@@ -18,12 +18,12 @@ read-only input until that repository settles.
 - [x] Keep Hermes hosting out of the mixed engine graph: Workbench now owns the
   owner-supplied standalone daemon process and attaches the same public client,
   preserving Hermes authentication, authorization, storage and shutdown.
-- [ ] Converge Chronos and Agora hosting on one immutable Keystone source
-  identity so their normal in-process product host graph needs no
-  qualification-only patch. Use a
-  remotely retrievable pinned Git revision or published artifact; a sibling
-  path breaks Chronos's relocatable source-profile gate, while separate vendored
-  paths cannot share one Cargo lock identity.
+- [x] Resolve the Chronos/Agora Keystone source collision without forcing an
+  unselected topology: production Workbench keeps Chronos native and supervises
+  Agora's exact standalone process, so the source graphs remain separate. The
+  patched all-three in-process qualifier stays test-only. Any future in-process
+  product must first select one immutable remotely retrievable Keystone source;
+  sibling paths and duplicate vendored identities remain forbidden.
 
 ## P1 — production composition
 
@@ -168,7 +168,7 @@ read-only input until that repository settles.
 - [ ] Revisit remote deployment, signing/notarization and wider GUI coverage only
   after the local product graph is release-qualified.
 
-## Exit evidence for every peer
+## Exit evidence for every claimed cell
 
 For each claimed cell record the exact source state, public client, capability
 identifier, topology, authority inputs, real-service scenario, refusal and

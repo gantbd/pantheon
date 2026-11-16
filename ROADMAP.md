@@ -127,8 +127,10 @@ registry, publishes, observes the retained result, and drains cleanly; it does
 not upgrade the test authority into production provenance. Chronos standalone and Agora
 daemon select the compatible checkpoint/commit subset under different source
 identities for `keystone-storage`; the qualifier derives a scoped local Cargo patch to prove
-the all-three lifecycle without embedding a machine path. Normal production
-builds still require the owning inputs to converge on one source identity.
+the all-three lifecycle without embedding a machine path. The selected
+production topology instead supervises Agora's exact standalone process, so it
+does not merge the Chronos and Agora Cargo source graphs or require an
+architecture-driven Keystone convergence.
 
 The registry also exposes explicit deployment-owned factory seams for Moira,
 Daimon, Hermes, Aegis, and Grounding. Each returns its concrete typed client and
@@ -183,8 +185,7 @@ Chronos's selected guarded-write profile is also qualified through the hosted
 Workbench path using the peer-owned public Hub: task creation, receipted
 cancellation, scheduling enablement, global/task pause, capacity, and
 not-before controls survive clean drain and exact independent service reopen.
-This does not claim mutations beyond that profile or resolve the immutable
-Keystone source identity shared with Agora.
+This does not claim mutations beyond that profile.
 
 ### 5. Extend peer coverage
 
@@ -292,17 +293,19 @@ independent reusable TUI and standalone CLI, `grounding.observe.v1` provenance
 and freshness observation, and Workbench attachment qualified against a real
 Dendrite fixture in interactive and headless modes. MCP remains an agent-facing
 surface and is not Workbench's internal protocol. Selected content navigation
-and native hosting remain later guarded slices.
+remains a later guarded slice. Native Workbench hosting is intentionally not
+applicable: Dendrite retains its independently deployed IDE/agent bridge
+lifecycle.
 
 ## Qualification matrix
 
-Every peer integration must pass:
+Every claimed applicable peer cell must pass:
 
 | Owner | Interactive | Headless |
 | --- | --- | --- |
 | Peer standalone CLI | Reused peer TUI | Peer client commands without UI state |
 | Workbench attach | Reused peer TUI over remote client | Same remote client graph |
-| Workbench host | Reused peer TUI over hosted client | Same hosted service/client graph |
+| Workbench host, when applicable | Reused peer TUI over hosted client | Same hosted service/client graph |
 
 The matrix includes authorization denial, stale revision, service unavailable,
 outcome unknown, recovery, and orderly/partial shutdown cases.
@@ -310,18 +313,16 @@ outcome unknown, recovery, and orderly/partial shutdown cases.
 Current status: the standalone and Workbench-attach read cells pass for Agora,
 Chronos, and Vellum with explicit capability IDs and versioned configuration or
 service failure envelopes. All three standalone paths have real-service gates.
-The Workbench-host row passes for Chronos, Vellum, Hermes and Aegis in both
-modes, including durable create/open and clean owner-process drain. Agora's
-hosted lifecycle, public client, reusable rendering, and headless observation
-pass through an injected factory against its real daemon; the factory's test
-authority is not production credential provenance and is not promoted by this
-evidence.
+The Workbench-host row passes for Chronos, Vellum, Hermes, Aegis and Agora in
+both modes, including durable create/open and clean owner-process drain. Agora's
+production-shaped profile supervises its exact standalone process from an
+opaque owner config and a real Aegis owner. The older in-process factory remains
+test-only authority evidence and is not promoted to production provenance.
 
 Presentation and invocation parity are therefore closed for the current
 read-only peer surfaces: each peer supplies a reusable component, a separate
 standalone CLI, an explicit headless path, a peer-owned capability manifest,
-and both Workbench attach and host composition. Production activation is a
-separate deployment claim. It remains gated by completion of Agora's
-owner-side real standalone/hosted process qualification and by convergence
-on one Keystone source identity; Workbench must not absorb either policy merely
-to make the matrix appear complete.
+and every applicable Workbench attach or host composition. Production
+activation is a separate deployment claim, gated by immutable per-owner source
+and artifact evidence. Workbench must not force an unselected in-process graph
+or absorb owner policy merely to make the matrix appear uniform.

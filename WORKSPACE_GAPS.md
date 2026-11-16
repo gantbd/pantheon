@@ -16,10 +16,11 @@ authorize Workbench to import an engine or recreate its client semantics.
 Federation peers and cross-engine adapters remain subordinate to their owning
 engine or workflow presentation. Keystone remains presentation-free.
 
-Workbench has deployment-owned typed lifecycle registration seams for all five
-formerly attach-only peers. Those seams accept an owner factory and return its
-concrete client unchanged. Hermes now supplies the first profile-driven
-sovereign process host; the other host cells remain open.
+Workbench has deployment-owned typed lifecycle registration seams for the
+formerly attach-only peers. Those seams return each owner's concrete client
+unchanged. Hermes and Aegis now supply profile-driven sovereign process hosts;
+Moira and Daimon hosting remain open, while Grounding hosting is deliberately
+not applicable.
 
 ## Current qualification state
 
@@ -48,10 +49,11 @@ source receipt and clean, but several engine trees differ from their recorded
 revisions,
 remote reachability is unqualified. Agora's production-shaped standalone and
 supervised process boundaries are locally qualified, but immutable provenance
-is not. The joint Chronos/Vellum hosted graph is locally qualified;
-the all-three graph is locally qualified with an injected explicitly test-only
-Agora authority factory, while the full production three-peer hosted profile
-remains open rather than being inferred from that evidence. Agora's daemon
+is not. The joint Chronos/Vellum hosted graph is locally qualified. The
+all-three in-process graph is locally qualified with an injected explicitly
+test-only Agora authority factory. The selected production-shaped three-peer
+topology is also locally qualified by supervising Agora's exact sovereign
+process; immutable release qualification remains open. Agora's daemon
 requires its application to bind each accepted connection to an exact
 participant, verified subject, Aegis session/grant, and trusted time. Aegis has
 a qualified Unix peer authenticator and Unix client port, but neither boundary
@@ -63,34 +65,34 @@ identities in one ordinary lockfile. The nested qualification derives a scoped
 source patch at runtime and now proves one process can own and reverse-drain all
 three peers from one lock closure without changing standalone source policy.
 Pointing Chronos directly at the sibling checkout was tested and rejected by
-its no-outward-path, relocatable source-profile gate. Production convergence
-therefore requires one immutable remotely retrievable Keystone revision or
-published artifact consumed by both owners; it must not replace the current
-patch with a workspace-only path assumption.
+its no-outward-path, relocatable source-profile gate. That constraint belongs
+only to the test-only in-process topology. The selected production topology
+supervises Agora as a sovereign process and keeps Chronos native, so their Cargo
+source identities never enter one lockfile. Any future in-process product must
+still use one immutable remotely retrievable Keystone revision or published
+artifact rather than a workspace-only path assumption.
 The mixed deployment that owns Chronos and Vellum while attaching Agora is also
 qualified across all three interactive panes and one aggregate headless report.
 
 ## Reconciliation order
 
-1. Converge Chronos and Agora on one Keystone source identity so the already
-   qualified all-three owner graph builds without a local source patch.
-2. Promote Agora's now-qualified real standalone and Workbench-supervised
+1. Promote Agora's now-qualified real standalone and Workbench-supervised
    process journeys to immutable release evidence, then add induced
    partial-shutdown cuts. Process drain remains owner-side. Deployment continues
    to supply credential mapping, authority epoch, lifetime, resource, and
    subject unchanged through the opaque Agora config.
-3. Expose Moira reconciliation actions only with exact confirmation, current
+2. Expose Moira reconciliation actions only with exact confirmation, current
    authority, revision, durable receipts, and outcome-unknown recovery; retain
    the now-qualified read-only evidence/receipt path unchanged.
-4. Extend Daimon's peer from redacted roster observation to exact-ID execution
+3. Extend Daimon's peer from redacted roster observation to exact-ID execution
    detail; add dispatch/resume only with no-redispatch and uncertainty evidence.
-5. Extend the typed Dendrite presentation boundary with selected surface/read
+4. Extend the typed Dendrite presentation boundary with selected surface/read
    DTOs only after their content disclosure, provenance, freshness, and bounds
    are fixed; MCP remains outside Workbench's internal protocol.
-6. Keep Hermes payload disclosure separate from routine observation and retain
+5. Keep Hermes payload disclosure separate from routine observation and retain
    its exact selector and bounds. Add ledger mutations only with authorization,
    uncertainty, retention and content-minimization laws intact.
-7. Keep Aegis issue and attenuation unavailable until a long-lived session can
+6. Keep Aegis issue and attenuation unavailable until a long-lived session can
    preserve its handles and reconcile a lost reply to an exact operation;
    epoch revocation already reuses the qualified exact-confirmation,
    current-epoch and no-retry guard.

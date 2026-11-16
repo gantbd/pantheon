@@ -174,8 +174,7 @@ creates a task, enables scheduling, changes capacity and not-before, pauses the
 task and scheduler, performs receipted cancellation, drains Workbench, then
 reopens the state with an independent `chronos-service` and verifies the exact
 durable result. This qualifies that profile locally; it does not invent mutation
-capability IDs, grant wider authority, or close the shared immutable Keystone
-source gap.
+capability IDs or grant wider authority.
 
 Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
 owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
@@ -187,8 +186,9 @@ observing the exact retained acceptance. Both scenarios use an explicitly
 test-only Agora authority composition. Its command derives a scoped Cargo source patch because
 Chronos standalone and Agora resolve the compatible checkpoint/commit subset of
 `keystone-storage` from different local identities. It qualifies the all-three lifecycle graph,
-but not the production Agora authority factory or a normal unpatched release
-build.
+but it is a test-only in-process topology, not a normal unpatched release build.
+The selected production topology below supervises Agora as its sovereign
+process and therefore does not merge its Cargo source graph with Chronos.
 
 Run `sh tests/live/agora_hosted.sh` for the production-shaped process boundary.
 Workbench first hosts the real Aegis daemon and then Agora's exact standalone
