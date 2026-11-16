@@ -58,7 +58,7 @@ implies production credential provenance.
 | Peer | Standalone interactive/headless | Workbench attach | Workbench host | Next boundary |
 | --- | --- | --- | --- | --- |
 | Agora | qualified read | qualified read | implemented with test-only authority | production provenance, Aegis grant/time and durable-owner factory |
-| Chronos | qualified read and selected guarded writes | qualified | qualified local owner | immutable shared Keystone source and broader mutation parity |
+| Chronos | qualified read and selected guarded writes | qualified, including the selected guarded-write profile | qualified local owner with exact durable mutation reopen | immutable shared Keystone source and mutations beyond the selected task/scheduling profile |
 | Vellum | qualified editor/read | qualified | qualified local owner | newer durable operations and release-qualified platform composition |
 | Moira | qualified read/reconciliation, census, evidence and receipt projections | qualified attach with the same component and census | absent | guarded reconciliation and native host factory |
 | Daimon | qualified redacted presence | qualified attach | absent | settle active engine work, then exact execution evidence and guarded dispatch/resume |

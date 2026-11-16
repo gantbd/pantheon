@@ -371,6 +371,47 @@ fn live_gate_owns_both_real_service_lifecycles_without_publication() {
 }
 
 #[test]
+fn chronos_mutation_gate_uses_the_peer_component_and_proves_durable_reopen() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/chronos_mutation.sh"))
+        .expect("Chronos mutation live gate");
+    for required in [
+        "chronos-service",
+        "workbench-tui",
+        "--host-chronos",
+        "--chronos-allow-writes",
+        "--chronos-scheduling",
+        "--chronos-cancel-receipts",
+        "Set concurrency capacity to 3?",
+        "Set global pause to true?",
+        "Cancel workbench-proof?",
+        "reopened task was not cancelled",
+        "reopened eligibility did not match",
+        "--shutdown",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Chronos mutation gate omits {required}"
+        );
+    }
+    for forbidden in [
+        "chronos_engine::",
+        "chronos_service::",
+        "cargo publish",
+        "git push",
+        "gh release",
+        "curl ",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Chronos mutation gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");

@@ -166,6 +166,15 @@ ownership while attaching Agora, qualifies the mixed topology's headless
 snapshot and interactive panes, and proves reverse shutdown removes every
 Workbench-owned data and control endpoint.
 
+Run `sh tests/live/chronos_mutation.sh` for the selected Chronos mutation
+profile through the real Workbench-hosted peer component. The isolated journey
+creates a task, enables scheduling, changes capacity and not-before, pauses the
+task and scheduler, performs receipted cancellation, drains Workbench, then
+reopens the state with an independent `chronos-service` and verifies the exact
+durable result. This qualifies that profile locally; it does not invent mutation
+capability IDs, grant wider authority, or close the shared immutable Keystone
+source gap.
+
 Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
 owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
 public Unix client. The same process observes all three peers through the

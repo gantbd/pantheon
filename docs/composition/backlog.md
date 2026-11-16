@@ -83,10 +83,14 @@ read-only input until that repository settles.
   Durable grant replay and lost-reply reconciliation remain nonclaims.
 - [x] Aegis: preserve bounded redacted grant/decision pagination through the
   same read-only component in standalone and Workbench interactive paths.
+- [x] Chronos: reuse its public Hub and owner service for task creation,
+  receipted cancellation, scheduling enablement, global/task pause, capacity,
+  and not-before controls through Workbench; prove clean drain and exact
+  independent durable reopen without importing mutation semantics.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and
   guarded dispatch/resume with no-redispatch qualification.
-- [ ] Agora, Chronos and Vellum: add mutations only where standalone and
-  Workbench paths preserve identical peer-owned confirmation and receipts.
+- [ ] Agora, Chronos and Vellum: add remaining mutations only where standalone
+  and Workbench paths preserve identical peer-owned confirmation and receipts.
 
 ## P3 — cross-engine completion
 

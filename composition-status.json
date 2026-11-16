@@ -36,7 +36,7 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "implemented"
+      "mutation": "qualified"
     },
     "daimon": {
       "owner": "daimon",

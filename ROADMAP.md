@@ -159,6 +159,13 @@ clean reverse shutdown. Production credential-to-principal/participant/subject
 binding, live Aegis grant issuance, trusted time, mutation routing, restart, and
 induced partial-shutdown qualification remain open.
 
+Chronos's selected guarded-write profile is also qualified through the hosted
+Workbench path using the peer-owned public Hub: task creation, receipted
+cancellation, scheduling enablement, global/task pause, capacity, and
+not-before controls survive clean drain and exact independent service reopen.
+This does not claim mutations beyond that profile or resolve the immutable
+Keystone source identity shared with Agora.
+
 ### 5. Extend peer coverage
 
 Moira now has an independent reusable TUI, standalone interactive/headless CLI,
