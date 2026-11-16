@@ -254,7 +254,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(source["ci"]["blockers"][1]
         .as_str()
         .unwrap()
-        .contains("pinned Daimon revision predates the daimon-client boundary"));
+        .contains("pinned Vellum and Daimon revisions predate direct boundaries"));
     assert_eq!(source["remoteReachabilityQualified"], false);
     assert_eq!(source["cratesIoPublished"], false);
 

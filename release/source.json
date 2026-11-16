@@ -89,7 +89,7 @@
     "qualified": false,
     "blockers": [
       "dependency working trees differ from their recorded revisions",
-      "the pinned Daimon revision predates the daimon-client boundary consumed by Workbench; an explicit committed Daimon candidate is required",
+      "the pinned Vellum and Daimon revisions predate direct boundaries consumed by Workbench: vellum-workspace plus daimon-client, daimon-protocol, and daimon-wire; explicit committed candidates are required",
       "immutable remote reachability is not yet authorized or qualified"
     ]
   },

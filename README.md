@@ -140,10 +140,12 @@ The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Groundi
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
 Remaining owner working trees and remote reachability remain unqualified.
-The archived-source preflight additionally proves that the recorded Daimon
-revision predates the `daimon-client` boundary consumed by Workbench. Source
-qualification therefore requires an explicit committed `--daimon` candidate;
-the active Daimon working tree is never copied or inferred as release evidence.
+The archived-source preflight additionally proves that the recorded Vellum and
+Daimon revisions predate direct boundaries consumed by Workbench:
+`vellum-workspace`, `daimon-client`, `daimon-protocol`, and `daimon-wire`.
+Source qualification therefore requires explicit committed `--vellum` and
+`--daimon` candidates; active working trees are never copied or inferred as
+release evidence.
 
 Run `python3 scripts/qualify-source.py WORKBENCH_COMMIT --live` to run the
 locked Rust suite and every deduplicated real-service gate named by the
