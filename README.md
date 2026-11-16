@@ -208,9 +208,10 @@ Run `sh tests/live/hermes_hosted.sh` to qualify Workbench-owned lifecycle for
 Hermes's standalone read-only daemon. The profile supplies explicit
 create/recover mode, daemon path, durable directory, socket, OS peer identity and
 subject. Workbench waits for the owner socket, observes through the same public
-client used for attachment, requests signal drain, verifies clean shutdown and
-reopens the same ledger. It links no Hermes engine/service or Keystone crate and
-does not acquire append, acknowledge or compaction authority.
+client used for attachment in headless and interactive modes, requests signal
+drain, verifies clean shutdown, and reopens the same ledger after each path. It
+links no Hermes engine/service or Keystone crate and does not acquire append,
+acknowledge or compaction authority.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one

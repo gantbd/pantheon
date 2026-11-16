@@ -493,6 +493,9 @@ fn hermes_hosted_gate_uses_the_owner_daemon_and_public_client() {
         "disposition\": \"clean",
         "run_profile create",
         "run_profile open",
+        "interactive",
+        "streams: 0",
+        "reopened_after_interactive",
     ] {
         assert!(
             gate.contains(required),

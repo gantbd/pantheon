@@ -197,8 +197,9 @@ explicit profile inputs, waits for its owner socket, attaches the ordinary
 public client, and records bounded signal shutdown. This avoids combining
 Hermes and Chronos engine graphs or masking their distinct `keystone-storage`
 sources with a product Cargo patch. Headless create/reopen lifecycle is
-qualified; interactive lifecycle and authority-bearing Hermes operations remain
-open.
+qualified. The interactive Workbench path now renders the same public-client
+observation, drains the owner on shell exit, removes the socket, and proves a
+subsequent headless reopen. Authority-bearing Hermes operations remain open.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
