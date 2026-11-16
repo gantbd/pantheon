@@ -104,6 +104,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         "qualified"
     );
     assert_eq!(
+        peers["aegis"]["mutationCapabilities"]["authority.attenuate-authorize-once.v1"],
+        "qualified"
+    );
+    assert_eq!(
         peers["hermes"]["disclosureCapabilities"]["ledger.events.disclose.v1"],
         "qualified"
     );
@@ -179,11 +183,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "52681dc6a2c43f37ef9cfb3871c3da88af3b2ee2"
+        "286d3f3af4f8680fb2d0695abde3cdec32d2cb69"
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
-        "38147c8d42679eac69577f535af482d7cd3d21ed"
+        "60d5a18eb95630735564088de0affd4c3b3dc391"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
@@ -371,7 +375,10 @@ fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
         "real_daemon_fixture",
         "authority.observe.v1",
         "authority.revoke-epoch.v1",
+        "authority.attenuate-authorize-once.v1",
         "REVOKE AEGIS EPOCH 0",
+        "AUTHORIZE AEGIS EPOCH 0 hermes",
+        "\"grant\" not in value",
         "confirmation_refused",
         "stale_epoch",
         "headless",

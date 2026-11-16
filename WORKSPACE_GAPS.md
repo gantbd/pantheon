@@ -39,7 +39,7 @@ connection without treating a manifest match as service authorization.
 | Moira | Reused saga TUI; real-daemon census/evidence/receipt journey | `sagas.inspect.v1`; real SQLite daemon | Interactive evidence/receipt component + aggregate census; real daemon | Open; attach only |
 | Daimon | Reused redacted presence TUI; public-port rendering gate | `agents.presence.v1`; real durable daemon and roster | Interactive component + aggregate headless; real daemon | Open; attach only |
 | Hermes | Reused ledger TUI | `ledger.observe.v1`; real durable daemon | Interactive component + aggregate headless; real daemon | Owner daemon process; headless create/reopen/public-client observation and clean drain qualified; interactive lifecycle implemented |
-| Aegis | Reused read-only authority TUI plus peer-owned epoch-revocation guard | `authority.observe.v1` and `authority.revoke-epoch.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed one-attempt revocation command | Native host and long-lived issue/attenuate remain open |
+| Aegis | Reused read-only authority TUI plus peer-owned authority guards | `authority.observe.v1`, `authority.revoke-epoch.v1`, and bounded `authority.attenuate-authorize-once.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed owner commands; grant handles never escape | Native host and reusable long-lived issue/attenuate remain open |
 | Grounding | Reused typed Grounding TUI | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Open; attach only |
 
 This is qualified local working-tree evidence, not an immutable release

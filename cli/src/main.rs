@@ -468,7 +468,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards: Aegis never retries an uncertain revocation, and Hermes discloses at most 16 events within the negotiated frame ceiling. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards: Aegis never retries uncertain authority mutations, and Hermes discloses at most 16 events within the negotiated frame ceiling. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -502,6 +502,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "aegis-revoke-epoch")
     {
         return aegis_revoke_epoch(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "aegis-attenuate-authorize-once")
+    {
+        return aegis_attenuate_authorize_once(std::env::args_os().skip(2));
     }
     let explicit_headless = std::env::args_os()
         .nth(1)
@@ -737,6 +743,112 @@ fn aegis_command_failure(
             "shell": "workbench",
             "peer": "aegis",
             "capability": aegis_admin_command::CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
+}
+
+fn aegis_attenuate_authorize_once(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let expected_epoch = aegis_u64(args.next()).ok_or_else(usage)?;
+    let now = aegis_u64(args.next()).ok_or_else(usage)?;
+    let parent_expires_at = aegis_u64(args.next()).ok_or_else(usage)?;
+    let child_expires_at = aegis_u64(args.next()).ok_or_else(usage)?;
+    let engine = aegis_text(args.next())
+        .and_then(|value| aegis_admin_command::parse_engine(&value))
+        .ok_or_else(usage)?;
+    let resource = aegis_text(args.next())
+        .and_then(|value| aegis_admin_command::parse_resource(&value))
+        .ok_or_else(usage)?;
+    let action = aegis_text(args.next())
+        .and_then(|value| aegis_admin_command::parse_action(&value))
+        .ok_or_else(usage)?;
+    let confirmation = aegis_text(args.next()).ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let request = aegis_admin_command::AuthorityJourney {
+        expected_epoch,
+        now,
+        parent_expires_at,
+        child_expires_at,
+        engine,
+        resource,
+        action,
+    };
+    let (session, port) = match aegis_tui_local_client::connect(
+        socket,
+        aegis_wire::LimitsV1::default(),
+        std::time::Duration::from_secs(5),
+    ) {
+        Ok(value) => value,
+        Err(error) => return aegis_journey_failure("not_sent", &format!("{error:?}"), None),
+    };
+    match aegis_admin_command::attenuate_authorize_once(session, port, request, &confirmation) {
+        Ok(result) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "aegis",
+                    "capability": aegis_admin_command::JOURNEY_CAPABILITY,
+                    "complete": true,
+                    "status": "authorized",
+                    "epoch": result.epoch,
+                    "expires_at": result.expires_at,
+                    "engine": aegis_admin_command::engine_name(result.engine),
+                    "action": aegis_admin_command::action_name(result.action)
+                }))?
+            );
+            Ok(())
+        }
+        Err(aegis_admin_command::JourneyError::ConfirmationMismatch { required }) => {
+            aegis_journey_failure(
+                "confirmation_refused",
+                "exact confirmation required",
+                Some(&required),
+            )
+        }
+        Err(aegis_admin_command::JourneyError::StaleEpoch { actual, .. }) => {
+            aegis_journey_failure("stale_epoch", &format!("current epoch is {actual}"), None)
+        }
+        Err(aegis_admin_command::JourneyError::Transport {
+            error: aegis_tui_local_client::ClientError::OutcomeUnknown(error),
+            ..
+        }) => aegis_journey_failure("outcome_unknown", &error.to_string(), None),
+        Err(aegis_admin_command::JourneyError::Refused { refusal, .. }) => {
+            aegis_journey_failure("refused", &format!("{refusal:?}"), None)
+        }
+        Err(error) => aegis_journey_failure("unavailable", &format!("{error:?}"), None),
+    }
+}
+
+fn aegis_text(value: Option<std::ffi::OsString>) -> Option<String> {
+    value?.into_string().ok()
+}
+
+fn aegis_u64(value: Option<std::ffi::OsString>) -> Option<u64> {
+    aegis_text(value)?.parse().ok()
+}
+
+fn aegis_journey_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "aegis",
+            "capability": aegis_admin_command::JOURNEY_CAPABILITY,
             "complete": false,
             "status": status,
             "required_confirmation": required_confirmation

@@ -209,8 +209,12 @@ retains one bounded page plus explicit continuation evidence. Standalone and
 Workbench also reuse Aegis's peer-owned `authority.revoke-epoch.v1` guard: exact
 literal confirmation, same-connection current-epoch observation, one mutation
 attempt, and preserved outcome uncertainty are qualified against the real
-daemon. Issue and attenuation remain excluded because their handles are
-session-local and lost replies cannot yet be reconciled to an exact grant.
+daemon. The same owner guard now supplies a bounded
+`authority.attenuate-authorize-once.v1` journey: issue, attenuation, and one
+authorization share a connection; no grant handle escapes; and every
+post-send failure remains uncertain without retry. Reusable grant management
+remains excluded because handles are session-local and lost replies cannot yet
+be reconciled to an exact grant.
 
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
 place for one headless Workbench invocation and now also observes Grounding

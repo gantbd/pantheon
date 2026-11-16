@@ -107,6 +107,23 @@ value = json.load(sys.stdin)
 assert not value["complete"] and value["status"] == "stale_epoch"
 '
 
+resource=abababababababababababababababab
+confirmation="AUTHORIZE AEGIS EPOCH 0 hermes $resource observe UNTIL 20"
+start_fixture
+authorized=$("$workbench" aegis-attenuate-authorize-once "$socket" \
+  0 10 30 20 hermes "$resource" observe "$confirmation")
+finish_fixture
+printf '%s' "$authorized" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "aegis"
+assert value["complete"] and value["status"] == "authorized"
+assert value["capability"] == "authority.attenuate-authorize-once.v1"
+assert value["epoch"] == 0 and value["expires_at"] == 20
+assert value["engine"] == "hermes" and value["action"] == "observe"
+assert "grant" not in value and "resource" not in value and "session" not in value
+'
+
 start_fixture
 revoked=$("$workbench" aegis-revoke-epoch "$socket" 0 'REVOKE AEGIS EPOCH 0')
 finish_fixture
@@ -166,4 +183,4 @@ finally:
 PYTHON
 finish_fixture
 
-echo 'PASS: real Aegis daemon -> bounded pages and exact-confirmed revocation -> Workbench'
+echo 'PASS: real Aegis daemon -> bounded pages, private-handle authority journey, and exact-confirmed revocation -> Workbench'

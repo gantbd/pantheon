@@ -756,6 +756,9 @@ dependencies = [
 [[package]]
 name = "moira-protocol"
 version = "0.1.0"
+dependencies = [
+ "sha2",
+]
 
 [[package]]
 name = "moira-tui"

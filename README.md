@@ -179,10 +179,12 @@ Run `sh tests/live/aegis_attach.sh` to qualify the independently packaged
 read-only Aegis peer through the real durable daemon in both Workbench headless
 and interactive attachment, including bounded grant/decision page navigation.
 The gate exercises `authority.observe.v1` plus the peer-owned
-`authority.revoke-epoch.v1` guard. Workbench gains no ambient authority: the
-separately invoked command requires the exact current epoch and literal
-confirmation, attempts once, and never retries an uncertain result. Issue,
-attenuation, and authorization remain unavailable.
+`authority.revoke-epoch.v1` and `authority.attenuate-authorize-once.v1` guards.
+Workbench gains no ambient authority: separately invoked commands require the
+exact current epoch and literal confirmation, attempt each mutation once, and
+never retry an uncertain result. The bounded authority journey keeps its parent
+and child handles inside one authenticated connection and returns only redacted
+authorization facts. Reusable issue and attenuation management remain unavailable.
 
 Run `sh tests/live/grounding_attach.sh` to qualify the independently packaged
 Grounding peer through Dendrite's typed authenticated observation endpoint in
