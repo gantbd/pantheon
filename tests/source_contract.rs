@@ -392,8 +392,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(qualifier.contains("\"agora\","));
     assert!(qualifier.contains("\"agora-tui\","));
     assert!(qualifier.contains("\"keystone\","));
-    assert!(qualifier.contains("run_live_evidence(stage)"));
-    assert!(qualifier.contains("prepare_live_dependency_closure(stage)"));
+    assert!(qualifier.contains("prepare_cargo_source_closure("));
+    assert!(qualifier.contains("f\"{keystone_revision}:refs/commit/{keystone_revision}\""));
+    assert!(qualifier.contains("environment[\"CARGO_NET_OFFLINE\"] = \"true\""));
+    assert!(qualifier.contains("run_live_evidence(stage, environment)"));
+    assert!(qualifier.contains("prepare_live_dependency_closure(stage, environment)"));
     assert!(qualifier.contains("[\"mix\", \"deps.get\", \"--only\", \"test\"]"));
     assert!(qualifier.contains("validate_direct_path_closure(directory, stage)"));
     assert!(qualifier.contains("candidate source closure omits direct dependencies"));
