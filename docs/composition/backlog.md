@@ -203,8 +203,11 @@ read-only input until that repository settles.
   Agora retains a caller-stable actor operation, its durable daemon commits one
   addressed response in a separate process, Moira discards the successful reply,
   and a fresh authenticated public client observes the exact result without
-  republishing. Vellum process qualification, the composed Agora→Vellum journey,
-  and the every-effect fault matrix remain open.
+  republishing. The Vellum segment is now independently closed as well: its
+  authenticated daemon commits one revision-bound durable edit, loses the reply,
+  and a fresh public client performs historical lookup without execution
+  fallback. The composed Agora→Vellum journey and every-effect fault matrix
+  remain open.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
   and Vellum federation; finish immutable release qualification for Agora
   federation.
