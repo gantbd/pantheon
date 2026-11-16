@@ -191,7 +191,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
-        "2ddb0631203d89b5c656c341d3b0dff3d2e6cdc4"
+        "b7557a60c0904c8847e603235be8fb477335984f"
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],

@@ -50,7 +50,7 @@
     },
     "aegis": {
       "repository": "https://github.com/gantbd/aegis",
-      "revision": "2ddb0631203d89b5c656c341d3b0dff3d2e6cdc4",
+      "revision": "b7557a60c0904c8847e603235be8fb477335984f",
       "workingTreeClean": true
     },
     "aegisTui": {
