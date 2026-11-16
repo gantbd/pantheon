@@ -80,7 +80,7 @@
     },
     "vellum": {
       "repository": "https://github.com/gantbd/vellum",
-      "revision": "3843307d26ef918b4ad8d76b4e283031644cdde2",
+      "revision": "2edb0d475b44d4e3c635eee899bc8684da4ee3b1",
       "workingTreeClean": true
     },
     "vellumTui": {

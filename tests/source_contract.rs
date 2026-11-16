@@ -232,7 +232,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellum"]["revision"],
-        "3843307d26ef918b4ad8d76b4e283031644cdde2"
+        "2edb0d475b44d4e3c635eee899bc8684da4ee3b1"
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
