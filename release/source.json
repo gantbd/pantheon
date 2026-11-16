@@ -40,8 +40,8 @@
     },
     "hermes": {
       "repository": "https://github.com/gantbd/hermes",
-      "revision": "91683ec04f7dee00e1a151b75975ef904b7fa82c",
-      "workingTreeClean": false
+      "revision": "b92ca5c243df86dc0707d5dba29dc2a555bd98f0",
+      "workingTreeClean": true
     },
     "hermesTui": {
       "repository": "https://github.com/gantbd/hermes-tui",

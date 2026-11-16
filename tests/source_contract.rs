@@ -170,6 +170,10 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "91b6e0fd8e92f013a9c7d0d802a138344fa573e4"
     );
     assert_eq!(
+        source["inputs"]["hermes"]["revision"],
+        "b92ca5c243df86dc0707d5dba29dc2a555bd98f0"
+    );
+    assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
         "52681dc6a2c43f37ef9cfb3871c3da88af3b2ee2"
     );
@@ -183,6 +187,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "vellumTui",
         "moiraTui",
         "daimonTui",
+        "hermes",
         "hermesTui",
         "aegisTui",
         "groundingTui",
@@ -190,7 +195,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
     for input in [
-        "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis", "dendrite",
+        "agora", "chronos", "vellum", "moira", "daimon", "aegis", "dendrite",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
