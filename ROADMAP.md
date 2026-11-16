@@ -104,8 +104,10 @@ assembly with exact receipts when a guarded factory start fails. An injected
 Agora authority factory is qualified against the real daemon and public client;
 Agora now owns the single-principal private-endpoint authenticator and
 non-regressing Unix-epoch clock plus an adopted bounded fresh-engine bootstrap,
-while the standalone Workbench profile still lacks public Aegis
-session/grant/resource selection, durable recovery, and a process shell. A single Workbench process and lock
+and its standalone application connects through Aegis's service-free public
+Unix client with a deployment-owned same-session grant selector. The profile
+still lacks a concrete deployment grant provisioner, durable recovery, and a
+process shell. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
@@ -162,7 +164,7 @@ against the real daemon in the same process as the Chronos and Vellum owners,
 including reusable interactive rendering, the shared headless observer, and
 clean reverse shutdown. The same lifecycle seam also qualifies scheduled
 publish/observe through Agora's public composition client under test-only
-authority. Production Aegis session/grant/resource selection, restart, and
+authority. Concrete production Aegis grant provisioning, restart, and
 induced partial-shutdown qualification remain open.
 
 Chronos's selected guarded-write profile is also qualified through the hosted

@@ -31,9 +31,11 @@ read-only input until that repository settles.
   credential policy in Workbench. Agora now owns the qualified single-principal
   private-endpoint authenticator, non-regressing Unix-epoch clock, and an
   adopted `agora-private-local` bounded create-time participant/room bootstrap.
-  Remaining inputs are public Aegis Unix session/grant and resource selection,
-  durable create/open plus residue recovery, and the standalone signal/drain
-  shell.
+  Aegis now supplies a service-free `aegis-local-client`; Agora connects through
+  it, binds the bootstrap principal before socket I/O, and invokes a
+  deployment-owned grant selector only on the exact live Aegis session.
+  Remaining inputs are the concrete deployment grant provisioner, durable
+  create/open plus residue recovery, and the standalone signal/drain shell.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,
