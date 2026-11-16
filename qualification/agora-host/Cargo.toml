@@ -14,7 +14,9 @@ chronos-tui = { path = "../../../chronos-tui" }
 agora-tui = { path = "../../../agora-tui" }
 agora-tui-local-client = { path = "../../../agora-tui/local-client" }
 agora-client = { path = "../../../agora/client/agora-client" }
+agora-local-client = { path = "../../../agora/client/agora-local-client" }
 agora-protocol = { path = "../../../agora/protocol/agora-protocol" }
+agora-scheduled-publication-port = { path = "../../../agora/ports/agora-scheduled-publication-port" }
 agora-wire = { path = "../../../agora/protocol/agora-wire" }
 agora-aegis-verifier = { path = "../../../agora/adapters/agora-aegis-verifier" }
 agora-engine = { path = "../../../agora/engine/agora-engine" }

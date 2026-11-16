@@ -281,6 +281,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(agora_qualifier.contains("workbench-tui = { path = \"../..\" }"));
     assert!(agora_qualifier.contains("agora-tui ="));
     assert!(agora_qualifier.contains("agora-local-daemon"));
+    assert!(agora_qualifier.contains("agora-local-client"));
+    assert!(agora_qualifier.contains("agora-scheduled-publication-port"));
     let qualification_script = fs::read_to_string(root.join("qualification/agora-host/qualify.sh"))
         .expect("three-owner qualification command");
     assert!(qualification_script.contains("chronos/third_party/keystone-storage-0.0.1"));

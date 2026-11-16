@@ -17,14 +17,20 @@ use aegis_protocol::{
     DecisionHandleV1, DecisionSummaryV1, EngineNamespaceV1, OutcomeV1, ReplyV1, SessionHandleV1,
 };
 use agora_aegis_verifier::{AegisContextV1, AegisVerifierV1};
+use agora_client::scheduled::ScheduledPublicationWireClientV1;
 use agora_client::v2::ClientV2;
 use agora_engine::{
     AdmissionPolicy, CommandV2 as EngineCommandV2, Engine, LogicalTime, Participant, ParticipantId,
     ParticipantKind, RoomId,
 };
 use agora_host::{HostLimits, HostTimeV1, VerifiedSubjectV1, v2::HostV2};
+use agora_local_client::ScheduledLocalClientV1;
 use agora_local_daemon::{
     AuthenticatorV1, DaemonCleanupV1, DaemonLimitsV1, DaemonV1, HostClockV1, ServerIncarnationV1,
+};
+use agora_scheduled_publication_port::{
+    ScheduledPublicationIdV1, ScheduledPublicationIntentV1, ScheduledPublicationObservationV1,
+    ScheduledPublicationRequestV1,
 };
 use agora_service::v2::{ServiceLimitsV2, ServiceV2};
 use agora_wire::WireLimits;
@@ -309,5 +315,117 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     assert!(!vellum.with_file_name("vellum.sock.control").exists());
     assert!(!chronos.join("chronos.sock").exists());
     assert!(!chronos.join("chronos.control.sock").exists());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn workbench_lifecycle_returns_the_same_public_scheduled_client() {
+    let root = scratch().with_file_name(format!(
+        "workbench-agora-composition-{}",
+        std::process::id()
+    ));
+    if root.exists() {
+        fs::remove_dir_all(&root).unwrap();
+    }
+    fs::create_dir(&root).unwrap();
+    fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+    let socket = root.join("agora-composition.sock");
+
+    let mut engine = Engine::new();
+    engine
+        .apply(EngineCommandV2::RegisterParticipant(Participant::new(
+            "operator",
+            "Operator",
+            ParticipantKind::Human,
+        )))
+        .unwrap();
+    engine
+        .apply(EngineCommandV2::CreateRoom {
+            room_id: RoomId::from("scheduled-room"),
+            name: "Scheduled Room".into(),
+            owner: ParticipantId::from("operator"),
+            admission: AdmissionPolicy::InviteOnly,
+        })
+        .unwrap();
+    let host = HostV2::new(
+        ServiceV2::new(engine, ServiceLimitsV2::default()),
+        AegisVerifierV1::new(AuthorityPort, [5; 16]),
+        HostLimits {
+            max_sessions: 4,
+            max_retired_sessions: 8,
+            wire: wire_limits(),
+        },
+    );
+    let daemon = DaemonV1::bind_new_composition(
+        &socket,
+        host,
+        Authentication,
+        Clock(2),
+        ServerIncarnationV1::new([10; 16]),
+        DaemonLimitsV1 {
+            max_frame_bytes: 8_192,
+            max_frames_after_connect: 4,
+            io_timeout: Duration::from_secs(2),
+        },
+    )
+    .unwrap();
+    let stopping = Arc::new(AtomicBool::new(false));
+    let owner_stopping = Arc::clone(&stopping);
+    let owner = thread::spawn(move || {
+        let mut daemon = daemon;
+        while !owner_stopping.load(Ordering::Acquire) {
+            let _ = daemon.serve_next();
+        }
+        let _ = daemon.begin_drain();
+        daemon.stop()
+    });
+
+    let mut native = NativeHost::new();
+    let client_socket = socket.clone();
+    let shutdown_socket = socket.clone();
+    let mut owner = Some(owner);
+    let mut client = native
+        .start_agora(|| {
+            Ok::<_, String>((
+                ScheduledLocalClientV1::new(
+                    client_socket,
+                    "operator",
+                    wire_limits(),
+                    Duration::from_secs(2),
+                ),
+                move || {
+                    stopping.store(true, Ordering::Release);
+                    let _ = UnixStream::connect(&shutdown_socket);
+                    match owner.take().map(thread::JoinHandle::join) {
+                        Some(Ok(stopped)) if stopped.cleanup == DaemonCleanupV1::Clean => {
+                            ShutdownDisposition::Clean
+                        }
+                        _ => ShutdownDisposition::OutcomeUnknown,
+                    }
+                },
+            ))
+        })
+        .unwrap();
+    native.seal().unwrap();
+
+    let request = ScheduledPublicationRequestV1 {
+        id: ScheduledPublicationIdV1::new([8; 16]).unwrap(),
+        intent: ScheduledPublicationIntentV1::new(
+            "scheduled-room",
+            2,
+            "same public client under Workbench lifecycle",
+        ),
+    };
+    let accepted = client.publish_scheduled(request.clone()).unwrap().unwrap();
+    assert_eq!(
+        client.observe_scheduled(request).unwrap().unwrap(),
+        ScheduledPublicationObservationV1::Accepted(accepted)
+    );
+
+    let receipt = native.shutdown().unwrap();
+    assert!(receipt.clean());
+    assert_eq!(receipt.receipts.len(), 1);
+    assert_eq!(receipt.receipts[0].peer, HostedPeerId::Agora);
+    assert!(!socket.exists());
     fs::remove_dir_all(root).unwrap();
 }

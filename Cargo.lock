@@ -63,10 +63,15 @@ name = "agora-client"
 version = "0.1.0"
 dependencies = [
  "agora-protocol",
+ "agora-scheduled-publication-port",
 ]
 
 [[package]]
 name = "agora-protocol"
+version = "0.1.0"
+
+[[package]]
+name = "agora-scheduled-publication-port"
 version = "0.1.0"
 
 [[package]]
@@ -94,6 +99,7 @@ name = "agora-wire"
 version = "0.1.0"
 dependencies = [
  "agora-protocol",
+ "agora-scheduled-publication-port",
  "keystone-codec 0.0.1",
 ]
 
@@ -795,6 +801,7 @@ dependencies = [
  "moira-client",
  "moira-protocol",
  "ratatui",
+ "sha2",
 ]
 
 [[package]]

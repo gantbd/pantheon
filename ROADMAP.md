@@ -109,7 +109,10 @@ explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
 the standalone CLI and retains a current observation for every peer. It then
 feeds a second real Agora client into the reusable component and renders its
-room and message projections through Workbench's shell boundary. Chronos standalone and Agora
+room and message projections through Workbench's shell boundary. A second
+scenario returns Agora's public scheduled-composition client from the same host
+registry, publishes, observes the retained result, and drains cleanly; it does
+not upgrade the test authority into production provenance. Chronos standalone and Agora
 daemon select the compatible checkpoint/commit subset under different source
 identities for `keystone-storage`; the qualifier derives a scoped local Cargo patch to prove
 the all-three lifecycle without embedding a machine path. Normal production
@@ -155,8 +158,10 @@ product modes; their headless aggregate publishes lifecycle receipts before
 claiming success. An injected, deployment-owned Agora factory is also qualified
 against the real daemon in the same process as the Chronos and Vellum owners,
 including reusable interactive rendering, the shared headless observer, and
-clean reverse shutdown. Production credential-to-principal/participant/subject
-binding, live Aegis grant issuance, trusted time, mutation routing, restart, and
+clean reverse shutdown. The same lifecycle seam also qualifies scheduled
+publish/observe through Agora's public composition client under test-only
+authority. Production credential-to-principal/participant/subject binding,
+live Aegis grant issuance, trusted time, restart, and
 induced partial-shutdown qualification remain open.
 
 Chronos's selected guarded-write profile is also qualified through the hosted

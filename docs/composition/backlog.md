@@ -118,8 +118,10 @@ read-only input until that repository settles.
   same transport-neutral client for standalone and Workbench use, preserves
   pre-send versus outcome-unknown evidence, and keeps its Dispatch/InspectAgora
   decisions separate from Agora's owner-side Execute/Observe enforcement.
-  Attaching this client to an actual Workbench production owner factory remains
-  part of the P1 Agora provenance/grant/time/durability item.
+  The isolated host qualification also returns this exact client from
+  `NativeHost` and proves publish/observe under Workbench lifecycle with
+  explicitly test-only authority. Supplying the production owner factory
+  remains part of the P1 Agora provenance/grant/time/durability item.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
   the real Aegis daemon and public Unix client, including live epoch revocation
