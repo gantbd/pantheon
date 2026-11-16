@@ -191,31 +191,33 @@ standalone and Workbench, bounded to 16 events plus the negotiated frame and
 reporting retention/publication gaps explicitly. Append and compaction remain
 guarded later operations.
 
-Hermes now also supplies the shutdown-aware accept loop and a conservative
-standalone read-only daemon. Workbench owns that sovereign process through
-explicit profile inputs, waits for its owner socket, attaches the ordinary
-public client, and records bounded signal shutdown. This avoids combining
-Hermes and Chronos engine graphs or masking their distinct `keystone-storage`
-sources with a product Cargo patch. Headless create/reopen lifecycle is
-qualified. The interactive Workbench path now renders the same public-client
-observation, drains the owner on shell exit, removes the socket, and proves a
-subsequent headless reopen. Authority-bearing Hermes operations remain open.
+Hermes now also supplies the shutdown-aware accept loop and explicit observer
+and exact-stream operator daemon profiles. Workbench owns that sovereign process
+through explicit profile inputs, waits for its owner socket, attaches the
+ordinary public client, and records bounded signal shutdown. This avoids
+combining Hermes and Chronos engine graphs or masking their distinct
+`keystone-storage` sources with a product Cargo patch. Headless create/reopen
+lifecycle is qualified. The interactive Workbench path now renders the same
+public-client observation, drains the owner on shell exit, removes the socket,
+and proves a subsequent headless reopen. Append remains producer-specific.
 
 Hermes acknowledgement now has one deliberately narrow authority-bearing path.
 The standalone and Workbench commands reuse the same owner guard: exact
 confirmation precedes traffic, the current cursor is observed and compared on
 the same connection, and one acknowledgement is attempted. A stale cursor
 prevents mutation and a post-send transport failure remains outcome-unknown
-without retry. The reusable component and hosted read-only daemon retain no
-consumer authority; generic append remains open.
+without retry. The reusable component retains no consumer authority; hosted
+consumer authority requires the explicit exact-stream operator profile. Generic
+append remains open.
 
 Hermes compaction follows the same pattern through a distinct owner guard. The
 standalone and Workbench commands observe the retained frontier and published
 edge, compare both with exact operator expectations, and attempt one confirmed
 compaction on the same connection. Stale state prevents mutation and uncertain
 delivery is never retried. `OperatorClient` remains outside the reusable
-component and hosted read-only daemon; generic append remains open because its
-domain envelope belongs to a producer-specific integration.
+component; any hosted operator authority is an explicit exact-stream Hermes
+process input. Generic append remains open because its domain envelope belongs
+to a producer-specific integration.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,

@@ -132,6 +132,7 @@ pub struct HermesProcessOptions {
     pub effective_uid: u32,
     pub effective_gid: u32,
     pub subject: String,
+    pub operator_stream: Option<String>,
 }
 
 /// Explicit deployment inputs for a Workbench-owned, sovereign Aegis daemon.
@@ -262,7 +263,7 @@ impl NativeHost {
         self.registry.start_or_rollback(HostedPeerId::Hermes, start)
     }
 
-    /// Starts the owner-supplied read-only Hermes application as a sovereign
+    /// Starts the owner-supplied selected Hermes application as a sovereign
     /// process. Workbench owns readiness and shutdown only; all ledger,
     /// authentication, authorization, persistence and wire behavior remains in
     /// Hermes, and ordinary Hermes clients attach to the configured socket.
@@ -272,13 +273,23 @@ impl NativeHost {
         options: HermesProcessOptions,
     ) -> Result<(), StartupFailure<String>> {
         self.start_hermes(|| {
-            let mut child = Command::new(&options.executable)
+            let mut command = Command::new(&options.executable);
+            command
                 .arg(if options.create { "create" } else { "open" })
                 .arg(&options.directory)
                 .arg(&options.socket)
                 .arg(options.effective_uid.to_string())
                 .arg(options.effective_gid.to_string())
-                .arg(&options.subject)
+                .arg(&options.subject);
+            match &options.operator_stream {
+                Some(stream) => {
+                    command.arg("operator").arg(stream);
+                }
+                None => {
+                    command.arg("observer");
+                }
+            }
+            let mut child = command
                 .stdin(Stdio::null())
                 .stdout(Stdio::null())
                 .stderr(Stdio::piped())

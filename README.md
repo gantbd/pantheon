@@ -225,20 +225,27 @@ append or compaction authority. The gate also qualifies
 `ledger.acknowledge.v1`: standalone and Workbench reuse one peer-owned guard
 that observes the expected cursor and attempts one exact-confirmed
 acknowledgement on the same connection. Consumer authority remains outside the
-reusable component and hosted read-only daemon.
+reusable component. A hosted daemon may select the exact-stream operator profile
+explicitly; Workbench never infers it from the presentation stream.
 The gate also qualifies `ledger.compact.v1` through the same pattern: exact
 retained-frontier and published-edge observation precede one confirmed
 compaction, with no retry after uncertain delivery. Operator authority remains
-outside the reusable component and hosted read-only daemon.
+outside the reusable component. A hosted daemon may receive one explicit
+exact-stream operator profile; Workbench owns only its lifecycle and passes that
+selection to Hermes unchanged.
 
 Run `sh tests/live/hermes_hosted.sh` to qualify Workbench-owned lifecycle for
-Hermes's standalone read-only daemon. The profile supplies explicit
-create/recover mode, daemon path, durable directory, socket, OS peer identity and
-subject. Workbench waits for the owner socket, observes through the same public
-client used for attachment in headless and interactive modes, requests signal
-drain, verifies clean shutdown, and reopens the same ledger after each path. It
-links no Hermes engine/service or Keystone crate and does not acquire append,
-acknowledge or compaction authority.
+Hermes's standalone selected daemon. The profile supplies explicit
+create/recover mode, daemon path, durable directory, socket, OS peer identity,
+subject and observer/operator selection. Operator selection additionally names
+one exact stream and must match any presentation stream. Workbench waits for the
+owner socket, observes through the same public client used for attachment in
+headless and interactive modes, requests signal drain, verifies clean shutdown,
+and reopens the same ledger after each path. The selected operator case invokes
+the same exact-confirmed acknowledgement and compaction guards while Workbench
+hosts the owner, then proves the cursor and retention edge survive reopen. It
+links no Hermes engine/service or Keystone crate and does not acquire or infer
+ledger authority.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one

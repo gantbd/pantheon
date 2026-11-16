@@ -179,11 +179,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "a3f3a027b31cc376a5daca6ed979d99d735a782f"
+        "c4f35d1c51c720fa1628f541f48a4c1f797d5d92"
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
-        "c46d3cbcf0d50e95b3f5e51b166966854d037f25"
+        "7c37d24ce6a6bbaec237907e1253cc42254d1b00"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],

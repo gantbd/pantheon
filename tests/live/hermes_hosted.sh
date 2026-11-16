@@ -9,6 +9,8 @@ chmod 700 "$scratch"
 
 cargo build --manifest-path "$workspace/hermes/Cargo.toml" \
   --package hermes-daemon --bin hermes-daemon --locked --offline
+cargo build --manifest-path "$workspace/hermes-tui/Cargo.toml" \
+  --package hermes-tui-cli --example seed_operator_ledger --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
   --package workbench-tui-cli --bin workbench-tui --locked --offline
 
@@ -37,7 +39,9 @@ run_profile() {
     "      \"mode\": \"$mode\"," \
     "      \"effective_uid\": $uid," \
     "      \"effective_gid\": $gid," \
-    '      "subject": "07070707070707070707070707070707"' \
+    '      "subject": "07070707070707070707070707070707",' \
+    '      "access": "observer",' \
+    '      "operator_stream": null' \
     '    }' \
     '  }' \
     '}' >"$profile"
@@ -121,4 +125,129 @@ assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$scratch/hermes.sock" ]
 
-echo 'PASS: owner Hermes daemon -> same public client -> hosted headless and interactive Workbench -> clean reopen'
+"$workspace/hermes-tui/target/debug/examples/seed_operator_ledger" \
+  "$scratch/operator-ledger"
+cat >"$scratch/operator.json" <<EOF
+{
+  "version": 1,
+  "name": "Hosted Hermes operator qualification",
+  "surfaces": ["hermes"],
+  "hermes": {
+    "deployment": "hosted",
+    "socket": "$scratch/operator.sock",
+    "stream": "05050505050505050505050505050505",
+    "consumer": "06060606060606060606060606060606",
+    "requires": ["ledger.observe.v1", "ledger.cursor.observe.v1"],
+    "host": {
+      "executable": "$daemon",
+      "directory": "$scratch/operator-ledger",
+      "mode": "open",
+      "effective_uid": $uid,
+      "effective_gid": $gid,
+      "subject": "07070707070707070707070707070707",
+      "access": "operator",
+      "operator_stream": "05050505050505050505050505050505"
+    }
+  }
+}
+EOF
+
+python3 - "$scratch" "$workbench" "$scratch/operator.json" <<'PYTHON'
+from pathlib import Path
+import json
+import shlex
+import subprocess
+import sys
+import time
+
+scratch, binary, profile = sys.argv[1:]
+socket = str(Path(scratch) / "operator.sock")
+tmux_socket = str(Path(scratch) / "operator-tmux.sock")
+command = shlex.join([binary, "interactive", "--workspace-profile", profile])
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", tmux_socket, "-f", "/dev/null", *args],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=5,
+    )
+
+try:
+    tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "hermes-operator", command)
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hermes-operator").stdout
+        if "Hermes" in screen and "streams: 1" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Hosted Hermes operator pane not ready:\n{screen}")
+
+    acknowledged = subprocess.run(
+        [
+            binary,
+            "hermes-acknowledge",
+            socket,
+            "06060606060606060606060606060606",
+            "05050505050505050505050505050505",
+            "1",
+            "1",
+            "ACKNOWLEDGE HERMES CONSUMER 06060606060606060606060606060606 STREAM 05050505050505050505050505050505 FROM 1 THROUGH 1",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=5,
+    )
+    acknowledgement = json.loads(acknowledged.stdout)
+    assert acknowledgement["complete"] and acknowledgement["status"] == "acknowledged"
+    assert acknowledgement["previous_next_sequence"] == 1
+    assert acknowledgement["next_sequence"] == 2
+
+    compacted = subprocess.run(
+        [
+            binary,
+            "hermes-compact",
+            socket,
+            "05050505050505050505050505050505",
+            "0",
+            "1",
+            "0",
+            "COMPACT HERMES STREAM 05050505050505050505050505050505 RETAINED FROM 0 PUBLISHED EDGE 1 THROUGH 0",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=5,
+    )
+    compaction = json.loads(compacted.stdout)
+    assert compaction["complete"] and compaction["status"] == "compacted"
+    assert compaction["removed"] == 1 and compaction["retained_from"] == 1
+
+    tmux("send-keys", "-t", "hermes-operator", "C-q")
+    deadline = time.monotonic() + 5
+    while tmux("has-session", "-t", "hermes-operator", check=False).returncode == 0:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Interactive Workbench did not drain hosted Hermes operator")
+        time.sleep(0.025)
+finally:
+    tmux("kill-server", check=False)
+PYTHON
+[ ! -e "$scratch/operator.sock" ]
+
+operator_reopened=$("$workbench" headless --workspace-profile "$scratch/operator.json")
+printf '%s' "$operator_reopened" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"]
+peer = report["peers"][0]
+assert peer["peer"] == "hermes" and peer["status"] == "current"
+assert peer["configured_stream"]["retained_from"] == 1
+assert peer["configured_cursor"]["next_sequence"] == 2
+assert report["hosted_shutdown"]["status"] == "clean"
+'
+[ ! -e "$scratch/operator.sock" ]
+
+echo 'PASS: selected Hermes observer/operator daemon -> same public clients and owner guards -> hosted Workbench -> clean reopen'

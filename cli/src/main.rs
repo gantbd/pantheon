@@ -18,7 +18,8 @@ use workbench_tui_cli::{
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     native_host::{AegisProcessOptions, ChronosHostOptions, HermesProcessOptions, NativeHost},
     profile::{
-        AegisOpenMode, AegisRole, AgoraProfile, DeploymentMode, HermesOpenMode, WorkspaceProfile,
+        AegisOpenMode, AegisRole, AgoraProfile, DeploymentMode, HermesAccessProfile,
+        HermesOpenMode, WorkspaceProfile,
     },
     registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers,
@@ -174,6 +175,11 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                     effective_uid: host.effective_uid,
                     effective_gid: host.effective_gid,
                     subject: host.subject.clone(),
+                    operator_stream: (host.access == HermesAccessProfile::Operator).then(|| {
+                        host.operator_stream
+                            .clone()
+                            .expect("validated operator Hermes stream")
+                    }),
                 });
             }
             hermes_socket = Some(hermes.socket);

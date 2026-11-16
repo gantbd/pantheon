@@ -41,9 +41,11 @@ read-only input until that repository settles.
 - [ ] Promote the remaining seams to standalone native or supervised profile factories
   only after each owner supplies explicit storage, authentication, recovery and
   shutdown composition and passes real lifecycle qualification.
-- [x] Hermes: qualify the owner-supplied read-only daemon under Workbench
+- [x] Hermes: qualify the owner-supplied selected daemon under Workbench
   lifecycle for explicit creation, recovery, public-client observation and clean
-  signal drain without linking engine or substrate internals.
+  signal drain without linking engine or substrate internals. The selected
+  operator gate also qualifies exact-confirmed acknowledgement and compaction,
+  followed by durable reopen, through the same public clients.
 - [x] Aegis: qualify the owner-supplied daemon under Workbench lifecycle with
   explicit authority/principal/session/role facts, create/open recovery, the
   ordinary public client and clean signal drain. Workbench retains no grant,
@@ -68,7 +70,8 @@ read-only input until that repository settles.
   cursors and never retrying an uncertain mutation.
 - [x] Hermes: reuse the peer-owned exact-stream-state guard for one compaction
   in standalone and Workbench, keeping operator authority out of the reusable
-  component and hosted read-only daemon.
+  component and selecting any hosted operator authority explicitly at the
+  Hermes process boundary.
 - [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
   one-attempt epoch revocation in standalone and Workbench, preserving
   `outcome_unknown` without retry.

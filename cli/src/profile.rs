@@ -77,6 +77,8 @@ pub struct HermesHostProfile {
     pub effective_uid: u32,
     pub effective_gid: u32,
     pub subject: String,
+    pub access: HermesAccessProfile,
+    pub operator_stream: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -84,6 +86,13 @@ pub struct HermesHostProfile {
 pub enum HermesOpenMode {
     Create,
     Open,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum HermesAccessProfile {
+    Observer,
+    Operator,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -304,15 +313,25 @@ impl WorkspaceProfile {
                 (DeploymentMode::Hosted, Some(host)) => {
                     validate_path(&host.executable)?;
                     validate_path(&host.directory)?;
-                    if host.subject.len() != 32
-                        || !host
-                            .subject
-                            .bytes()
-                            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
-                    {
-                        return Err(
-                            "hosted Hermes subject must be 32 lowercase hexadecimal digits",
-                        );
+                    validate_lower_hex(&host.subject, 32, "hosted Hermes subject")?;
+                    match (host.access, &host.operator_stream) {
+                        (HermesAccessProfile::Observer, None) => {}
+                        (HermesAccessProfile::Observer, Some(_)) => {
+                            return Err("observer Hermes host cannot select an operator stream");
+                        }
+                        (HermesAccessProfile::Operator, Some(stream)) => {
+                            validate_lower_hex(stream, 32, "hosted Hermes operator stream")?;
+                            if let Some(presentation_stream) = &hermes.stream
+                                && presentation_stream != stream
+                            {
+                                return Err(
+                                    "hosted Hermes operator and presentation streams must match",
+                                );
+                            }
+                        }
+                        (HermesAccessProfile::Operator, None) => {
+                            return Err("operator Hermes host requires an exact stream");
+                        }
                     }
                 }
                 (DeploymentMode::Hosted, None) => {
@@ -626,7 +645,8 @@ mod tests {
           "version":1,"name":"Hermes","surfaces":["hermes"],
           "hermes":{"deployment":"hosted","socket":"hermes.sock","stream":null,"consumer":null,
             "host":{"executable":"bin/hermes-daemon","directory":"ledger","mode":"create",
-              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707"}}
+              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707",
+              "access":"observer","operator_stream":null}}
         }"#;
         let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
         let host = profile.hermes.unwrap().host.unwrap();
@@ -645,9 +665,33 @@ mod tests {
           "version":1,"name":"Hermes","surfaces":["hermes"],
           "hermes":{"socket":"hermes.sock","stream":null,"consumer":null,
             "host":{"executable":"hermes-daemon","directory":"ledger","mode":"open",
-              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707"}}
+              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707",
+              "access":"observer","operator_stream":null}}
         }"#;
         assert!(WorkspaceProfile::parse(attached_host, Path::new(".")).is_err());
+
+        let operator = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"deployment":"hosted","socket":"hermes.sock",
+            "stream":"05050505050505050505050505050505","consumer":null,
+            "host":{"executable":"hermes-daemon","directory":"ledger","mode":"open",
+              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707",
+              "access":"operator","operator_stream":"05050505050505050505050505050505"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(operator, Path::new(".")).unwrap();
+        assert_eq!(
+            profile.hermes.unwrap().host.unwrap().access,
+            HermesAccessProfile::Operator
+        );
+        let mismatched_operator = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"deployment":"hosted","socket":"hermes.sock",
+            "stream":"06060606060606060606060606060606","consumer":null,
+            "host":{"executable":"hermes-daemon","directory":"ledger","mode":"open",
+              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707",
+              "access":"operator","operator_stream":"05050505050505050505050505050505"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(mismatched_operator, Path::new(".")).is_err());
     }
 
     #[test]

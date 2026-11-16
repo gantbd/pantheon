@@ -63,7 +63,11 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "planned",
+      "mutation": "qualified",
+      "mutationCapabilities": {
+        "ledger.acknowledge.v1": "qualified",
+        "ledger.compact.v1": "qualified"
+      },
       "disclosureCapabilities": {
         "ledger.events.disclose.v1": "qualified"
       }
