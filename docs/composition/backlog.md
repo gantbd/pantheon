@@ -64,11 +64,12 @@ read-only input until that repository settles.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
   Hermes, Aegis, and Grounding while preserving separate state, authority,
   recovery and shutdown receipts.
-- [ ] Promote the remaining applicable Moira seam to a standalone native or
-  supervised profile factory only after its owner supplies
-  explicit storage, authentication, recovery and shutdown composition and
-  passes real lifecycle qualification. Grounding is attach-only by design:
-  Dendrite retains its IDE/agent bridge lifecycle.
+- [x] Promote Moira through its owner-supplied sovereign `moira-saga-local`
+  profile after explicit storage, Aegis authentication, recovery and shutdown
+  composition passed the standalone and Workbench real-process lifecycle
+  qualification. Workbench supervises the exact owner binary from an opaque
+  profile and cannot upgrade its reconciliation authority. Grounding remains
+  attach-only by design: Dendrite retains its IDE/agent bridge lifecycle.
 - [x] Promote Daimon's production local-agent application to an explicit
   supervised profile factory after the owner supplied an opaque configuration,
   exact public agent socket and one-byte drain contract. Workbench does not
@@ -128,8 +129,15 @@ read-only input until that repository settles.
   qualification.
 - [x] Daimon: close the integrated hosted lifecycle gate across the production
   owner process, ordinary public client, clean drain and durable reopen.
-- [ ] Agora, Chronos and Vellum: add remaining mutations only where standalone
-  and Workbench paths preserve identical peer-owned confirmation and receipts.
+- [x] Chronos: qualify the selected task and scheduling mutation profile through
+  the same public Hub and owner service in standalone and Workbench paths,
+  preserving peer-owned receipts, clean drain and exact durable reopen.
+- [ ] Vellum: promote the implemented edit/save path to qualified only after
+  standalone and Workbench gates preserve its revision witness, persistence
+  projection, save receipt and exact outcome-unknown replay law.
+- [ ] Agora: select guarded domain mutations only where the public client and
+  owner service can preserve the same actor-bound authority, confirmation,
+  durable receipt and uncertainty behavior in standalone and Workbench paths.
 
 ## P3 — cross-engine completion
 
