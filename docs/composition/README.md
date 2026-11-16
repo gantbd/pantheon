@@ -33,9 +33,9 @@ with a TUI or Workbench. A presentation repository may retain a thin re-export
 facade for source compatibility, but it must not retain framing, endpoint
 validation, certainty classification, authentication, or lifecycle policy.
 Standalone shells and Workbench should consume the owner client directly when
-compatibility no longer requires the facade. Hermes, Agora, and Aegis currently
-enforce this shape; Moira and Grounding remain deferred while their owning
-boundaries are active.
+compatibility no longer requires the facade. Hermes, Agora, Aegis, and Moira
+currently enforce this shape. Grounding remains deferred while Dendrite's
+owning typed boundary is active.
 
 The invariant is shared; the interaction is not. Vellum may be an editor,
 Agora a room/message surface, Chronos a task hub, Moira a reconciliation view,
