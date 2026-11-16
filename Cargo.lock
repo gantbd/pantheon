@@ -353,6 +353,9 @@ version = "0.1.0"
 dependencies = [
  "daimon-client",
  "daimon-protocol",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

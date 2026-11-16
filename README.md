@@ -269,6 +269,14 @@ key and confirmation, and attempts one bounded provider slice. An uncertain
 delivery is never retried; retained session inspection is the reconciliation
 path. The reusable Daimon presentation remains read-only.
 
+Run `sh tests/live/daimon_prompt.sh` to qualify
+`agents.session.prompt.v1`. Standalone Daimon and Workbench parse the same
+strict credential-free request document and invoke the same owner guard. Prompt
+bytes are read from a bounded file rather than argv; exact confirmation binds
+their digest and the canonical digest of the entire execution envelope. The
+guard fences the ready revision on the mutation connection, dispatches once,
+and leaves transport uncertainty for retained-session reconciliation.
+
 Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
 configured consumer's content-free cursor/backlog through Hermes's read-only
 facade. Exact opaque selectors are profile inputs and are never catalogued or

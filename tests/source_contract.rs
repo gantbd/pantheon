@@ -140,6 +140,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         peers["hermes"]["disclosureCapabilities"]["ledger.events.disclose.v1"],
         "qualified"
     );
+    assert_eq!(
+        peers["daimon"]["mutationCapabilities"]["agents.session.prompt.v1"],
+        "qualified"
+    );
 
     let capabilities = [
         ("aegis", aegis_tui::CAPABILITIES.headless[0]),
@@ -200,7 +204,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "86c38ebbd0e5dae05ee43df67cfb18072d8fec9e"
+        "0b79a2b717e0a16726cb39c5908f2cf8a99baa15"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
@@ -224,7 +228,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "8c03cfdf26bc7416e1acdc0a77b90438eb088e59"
+        "ca7bbde4afdc0234031306571b1613ebf7288351"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -767,6 +771,35 @@ fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
     assert!(cli.contains("daimon_agent_command::advance"));
     assert!(!cli.contains("AgentCommandV1::Advance"));
+}
+
+#[test]
+fn daimon_prompt_reuses_the_owner_guard_and_document_in_both_shells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/daimon_prompt.sh")).expect("Daimon prompt gate");
+    for required in [
+        "agent_prompt_fixture",
+        "daimon-tui",
+        "workbench-tui",
+        "daimon-agent-prompt",
+        "agents.session.prompt.v1",
+        "prompt.txt",
+        "request.json",
+        "standalone.marker",
+        "workbench.marker",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon prompt gate omits {required}"
+        );
+    }
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(cli.contains("daimon_agent_command::prompt"));
+    assert!(cli.contains("parse_prompt_document"));
+    assert!(!cli.contains("AgentCommandV1::Prompt"));
 }
 
 #[test]
