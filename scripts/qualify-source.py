@@ -43,6 +43,25 @@ def archive(repo, revision, output):
             source.extractall(output, filter="data")
 
 
+def run_live_evidence(stage):
+    status = json.loads(
+        (stage / "workbench-tui" / "composition-status.json").read_text()
+    )
+    evidence = []
+    for peer in sorted(status["peers"]):
+        for relative in status["peers"][peer]["evidence"]:
+            if relative not in evidence:
+                evidence.append(relative)
+    for relative in evidence:
+        if not re.fullmatch(r"[a-z0-9][a-z0-9-]*/[A-Za-z0-9_./-]+\.sh", relative):
+            raise SystemExit(f"unsafe live evidence path: {relative}")
+        script = stage / relative
+        if not script.is_file() or stage not in script.resolve().parents:
+            raise SystemExit(f"missing live evidence in source closure: {relative}")
+        repository, script_relative = relative.split("/", 1)
+        subprocess.run(["sh", script_relative], cwd=stage / repository, check=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("workbench", help="Workbench commit")
@@ -116,7 +135,7 @@ def main():
             check=True,
         )
         if args.live:
-            subprocess.run(["sh", "tests/live/dual_service.sh"], cwd=directory, check=True)
+            run_live_evidence(stage)
     print(json.dumps({"workbench-tui": workbench, **pins}, indent=2, sort_keys=True))
 
 

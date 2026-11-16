@@ -370,6 +370,9 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         fs::read_to_string(root.join("scripts/qualify-source.py")).expect("source qualifier");
     assert!(qualifier.contains("\"agora\","));
     assert!(qualifier.contains("\"agora-tui\","));
+    assert!(qualifier.contains("run_live_evidence(stage)"));
+    assert!(qualifier.contains("status[\"peers\"][peer][\"evidence\"]"));
+    assert!(!qualifier.contains("[\"sh\", \"tests/live/dual_service.sh\"]"));
     assert!(
         architecture.contains("github.com/gantbd/keystone/blob/main/COMPONENT_ARCHITECTURE.md")
     );

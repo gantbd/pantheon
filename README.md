@@ -141,8 +141,10 @@ boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
 Remaining owner working trees and remote reachability remain unqualified.
 
-Run `python3 scripts/qualify-source.py WORKBENCH_COMMIT --live` to do both
-from temporary archives of the candidate commits. The command reads the peer
+Run `python3 scripts/qualify-source.py WORKBENCH_COMMIT --live` to run the
+locked Rust suite and every deduplicated real-service gate named by the
+candidate's `composition-status.json`, all from temporary archives of the
+candidate commits. The command reads the peer
 pins from the source receipts and accepts full candidate commit IDs for
 Chronos, Vellum, and Vellum TUI while evaluating an updated set. It emits the
 tested revisions after success and leaves the sibling checkouts untouched.
