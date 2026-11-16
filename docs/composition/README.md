@@ -28,6 +28,15 @@ the layers:
 6. optional Workbench hosting when production adapter, authority, recovery and
    shutdown composition are explicit.
 
+Concrete transport clients belong with the peer that owns the protocol, not
+with a TUI or Workbench. A presentation repository may retain a thin re-export
+facade for source compatibility, but it must not retain framing, endpoint
+validation, certainty classification, authentication, or lifecycle policy.
+Standalone shells and Workbench should consume the owner client directly when
+compatibility no longer requires the facade. Hermes, Agora, and Aegis currently
+enforce this shape; Moira and Grounding remain deferred while their owning
+boundaries are active.
+
 The invariant is shared; the interaction is not. Vellum may be an editor,
 Agora a room/message surface, Chronos a task hub, Moira a reconciliation view,
 Daimon an execution inspector, Hermes a ledger view, Aegis an authority

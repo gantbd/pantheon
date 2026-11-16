@@ -15,6 +15,10 @@ read-only input until that repository settles.
   together in one Workbench invocation, not only as isolated peer attachments.
 - [x] Keep the root repository inventory synchronized with all presentation
   peers and current source state.
+- [x] Move reusable Hermes, Agora, and Aegis Unix transport clients into their
+  owner repositories; reduce TUI packages to compatibility re-exports and make
+  Workbench consume the owner clients directly. Defer Moira and Grounding until
+  their active owner boundaries settle.
 - [x] Keep Hermes hosting out of the mixed engine graph: Workbench now owns the
   owner-supplied standalone daemon process and attaches the same public client,
   preserving Hermes authentication, authorization, storage and shutdown.
