@@ -775,7 +775,11 @@ fn daimon_hosting_uses_the_owner_supervisor_without_importing_provider_policy() 
     ] {
         assert!(host.contains(required), "Daimon host omits {required}");
     }
-    for forbidden in ["provider_id", "inherited_environment_names", "aegis_grant_now"] {
+    for forbidden in [
+        "provider_id",
+        "inherited_environment_names",
+        "aegis_grant_now",
+    ] {
         assert!(
             !host.contains(forbidden),
             "Workbench acquired Daimon owner policy through {forbidden}"
@@ -784,6 +788,30 @@ fn daimon_hosting_uses_the_owner_supervisor_without_importing_provider_policy() 
     let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI main");
     assert!(main.contains("options.daimon_host.is_none()"));
     assert!(main.contains("host.start_daimon_process(daimon.clone())"));
+}
+
+#[test]
+fn daimon_hosted_gate_reopens_real_durable_session_in_both_workbench_modes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/daimon_hosted.sh")).expect("hosted Daimon gate");
+    for required in [
+        "aegis-daemon",
+        "daimon-local-agent",
+        "qualification_chronos",
+        "qualification_seed",
+        "--supervised",
+        "headless --workspace-profile",
+        "interactive",
+        "ReattachRequired",
+        "hosted_shutdown",
+        "disposition\": \"clean",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted Daimon gate omits {required}"
+        );
+    }
 }
 
 #[test]

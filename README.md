@@ -271,6 +271,16 @@ contiguous event page and exposes phase, profile digest, capabilities and event
 kinds without cataloguing sessions or acquiring open, prompt, permission,
 advance, cancel, close, resume or reattach authority.
 
+Run `sh tests/live/daimon_hosted.sh` to qualify the production
+`daimon-local-agent` under Workbench ownership. The gate issues a real
+session-bound Aegis grant, validates one exact Chronos attempt, seeds a durable
+resumable session through Daimon's public client, drains the standalone owner,
+then reopens the same checkpoint through Workbench in headless and interactive
+modes. Both paths inspect the recovered `ReattachRequired` session through the
+ordinary client and end with a clean Daimon shutdown receipt and removed owner
+socket. Provider launch policy and credentials remain in the opaque owner
+configuration; the qualification provider is never dispatched.
+
 Run `sh tests/live/daimon_advance.sh` to qualify the separate
 `agents.session.advance.v1` operator path. Standalone Daimon and Workbench reuse
 the same Daimon-owned exact-state guard: it observes the configured session on

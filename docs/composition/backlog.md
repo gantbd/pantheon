@@ -126,7 +126,7 @@ read-only input until that repository settles.
   reattach only with
   current authority, exact confirmation, durable reconciliation and no-retry
   qualification.
-- [ ] Daimon: close the integrated hosted lifecycle gate across the production
+- [x] Daimon: close the integrated hosted lifecycle gate across the production
   owner process, ordinary public client, clean drain and durable reopen.
 - [ ] Agora, Chronos and Vellum: add remaining mutations only where standalone
   and Workbench paths preserve identical peer-owned confirmation and receipts.
