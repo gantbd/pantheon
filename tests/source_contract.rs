@@ -194,11 +194,16 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "3fb39f7ddece119868e016cb639d6644f32207a7"
     );
     assert_eq!(
+        source["inputs"]["agora"]["revision"],
+        "915970cd14120e6e75a3ae7b7d856c235f5828df"
+    );
+    assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
         "11d75c218e2e9614ae6bef6bde05b9eb96222c62"
     );
     for input in [
         "agoraTui",
+        "agora",
         "chronosTui",
         "chronos",
         "vellumTui",
@@ -213,7 +218,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["agora", "vellum", "daimon", "dendrite"] {
+    for input in ["vellum", "daimon", "dendrite"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);

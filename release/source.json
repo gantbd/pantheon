@@ -5,8 +5,8 @@
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
-      "revision": "aa763ce6a9c4d2ab9d81caed7abe32b446e55e8e",
-      "workingTreeClean": false
+      "revision": "915970cd14120e6e75a3ae7b7d856c235f5828df",
+      "workingTreeClean": true
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
