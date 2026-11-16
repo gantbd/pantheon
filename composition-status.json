@@ -117,7 +117,7 @@
       "presentation": "moira-tui",
       "readCapability": "sagas.inspect.v1",
       "client": { "contract": "moira-client", "connection": "moira-client::unix::SagaUnixPort", "ownership": "peer" },
-      "evidence": ["moira/apps/moira-saga-local/tests/process_journey.rs", "moira-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/moira_attach.sh", "workbench-tui/tests/live/moira_hosted.sh"],
+      "evidence": ["moira-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/moira_attach.sh", "workbench-tui/tests/live/moira_hosted.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
