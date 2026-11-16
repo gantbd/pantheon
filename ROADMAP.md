@@ -179,8 +179,10 @@ publish/observe through Agora's public composition client under test-only
 authority. Durable Agora restart now passes through the exact standalone
 process in both standalone and Workbench-supervised journeys. An induced
 non-clean Agora receipt now proves aggregate refusal, continued reverse drain
-of Aegis, and durable reopen. Abrupt owner death and an outcome-unknown drain
-remain open; grant provisioning stays owner-side and outside Workbench.
+of Aegis, and durable reopen. A separate shutdown-edge process cut proves
+abrupt child death, visible endpoint residue, safe replacement readiness, exact
+incarnation rotation, and retained-room recovery. A genuinely outcome-unknown
+drain remains open; grant provisioning stays owner-side and outside Workbench.
 
 Chronos's selected guarded-write profile is also qualified through the hosted
 Workbench path using the peer-owned public Hub: task creation, receipted

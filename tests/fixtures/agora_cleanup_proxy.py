@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test-only proxy that turns a real clean Agora receipt into preserved residue."""
+"""Test-only proxy for refused-receipt and abrupt Agora shutdown cuts."""
 
 import json
 import os
@@ -19,6 +19,13 @@ def main() -> int:
     assert child.stdin is not None
     assert child.stdout is not None
     request = sys.stdin.buffer.read(1)
+    mode = os.environ.get("WORKBENCH_AGORA_PROXY_MODE", "residue-receipt")
+    if mode == "kill-on-shutdown":
+        child.kill()
+        child.wait()
+        return 70
+    if mode != "residue-receipt":
+        raise SystemExit(f"unknown WORKBENCH_AGORA_PROXY_MODE: {mode}")
     if request:
         child.stdin.write(request)
         child.stdin.flush()

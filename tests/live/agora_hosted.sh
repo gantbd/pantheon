@@ -36,6 +36,9 @@ run_profile() {
   incarnation=$3
   operation=${4:-headless}
   agora_executable=${5:-$agora}
+  next_incarnation=${6:-}
+  aegis_mode=$mode
+  [ "$aegis_mode" != recover ] || aegis_mode=open
   grant_now=$(( $(date +%s) * 1000 ))
   grant_expires_at=$(( grant_now + 600000 ))
   config="$scratch/agora-$mode.conf"
@@ -63,7 +66,7 @@ run_profile() {
       'room_name=Scheduled Room' \
       'admission=open' \
       >"$config"
-  else
+  elif [ "$mode" = open ]; then
     printf '%s\n' \
       'schema=1' \
       'mode=open' \
@@ -79,6 +82,26 @@ run_profile() {
       'grant_profile=scheduled' \
       'host_scope=08080808080808080808080808080808' \
       "server_incarnation=$incarnation" \
+      >"$config"
+  else
+    [ "$mode" = recover ]
+    [ -n "$next_incarnation" ]
+    printf '%s\n' \
+      'schema=1' \
+      'mode=recover' \
+      "store=$scratch/agora-store" \
+      "socket=$scratch/agora.sock" \
+      "aegis_socket=$scratch/aegis.sock" \
+      'participant=alice' \
+      'subject=02020202020202020202020202020202' \
+      'resource=07070707070707070707070707070707' \
+      "authority_epoch=$epoch" \
+      "grant_now=$grant_now" \
+      "grant_expires_at=$grant_expires_at" \
+      'grant_profile=scheduled' \
+      'host_scope=08080808080808080808080808080808' \
+      "previous_incarnation=$incarnation" \
+      "next_incarnation=$next_incarnation" \
       >"$config"
   fi
 
@@ -105,7 +128,7 @@ run_profile() {
     '    "host": {' \
     "      \"executable\": \"$aegis\"," \
     "      \"directory\": \"$scratch/authority\"," \
-    "      \"mode\": \"$mode\"," \
+    "      \"mode\": \"$aegis_mode\"," \
     '      "authority": "01010101010101010101010101010101",' \
     "      \"effective_uid\": $uid," \
     "      \"effective_gid\": $gid," \
@@ -295,17 +318,52 @@ PYTHON
 [ ! -e "$scratch/agora.sock" ]
 [ ! -e "$scratch/aegis.sock" ]
 
-after_partial=$(run_profile open 5 0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e)
-printf '%s' "$after_partial" | python3 -c '
+abrupt_profile=$(run_profile open 5 0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e prepare "$cleanup_proxy")
+abrupt_report="$scratch/abrupt-shutdown-report.json"
+if WORKBENCH_AGORA_REAL_EXECUTABLE="$agora" \
+  WORKBENCH_AGORA_PROXY_MODE=kill-on-shutdown \
+  "$workbench" headless --workspace-profile "$abrupt_profile" \
+    >"$abrupt_report" 2>"$scratch/abrupt-shutdown.err"; then
+  echo 'FAIL: Workbench accepted an abruptly stopped Agora owner' >&2
+  exit 1
+fi
+grep -q 'one or more peer observations or hosted shutdowns were incomplete' \
+  "$scratch/abrupt-shutdown.err"
+python3 - "$abrupt_report" <<'PYTHON'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    report = json.load(source)
+assert not report["complete"]
+peers = {peer["peer"]: peer for peer in report["peers"]}
+assert peers["agora"]["status"] == "current"
+assert peers["agora"]["rooms"] == 1
+assert peers["aegis"]["status"] == "current"
+assert report["hosted_shutdown"] == {
+    "status": "incomplete",
+    "receipts": [
+        {"peer": "agora", "instance": None, "disposition": "refused"},
+        {"peer": "aegis", "instance": None, "disposition": "clean"},
+    ],
+}
+PYTHON
+[ -S "$scratch/agora.sock" ]
+[ ! -e "$scratch/aegis.sock" ]
+
+after_abrupt=$(run_profile recover 6 \
+  0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e headless "$agora" \
+  0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f)
+printf '%s' "$after_abrupt" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)
 assert report["complete"]
 peers = {peer["peer"]: peer for peer in report["peers"]}
 assert peers["agora"]["rooms"] == 1
-assert peers["aegis"]["epoch"] == 5
+assert peers["aegis"]["epoch"] == 6
 assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$scratch/agora.sock" ]
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: Workbench-hosted Aegis -> exact Agora process -> clean and refused shutdown receipts -> continued reverse drain -> durable reopen'
+echo 'PASS: Workbench-hosted Aegis -> exact Agora process -> refused receipt and abrupt-stop cuts -> continued reverse drain -> residue recovery -> durable reopen'

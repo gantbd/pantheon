@@ -47,7 +47,9 @@ read-only input until that repository settles.
   interactive modes, drains Agora before Aegis, and qualifies durable reopen.
   A test-only cleanup-receipt proxy proves a non-clean Agora result refuses
   aggregate success without suppressing the later Aegis drain, followed by an
-  exact durable reopen. Abrupt owner death and outcome-unknown drain remain open.
+  exact durable reopen. A separate shutdown-edge child kill proves explicit
+  residue preservation, safe replacement readiness, exact incarnation rotation,
+  and retained-room recovery. Outcome-unknown drain remains open.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,

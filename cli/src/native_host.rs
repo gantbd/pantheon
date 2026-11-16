@@ -13,7 +13,7 @@ use std::thread::JoinHandle;
 use std::{
     fs,
     io::{Read, Write},
-    os::unix::fs::FileTypeExt,
+    os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt},
     path::PathBuf,
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
     time::Duration,
@@ -44,7 +44,45 @@ pub struct NativeHost {
 }
 
 #[cfg(unix)]
-fn wait_for_process_ready(child: &mut Child, socket: &Path, peer: &str) -> Result<(), String> {
+type SocketIdentity = (u64, u64, i64, i64);
+
+#[cfg(unix)]
+fn socket_identity(socket: &Path) -> Option<SocketIdentity> {
+    fs::symlink_metadata(socket).ok().and_then(|metadata| {
+        metadata.file_type().is_socket().then(|| {
+            (
+                metadata.dev(),
+                metadata.ino(),
+                metadata.ctime(),
+                metadata.ctime_nsec(),
+            )
+        })
+    })
+}
+
+#[cfg(unix)]
+fn ready_socket_identity(socket: &Path) -> Option<SocketIdentity> {
+    fs::symlink_metadata(socket).ok().and_then(|metadata| {
+        (metadata.file_type().is_socket() && metadata.permissions().mode() & 0o077 == 0).then(
+            || {
+                (
+                    metadata.dev(),
+                    metadata.ino(),
+                    metadata.ctime(),
+                    metadata.ctime_nsec(),
+                )
+            },
+        )
+    })
+}
+
+#[cfg(unix)]
+fn wait_for_process_ready(
+    child: &mut Child,
+    socket: &Path,
+    peer: &str,
+    prior_socket: Option<SocketIdentity>,
+) -> Result<(), String> {
     for _ in 0..400 {
         if let Some(status) = child
             .try_wait()
@@ -52,7 +90,7 @@ fn wait_for_process_ready(child: &mut Child, socket: &Path, peer: &str) -> Resul
         {
             return Err(format!("{peer} stopped before readiness: {status}"));
         }
-        if fs::symlink_metadata(socket).is_ok_and(|metadata| metadata.file_type().is_socket()) {
+        if ready_socket_identity(socket).is_some_and(|identity| Some(identity) != prior_socket) {
             return Ok(());
         }
         thread::sleep(Duration::from_millis(5));
@@ -248,6 +286,7 @@ impl NativeHost {
         options: AgoraProcessOptions,
     ) -> Result<(), StartupFailure<String>> {
         self.start_agora(|| {
+            let prior_socket = socket_identity(&options.socket);
             let mut child = Command::new(&options.executable)
                 .arg(&options.config)
                 .stdin(Stdio::piped())
@@ -255,7 +294,9 @@ impl NativeHost {
                 .stderr(Stdio::piped())
                 .spawn()
                 .map_err(|error| format!("Agora process start refused: {error}"))?;
-            if let Err(error) = wait_for_process_ready(&mut child, &options.socket, "Agora") {
+            if let Err(error) =
+                wait_for_process_ready(&mut child, &options.socket, "Agora", prior_socket)
+            {
                 stop_failed_process_start(&mut child);
                 return Err(error);
             }
@@ -314,6 +355,7 @@ impl NativeHost {
         options: HermesProcessOptions,
     ) -> Result<(), StartupFailure<String>> {
         self.start_hermes(|| {
+            let prior_socket = socket_identity(&options.socket);
             let mut command = Command::new(&options.executable);
             command
                 .arg(if options.create { "create" } else { "open" })
@@ -336,7 +378,9 @@ impl NativeHost {
                 .stderr(Stdio::piped())
                 .spawn()
                 .map_err(|error| format!("Hermes process start refused: {error}"))?;
-            if let Err(error) = wait_for_process_ready(&mut child, &options.socket, "Hermes") {
+            if let Err(error) =
+                wait_for_process_ready(&mut child, &options.socket, "Hermes", prior_socket)
+            {
                 stop_failed_process_start(&mut child);
                 return Err(error);
             }
@@ -365,6 +409,7 @@ impl NativeHost {
         options: AegisProcessOptions,
     ) -> Result<(), StartupFailure<String>> {
         self.start_aegis(|| {
+            let prior_socket = socket_identity(&options.socket);
             let mut child = Command::new(&options.executable)
                 .arg(if options.create { "create" } else { "open" })
                 .arg(&options.directory)
@@ -384,7 +429,9 @@ impl NativeHost {
                 .stderr(Stdio::piped())
                 .spawn()
                 .map_err(|error| format!("Aegis process start refused: {error}"))?;
-            if let Err(error) = wait_for_process_ready(&mut child, &options.socket, "Aegis") {
+            if let Err(error) =
+                wait_for_process_ready(&mut child, &options.socket, "Aegis", prior_socket)
+            {
                 stop_failed_process_start(&mut child);
                 return Err(error);
             }
