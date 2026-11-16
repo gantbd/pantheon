@@ -187,7 +187,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "f12d013b6c856749ef65457f575ec409482c09cc"
+        "6492498df8ae67368813b2c44ea4ef0fb8b97a90"
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
@@ -394,6 +394,9 @@ fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
         "ATTENUATE AEGIS OP",
         "AUTHORIZE AEGIS OP",
         "\"handle\" not in rendered",
+        "--package aegis-daemon",
+        "values[0][\"grants\"] == []",
+        "kill -TERM",
         "REVOKE AEGIS EPOCH 0",
         "AUTHORIZE AEGIS EPOCH 0 hermes",
         "\"grant\" not in value",

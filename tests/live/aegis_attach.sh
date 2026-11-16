@@ -3,11 +3,13 @@ set -eu
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 aegis_tui=$(CDPATH= cd -- "$repo/../aegis-tui" && pwd -P)
+aegis=$(CDPATH= cd -- "$repo/../aegis" && pwd -P)
 scratch=$(mktemp -d /tmp/wb-aegis.XXXXXX)
 chmod 700 "$scratch"
 target="$scratch/target"
 fixture="$target/debug/examples/real_daemon_fixture"
 workbench="$target/debug/workbench-tui"
+daemon="$target/debug/aegis-daemon"
 socket="$scratch/aegis.sock"
 authority="$scratch/authority"
 profile="$scratch/workspace.json"
@@ -28,6 +30,9 @@ cargo build --manifest-path "$aegis_tui/Cargo.toml" \
   --locked --offline --target-dir "$target"
 cargo build --manifest-path "$repo/Cargo.toml" \
   --package workbench-tui-cli --bin workbench-tui \
+  --locked --offline --target-dir "$target"
+cargo build --manifest-path "$aegis/Cargo.toml" \
+  --package aegis-daemon --bin aegis-daemon \
   --locked --offline --target-dir "$target"
 
 cat >"$profile" <<'JSON'
@@ -206,5 +211,59 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 finish_fixture
+
+owner_socket="$scratch/owner.sock"
+owner_authority="$scratch/owner-authority"
+authority_id=31313131313131313131313131313131
+principal_id=32323232323232323232323232323232
+session_namespace=3333333333333333
+"$daemon" create "$owner_authority" "$owner_socket" "$authority_id" \
+  "$(id -u)" "$(id -g)" "$principal_id" "$session_namespace" administrator \
+  >"$scratch/owner.log" 2>&1 &
+pid=$!
+attempt=0
+while [ ! -S "$owner_socket" ]; do
+  if ! kill -0 "$pid" 2>/dev/null || [ "$attempt" -eq 100 ]; then
+    sed -n '1,160p' "$scratch/owner.log" >&2
+    echo 'FAIL: selected Aegis owner did not become ready' >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+abandoned=41414141414141414141414141414141
+rebuilt=42424242424242424242424242424242
+owner_resource=43434343434343434343434343434343
+first=$(printf '%s\n' \
+  "{\"version\":1,\"command\":\"issue\",\"operation\":\"$abandoned\",\"expected_epoch\":0,\"now\":10,\"expires_at\":40,\"scopes\":[{\"engine\":\"hermes\",\"resource\":\"$owner_resource\",\"actions\":[\"observe\"]}],\"confirmation\":\"ISSUE AEGIS OP $abandoned EPOCH 0 UNTIL 40 SCOPES hermes:$owner_resource:observe\"}" | \
+  "$workbench" aegis-manage-session "$owner_socket")
+printf '%s' "$first" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["status"] == "issued" and not value["terminal"]
+'
+
+second=$(printf '%s\n' \
+  '{"version":1,"command":"list"}' \
+  "{\"version\":1,\"command\":\"issue\",\"operation\":\"$rebuilt\",\"expected_epoch\":0,\"now\":11,\"expires_at\":50,\"scopes\":[{\"engine\":\"hermes\",\"resource\":\"$owner_resource\",\"actions\":[\"observe\"]}],\"confirmation\":\"ISSUE AEGIS OP $rebuilt EPOCH 0 UNTIL 50 SCOPES hermes:$owner_resource:observe\"}" \
+  "{\"version\":1,\"command\":\"authorize\",\"operation\":\"$rebuilt\",\"now\":12,\"engine\":\"hermes\",\"resource\":\"$owner_resource\",\"action\":\"observe\",\"confirmation\":\"AUTHORIZE AEGIS OP $rebuilt hermes $owner_resource observe\"}" \
+  '{"version":1,"command":"close"}' | \
+  "$workbench" aegis-manage-session "$owner_socket")
+printf '%s' "$second" | python3 -c '
+import json, sys
+values = [json.loads(line) for line in sys.stdin if line.strip()]
+assert [value["status"] for value in values] == ["current", "issued", "authorized", "closed"]
+assert values[0]["grants"] == []
+assert values[1]["grant"]["operation"] == "42424242424242424242424242424242"
+assert "41414141414141414141414141414141" not in json.dumps(values)
+'
+kill -TERM "$pid"
+wait "$pid"
+pid=
+if [ -e "$owner_socket" ]; then
+  echo 'FAIL: selected Aegis owner left its socket behind' >&2
+  exit 1
+fi
 
 echo 'PASS: real Aegis daemon -> bounded pages, managed private-handle session, authority journey, and revocation -> Workbench'

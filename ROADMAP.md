@@ -233,9 +233,11 @@ post-send failure remains uncertain without retry. Aegis's bounded
 `aegis.admin-session.v1` application protocol now supplies reusable named issue,
 attenuation, authorization, listing and close in both standalone and Workbench
 shells. Both shells call the same owner parser/manager over the public client;
-Workbench owns no grant handles, confirmation grammar or retry policy. Explicit
-disconnect/reconnect abandonment and rebuild qualification remains open; durable
-grant replay and lost-reply reconciliation are nonclaims.
+Workbench owns no grant handles, confirmation grammar or retry policy. Two
+separate Workbench command processes against the selected owner daemon qualify
+disconnect abandonment, an empty fresh name set, and deliberate rebuild under
+a new operation ID. Durable grant replay and lost-reply reconciliation are
+nonclaims.
 
 Aegis now also supplies a standalone shutdown-aware owner daemon. Its explicit
 deployment inputs select create/open recovery, authority namespace, exact kernel

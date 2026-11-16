@@ -75,9 +75,9 @@ read-only input until that repository settles.
 - [x] Aegis: reuse the owner-supplied bounded administration-session protocol
   for named issue/attenuate/authorize/list/close in standalone and Workbench;
   grant handles remain session-local and private to the shared manager.
-- [ ] Aegis: qualify explicit disconnect/reconnect abandonment and deliberate
-  rebuild under new operation names. Do not claim durable grant replay or
-  lost-reply reconciliation.
+- [x] Aegis: qualify explicit disconnect/reconnect abandonment and deliberate
+  rebuild under a new operation name in both standalone and Workbench shells.
+  Durable grant replay and lost-reply reconciliation remain nonclaims.
 - [x] Aegis: preserve bounded redacted grant/decision pagination through the
   same read-only component in standalone and Workbench interactive paths.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and

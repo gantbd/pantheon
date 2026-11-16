@@ -191,6 +191,10 @@ The managed-session command keeps named grants inside Aegis's shared
 bounded owner, supports issue/attenuate/authorize/list/close over NDJSON, and is
 identical to the standalone shell below the socket/stdio composition edge.
 Workbench does not parse requests, retain handles, or redefine confirmations.
+The gate also runs two separate Workbench command processes against the selected
+long-running owner daemon: the first abandons a named grant on disconnect, and
+the second observes an empty local name set before deliberately rebuilding under
+a different operation ID.
 
 Run `sh tests/live/aegis_hosted.sh` to qualify Workbench-owned lifecycle for
 Aegis's standalone daemon. The profile supplies explicit create/open mode,
