@@ -184,7 +184,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "f0cf0653ef0636a2665c9349a9194a3e05f310ec"
+        "2ec9df3188e9c1e17993c3768fe86065007168cf"
     );
     assert_eq!(
         source["inputs"]["chronos"]["revision"],

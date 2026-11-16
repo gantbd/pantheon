@@ -20,7 +20,7 @@
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
-      "revision": "f0cf0653ef0636a2665c9349a9194a3e05f310ec",
+      "revision": "2ec9df3188e9c1e17993c3768fe86065007168cf",
       "workingTreeClean": true
     },
     "daimon": {
