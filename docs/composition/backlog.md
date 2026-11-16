@@ -92,7 +92,10 @@ read-only input until that repository settles.
 
 - [ ] Close Agora–Chronos atomic admission/eligibility, cancellation,
   reconciliation and Aegis mapping.
-- [ ] Close the Agora–Hermes concrete endpoint and production authority profile.
+- [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
+  The adapter-owned public-Aegis-client authority wiring is qualified; the
+  deployment must still select peer provenance, session/grant issuance, trusted
+  time source, endpoint receipts/network policy, and durable owner lifecycle.
 - [ ] Complete Moira's process-separated Agora/Vellum workflow and every-boundary
   lost-reply matrix.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
