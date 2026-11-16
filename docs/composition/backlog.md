@@ -189,8 +189,10 @@ read-only input until that repository settles.
   attach and host matrix.
 - [ ] Close source/legal review, upgrade/migration, supported-platform and
   artifact gates for the selected local deployment.
-- [ ] Qualify Workbench GUI dependency closure and distribution before adding
-  peers beyond Chronos and Vellum.
+- [x] Qualify the Workbench GUI local dependency closure across clean committed
+  Chronos/Vellum engines and GUI peers.
+- [ ] Qualify Workbench GUI artifact distribution, signing and notarization
+  before adding peers beyond Chronos and Vellum.
 - [ ] Revisit remote deployment, signing/notarization and wider GUI coverage only
   after the local product graph is release-qualified.
 

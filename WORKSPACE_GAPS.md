@@ -74,6 +74,10 @@ still use one immutable remotely retrievable Keystone revision or published
 artifact rather than a workspace-only path assumption.
 The mixed deployment that owns Chronos and Vellum while attaching Agora is also
 qualified across all three interactive panes and one aggregate headless report.
+The separate macOS Workbench GUI now has a clean committed local dependency
+closure across the Chronos/Vellum engines and their GUI peers. Artifact
+distribution, signing, notarization and remote immutable reachability remain
+open and are not inferred from that local source closure.
 
 ## Reconciliation order
 
@@ -86,8 +90,8 @@ qualified across all three interactive panes and one aggregate headless report.
    the now-qualified read-only evidence/receipt path unchanged.
 3. Retain Daimon's qualified exact-session evidence, bounded active-turn
    advance, cancellation, close, reattach, prompt-dispatch and
-   permission-decision paths; add native hosting only after provider and
-   credential composition is deployment-owned.
+   permission-decision paths plus qualified sovereign hosting; keep broader
+   provider, credential and platform qualification owner-side.
 4. Extend the typed Dendrite presentation boundary with selected surface/read
    DTOs only after their content disclosure, provenance, freshness, and bounds
    are fixed; MCP remains outside Workbench's internal protocol.
