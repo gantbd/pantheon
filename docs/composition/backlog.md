@@ -112,8 +112,14 @@ read-only input until that repository settles.
 - [x] Add Agora's actor-bound, read-only retained-observation owner contract
   and adapter reconciliation: accepted evidence wins; authoritative absence
   closes only with independently terminal Chronos cancellation.
-- [ ] Deploy that Agora observation contract through a dedicated composition
-  transport and public client; ordinary participant Wire V2 remains unchanged.
+- [x] Deploy Agora publish/observation through private-local composition
+  handshake profile 4 and the public `ScheduledLocalClientV1`; ordinary
+  participant Wire V2 remains unchanged. The Agora–Chronos adapter wraps the
+  same transport-neutral client for standalone and Workbench use, preserves
+  pre-send versus outcome-unknown evidence, and keeps its Dispatch/InspectAgora
+  decisions separate from Agora's owner-side Execute/Observe enforcement.
+  Attaching this client to an actual Workbench production owner factory remains
+  part of the P1 Agora provenance/grant/time/durability item.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
   the real Aegis daemon and public Unix client, including live epoch revocation
