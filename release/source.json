@@ -35,8 +35,8 @@
     },
     "moira": {
       "repository": "https://github.com/gantbd/moira",
-      "revision": "1408e46b12f7326e987724d867e40696aecf70a3",
-      "workingTreeClean": false
+      "revision": "4264323fabf93c6ec121797b5efc2d06dccd904e",
+      "workingTreeClean": true
     },
     "hermes": {
       "repository": "https://github.com/gantbd/hermes",
