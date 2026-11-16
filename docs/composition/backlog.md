@@ -248,8 +248,14 @@ read-only input until that repository settles.
 
 - [x] Capture immutable peer and engine revisions and rerun the full standalone,
   attach and host matrix.
-- [ ] Close source/legal review, upgrade/migration, supported-platform and
-  artifact gates for the selected local deployment.
+- [x] Close source/legal review, upgrade/migration, supported-platform and
+  artifact gates for the selected local deployment. The immutable source
+  qualifier builds an unsigned `aarch64-apple-darwin` tarball on the recorded
+  Darwin 25.6.0 arm64 host, emits a SHA-256 file manifest and exact reviewed
+  transitive license inventory, and qualifies initial install plus atomic
+  same-version replacement without modifying the external version-1 profile.
+  Workbench owns no peer durable state and refuses unknown profile schemas;
+  remote publication, wider platforms, signing and notarization remain open.
 - [x] Qualify the Workbench GUI local dependency closure across clean committed
   Chronos/Vellum engines and GUI peers.
 - [ ] Qualify Workbench GUI artifact distribution, signing and notarization

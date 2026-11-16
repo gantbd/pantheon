@@ -213,6 +213,15 @@ the authenticated daemon and its action ceiling/filesystem adapter remain the
 only effect authority. Save As submission, retirement and other durable intents
 remain outside this claim.
 
+The selected terminal product also has a bounded local release profile. An
+immutable archive closure builds one unsigned `aarch64-apple-darwin` artifact,
+records its SHA-256 file manifest and exact transitive license expressions, and
+qualifies initial install and atomic same-version replacement while preserving
+the external version-1 operator profile. Workbench owns no peer durable state;
+unknown profile schemas fail before connection. Remote publication, automatic
+update, signing/notarization, wider platforms, and GUI distribution remain
+separate cells.
+
 ### 5. Extend peer coverage
 
 Moira now has an independent reusable TUI, standalone interactive/headless CLI,

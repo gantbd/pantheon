@@ -203,7 +203,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
-        "9e46b4edda2eff051310346da415feb65cea7c03"
+        "b88fafc78ee72028f79ebbc38450dc84e9b82f63"
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
@@ -215,7 +215,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "16f28cb4d7f9c31fc362fb09ce23cb2a9730ce56"
+        "df128d4968003b41a2c267d01672b6ff511b8bea"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
@@ -231,7 +231,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
-        "4b343a7d114fd8fb61c5fe978b050db783500fa8"
+        "cd9cd8d73f74a41af0d360f45f08318a49909890"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
@@ -243,11 +243,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "4c650bce6eef21d5c61d3e8538a0a81dccfe81c6"
+        "836ec4ded4bc52eb95cd8aff7ebac68f294896ea"
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "0f3136215409d13ec75fd40e6885243c38ccbbf5"
+        "31121dc6389fbaee5069e094ea362c4910821039"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -255,15 +255,23 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellum"]["revision"],
-        "2edb0d475b44d4e3c635eee899bc8684da4ee3b1"
+        "a59d8a343145b31ff5288499903fb002a1b61a84"
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
-        "982f26afc36f2657777036e1e2d9d4bd45d1a8b5"
+        "a86a8a6eba54a5191c245f87f3664f026403f051"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
         "11d75c218e2e9614ae6bef6bde05b9eb96222c62"
+    );
+    assert_eq!(
+        source["inputs"]["keystone"]["revision"],
+        "d0337e789375e911caed8b02b8a5a9065e29ac1e"
+    );
+    assert_eq!(
+        source["inputs"]["keystoneGit"]["revision"],
+        "8a7970cb77e668f3488ecd97dae7c9e765f170cc"
     );
     for input in [
         "agoraTui",
@@ -278,6 +286,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "aegis",
         "groundingTui",
         "keystone",
+        "keystoneGit",
         "vellum",
         "daimon",
         "dendrite",
@@ -287,6 +296,9 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], true);
+    assert_eq!(source["localRelease"]["qualified"], true);
+    assert_eq!(source["localRelease"]["target"], "aarch64-apple-darwin");
+    assert_eq!(source["localRelease"]["profileSchema"], 1);
     assert_eq!(source["ci"]["qualified"], false);
     assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 1);
     assert!(
@@ -424,6 +436,35 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(qualifier.contains("validate_direct_path_closure(directory, stage)"));
     assert!(qualifier.contains("candidate source closure omits direct dependencies"));
     assert!(qualifier.contains("status[\"peers\"][peer][\"evidence\"]"));
+    for required in [
+        "--local-release",
+        "ALLOWED_LICENSE_EXPRESSIONS",
+        "THIRD_PARTY_LICENSES.tsv",
+        "SHA256SUMS",
+        "write_deterministic_tar_gz",
+        "os.replace(replacement, deployed_binary)",
+        "unsupported[\"version\"] = release[\"profileSchema\"] + 1",
+        "artifact replacement modified the operator-owned profile",
+    ] {
+        assert!(
+            qualifier.contains(required),
+            "local release qualifier omits {required}"
+        );
+    }
+    let local_release =
+        fs::read_to_string(root.join("docs/local-release.md")).expect("local release policy");
+    for required in [
+        "aarch64-apple-darwin",
+        "unsigned",
+        "initial supported Workbench artifact",
+        "owns no durable engine",
+        "unknown schema is refused",
+    ] {
+        assert!(
+            local_release.contains(required),
+            "local release policy omits {required}"
+        );
+    }
     assert!(!qualifier.contains("[\"sh\", \"tests/live/dual_service.sh\"]"));
     assert!(
         architecture.contains("github.com/gantbd/keystone/blob/main/COMPONENT_ARCHITECTURE.md")

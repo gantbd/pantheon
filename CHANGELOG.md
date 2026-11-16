@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added the selected unsigned local `aarch64-apple-darwin` release gate. It
+  reconstructs exact peer commits, builds offline, emits a checksummed artifact
+  with a reviewed transitive license inventory, preserves the operator profile
+  across atomic same-version replacement, and refuses unknown profile schemas.
+- Qualified Vellum's restart-stable Save execute and historical lookup through
+  one peer-owned public-client guard in standalone and Workbench.
 - Qualified Vellum's ordinary witnessed edit/save path through the same
   reusable editor in standalone and hosted Workbench, including exact persisted
   bytes, save-authority refusal and exact replay of an indeterminate save.
