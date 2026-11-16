@@ -53,7 +53,7 @@ hermes-protocol = { version = "=0.1.0", path = "../../hermes/crates/hermes-proto
 aegis-tui = { version = "=0.1.0", path = "../../aegis-tui" }
 aegis-admin-command = { version = "=0.1.0", path = "../../aegis/crates/aegis-admin-command" }
 aegis-admin-session = { version = "=0.1.0", path = "../../aegis/applications/aegis-admin-session" }
-aegis-tui-local-client = { version = "=0.1.0", path = "../../aegis-tui/local-client" }
+aegis-local-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-local-client" }
 aegis-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-client" }
 aegis-wire = { version = "=0.1.0", path = "../../aegis/crates/aegis-wire" }
 grounding-tui = { version = "=0.1.0", path = "../../grounding-tui" }

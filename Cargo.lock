@@ -29,6 +29,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "aegis-local-client"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "aegis-wire",
+]
+
+[[package]]
 name = "aegis-protocol"
 version = "0.1.0"
 
@@ -40,15 +49,6 @@ dependencies = [
  "aegis-protocol",
  "crossterm",
  "ratatui",
-]
-
-[[package]]
-name = "aegis-tui-local-client"
-version = "0.1.0"
-dependencies = [
- "aegis-client",
- "aegis-protocol",
- "aegis-wire",
 ]
 
 [[package]]
@@ -1540,8 +1540,8 @@ dependencies = [
  "aegis-admin-command",
  "aegis-admin-session",
  "aegis-client",
+ "aegis-local-client",
  "aegis-tui",
- "aegis-tui-local-client",
  "aegis-wire",
  "agora-client",
  "agora-local-client",

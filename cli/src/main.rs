@@ -1004,7 +1004,7 @@ fn aegis_revoke_epoch(
     if args.next().is_some() {
         return Err(usage().into());
     }
-    let (session, port) = match aegis_tui_local_client::connect(
+    let (session, port) = match aegis_local_client::connect(
         socket,
         aegis_wire::LimitsV1::default(),
         std::time::Duration::from_secs(5),
@@ -1045,7 +1045,7 @@ fn aegis_revoke_epoch(
             aegis_command_failure("stale_epoch", &format!("current epoch is {actual}"), None)
         }
         Err(aegis_admin_command::RevokeError::MutationTransport(
-            aegis_tui_local_client::ClientError::OutcomeUnknown(error),
+            aegis_local_client::ClientErrorV1::OutcomeUnknown(error),
         )) => aegis_command_failure("outcome_unknown", &error.to_string(), None),
         Err(aegis_admin_command::RevokeError::MutationRefused(refusal)) => {
             aegis_command_failure("refused", &format!("{refusal:?}"), None)
@@ -1104,7 +1104,7 @@ fn aegis_attenuate_authorize_once(
         resource,
         action,
     };
-    let (session, port) = match aegis_tui_local_client::connect(
+    let (session, port) = match aegis_local_client::connect(
         socket,
         aegis_wire::LimitsV1::default(),
         std::time::Duration::from_secs(5),
@@ -1142,7 +1142,7 @@ fn aegis_attenuate_authorize_once(
             aegis_journey_failure("stale_epoch", &format!("current epoch is {actual}"), None)
         }
         Err(aegis_admin_command::JourneyError::Transport {
-            error: aegis_tui_local_client::ClientError::OutcomeUnknown(error),
+            error: aegis_local_client::ClientErrorV1::OutcomeUnknown(error),
             ..
         }) => aegis_journey_failure("outcome_unknown", &error.to_string(), None),
         Err(aegis_admin_command::JourneyError::Refused { refusal, .. }) => {
@@ -1187,7 +1187,7 @@ fn aegis_manage_session(
         (Some(socket), None) => PathBuf::from(socket),
         _ => return Err(usage().into()),
     };
-    let (session, port) = aegis_tui_local_client::connect(
+    let (session, port) = aegis_local_client::connect(
         socket,
         aegis_wire::LimitsV1::default(),
         std::time::Duration::from_secs(5),
@@ -1449,7 +1449,7 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
         None
     };
     let aegis = if let Some(socket) = options.aegis_socket {
-        let (session, port) = aegis_tui_local_client::connect(
+        let (session, port) = aegis_local_client::connect(
             socket,
             aegis_wire::LimitsV1::default(),
             std::time::Duration::from_secs(5),

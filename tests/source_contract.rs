@@ -212,7 +212,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "6492498df8ae67368813b2c44ea4ef0fb8b97a90"
+        "91bc808e34df0a9a386dd72be81efa49fdca50d8"
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
@@ -286,7 +286,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "moira-tui-local-client",
         "daimon-client",
         "hermes-local-client",
-        "aegis-tui-local-client",
+        "aegis-local-client",
         "aegis-admin-session",
         "grounding-tui-local-client",
         "chronos-local",
@@ -298,6 +298,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     }
     assert!(!cli_manifest.contains("hermes-tui-local-client"));
     assert!(!cli_manifest.contains("agora-tui-local-client"));
+    assert!(!cli_manifest.contains("aegis-tui-local-client"));
     assert!(cli_manifest.contains("default = [\"native-chronos\"]"));
     assert!(cli_manifest.contains("chronos-standalone = {"));
     assert!(cli_manifest.contains("optional = true"));

@@ -216,7 +216,7 @@ fn observe_aegis(socket: PathBuf) -> (serde_json::Value, bool) {
     use std::time::Duration;
 
     let capability = aegis_tui::CAPABILITIES.headless[0];
-    let (session, port) = match aegis_tui_local_client::connect(
+    let (session, port) = match aegis_local_client::connect(
         socket,
         aegis_wire::LimitsV1::default(),
         Duration::from_secs(5),
