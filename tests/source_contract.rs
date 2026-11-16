@@ -763,6 +763,30 @@ fn daimon_live_gate_reuses_exact_agent_session_evidence_in_both_workbench_modes(
 }
 
 #[test]
+fn daimon_hosting_uses_the_owner_supervisor_without_importing_provider_policy() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let host = fs::read_to_string(root.join("cli/src/native_host.rs")).expect("native host");
+    for required in [
+        "DaimonProcessOptions",
+        "start_daimon_process",
+        ".arg(\"--supervised\")",
+        "wait_for_process_ready",
+        "stop_supervised_process",
+    ] {
+        assert!(host.contains(required), "Daimon host omits {required}");
+    }
+    for forbidden in ["provider_id", "inherited_environment_names", "aegis_grant_now"] {
+        assert!(
+            !host.contains(forbidden),
+            "Workbench acquired Daimon owner policy through {forbidden}"
+        );
+    }
+    let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI main");
+    assert!(main.contains("options.daimon_host.is_none()"));
+    assert!(main.contains("host.start_daimon_process(daimon.clone())"));
+}
+
+#[test]
 fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =

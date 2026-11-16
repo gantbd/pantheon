@@ -174,6 +174,17 @@ pub struct HermesProcessOptions {
     pub operator_stream: Option<String>,
 }
 
+/// Explicit deployment inputs for Daimon's production interactive-agent
+/// application. Provider, credential, authority, attempt, storage and recovery
+/// policy remain in the opaque Daimon-owned configuration document.
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DaimonProcessOptions {
+    pub executable: PathBuf,
+    pub config: PathBuf,
+    pub socket: PathBuf,
+}
+
 /// Explicit deployment inputs for a Workbench-owned, sovereign Aegis daemon.
 /// These values are passed to Aegis unchanged; Workbench does not interpret
 /// the authority namespace, principal, session namespace, or role as grants.
@@ -331,6 +342,35 @@ impl NativeHost {
         S: FnMut() -> ShutdownDisposition + Send + 'static,
     {
         self.registry.start_or_rollback(HostedPeerId::Daimon, start)
+    }
+
+    /// Starts Daimon's production local-agent application in its owner-defined
+    /// supervised mode. Workbench owns readiness and drain only and attaches
+    /// through the ordinary public agent client.
+    #[cfg(unix)]
+    pub fn start_daimon_process(
+        &mut self,
+        options: DaimonProcessOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        self.start_daimon(|| {
+            let prior_socket = socket_identity(&options.socket);
+            let mut child = Command::new(&options.executable)
+                .arg("--supervised")
+                .arg(&options.config)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|error| format!("Daimon process start refused: {error}"))?;
+            if let Err(error) =
+                wait_for_process_ready(&mut child, &options.socket, "Daimon", prior_socket)
+            {
+                stop_failed_process_start(&mut child);
+                return Err(error);
+            }
+            let mut input = child.stdin.take();
+            Ok(((), move || stop_supervised_process(&mut child, &mut input)))
+        })
     }
 
     /// Starts a deployment-supplied Hermes owner. Retention, authorization,
@@ -545,6 +585,39 @@ fn stop_agora_process(
                     .take()
                     .is_some_and(|mut receipt| agora_cleanup_receipt_is_clean(&mut receipt));
                 return if clean {
+                    ShutdownDisposition::Clean
+                } else {
+                    ShutdownDisposition::Refused
+                };
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(5)),
+            Err(_) => return ShutdownDisposition::OutcomeUnknown,
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    ShutdownDisposition::OutcomeUnknown
+}
+
+#[cfg(unix)]
+fn stop_supervised_process(
+    child: &mut Child,
+    input: &mut Option<ChildStdin>,
+) -> ShutdownDisposition {
+    if child.try_wait().ok().flatten().is_some() {
+        return ShutdownDisposition::Refused;
+    }
+    let Some(mut shutdown) = input.take() else {
+        return ShutdownDisposition::Refused;
+    };
+    if shutdown.write_all(b"x").is_err() {
+        return ShutdownDisposition::Refused;
+    }
+    drop(shutdown);
+    for _ in 0..400 {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                return if status.success() {
                     ShutdownDisposition::Clean
                 } else {
                     ShutdownDisposition::Refused

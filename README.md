@@ -51,9 +51,9 @@ cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interac
 Profiles contain connection configuration, presentation selection and explicit
 cross-service scope mappings. They cannot enable Chronos writes or carry grant
 handles. Continue to pass `--chronos-allow-writes` at launch when intended.
-Agora, Chronos, Vellum, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
+Agora, Chronos, Vellum, Daimon, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
 owns their real local service lifecycles while the same peer clients and TUI
-components are used. Agora, Hermes and Aegis remain sovereign supervised owner
+components are used. Agora, Daimon, Hermes and Aegis remain sovereign supervised owner
 processes rather than linked semantic engines. Hosted Vellum requires a bounded non-empty `roots` list;
 attached profiles must not include roots. Edit and save authority remain
 launch-only through `--vellum-allow-edit` and `--vellum-allow-save`.
@@ -71,6 +71,16 @@ A Daimon profile may pair `agent_socket` with one exact 32-hex-digit
 stable session view and bounded event page in both headless and interactive
 modes. The two fields are all-or-nothing; they confer no open, prompt,
 permission, reattach, cancel, or close authority.
+
+A hosted Daimon profile requires that exact agent selection plus an owner
+`host` containing only the `daimon-local-agent` executable and its opaque
+configuration path. The owner configuration retains provider commands,
+inherited credential names, Aegis/Chronos endpoints, checkpoint directory and
+limits. Workbench invokes Daimon's `--supervised` lifecycle, waits for the
+configured public agent socket, uses the same public client as attach mode, and
+requests a bounded owner-defined drain on exit. A presence socket remains
+optional because the production agent application does not claim to serve the
+separate legacy presence protocol.
 
 Use `--chronos-profile PATH` in place of the initial service directory to
 reopen a workspace saved by `chronos-tui --save-profile`. Relative service

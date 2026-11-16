@@ -64,11 +64,15 @@ read-only input until that repository settles.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
   Hermes, Aegis, and Grounding while preserving separate state, authority,
   recovery and shutdown receipts.
-- [ ] Promote the remaining applicable Moira and Daimon seams to standalone
-  native or supervised profile factories only after each owner supplies
+- [ ] Promote the remaining applicable Moira seam to a standalone native or
+  supervised profile factory only after its owner supplies
   explicit storage, authentication, recovery and shutdown composition and
   passes real lifecycle qualification. Grounding is attach-only by design:
   Dendrite retains its IDE/agent bridge lifecycle.
+- [x] Promote Daimon's production local-agent application to an explicit
+  supervised profile factory after the owner supplied an opaque configuration,
+  exact public agent socket and one-byte drain contract. Workbench does not
+  acquire provider, credential, authority, attempt, storage or recovery policy.
 - [x] Hermes: qualify the owner-supplied selected daemon under Workbench
   lifecycle for explicit creation, recovery, public-client observation and clean
   signal drain without linking engine or substrate internals. The selected
@@ -122,8 +126,8 @@ read-only input until that repository settles.
   reattach only with
   current authority, exact confirmation, durable reconciliation and no-retry
   qualification.
-- [ ] Daimon: add production Workbench hosting only after provider
-  and credential composition is deployment-owned.
+- [ ] Daimon: close the integrated hosted lifecycle gate across the production
+  owner process, ordinary public client, clean drain and durable reopen.
 - [ ] Agora, Chronos and Vellum: add remaining mutations only where standalone
   and Workbench paths preserve identical peer-owned confirmation and receipts.
 

@@ -17,8 +17,8 @@ use workbench_tui_cli::{
     OperationalPeers,
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     native_host::{
-        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, HermesProcessOptions,
-        NativeHost,
+        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, DaimonProcessOptions,
+        HermesProcessOptions, NativeHost,
     },
     profile::{
         AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, DeploymentMode,
@@ -57,6 +57,7 @@ struct Options {
     daimon_agent_socket: Option<PathBuf>,
     daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     daimon_requires: Vec<String>,
+    daimon_host: Option<DaimonProcessOptions>,
     hermes_socket: Option<PathBuf>,
     hermes_stream: Option<hermes_protocol::StreamIdV1>,
     hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
@@ -132,6 +133,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut daimon_agent_socket = None;
     let mut daimon_agent_session = None;
     let mut daimon_requires = Vec::new();
+    let mut daimon_host = None;
     let mut hermes_socket = None;
     let mut hermes_stream = None;
     let mut hermes_consumer = None;
@@ -180,7 +182,21 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             moira_requires = moira.requires;
         }
         if let Some(daimon) = profile.daimon {
-            daimon_socket = Some(daimon.socket);
+            if daimon.deployment == DeploymentMode::Hosted {
+                let host = daimon
+                    .host
+                    .as_ref()
+                    .expect("validated hosted Daimon configuration");
+                daimon_host = Some(DaimonProcessOptions {
+                    executable: host.executable.clone(),
+                    config: host.config.clone(),
+                    socket: daimon
+                        .agent_socket
+                        .clone()
+                        .expect("validated hosted Daimon agent socket"),
+                });
+            }
+            daimon_socket = daimon.socket;
             daimon_agent_socket = daimon.agent_socket;
             daimon_agent_session = daimon
                 .agent_session
@@ -477,6 +493,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_agent_socket,
         daimon_agent_session,
         daimon_requires,
+        daimon_host,
         hermes_socket,
         hermes_stream,
         hermes_consumer,
@@ -2134,6 +2151,7 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     if !options.host_chronos
         && !options.host_vellum
         && options.agora_host.is_none()
+        && options.daimon_host.is_none()
         && options.hermes_host.is_none()
         && options.aegis_host.is_none()
     {
@@ -2179,6 +2197,10 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     if let Some(aegis) = &options.aegis_host {
         host.start_aegis_process(aegis.clone())
             .map_err(|failure| format!("hosted Aegis startup refused: {failure:?}"))?;
+    }
+    if let Some(daimon) = &options.daimon_host {
+        host.start_daimon_process(daimon.clone())
+            .map_err(|failure| format!("hosted Daimon startup refused: {failure:?}"))?;
     }
     if let Some(agora) = &options.agora_host {
         host.start_agora_process(agora.clone())

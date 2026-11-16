@@ -70,11 +70,21 @@ pub struct MoiraProfile {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct DaimonProfile {
-    pub socket: PathBuf,
+    #[serde(default)]
+    pub deployment: DeploymentMode,
+    pub socket: Option<PathBuf>,
     pub agent_socket: Option<PathBuf>,
     pub agent_session: Option<String>,
+    pub host: Option<DaimonHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonHostProfile {
+    pub executable: PathBuf,
+    pub config: PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -251,9 +261,15 @@ impl WorkspaceProfile {
             moira.socket = resolve(base, &moira.socket);
         }
         if let Some(daimon) = &mut profile.daimon {
-            daimon.socket = resolve(base, &daimon.socket);
+            if let Some(socket) = &mut daimon.socket {
+                *socket = resolve(base, socket);
+            }
             if let Some(socket) = &mut daimon.agent_socket {
                 *socket = resolve(base, socket);
+            }
+            if let Some(host) = &mut daimon.host {
+                host.executable = resolve(base, &host.executable);
+                host.config = resolve(base, &host.config);
             }
         }
         if let Some(hermes) = &mut profile.hermes {
@@ -346,7 +362,12 @@ impl WorkspaceProfile {
             if !self.surfaces.contains(&Surface::Daimon) {
                 return Err("Daimon configuration requires the Daimon surface");
             }
-            validate_path(&daimon.socket)?;
+            if daimon.socket.is_none() && daimon.agent_socket.is_none() {
+                return Err("Daimon configuration requires a presence or agent socket");
+            }
+            if let Some(socket) = &daimon.socket {
+                validate_path(socket)?;
+            }
             match (&daimon.agent_socket, &daimon.agent_session) {
                 (Some(socket), Some(session)) => {
                     validate_path(socket)?;
@@ -356,6 +377,22 @@ impl WorkspaceProfile {
                 }
                 (None, None) => {}
                 _ => return Err("Daimon agent socket and session must be configured together"),
+            }
+            match (daimon.deployment, &daimon.host) {
+                (DeploymentMode::Hosted, Some(host)) => {
+                    if daimon.agent_socket.is_none() {
+                        return Err("hosted Daimon requires an exact agent selection");
+                    }
+                    validate_path(&host.executable)?;
+                    validate_path(&host.config)?;
+                }
+                (DeploymentMode::Hosted, None) => {
+                    return Err("hosted Daimon requires an owner configuration");
+                }
+                (DeploymentMode::Attach, Some(_)) => {
+                    return Err("attached Daimon cannot carry owner configuration");
+                }
+                (DeploymentMode::Attach, None) => {}
             }
             validate_required_capabilities(&daimon.requires)?;
         }
@@ -724,6 +761,37 @@ mod tests {
             "agent_session":"not-an-opaque-id"}
         }"#;
         assert!(WorkspaceProfile::parse(invalid, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hosted_daimon_requires_owner_config_and_exact_agent_selection() {
+        let valid = br#"{
+          "version":1,"name":"Daimon host","surfaces":["daimon"],
+          "daimon":{"deployment":"hosted","agent_socket":"agent.sock",
+            "agent_session":"07070707070707070707070707070707",
+            "host":{"executable":"bin/daimon-local-agent","config":"agent.json"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let daimon = profile.daimon.unwrap();
+        assert_eq!(daimon.deployment, DeploymentMode::Hosted);
+        assert!(daimon.socket.is_none());
+        assert_eq!(
+            daimon.host.unwrap().config,
+            Path::new("/tmp/workbench/agent.json")
+        );
+
+        let no_selection = br#"{
+          "version":1,"name":"Daimon host","surfaces":["daimon"],
+          "daimon":{"deployment":"hosted","socket":"presence.sock",
+            "host":{"executable":"daimon-local-agent","config":"agent.json"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(no_selection, Path::new(".")).is_err());
+        let attached_owner = br#"{
+          "version":1,"name":"Daimon attach","surfaces":["daimon"],
+          "daimon":{"socket":"presence.sock",
+            "host":{"executable":"daimon-local-agent","config":"agent.json"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(attached_owner, Path::new(".")).is_err());
     }
 
     #[test]

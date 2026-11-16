@@ -105,9 +105,9 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         peers.push(observation);
         complete &= current;
     }
-    if let Some(socket) = request.daimon_socket {
+    if request.daimon_socket.is_some() || request.daimon_agent_socket.is_some() {
         let (observation, current) = observe_daimon(
-            socket,
+            request.daimon_socket,
             request.daimon_agent_socket,
             request.daimon_agent_session,
         );
@@ -341,7 +341,7 @@ fn observe_hermes(
 }
 
 fn observe_daimon(
-    socket: PathBuf,
+    socket: Option<PathBuf>,
     agent_socket: Option<PathBuf>,
     agent_session: Option<daimon_protocol::AgentSessionIdV1>,
 ) -> (serde_json::Value, bool) {
@@ -351,6 +351,25 @@ fn observe_daimon(
     use std::time::Duration;
 
     let capability = daimon_tui::CAPABILITIES.headless[0];
+    let Some(socket) = socket else {
+        let (agent, current) = match (agent_socket, agent_session) {
+            (Some(socket), Some(session)) => observe_daimon_agent(socket, session),
+            _ => (
+                serde_json::json!({"status": "configuration_refused"}),
+                false,
+            ),
+        };
+        return (
+            serde_json::json!({
+                "peer": "daimon",
+                "capability": "agents.session.inspect.v1",
+                "capabilities": ["agents.session.inspect.v1"],
+                "status": if current { "current" } else { "partial" },
+                "configured_agent_session": agent,
+            }),
+            current,
+        );
+    };
     let (session, port) = match daimon_client::unix::connect(
         socket,
         daimon_wire::LimitsV1::default(),
