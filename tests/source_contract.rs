@@ -250,7 +250,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
     assert_eq!(source["ci"]["qualified"], false);
-    assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 2);
+    assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 3);
+    assert!(source["ci"]["blockers"][1]
+        .as_str()
+        .unwrap()
+        .contains("pinned Daimon revision predates the daimon-client boundary"));
     assert_eq!(source["remoteReachabilityQualified"], false);
     assert_eq!(source["cratesIoPublished"], false);
 
