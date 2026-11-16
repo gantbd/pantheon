@@ -54,9 +54,11 @@ read-only input until that repository settles.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
   Hermes, Aegis, and Grounding while preserving separate state, authority,
   recovery and shutdown receipts.
-- [ ] Promote the remaining seams to standalone native or supervised profile factories
-  only after each owner supplies explicit storage, authentication, recovery and
-  shutdown composition and passes real lifecycle qualification.
+- [ ] Promote the remaining applicable Moira and Daimon seams to standalone
+  native or supervised profile factories only after each owner supplies
+  explicit storage, authentication, recovery and shutdown composition and
+  passes real lifecycle qualification. Grounding is attach-only by design:
+  Dendrite retains its IDE/agent bridge lifecycle.
 - [x] Hermes: qualify the owner-supplied selected daemon under Workbench
   lifecycle for explicit creation, recovery, public-client observation and clean
   signal drain without linking engine or substrate internals. The selected

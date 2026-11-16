@@ -43,13 +43,17 @@ turn partial peer success into aggregate success.
 
 The parity matrix uses these states:
 
+- `not-applicable`: the owning architecture deliberately excludes this cell;
+  a non-empty owner rationale is required in the machine matrix;
 - `absent`: no suitable public boundary exists;
 - `planned`: ownership and exit evidence are documented;
 - `implemented`: code exists with focused tests;
 - `qualified`: real peer/service evidence passes at a named source state;
 - `release-qualified`: immutable inputs and the claimed distribution gate pass.
 
-Interactive, headless, attach and host are classified separately. Read-only
+`not-applicable` is not a softer spelling of missing work. It records that the
+common pattern does not require an identical topology or interaction shape for
+that peer. Interactive, headless, attach and host are classified separately. Read-only
 qualification never implies mutation qualification. Test authority never
 implies production credential provenance.
 
@@ -64,7 +68,7 @@ implies production credential provenance.
 | Daimon | qualified redacted presence | qualified attach | absent | settle active engine work, then exact execution evidence and guarded dispatch/resume |
 | Hermes | qualified content-free observation/cursor plus separate exact-confirmed bounded event disclosure | qualified attach and the same disclosure guard | qualified owner process in both modes | guarded producer-specific append |
 | Aegis | qualified read-only authority observation, bounded pages, exact-confirmed epoch revocation and named managed authority session | qualified observation/navigation plus the same owner guards, managed session, disconnect abandonment and deliberate rebuild | qualified owner process in both modes | no selected-profile parity gap; durable replay/reconciliation are nonclaims |
-| Grounding/Dendrite | qualified typed observation | qualified typed attach | absent | selected surface/read DTOs and deployment-owned hosting |
+| Grounding/Dendrite | qualified typed observation | qualified typed attach | not applicable: Dendrite retains its IDE/agent bridge lifecycle | selected surface/read DTOs; Grounding remains observation-only |
 
 The detailed open-boundary ledger remains `WORKSPACE_GAPS.md`. The ordered
 delivery sequence is in `backlog.md`; Axon and Engram adoption decisions are in

@@ -25,6 +25,7 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         BTreeSet::from([
             "absent",
             "implemented",
+            "not-applicable",
             "planned",
             "qualified",
             "release-qualified",
@@ -59,6 +60,30 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
             states.contains(mutation),
             "unknown mutation state {mutation}"
         );
+        let non_applicable = peer.get("nonApplicable").and_then(Value::as_object);
+        for topology in ["standalone", "attach", "host"] {
+            let selected = ["interactive", "headless"]
+                .iter()
+                .any(|mode| peer[topology][*mode].as_str() == Some("not-applicable"));
+            if selected {
+                assert!(
+                    non_applicable
+                        .and_then(|reasons| reasons.get(topology))
+                        .and_then(Value::as_str)
+                        .is_some_and(|reason| !reason.is_empty()),
+                    "not-applicable {topology} requires an owner rationale"
+                );
+            }
+        }
+        if mutation == "not-applicable" {
+            assert!(
+                non_applicable
+                    .and_then(|reasons| reasons.get("mutation"))
+                    .and_then(Value::as_str)
+                    .is_some_and(|reason| !reason.is_empty()),
+                "not-applicable mutation requires an owner rationale"
+            );
+        }
         if let Some(capabilities) = peer.get("mutationCapabilities") {
             for (capability, state) in capabilities
                 .as_object()

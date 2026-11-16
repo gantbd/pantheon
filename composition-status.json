@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "owner": "workbench-tui",
-  "states": ["absent", "planned", "implemented", "qualified", "release-qualified"],
+  "states": ["not-applicable", "absent", "planned", "implemented", "qualified", "release-qualified"],
   "priorArt": ["axon", "engram"],
   "peers": {
     "aegis": {
@@ -53,8 +53,12 @@
       "readCapability": "grounding.observe.v1",
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
-      "host": { "interactive": "absent", "headless": "absent" },
-      "mutation": "absent"
+      "host": { "interactive": "not-applicable", "headless": "not-applicable" },
+      "mutation": "not-applicable",
+      "nonApplicable": {
+        "host": "Dendrite is an independently deployed IDE and agent bridge; Workbench attaches only to its bounded typed Grounding endpoint.",
+        "mutation": "Grounding is a provenance and freshness observation peer, not an authority-bearing mutation surface."
+      }
     },
     "hermes": {
       "owner": "hermes",
