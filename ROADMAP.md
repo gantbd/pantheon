@@ -110,8 +110,9 @@ conversation or scheduled-composition actions. The deployment still supplies
 the administrator credential mapping, authority epoch, grant lifetime,
 resource, and opaque subject. Agora now also owns an ordered durable create, clean-open, and
 exact endpoint-residue-recovery factory. Its shared owner loop now accepts an
-idempotent shutdown wakeup and returns the exact drain/cleanup receipt; only
-the standalone configuration/OS-signal entrypoint remains. A single Workbench process and lock
+idempotent shutdown wakeup and returns the exact drain/cleanup receipt. Its
+bounded standalone configuration and POSIX signal wrapper reuse that owner;
+real standalone and Workbench process qualification remain. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
@@ -315,6 +316,6 @@ read-only peer surfaces: each peer supplies a reusable component, a separate
 standalone CLI, an explicit headless path, a peer-owned capability manifest,
 and both Workbench attach and host composition. Production activation is a
 separate deployment claim. It remains gated by completion of Agora's
-owner-side standalone configuration/OS-signal entrypoint and by convergence
+owner-side real standalone/hosted process qualification and by convergence
 on one Keystone source identity; Workbench must not absorb either policy merely
 to make the matrix appear complete.

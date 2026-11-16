@@ -39,8 +39,9 @@ read-only input until that repository settles.
   lifetime, resource, subject, and administrator credential mapping. Remaining
   The owner factory now orders durable create, clean open, and exact endpoint
   residue recovery, and the shared owner loop returns an exact cleanup receipt
-  after explicit shutdown and drain. The remaining input is the standalone
-  configuration/OS-signal entrypoint.
+  after explicit shutdown and drain. The bounded standalone configuration and
+  POSIX signal entrypoint now reuse that owner. Remaining work is a real
+  Aegis/Agora standalone journey and Workbench-owned process qualification.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,
