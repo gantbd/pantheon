@@ -123,6 +123,7 @@ gantbd/
   aegis-tui/
   dendrite/
   grounding-tui/
+  keystone/
   moira/
   moira-tui/
   vellum/
@@ -139,6 +140,9 @@ inputs are committed and remotely reachable.
 The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Grounding, Hermes, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
+It also pins Keystone as an explicit substrate source input because selected
+owner crates resolve its local mechanisms; this records source closure without
+making Keystone a product, presentation, or semantic integration layer.
 Remaining owner working trees and remote reachability remain unqualified.
 The archived-source preflight additionally proves that the recorded Vellum and
 Daimon revisions predate direct boundaries consumed by Workbench:

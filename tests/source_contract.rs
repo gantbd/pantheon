@@ -242,6 +242,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "aegisTui",
         "aegis",
         "groundingTui",
+        "keystone",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
@@ -374,6 +375,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         fs::read_to_string(root.join("scripts/qualify-source.py")).expect("source qualifier");
     assert!(qualifier.contains("\"agora\","));
     assert!(qualifier.contains("\"agora-tui\","));
+    assert!(qualifier.contains("\"keystone\","));
     assert!(qualifier.contains("run_live_evidence(stage)"));
     assert!(qualifier.contains("validate_direct_path_closure(directory, stage)"));
     assert!(qualifier.contains("candidate source closure omits direct dependencies"));

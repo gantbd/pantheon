@@ -68,6 +68,11 @@
       "revision": "11d75c218e2e9614ae6bef6bde05b9eb96222c62",
       "workingTreeClean": true
     },
+    "keystone": {
+      "repository": "https://github.com/gantbd/keystone",
+      "revision": "8a7970cb77e668f3488ecd97dae7c9e765f170cc",
+      "workingTreeClean": true
+    },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
       "revision": "e14077c723d99d0f60b7687ad0e4dda26efd5364",
