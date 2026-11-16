@@ -98,9 +98,10 @@ read-only input until that repository settles.
   reconciliation and Aegis mapping.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
-  the real Aegis daemon and public Unix client; the deployment must still select
-  peer provenance, production session/grant issuance, trusted time source,
-  endpoint receipts/network policy, and durable owner lifecycle.
+  the real Aegis daemon and public Unix client, including live epoch revocation
+  fencing a previously valid grant; the deployment must still select peer
+  provenance, production session/grant issuance, trusted time source, endpoint
+  receipts/network policy, and durable owner lifecycle.
 - [ ] Complete Moira's process-separated Agora/Vellum workflow and every-boundary
   lost-reply matrix.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
