@@ -44,6 +44,10 @@ read-only input until that repository settles.
 - [x] Hermes: qualify the owner-supplied read-only daemon under Workbench
   lifecycle for explicit creation, recovery, public-client observation and clean
   signal drain without linking engine or substrate internals.
+- [x] Aegis: qualify the owner-supplied daemon under Workbench lifecycle with
+  explicit authority/principal/session/role facts, create/open recovery, the
+  ordinary public client and clean signal drain. Workbench retains no grant,
+  clock, authentication or authority policy.
 
 ## P2 — operational depth
 

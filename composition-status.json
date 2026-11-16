@@ -10,7 +10,7 @@
       "readCapability": "authority.observe.v1",
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
-      "host": { "interactive": "absent", "headless": "absent" },
+      "host": { "interactive": "qualified", "headless": "qualified" },
       "mutation": "planned",
       "mutationCapabilities": {
         "authority.revoke-epoch.v1": "qualified",
@@ -61,7 +61,7 @@
       "readCapability": "ledger.observe.v1",
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
-      "host": { "interactive": "implemented", "headless": "qualified" },
+      "host": { "interactive": "qualified", "headless": "qualified" },
       "mutation": "planned",
       "disclosureCapabilities": {
         "ledger.events.disclose.v1": "qualified"

@@ -522,6 +522,42 @@ fn hermes_hosted_gate_uses_the_owner_daemon_and_public_client() {
 }
 
 #[test]
+fn aegis_hosted_gate_uses_the_owner_daemon_and_public_client() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/aegis_hosted.sh")).expect("hosted Aegis gate");
+    for required in [
+        "--package aegis-daemon",
+        "\"deployment\": \"hosted\"",
+        "\\\"mode\\\": \\\"$mode\\\"",
+        "authority.observe.v1",
+        "\"role\": \"administrator\"",
+        "hosted_shutdown",
+        "disposition\": \"clean",
+        "run_profile create",
+        "run_profile open",
+        "interactive",
+        "epoch: 2",
+        "reopened_after_interactive",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted Aegis gate omits {required}"
+        );
+    }
+    for forbidden in [
+        "--package aegis-host",
+        "--package aegis-service",
+        "keystone-storage",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "hosted Aegis gate links owner internals through {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn moira_live_gate_reuses_selected_saga_evidence_in_both_workbench_modes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =

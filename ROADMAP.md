@@ -233,6 +233,15 @@ post-send failure remains uncertain without retry. Reusable grant management
 remains excluded because handles are session-local and lost replies cannot yet
 be reconciled to an exact grant.
 
+Aegis now also supplies a standalone shutdown-aware owner daemon. Its explicit
+deployment inputs select create/open recovery, authority namespace, exact kernel
+peer mapping, principal, session namespace and administrator/principal role.
+Workbench supervises that sovereign process, waits for its socket, connects the
+ordinary public client and records signal-drain receipts. Headless create/open
+and interactive reopen are qualified without linking Aegis engine, service,
+storage or authentication implementations into Workbench. Long-lived grant
+management remains an Aegis command-owner problem, not hosting authority.
+
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
 place for one headless Workbench invocation and now also observes Grounding
 through Dendrite's typed endpoint. The current qualification passes against all
@@ -266,8 +275,8 @@ outcome unknown, recovery, and orderly/partial shutdown cases.
 Current status: the standalone and Workbench-attach read cells pass for Agora,
 Chronos, and Vellum with explicit capability IDs and versioned configuration or
 service failure envelopes. All three standalone paths have real-service gates.
-The Workbench-host row passes for Chronos and Vellum in both modes and for the
-Hermes read-only owner process in headless create/reopen mode. Agora's
+The Workbench-host row passes for Chronos, Vellum, Hermes and Aegis in both
+modes, including durable create/open and clean owner-process drain. Agora's
 hosted lifecycle, public client, reusable rendering, and headless observation
 pass through an injected factory against its real daemon; the factory's test
 authority is not production credential provenance and is not promoted by this

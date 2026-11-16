@@ -89,9 +89,40 @@ pub enum HermesOpenMode {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AegisProfile {
+    #[serde(default)]
+    pub deployment: DeploymentMode,
     pub socket: PathBuf,
+    pub host: Option<AegisHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct AegisHostProfile {
+    pub executable: PathBuf,
+    pub directory: PathBuf,
+    pub mode: AegisOpenMode,
+    pub authority: String,
+    pub effective_uid: u32,
+    pub effective_gid: u32,
+    pub principal: String,
+    pub session_namespace: String,
+    pub role: AegisRole,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum AegisOpenMode {
+    Create,
+    Open,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum AegisRole {
+    Administrator,
+    Principal,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -196,6 +227,10 @@ impl WorkspaceProfile {
         }
         if let Some(aegis) = &mut profile.aegis {
             aegis.socket = resolve(base, &aegis.socket);
+            if let Some(host) = &mut aegis.host {
+                host.executable = resolve(base, &host.executable);
+                host.directory = resolve(base, &host.directory);
+            }
         }
         if let Some(grounding) = &mut profile.grounding
             && let Some(token) = &mut grounding.token
@@ -308,6 +343,26 @@ impl WorkspaceProfile {
                 return Err("Aegis configuration requires the Aegis surface");
             }
             validate_path(&aegis.socket)?;
+            match (aegis.deployment, &aegis.host) {
+                (DeploymentMode::Hosted, Some(host)) => {
+                    validate_path(&host.executable)?;
+                    validate_path(&host.directory)?;
+                    validate_lower_hex(&host.authority, 32, "hosted Aegis authority")?;
+                    validate_lower_hex(&host.principal, 32, "hosted Aegis principal")?;
+                    validate_lower_hex(
+                        &host.session_namespace,
+                        16,
+                        "hosted Aegis session namespace",
+                    )?;
+                }
+                (DeploymentMode::Hosted, None) => {
+                    return Err("hosted Aegis requires an explicit host configuration");
+                }
+                (DeploymentMode::Attach, Some(_)) => {
+                    return Err("attached Aegis cannot declare a host configuration");
+                }
+                (DeploymentMode::Attach, None) => {}
+            }
             validate_required_capabilities(&aegis.requires)?;
         }
         if let Some(grounding) = &self.grounding {
@@ -426,6 +481,26 @@ fn validate_required_capabilities(values: &[String]) -> Result<(), &'static str>
         }
     }
     Ok(())
+}
+
+fn validate_lower_hex(value: &str, length: usize, field: &'static str) -> Result<(), &'static str> {
+    if value.len() == length
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        Ok(())
+    } else {
+        Err(match field {
+            "hosted Aegis authority" => {
+                "hosted Aegis authority must be 32 lowercase hexadecimal digits"
+            }
+            "hosted Aegis principal" => {
+                "hosted Aegis principal must be 32 lowercase hexadecimal digits"
+            }
+            _ => "hosted Aegis session namespace must be 16 lowercase hexadecimal digits",
+        })
+    }
 }
 
 fn validate_binding<'a>(
@@ -573,6 +648,43 @@ mod tests {
               "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707"}}
         }"#;
         assert!(WorkspaceProfile::parse(attached_host, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hosted_aegis_requires_explicit_owner_inputs_and_canonical_authority_facts() {
+        let valid = br#"{
+          "version":1,"name":"Aegis","surfaces":["aegis"],
+          "aegis":{"deployment":"hosted","socket":"aegis.sock",
+            "host":{"executable":"bin/aegis-daemon","directory":"authority","mode":"create",
+              "authority":"01010101010101010101010101010101",
+              "effective_uid":501,"effective_gid":20,
+              "principal":"02020202020202020202020202020202",
+              "session_namespace":"0303030303030303","role":"administrator"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let host = profile.aegis.unwrap().host.unwrap();
+        assert_eq!(
+            host.executable,
+            Path::new("/tmp/workbench/bin/aegis-daemon")
+        );
+        assert_eq!(host.directory, Path::new("/tmp/workbench/authority"));
+        assert_eq!(host.role, AegisRole::Administrator);
+
+        let missing_host = br#"{
+          "version":1,"name":"Aegis","surfaces":["aegis"],
+          "aegis":{"deployment":"hosted","socket":"aegis.sock"}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_host, Path::new(".")).is_err());
+        let invalid_authority = br#"{
+          "version":1,"name":"Aegis","surfaces":["aegis"],
+          "aegis":{"deployment":"hosted","socket":"aegis.sock",
+            "host":{"executable":"aegis-daemon","directory":"authority","mode":"open",
+              "authority":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "effective_uid":501,"effective_gid":20,
+              "principal":"02020202020202020202020202020202",
+              "session_namespace":"0303030303030303","role":"principal"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(invalid_authority, Path::new(".")).is_err());
     }
 
     #[test]

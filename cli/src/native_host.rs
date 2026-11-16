@@ -43,24 +43,24 @@ pub struct NativeHost {
 }
 
 #[cfg(unix)]
-fn wait_for_hermes_ready(child: &mut Child, socket: &Path) -> Result<(), String> {
+fn wait_for_process_ready(child: &mut Child, socket: &Path, peer: &str) -> Result<(), String> {
     for _ in 0..400 {
         if let Some(status) = child
             .try_wait()
-            .map_err(|error| format!("Hermes readiness check failed: {error}"))?
+            .map_err(|error| format!("{peer} readiness check failed: {error}"))?
         {
-            return Err(format!("Hermes stopped before readiness: {status}"));
+            return Err(format!("{peer} stopped before readiness: {status}"));
         }
         if fs::symlink_metadata(socket).is_ok_and(|metadata| metadata.file_type().is_socket()) {
             return Ok(());
         }
         thread::sleep(Duration::from_millis(5));
     }
-    Err("Hermes readiness deadline expired".to_owned())
+    Err(format!("{peer} readiness deadline expired"))
 }
 
 #[cfg(unix)]
-fn signal_hermes(child: &Child) -> Result<(), nix::errno::Errno> {
+fn signal_process(child: &Child) -> Result<(), nix::errno::Errno> {
     nix::sys::signal::kill(
         nix::unistd::Pid::from_raw(i32::try_from(child.id()).unwrap_or(i32::MAX)),
         nix::sys::signal::Signal::SIGTERM,
@@ -68,9 +68,9 @@ fn signal_hermes(child: &Child) -> Result<(), nix::errno::Errno> {
 }
 
 #[cfg(unix)]
-fn stop_failed_start(child: &mut Child) {
+fn stop_failed_process_start(child: &mut Child) {
     if child.try_wait().ok().flatten().is_none() {
-        let _ = signal_hermes(child);
+        let _ = signal_process(child);
         for _ in 0..100 {
             if child.try_wait().ok().flatten().is_some() {
                 return;
@@ -83,7 +83,7 @@ fn stop_failed_start(child: &mut Child) {
 }
 
 #[cfg(unix)]
-fn stop_hermes_process(child: &mut Child) -> ShutdownDisposition {
+fn stop_process(child: &mut Child) -> ShutdownDisposition {
     if let Ok(Some(status)) = child.try_wait() {
         return if status.success() {
             ShutdownDisposition::Clean
@@ -91,7 +91,7 @@ fn stop_hermes_process(child: &mut Child) -> ShutdownDisposition {
             ShutdownDisposition::Refused
         };
     }
-    if signal_hermes(child).is_err() {
+    if signal_process(child).is_err() {
         return ShutdownDisposition::Refused;
     }
     for _ in 0..400 {
@@ -132,6 +132,24 @@ pub struct HermesProcessOptions {
     pub effective_uid: u32,
     pub effective_gid: u32,
     pub subject: String,
+}
+
+/// Explicit deployment inputs for a Workbench-owned, sovereign Aegis daemon.
+/// These values are passed to Aegis unchanged; Workbench does not interpret
+/// the authority namespace, principal, session namespace, or role as grants.
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AegisProcessOptions {
+    pub executable: PathBuf,
+    pub directory: PathBuf,
+    pub socket: PathBuf,
+    pub create: bool,
+    pub authority: String,
+    pub effective_uid: u32,
+    pub effective_gid: u32,
+    pub principal: String,
+    pub session_namespace: String,
+    pub administrator: bool,
 }
 
 impl Default for NativeHost {
@@ -266,11 +284,11 @@ impl NativeHost {
                 .stderr(Stdio::piped())
                 .spawn()
                 .map_err(|error| format!("Hermes process start refused: {error}"))?;
-            if let Err(error) = wait_for_hermes_ready(&mut child, &options.socket) {
-                stop_failed_start(&mut child);
+            if let Err(error) = wait_for_process_ready(&mut child, &options.socket, "Hermes") {
+                stop_failed_process_start(&mut child);
                 return Err(error);
             }
-            Ok(((), move || stop_hermes_process(&mut child)))
+            Ok(((), move || stop_process(&mut child)))
         })
     }
 
@@ -284,6 +302,42 @@ impl NativeHost {
         S: FnMut() -> ShutdownDisposition + Send + 'static,
     {
         self.registry.start_or_rollback(HostedPeerId::Aegis, start)
+    }
+
+    /// Starts the owner-supplied Aegis application as a sovereign process.
+    /// Workbench owns readiness and shutdown only; Aegis retains authority,
+    /// authentication, role, persistence, session and wire behavior.
+    #[cfg(unix)]
+    pub fn start_aegis_process(
+        &mut self,
+        options: AegisProcessOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        self.start_aegis(|| {
+            let mut child = Command::new(&options.executable)
+                .arg(if options.create { "create" } else { "open" })
+                .arg(&options.directory)
+                .arg(&options.socket)
+                .arg(&options.authority)
+                .arg(options.effective_uid.to_string())
+                .arg(options.effective_gid.to_string())
+                .arg(&options.principal)
+                .arg(&options.session_namespace)
+                .arg(if options.administrator {
+                    "administrator"
+                } else {
+                    "principal"
+                })
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|error| format!("Aegis process start refused: {error}"))?;
+            if let Err(error) = wait_for_process_ready(&mut child, &options.socket, "Aegis") {
+                stop_failed_process_start(&mut child);
+                return Err(error);
+            }
+            Ok(((), move || stop_process(&mut child)))
+        })
     }
 
     /// Starts a deployment-supplied Grounding/Dendrite owner. The returned

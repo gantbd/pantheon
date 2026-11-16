@@ -51,9 +51,10 @@ cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interac
 Profiles contain connection configuration, presentation selection and explicit
 cross-service scope mappings. They cannot enable Chronos writes or carry grant
 handles. Continue to pass `--chronos-allow-writes` at launch when intended.
-Chronos and Vellum profiles may select `"deployment":"hosted"`. Workbench then
+Chronos, Vellum, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
 owns their real local service lifecycles while the same peer clients and TUI
-components are used. Hosted Vellum requires a bounded non-empty `roots` list;
+components are used. Hermes and Aegis remain sovereign supervised owner
+processes rather than linked semantic engines. Hosted Vellum requires a bounded non-empty `roots` list;
 attached profiles must not include roots. Edit and save authority remain
 launch-only through `--vellum-allow-edit` and `--vellum-allow-save`.
 Each configured peer may also carry a bounded `requires` list. Workbench checks
@@ -185,6 +186,15 @@ exact current epoch and literal confirmation, attempt each mutation once, and
 never retry an uncertain result. The bounded authority journey keeps its parent
 and child handles inside one authenticated connection and returns only redacted
 authorization facts. Reusable issue and attenuation management remain unavailable.
+
+Run `sh tests/live/aegis_hosted.sh` to qualify Workbench-owned lifecycle for
+Aegis's standalone daemon. The profile supplies explicit create/open mode,
+daemon path, durable directory, socket, authority namespace, OS peer identity,
+principal, session namespace and role. Workbench waits for the owner socket,
+observes through the same public client in headless and interactive modes,
+requests signal drain, verifies clean socket removal and reopens the same
+authority. It links no Aegis engine/service/storage crate and treats none of
+those deployment facts as a grant.
 
 Run `sh tests/live/grounding_attach.sh` to qualify the independently packaged
 Grounding peer through Dendrite's typed authenticated observation endpoint in
