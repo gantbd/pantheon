@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added exact-confirmed Daimon detached-session reattach to standalone and
+  Workbench through one owner parser and guard, with full execution-envelope
+  binding, exact revision fencing and no retry after uncertain delivery.
 - Normalized the Vellum and Workbench source closures on the workspace's exact
   Keystone revision. Archived qualification now materializes that immutable
   local Git object under the declared GitHub identity in a private Cargo home,

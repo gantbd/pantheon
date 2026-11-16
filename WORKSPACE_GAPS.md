@@ -38,7 +38,7 @@ connection without treating a manifest match as service authorization.
 | Chronos | Reused TUI; real-service read and selected guarded-write journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service; selected guarded-write profile with exact durable reopen | Native owner; interactive + headless client path; joined drain; selected guarded-write profile with exact durable reopen |
 | Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 | Moira | Reused saga TUI; real-daemon census/evidence/receipt journey | `sagas.inspect.v1`; real SQLite daemon | Interactive evidence/receipt component + aggregate census; real daemon | Open; attach only |
-| Daimon | Reused redacted presence plus exact configured agent-session TUI; separate guarded advance, cancel, close, prompt and permission commands | `agents.presence.v1`, `agents.session.inspect.v1`, exact-confirmed `agents.session.advance.v1`, `agents.session.cancel.v1`, and `agents.session.close.v1`, digest-bound `agents.session.prompt.v1`, and exact-challenge `agents.session.permission.v1`; real bounded Unix profiles | Interactive component + aggregate headless with stable bounded events; same owner mutation guards and strict operator documents | Open; attach only |
+| Daimon | Reused redacted presence plus exact configured agent-session TUI; separate guarded advance, cancel, close, reattach, prompt and permission commands | `agents.presence.v1`, `agents.session.inspect.v1`, exact-confirmed `agents.session.advance.v1`, `agents.session.cancel.v1`, `agents.session.close.v1`, and `agents.session.reattach.v1`, digest-bound `agents.session.prompt.v1`, and exact-challenge `agents.session.permission.v1`; real bounded Unix profiles | Interactive component + aggregate headless with stable bounded events; same owner mutation guards and strict operator documents | Open; attach only |
 | Hermes | Reused ledger TUI plus owner guards | `ledger.observe.v1`, `ledger.acknowledge.v1`, `ledger.compact.v1`; real durable selected daemon | Interactive component + aggregate headless; exact-confirmed owner commands | Observer/operator owner process; create/reopen, guarded mutation and clean drain qualified in both modes |
 | Aegis | Reused read-only authority TUI plus peer-owned authority guards | `authority.observe.v1`, `authority.revoke-epoch.v1`, bounded `authority.attenuate-authorize-once.v1`, and `aegis.admin-session.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed owner commands and long-lived named manager; grant handles never escape | Owner daemon, managed session, disconnect abandonment and deliberate rebuild qualified; replay/reconciliation remain nonclaims |
 | Grounding | Reused typed Grounding TUI | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Not applicable; attach to independently deployed Dendrite |
@@ -85,9 +85,9 @@ qualified across all three interactive panes and one aggregate headless report.
    authority, revision, durable receipts, and outcome-unknown recovery; retain
    the now-qualified read-only evidence/receipt path unchanged.
 3. Retain Daimon's qualified exact-session evidence, bounded active-turn
-   advance, cancellation, close, prompt-dispatch and permission-decision paths;
-   add reattach only with its own confirmation, current authority, no-redispatch
-   and uncertainty evidence.
+   advance, cancellation, close, reattach, prompt-dispatch and
+   permission-decision paths; add native hosting only after provider and
+   credential composition is deployment-owned.
 4. Extend the typed Dendrite presentation boundary with selected surface/read
    DTOs only after their content disclosure, provenance, freshness, and bounds
    are fixed; MCP remains outside Workbench's internal protocol.

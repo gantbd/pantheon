@@ -527,7 +527,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Daimon cancellation, close and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\nworkbench-tui daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -555,6 +555,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "daimon-agent-close")
     {
         return daimon_agent_close(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "daimon-agent-reattach")
+    {
+        return daimon_agent_reattach(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)
@@ -991,6 +997,119 @@ fn daimon_close_failure(
             "shell": "workbench",
             "peer": "daimon",
             "capability": daimon_agent_command::CLOSE_CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation,
+            "actual_revision": actual.map(|view| view.revision),
+            "actual_phase": actual.map(|view| format!("{:?}", view.phase)),
+            "actual_active_turn": actual.and_then(|view| view.active_turn).map(|_| "present"),
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
+}
+
+fn daimon_agent_reattach(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use daimon_agent_command::{ReattachError, parse_reattach_document};
+    use daimon_client::unix::AgentClientErrorV1;
+    use daimon_protocol::agent::AgentOutcomeV1;
+    use std::time::Duration;
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let document_path = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let document = read_daimon_bounded(&document_path, 64 * 1024)?;
+    let request = parse_reattach_document(&document)
+        .map_err(|error| format!("Daimon reattach document refused: {error:?}"))?;
+    let (service_session, port) = match daimon_client::unix::connect_agent(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => {
+            return daimon_reattach_failure("not_sent", &format!("{error:?}"), None, None);
+        }
+    };
+    match daimon_agent_command::reattach(service_session, port, request, &confirmation) {
+        Ok(AgentOutcomeV1::Session(view)) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "daimon",
+                    "capability": daimon_agent_command::REATTACH_CAPABILITY,
+                    "complete": true,
+                    "status": "reattached",
+                    "revision": view.revision,
+                    "phase": format!("{:?}", view.phase),
+                    "active_turn": view.active_turn.map(|_| "present"),
+                    "last_event_cursor": view.last_event_cursor,
+                }))?
+            );
+            Ok(())
+        }
+        Ok(AgentOutcomeV1::OutcomeUnknown { .. }) => daimon_reattach_failure(
+            "outcome_unknown",
+            "Daimon retained an indeterminate reattach outcome; inspect before any further action",
+            None,
+            None,
+        ),
+        Ok(AgentOutcomeV1::Events(_)) => daimon_reattach_failure(
+            "invalid_reply",
+            "unexpected Daimon reattach reply",
+            None,
+            None,
+        ),
+        Err(ReattachError::ConfirmationMismatch { required }) => daimon_reattach_failure(
+            "confirmation_refused",
+            "exact Daimon reattach confirmation required",
+            Some(&required),
+            None,
+        ),
+        Err(ReattachError::SessionChanged { actual }) => daimon_reattach_failure(
+            "stale_session",
+            "Daimon session must remain at the exact resume-capable detached revision",
+            None,
+            Some(&actual),
+        ),
+        Err(ReattachError::MutationTransport(AgentClientErrorV1::OutcomeUnknown(error))) => {
+            daimon_reattach_failure("outcome_unknown", &format!("{error:?}"), None, None)
+        }
+        Err(ReattachError::ObservationTransport(AgentClientErrorV1::NotSent(error)))
+        | Err(ReattachError::MutationTransport(AgentClientErrorV1::NotSent(error))) => {
+            daimon_reattach_failure("not_sent", &format!("{error:?}"), None, None)
+        }
+        Err(ReattachError::ObservationRefused(refusal))
+        | Err(ReattachError::MutationRefused(refusal)) => {
+            daimon_reattach_failure("refused", &format!("{refusal:?}"), None, None)
+        }
+        Err(error) => daimon_reattach_failure("unavailable", &format!("{error:?}"), None, None),
+    }
+}
+
+fn daimon_reattach_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+    actual: Option<&daimon_protocol::agent::AgentSessionViewV1>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "daimon",
+            "capability": daimon_agent_command::REATTACH_CAPABILITY,
             "complete": false,
             "status": status,
             "required_confirmation": required_confirmation,

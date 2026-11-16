@@ -208,7 +208,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "efe42c78bed619d49c6ca28a20fa3c91ccb6e8dc"
+        "5bc81cb53b13fe79c6f2061911ddb868ddce1e88"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
@@ -232,7 +232,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "d152f74a52e93642cd0f79fa895d0a355646290f"
+        "0f3136215409d13ec75fd40e6885243c38ccbbf5"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -829,6 +829,34 @@ fn daimon_close_reuses_the_owner_guard_in_standalone_and_workbench() {
     let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
     assert!(cli.contains("daimon_agent_command::close"));
     assert!(!cli.contains("AgentCommandV1::Close"));
+}
+
+#[test]
+fn daimon_reattach_reuses_the_owner_guard_and_document_in_both_shells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_reattach.sh"))
+        .expect("Daimon reattach gate");
+    for required in [
+        "agent_reattach_fixture",
+        "daimon-tui",
+        "workbench-tui",
+        "daimon-agent-reattach",
+        "agents.session.reattach.v1",
+        "request.json",
+        "standalone.marker",
+        "workbench.marker",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon reattach gate omits {required}"
+        );
+    }
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(cli.contains("daimon_agent_command::reattach"));
+    assert!(cli.contains("parse_reattach_document"));
+    assert!(!cli.contains("AgentCommandV1::Reattach"));
 }
 
 #[test]

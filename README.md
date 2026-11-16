@@ -280,6 +280,13 @@ Both shells reuse the owner guard that accepts only an exact Ready revision
 with no active turn, so active work must be cancelled first. Close is attempted
 once and an uncertain delivery remains an inspection/reconciliation problem.
 
+Run `sh tests/live/daimon_reattach.sh` to qualify
+`agents.session.reattach.v1`. Both shells parse the same strict credential-free
+execution document and reuse the owner guard that accepts only an exact
+resume-capable `ReattachRequired` revision with no active turn. Confirmation
+binds the complete fresh execution envelope; the single attempt neither
+replays history nor submits a prompt, and uncertain delivery is not retried.
+
 Run `sh tests/live/daimon_prompt.sh` to qualify
 `agents.session.prompt.v1`. Standalone Daimon and Workbench parse the same
 strict credential-free request document and invoke the same owner guard. Prompt
