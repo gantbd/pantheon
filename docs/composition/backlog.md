@@ -104,8 +104,13 @@ read-only input until that repository settles.
   transition, command-scoped lookup cannot admit missing work, and V4 returns
   the original allocation. The same public client is qualified with real Aegis
   and Chronos daemons through a deliberately discarded reply.
-- [ ] Add the remaining Chronos cancellation coordinator and post-cancellation
-  reconciliation without treating cancellation as proof Agora did not publish.
+- [x] Add retained Chronos V8 cancellation with exact-reference guards and a
+  non-admitting scoped lookup; the real dual-daemon gate discards and recovers
+  both admission and cancellation replies without a second mutation.
+- [x] Preserve the post-offer cut: even known Chronos cancellation remains
+  reconciliation-required and is never treated as proof Agora did not publish.
+- [ ] Supply the deployed Agora retained-observation endpoint that can resolve
+  the remaining post-offer cut from Agora's own authoritative evidence.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
   the real Aegis daemon and public Unix client, including live epoch revocation
