@@ -72,9 +72,12 @@ read-only input until that repository settles.
 - [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
   one-attempt epoch revocation in standalone and Workbench, preserving
   `outcome_unknown` without retry.
-- [ ] Aegis: guarded long-lived issue/attenuate administration with exact
-  resource/action confirmation and reconcilable operation identity. One-shot
-  commands are invalid because grant handles are session-local.
+- [x] Aegis: reuse the owner-supplied bounded administration-session protocol
+  for named issue/attenuate/authorize/list/close in standalone and Workbench;
+  grant handles remain session-local and private to the shared manager.
+- [ ] Aegis: qualify explicit disconnect/reconnect abandonment and deliberate
+  rebuild under new operation names. Do not claim durable grant replay or
+  lost-reply reconciliation.
 - [x] Aegis: preserve bounded redacted grant/decision pagination through the
   same read-only component in standalone and Workbench interactive paths.
 - [ ] Daimon: after active work settles, exact execution/provider evidence and

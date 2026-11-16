@@ -11,6 +11,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aegis-admin-session"
+version = "0.1.0"
+dependencies = [
+ "aegis-admin-command",
+ "aegis-client",
+ "aegis-protocol",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "aegis-client"
 version = "0.1.0"
 dependencies = [
@@ -1520,6 +1531,7 @@ name = "workbench-tui-cli"
 version = "0.1.0"
 dependencies = [
  "aegis-admin-command",
+ "aegis-admin-session",
  "aegis-client",
  "aegis-tui",
  "aegis-tui-local-client",

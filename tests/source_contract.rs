@@ -108,6 +108,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         "qualified"
     );
     assert_eq!(
+        peers["aegis"]["mutationCapabilities"]["aegis.admin-session.v1"],
+        "qualified"
+    );
+    assert_eq!(
         peers["hermes"]["disclosureCapabilities"]["ledger.events.disclose.v1"],
         "qualified"
     );
@@ -183,11 +187,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "286d3f3af4f8680fb2d0695abde3cdec32d2cb69"
+        "f12d013b6c856749ef65457f575ec409482c09cc"
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
-        "60d5a18eb95630735564088de0affd4c3b3dc391"
+        "2ddb0631203d89b5c656c341d3b0dff3d2e6cdc4"
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
@@ -258,6 +262,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "daimon-client",
         "hermes-tui-local-client",
         "aegis-tui-local-client",
+        "aegis-admin-session",
         "grounding-tui-local-client",
         "chronos-local",
         "chronos-standalone",
@@ -384,6 +389,11 @@ fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
         "authority.observe.v1",
         "authority.revoke-epoch.v1",
         "authority.attenuate-authorize-once.v1",
+        "aegis-manage-session",
+        "ISSUE AEGIS OP",
+        "ATTENUATE AEGIS OP",
+        "AUTHORIZE AEGIS OP",
+        "\"handle\" not in rendered",
         "REVOKE AEGIS EPOCH 0",
         "AUTHORIZE AEGIS EPOCH 0 hermes",
         "\"grant\" not in value",

@@ -50,12 +50,12 @@
     },
     "aegis": {
       "repository": "https://github.com/gantbd/aegis",
-      "revision": "60d5a18eb95630735564088de0affd4c3b3dc391",
+      "revision": "2ddb0631203d89b5c656c341d3b0dff3d2e6cdc4",
       "workingTreeClean": true
     },
     "aegisTui": {
       "repository": "https://github.com/gantbd/aegis-tui",
-      "revision": "286d3f3af4f8680fb2d0695abde3cdec32d2cb69",
+      "revision": "f12d013b6c856749ef65457f575ec409482c09cc",
       "workingTreeClean": true
     },
     "dendrite": {

@@ -180,12 +180,17 @@ Run `sh tests/live/aegis_attach.sh` to qualify the independently packaged
 read-only Aegis peer through the real durable daemon in both Workbench headless
 and interactive attachment, including bounded grant/decision page navigation.
 The gate exercises `authority.observe.v1` plus the peer-owned
-`authority.revoke-epoch.v1` and `authority.attenuate-authorize-once.v1` guards.
+`authority.revoke-epoch.v1`, `authority.attenuate-authorize-once.v1`, and
+`aegis.admin-session.v1` contracts.
 Workbench gains no ambient authority: separately invoked commands require the
 exact current epoch and literal confirmation, attempt each mutation once, and
 never retry an uncertain result. The bounded authority journey keeps its parent
 and child handles inside one authenticated connection and returns only redacted
-authorization facts. Reusable issue and attenuation management remain unavailable.
+authorization facts. Reusable management is not exposed as one-shot commands.
+The managed-session command keeps named grants inside Aegis's shared
+bounded owner, supports issue/attenuate/authorize/list/close over NDJSON, and is
+identical to the standalone shell below the socket/stdio composition edge.
+Workbench does not parse requests, retain handles, or redefine confirmations.
 
 Run `sh tests/live/aegis_hosted.sh` to qualify Workbench-owned lifecycle for
 Aegis's standalone daemon. The profile supplies explicit create/open mode,

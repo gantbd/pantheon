@@ -124,6 +124,30 @@ assert value["engine"] == "hermes" and value["action"] == "observe"
 assert "grant" not in value and "resource" not in value and "session" not in value
 '
 
+managed_resource=cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd
+parent=11111111111111111111111111111111
+child=22222222222222222222222222222222
+start_fixture
+managed=$(printf '%s\n' \
+  "{\"version\":1,\"command\":\"issue\",\"operation\":\"$parent\",\"expected_epoch\":0,\"now\":10,\"expires_at\":40,\"scopes\":[{\"engine\":\"hermes\",\"resource\":\"$managed_resource\",\"actions\":[\"observe\",\"delegate\"]}],\"confirmation\":\"ISSUE AEGIS OP $parent EPOCH 0 UNTIL 40 SCOPES hermes:$managed_resource:observe+delegate\"}" \
+  "{\"version\":1,\"command\":\"attenuate\",\"operation\":\"$child\",\"parent\":\"$parent\",\"expected_epoch\":0,\"now\":11,\"expires_at\":30,\"scopes\":[{\"engine\":\"hermes\",\"resource\":\"$managed_resource\",\"actions\":[\"observe\"]}],\"confirmation\":\"ATTENUATE AEGIS OP $child FROM $parent EPOCH 0 UNTIL 30 SCOPES hermes:$managed_resource:observe\"}" \
+  "{\"version\":1,\"command\":\"authorize\",\"operation\":\"$child\",\"now\":12,\"engine\":\"hermes\",\"resource\":\"$managed_resource\",\"action\":\"observe\",\"confirmation\":\"AUTHORIZE AEGIS OP $child hermes $managed_resource observe\"}" \
+  '{"version":1,"command":"list"}' \
+  '{"version":1,"command":"close"}' | \
+  "$workbench" aegis-manage-session "$socket")
+finish_fixture
+printf '%s' "$managed" | python3 -c '
+import json, sys
+values = [json.loads(line) for line in sys.stdin if line.strip()]
+assert [value["status"] for value in values] == [
+    "issued", "attenuated", "authorized", "current", "closed"
+]
+assert values[3]["grants"][1]["parent"] == "11111111111111111111111111111111"
+assert values[-1]["terminal"]
+rendered = json.dumps(values)
+assert "handle" not in rendered and "credential" not in rendered
+'
+
 start_fixture
 revoked=$("$workbench" aegis-revoke-epoch "$socket" 0 'REVOKE AEGIS EPOCH 0')
 finish_fixture
@@ -183,4 +207,4 @@ finally:
 PYTHON
 finish_fixture
 
-echo 'PASS: real Aegis daemon -> bounded pages, private-handle authority journey, and exact-confirmed revocation -> Workbench'
+echo 'PASS: real Aegis daemon -> bounded pages, managed private-handle session, authority journey, and revocation -> Workbench'

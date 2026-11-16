@@ -11,12 +11,13 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "planned",
+      "mutation": "qualified",
       "mutationCapabilities": {
         "authority.revoke-epoch.v1": "qualified",
         "authority.attenuate-authorize-once.v1": "qualified",
-        "authority.issue.v1": "planned",
-        "authority.attenuate.v1": "planned"
+        "aegis.admin-session.v1": "qualified",
+        "authority.issue.v1": "qualified",
+        "authority.attenuate.v1": "qualified"
       }
     },
     "agora": {

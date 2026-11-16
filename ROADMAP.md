@@ -229,9 +229,13 @@ attempt, and preserved outcome uncertainty are qualified against the real
 daemon. The same owner guard now supplies a bounded
 `authority.attenuate-authorize-once.v1` journey: issue, attenuation, and one
 authorization share a connection; no grant handle escapes; and every
-post-send failure remains uncertain without retry. Reusable grant management
-remains excluded because handles are session-local and lost replies cannot yet
-be reconciled to an exact grant.
+post-send failure remains uncertain without retry. Aegis's bounded
+`aegis.admin-session.v1` application protocol now supplies reusable named issue,
+attenuation, authorization, listing and close in both standalone and Workbench
+shells. Both shells call the same owner parser/manager over the public client;
+Workbench owns no grant handles, confirmation grammar or retry policy. Explicit
+disconnect/reconnect abandonment and rebuild qualification remains open; durable
+grant replay and lost-reply reconciliation are nonclaims.
 
 Aegis now also supplies a standalone shutdown-aware owner daemon. Its explicit
 deployment inputs select create/open recovery, authority namespace, exact kernel
@@ -240,7 +244,7 @@ Workbench supervises that sovereign process, waits for its socket, connects the
 ordinary public client and records signal-drain receipts. Headless create/open
 and interactive reopen are qualified without linking Aegis engine, service,
 storage or authentication implementations into Workbench. Long-lived grant
-management remains an Aegis command-owner problem, not hosting authority.
+management remains an Aegis-owned application contract, not hosting authority.
 
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
 place for one headless Workbench invocation and now also observes Grounding
