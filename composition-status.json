@@ -136,11 +136,15 @@
       "presentation": "vellum-tui",
       "readCapability": "workspace.inventory.v1",
       "client": { "contract": "vellum-sdk-client", "connection": "vellum-sdk-client", "ownership": "peer" },
-      "evidence": ["vellum-tui/tests/live/service_journey.sh", "workbench-tui/tests/live/dual_service.sh"],
+      "evidence": ["vellum-tui/tests/live/service_journey.sh", "workbench-tui/tests/live/dual_service.sh", "workbench-tui/tests/live/vellum_mutation.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "implemented"
+      "mutation": "qualified",
+      "mutationCapabilities": {
+        "workspace.edit.v1": "qualified",
+        "workspace.save.v1": "qualified"
+      }
     }
   }
 }

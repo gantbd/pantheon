@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Qualified Vellum's ordinary witnessed edit/save path through the same
+  reusable editor in standalone and hosted Workbench, including exact persisted
+  bytes, save-authority refusal and exact replay of an indeterminate save.
 - Qualified selected Agora room creation across the standalone and Workbench
   shells through one owner-client guard. The real-daemon gates cover zero-contact
   confirmation refusal, stale revision refusal, durable receipt publication and

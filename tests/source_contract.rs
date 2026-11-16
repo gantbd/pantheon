@@ -535,6 +535,47 @@ fn agora_mutation_gate_reuses_the_owner_guard_in_both_shells() {
 }
 
 #[test]
+fn vellum_mutation_gate_reuses_the_editor_and_preserves_service_authority() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/vellum_mutation.sh"))
+        .expect("Vellum mutation live gate");
+    for required in [
+        "workspace.edit.v1",
+        "workspace.save.v1",
+        "--vellum-allow-edit",
+        "--vellum-allow-save",
+        "focus=Vellum",
+        "Dirty",
+        "Clean",
+        "Refused",
+        "denied Workbench Vellum save changed source bytes",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Vellum mutation gate omits {required}"
+        );
+    }
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    assert!(terminal.contains("ServiceEditor"));
+    assert!(terminal.contains("translate_service_input"));
+    for forbidden in [
+        "vellum_engine::",
+        "vellum_service::",
+        "cargo publish",
+        "git push",
+        "gh release",
+        "curl ",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Vellum mutation gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");

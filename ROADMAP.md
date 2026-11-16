@@ -200,6 +200,13 @@ revision refusal and an intentionally discarded reply recovered only through
 the exact retained request identity. This does not claim a generic conversation
 mutation bus or Agora commands beyond room creation.
 
+Vellum's ordinary `workspace.edit.v1` and `workspace.save.v1` profile is also
+qualified through the shared `ServiceEditor` in standalone and hosted
+Workbench. The real owner preserves revision witnesses and exact source bytes,
+refuses save without its independent persistence ceiling, and leaves uncertain
+persistence indeterminate until the exact retained save is replayed. Newer
+durable-operation profiles remain outside this claim.
+
 ### 5. Extend peer coverage
 
 Moira now has an independent reusable TUI, standalone interactive/headless CLI,

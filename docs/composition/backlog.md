@@ -132,9 +132,12 @@ read-only input until that repository settles.
 - [x] Chronos: qualify the selected task and scheduling mutation profile through
   the same public Hub and owner service in standalone and Workbench paths,
   preserving peer-owned receipts, clean drain and exact durable reopen.
-- [ ] Vellum: promote the implemented edit/save path to qualified only after
-  standalone and Workbench gates preserve its revision witness, persistence
-  projection, save receipt and exact outcome-unknown replay law.
+- [x] Vellum: qualify the implemented `workspace.edit.v1` and
+  `workspace.save.v1` path in standalone and Workbench. Real-owner gates
+  preserve revision witnesses, dirty/clean/indeterminate projection, save
+  authority refusal, exact persisted bytes and exact replay after a deliberately
+  discarded accepted reply. Newer durable operations remain a separate adapter
+  selection item.
 - [x] Agora: qualify selected `rooms.create.v2` through one owner-client guard
   in standalone and Workbench. The command binds the exact room facts and
   current revision, refuses an inexact confirmation before connection, returns

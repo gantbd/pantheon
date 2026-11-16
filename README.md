@@ -216,6 +216,14 @@ reopens the state with an independent `chronos-service` and verifies the exact
 durable result. This qualifies that profile locally; it does not invent mutation
 capability IDs or grant wider authority.
 
+Run `sh tests/live/vellum_mutation.sh` for ordinary witnessed Vellum mutation
+parity. Workbench hosts the real owner with explicit edit/save ceilings, drives
+the same `ServiceEditor` used by the standalone peer, verifies exact persisted
+bytes and clean drain, then repeats without save authority and proves the
+service refusal leaves source bytes unchanged. The standalone Vellum gate owns
+the complementary lost-reply proof: `Indeterminate` resolves only by replaying
+the exact retained save request.
+
 Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
 owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
 public Unix client. The same process observes all three peers through the
