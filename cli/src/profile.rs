@@ -62,9 +62,19 @@ pub struct AgoraHostProfile {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct MoiraProfile {
+    #[serde(default)]
+    pub deployment: DeploymentMode,
     pub socket: PathBuf,
+    pub host: Option<MoiraHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct MoiraHostProfile {
+    pub executable: PathBuf,
+    pub config: PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -259,6 +269,10 @@ impl WorkspaceProfile {
         }
         if let Some(moira) = &mut profile.moira {
             moira.socket = resolve(base, &moira.socket);
+            if let Some(host) = &mut moira.host {
+                host.executable = resolve(base, &host.executable);
+                host.config = resolve(base, &host.config);
+            }
         }
         if let Some(daimon) = &mut profile.daimon {
             if let Some(socket) = &mut daimon.socket {
@@ -356,6 +370,19 @@ impl WorkspaceProfile {
                 return Err("Moira configuration requires the Moira surface");
             }
             validate_path(&moira.socket)?;
+            match (moira.deployment, &moira.host) {
+                (DeploymentMode::Hosted, Some(host)) => {
+                    validate_path(&host.executable)?;
+                    validate_path(&host.config)?;
+                }
+                (DeploymentMode::Hosted, None) => {
+                    return Err("hosted Moira requires an owner configuration");
+                }
+                (DeploymentMode::Attach, Some(_)) => {
+                    return Err("attached Moira cannot carry owner configuration");
+                }
+                (DeploymentMode::Attach, None) => {}
+            }
             validate_required_capabilities(&moira.requires)?;
         }
         if let Some(daimon) = &self.daimon {
@@ -792,6 +819,36 @@ mod tests {
             "host":{"executable":"daimon-local-agent","config":"agent.json"}}
         }"#;
         assert!(WorkspaceProfile::parse(attached_owner, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hosted_moira_requires_only_opaque_owner_inputs() {
+        let valid = br#"{
+          "version":1,"name":"Moira host","surfaces":["moira"],
+          "moira":{"deployment":"hosted","socket":"moira.sock",
+            "host":{"executable":"bin/moira-saga-local","config":"owner.json"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let moira = profile.moira.unwrap();
+        assert_eq!(moira.deployment, DeploymentMode::Hosted);
+        let host = moira.host.unwrap();
+        assert_eq!(
+            host.executable,
+            Path::new("/tmp/workbench/bin/moira-saga-local")
+        );
+        assert_eq!(host.config, Path::new("/tmp/workbench/owner.json"));
+
+        let missing_host = br#"{
+          "version":1,"name":"Moira host","surfaces":["moira"],
+          "moira":{"deployment":"hosted","socket":"moira.sock"}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_host, Path::new(".")).is_err());
+        let attached_host = br#"{
+          "version":1,"name":"Moira attach","surfaces":["moira"],
+          "moira":{"socket":"moira.sock",
+            "host":{"executable":"moira-saga-local","config":"owner.json"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(attached_host, Path::new(".")).is_err());
     }
 
     #[test]

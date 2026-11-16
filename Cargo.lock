@@ -795,6 +795,7 @@ name = "moira-client"
 version = "0.1.0"
 dependencies = [
  "moira-protocol",
+ "moira-wire",
 ]
 
 [[package]]

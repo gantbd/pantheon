@@ -18,7 +18,7 @@ use workbench_tui_cli::{
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     native_host::{
         AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, DaimonProcessOptions,
-        HermesProcessOptions, NativeHost,
+        HermesProcessOptions, MoiraProcessOptions, NativeHost,
     },
     profile::{
         AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, DeploymentMode,
@@ -53,6 +53,7 @@ struct Options {
     agora_host: Option<AgoraProcessOptions>,
     moira_socket: Option<PathBuf>,
     moira_requires: Vec<String>,
+    moira_host: Option<MoiraProcessOptions>,
     daimon_socket: Option<PathBuf>,
     daimon_agent_socket: Option<PathBuf>,
     daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
@@ -129,6 +130,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut agora_host = None;
     let mut moira_socket = None;
     let mut moira_requires = Vec::new();
+    let mut moira_host = None;
     let mut daimon_socket = None;
     let mut daimon_agent_socket = None;
     let mut daimon_agent_session = None;
@@ -178,6 +180,17 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             });
         }
         if let Some(moira) = profile.moira {
+            if moira.deployment == DeploymentMode::Hosted {
+                let host = moira
+                    .host
+                    .as_ref()
+                    .expect("validated hosted Moira configuration");
+                moira_host = Some(MoiraProcessOptions {
+                    executable: host.executable.clone(),
+                    config: host.config.clone(),
+                    socket: moira.socket.clone(),
+                });
+            }
             moira_socket = Some(moira.socket);
             moira_requires = moira.requires;
         }
@@ -489,6 +502,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         agora_host,
         moira_socket,
         moira_requires,
+        moira_host,
         daimon_socket,
         daimon_agent_socket,
         daimon_agent_session,
@@ -2151,6 +2165,7 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     if !options.host_chronos
         && !options.host_vellum
         && options.agora_host.is_none()
+        && options.moira_host.is_none()
         && options.daimon_host.is_none()
         && options.hermes_host.is_none()
         && options.aegis_host.is_none()
@@ -2198,6 +2213,10 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
         host.start_aegis_process(aegis.clone())
             .map_err(|failure| format!("hosted Aegis startup refused: {failure:?}"))?;
     }
+    if let Some(moira) = &options.moira_host {
+        host.start_moira_process(moira.clone())
+            .map_err(|failure| format!("hosted Moira startup refused: {failure:?}"))?;
+    }
     if let Some(daimon) = &options.daimon_host {
         host.start_daimon_process(daimon.clone())
             .map_err(|failure| format!("hosted Daimon startup refused: {failure:?}"))?;
@@ -2234,9 +2253,9 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
         None
     };
     let moira = if let Some(socket) = options.moira_socket {
-        let port = moira_tui_local_client::LocalSagaPort::connect(
+        let port = moira_client::unix::SagaUnixPort::connect(
             socket,
-            moira_tui_local_client::ClientLimits::default(),
+            moira_client::unix::SagaClientLimitsV1::default(),
         )
         .map_err(|error| format!("Moira service refused: {error:?}"))?;
         Some(moira_tui::Component::new(port))

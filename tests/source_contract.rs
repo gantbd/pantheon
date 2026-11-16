@@ -160,6 +160,9 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         peers["daimon"]["mutationCapabilities"]["agents.session.permission.v1"],
         "qualified"
     );
+    assert_eq!(peers["moira"]["host"]["interactive"], "qualified");
+    assert_eq!(peers["moira"]["host"]["headless"], "qualified");
+    assert_eq!(peers["moira"]["client"]["ownership"], "peer");
 
     let capabilities = [
         ("aegis", aegis_tui::CAPABILITIES.headless[0]),
@@ -216,7 +219,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "8f574343bbe9fa91efcac5322596f52ff9eca52c"
+        "237858f5c87ff8a1eace9462c019311ae81ff71b"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -240,7 +243,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "ce0022845178df9584b0081469c49eab5cfbe04e"
+        "a3e9554f6a82e3f63a90875bd94202c6d42d61c8"
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
@@ -724,6 +727,54 @@ fn moira_live_gate_reuses_selected_saga_evidence_in_both_workbench_modes() {
         assert!(
             !gate.contains(forbidden),
             "Moira attach gate acquires or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn moira_hosting_uses_the_sovereign_owner_and_peer_public_client() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let host = fs::read_to_string(root.join("cli/src/native_host.rs")).expect("native host");
+    for required in [
+        "MoiraProcessOptions",
+        "start_moira_process",
+        ".arg(\"--supervised\")",
+        "wait_for_process_ready",
+        "stop_supervised_process",
+    ] {
+        assert!(host.contains(required), "Moira host omits {required}");
+    }
+    for forbidden in ["max_database_pages", "max_sagas", "OperatorAuthorizer"] {
+        assert!(
+            !host.contains(forbidden),
+            "Workbench acquired Moira owner policy through {forbidden}"
+        );
+    }
+    let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI main");
+    assert!(main.contains("options.moira_host.is_none()"));
+    assert!(main.contains("host.start_moira_process(moira.clone())"));
+    assert!(main.contains("moira_client::unix::SagaUnixPort::connect"));
+}
+
+#[test]
+fn moira_hosted_gate_reopens_real_durable_saga_in_both_workbench_modes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/moira_hosted.sh")).expect("hosted Moira gate");
+    for required in [
+        "moira-saga-local",
+        "admit_saga",
+        "--supervised",
+        "headless --workspace-profile",
+        "interactive",
+        "census total 1",
+        "hosted_shutdown",
+        "disposition\": \"clean",
+        "reopened=$(\"$workbench\" headless",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted Moira gate omits {required}"
         );
     }
 }

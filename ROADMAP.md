@@ -202,7 +202,11 @@ is qualified interactively both standalone and through Workbench, while the
 headless path preserves the content-free census. Operator reconciliation remains
 deliberately absent until its confirmation, command-scoped authority, revision,
 durable receipt, and uncertain delivery contracts can be preserved end to end.
-Native Workbench hosting also remains open.
+The selected ordinary saga profile now has a sovereign `moira-saga-local`
+application. Workbench supervises its exact process from an opaque owner config,
+attaches with Moira's peer-owned public Unix client, and qualifies durable
+mutation/reopen plus clean drain in both headless and interactive modes. This
+owner explicitly denies reconciliation authority; supervision cannot upgrade it.
 
 Daimon now likewise has an independent reusable TUI, standalone CLI,
 `agents.presence.v1` headless observation, and Workbench attach composition. Its
@@ -327,7 +331,7 @@ outcome unknown, recovery, and orderly/partial shutdown cases.
 Current status: the standalone and Workbench-attach read cells pass for Agora,
 Chronos, and Vellum with explicit capability IDs and versioned configuration or
 service failure envelopes. All three standalone paths have real-service gates.
-The Workbench-host row passes for Chronos, Vellum, Hermes, Aegis and Agora in
+The Workbench-host row passes for Chronos, Vellum, Hermes, Aegis, Moira and Agora in
 both modes, including durable create/open and clean owner-process drain. Agora's
 production-shaped profile supervises its exact standalone process from an
 opaque owner config and a real Aegis owner. The older in-process factory remains

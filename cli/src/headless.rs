@@ -543,9 +543,9 @@ fn hex_bytes(bytes: &[u8]) -> String {
 
 fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
     let capability = moira_tui::CAPABILITIES.headless[0];
-    let port = match moira_tui_local_client::LocalSagaPort::connect(
+    let port = match moira_client::unix::SagaUnixPort::connect(
         socket,
-        moira_tui_local_client::ClientLimits::default(),
+        moira_client::unix::SagaClientLimitsV1::default(),
     ) {
         Ok(port) => port,
         Err(error) => {
@@ -613,12 +613,12 @@ fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
 
 fn moira_client_failure(
     capability: &str,
-    error: moira_tui_local_client::ClientError,
+    error: moira_client::unix::SagaClientErrorV1,
 ) -> (serde_json::Value, bool) {
     let status = match error {
-        moira_tui_local_client::ClientError::NotSent(_) => "not_sent",
-        moira_tui_local_client::ClientError::OutcomeUnknown(_) => "outcome_unknown",
-        moira_tui_local_client::ClientError::RequestLimit => "request_limit",
+        moira_client::unix::SagaClientErrorV1::NotSent(_) => "not_sent",
+        moira_client::unix::SagaClientErrorV1::OutcomeUnknown(_) => "outcome_unknown",
+        moira_client::unix::SagaClientErrorV1::RequestLimit => "request_limit",
         _ => "invalid_reply",
     };
     (

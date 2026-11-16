@@ -185,6 +185,17 @@ pub struct DaimonProcessOptions {
     pub socket: PathBuf,
 }
 
+/// Opaque deployment inputs for Moira's sovereign durable saga owner.
+/// Store, peer mapping, bounds and operator-authority selection remain inside
+/// the Moira-owned configuration document.
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct MoiraProcessOptions {
+    pub executable: PathBuf,
+    pub config: PathBuf,
+    pub socket: PathBuf,
+}
+
 /// Explicit deployment inputs for a Workbench-owned, sovereign Aegis daemon.
 /// These values are passed to Aegis unchanged; Workbench does not interpret
 /// the authority namespace, principal, session namespace, or role as grants.
@@ -330,6 +341,35 @@ impl NativeHost {
         S: FnMut() -> ShutdownDisposition + Send + 'static,
     {
         self.registry.start_or_rollback(HostedPeerId::Moira, start)
+    }
+
+    /// Starts Moira's production saga application as a sovereign process.
+    /// Workbench owns only readiness and the exact one-byte drain channel; it
+    /// attaches through Moira's ordinary public saga client.
+    #[cfg(unix)]
+    pub fn start_moira_process(
+        &mut self,
+        options: MoiraProcessOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        self.start_moira(|| {
+            let prior_socket = socket_identity(&options.socket);
+            let mut child = Command::new(&options.executable)
+                .arg("--supervised")
+                .arg(&options.config)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|error| format!("Moira process start refused: {error}"))?;
+            if let Err(error) =
+                wait_for_process_ready(&mut child, &options.socket, "Moira", prior_socket)
+            {
+                stop_failed_process_start(&mut child);
+                return Err(error);
+            }
+            let mut input = child.stdin.take();
+            Ok(((), move || stop_supervised_process(&mut child, &mut input)))
+        })
     }
 
     /// Starts a deployment-supplied Daimon owner without acquiring provider,

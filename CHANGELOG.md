@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added Moira's sovereign durable saga owner to Workbench hosting. Standalone
+  and Workbench now reuse Moira's peer-owned reconnectable Unix saga client;
+  durable mutation/reopen and clean headless/interactive drain are qualified,
+  while operator reconciliation remains explicitly unauthorized.
 - Normalized Hermes producer delivery as adapter-owned integration evidence:
   Moira workflow events and Agora minimized wake are qualified profiles, while
   generic Workbench append is explicitly not a presentation capability.

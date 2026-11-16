@@ -51,7 +51,7 @@ cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interac
 Profiles contain connection configuration, presentation selection and explicit
 cross-service scope mappings. They cannot enable Chronos writes or carry grant
 handles. Continue to pass `--chronos-allow-writes` at launch when intended.
-Agora, Chronos, Vellum, Daimon, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
+Agora, Chronos, Vellum, Moira, Daimon, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
 owns their real local service lifecycles while the same peer clients and TUI
 components are used. Agora, Daimon, Hermes and Aegis remain sovereign supervised owner
 processes rather than linked semantic engines. Hosted Vellum requires a bounded non-empty `roots` list;
@@ -81,6 +81,13 @@ configured public agent socket, uses the same public client as attach mode, and
 requests a bounded owner-defined drain on exit. A presence socket remains
 optional because the production agent application does not claim to serve the
 separate legacy presence protocol.
+
+A hosted Moira profile supplies only the `moira-saga-local` executable and its
+opaque owner configuration. That Moira document retains the database, kernel
+peer mapping, all bounds and the selected operator-authority policy. Workbench
+invokes the exact supervised lifecycle, waits for the private saga socket and
+attaches through `moira-client::unix::SagaUnixPort`; it cannot turn ordinary
+read/mutate access into reconciliation authority.
 
 Use `--chronos-profile PATH` in place of the initial service directory to
 reopen a workspace saved by `chronos-tui --save-profile`. Relative service
@@ -263,6 +270,12 @@ Run `sh tests/live/moira_attach.sh` to qualify Moira's content-free census in
 headless mode and the same reusable component's bounded selected-saga evidence
 and operator receipts interactively. The gate uses only `SagaReadOnlyClient`;
 it grants Workbench no reconciliation authority.
+
+Run `sh tests/live/moira_hosted.sh` to qualify the sovereign Moira saga owner.
+The journey seeds one durable saga through Moira's public client, drains the
+standalone owner, then reopens it under Workbench in headless and interactive
+modes. Both paths observe the retained census and end with a clean supervised
+receipt and removed socket; a final headless reopen proves persistence.
 
 Run `sh tests/live/daimon_attach.sh` to qualify Daimon's redacted presence plus
 one exact configured `agents.session.inspect.v1` projection in both Workbench
