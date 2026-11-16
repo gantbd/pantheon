@@ -527,7 +527,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Daimon prompt bytes stay outside argv and permission decisions bind exact provider challenges plus separate execution authority; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Daimon cancellation and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -550,6 +550,12 @@ fn vellum_connector(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "daimon-agent-cancel")
+    {
+        return daimon_agent_cancel(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "daimon-agent-permission")
@@ -736,6 +742,136 @@ fn daimon_agent_advance(
         }
         Err(error) => daimon_advance_failure("unavailable", &format!("{error:?}"), None, None),
     }
+}
+
+fn daimon_agent_cancel(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use daimon_agent_command::{CancelError, CancelRequest};
+    use daimon_client::unix::AgentClientErrorV1;
+    use daimon_protocol::agent::AgentOutcomeV1;
+    use std::time::Duration;
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let session = args
+        .next()
+        .and_then(|value| daimon_tui::parse_agent_session(&value.to_string_lossy()))
+        .ok_or("agent session must be 32 hexadecimal digits")?;
+    let turn = args
+        .next()
+        .and_then(|value| daimon_tui::parse_agent_turn(&value.to_string_lossy()))
+        .ok_or("agent turn must be 32 hexadecimal digits")?;
+    let expected_revision = parse_daimon_u64(args.next())?;
+    let idempotency_key = args
+        .next()
+        .and_then(|value| daimon_tui::parse_idempotency_key(&value.to_string_lossy()))
+        .ok_or("idempotency key must be 32 hexadecimal digits")?;
+    let now = parse_daimon_u64(args.next())?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let (service_session, port) = match daimon_client::unix::connect_agent(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => {
+            return daimon_cancel_failure("not_sent", &format!("{error:?}"), None, None);
+        }
+    };
+    let request = CancelRequest {
+        session,
+        turn,
+        expected_revision,
+        idempotency_key,
+        now,
+    };
+    match daimon_agent_command::cancel(service_session, port, request, &confirmation) {
+        Ok(AgentOutcomeV1::Session(view)) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "daimon",
+                    "capability": daimon_agent_command::CANCEL_CAPABILITY,
+                    "complete": true,
+                    "status": "cancelled",
+                    "revision": view.revision,
+                    "phase": format!("{:?}", view.phase),
+                    "active_turn": view.active_turn.map(|_| "present"),
+                    "last_event_cursor": view.last_event_cursor,
+                }))?
+            );
+            Ok(())
+        }
+        Ok(AgentOutcomeV1::OutcomeUnknown { .. }) => daimon_cancel_failure(
+            "outcome_unknown",
+            "Daimon retained an indeterminate cancellation outcome; inspect before any further action",
+            None,
+            None,
+        ),
+        Ok(AgentOutcomeV1::Events(_)) => daimon_cancel_failure(
+            "invalid_reply",
+            "unexpected Daimon cancellation reply",
+            None,
+            None,
+        ),
+        Err(CancelError::ConfirmationMismatch { required }) => daimon_cancel_failure(
+            "confirmation_refused",
+            "exact Daimon cancellation confirmation required",
+            Some(&required),
+            None,
+        ),
+        Err(CancelError::SessionChanged { actual }) => daimon_cancel_failure(
+            "stale_session",
+            "Daimon session revision, phase, or active turn changed",
+            None,
+            Some(&actual),
+        ),
+        Err(CancelError::MutationTransport(AgentClientErrorV1::OutcomeUnknown(error))) => {
+            daimon_cancel_failure("outcome_unknown", &format!("{error:?}"), None, None)
+        }
+        Err(CancelError::ObservationTransport(AgentClientErrorV1::NotSent(error)))
+        | Err(CancelError::MutationTransport(AgentClientErrorV1::NotSent(error))) => {
+            daimon_cancel_failure("not_sent", &format!("{error:?}"), None, None)
+        }
+        Err(CancelError::ObservationRefused(refusal))
+        | Err(CancelError::MutationRefused(refusal)) => {
+            daimon_cancel_failure("refused", &format!("{refusal:?}"), None, None)
+        }
+        Err(error) => daimon_cancel_failure("unavailable", &format!("{error:?}"), None, None),
+    }
+}
+
+fn daimon_cancel_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+    actual: Option<&daimon_protocol::agent::AgentSessionViewV1>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "daimon",
+            "capability": daimon_agent_command::CANCEL_CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation,
+            "actual_revision": actual.map(|view| view.revision),
+            "actual_phase": actual.map(|view| format!("{:?}", view.phase)),
+            "actual_active_turn": actual.and_then(|view| view.active_turn).map(|_| "present"),
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn daimon_agent_prompt(

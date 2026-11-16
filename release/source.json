@@ -25,12 +25,12 @@
     },
     "daimon": {
       "repository": "https://github.com/gantbd/daimon",
-      "revision": "c3f7bd01fa51dee91d50e9024edc67adcb8b29b9",
+      "revision": "3569a04d65bbd870af723c6ea760f0876c486c27",
       "workingTreeClean": true
     },
     "daimonTui": {
       "repository": "https://github.com/gantbd/daimon-tui",
-      "revision": "228d87e1ea3106d78a3a55e92d3f85a617a09267",
+      "revision": "1d1d035e9efce519f7d56b9ebe49e962bec1e189",
       "workingTreeClean": true
     },
     "moira": {

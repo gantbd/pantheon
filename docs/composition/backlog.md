@@ -118,8 +118,12 @@ read-only input until that repository settles.
 - [x] Daimon: reuse exact configured agent-session/provider evidence through
   standalone and Workbench without exposing a session catalogue or mutation
   client.
-- [ ] Daimon: add guarded dispatch/resume/permission only with current authority,
-  exact confirmation, durable reconciliation and no-redispatch qualification.
+- [x] Daimon: add guarded prompt, advance, permission and cancellation only with
+  current authority, exact confirmation, durable reconciliation and no-retry
+  qualification.
+- [ ] Daimon: add close and reattach only with their own current-state and
+  uncertainty contracts; add production Workbench hosting only after provider
+  and credential composition is deployment-owned.
 - [ ] Agora, Chronos and Vellum: add remaining mutations only where standalone
   and Workbench paths preserve identical peer-owned confirmation and receipts.
 

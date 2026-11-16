@@ -269,6 +269,12 @@ key and confirmation, and attempts one bounded provider slice. An uncertain
 delivery is never retried; retained session inspection is the reconciliation
 path. The reusable Daimon presentation remains read-only.
 
+Run `sh tests/live/daimon_cancel.sh` to qualify
+`agents.session.cancel.v1`. Standalone Daimon and Workbench reuse the same
+owner guard and exact confirmation across turn-active and permission-waiting
+states. Cancellation is attempted once with a stable idempotency key; an
+uncertain delivery is never retried and must be reconciled by inspection.
+
 Run `sh tests/live/daimon_prompt.sh` to qualify
 `agents.session.prompt.v1`. Standalone Daimon and Workbench parse the same
 strict credential-free request document and invoke the same owner guard. Prompt

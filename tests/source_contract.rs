@@ -208,7 +208,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "228d87e1ea3106d78a3a55e92d3f85a617a09267"
+        "1d1d035e9efce519f7d56b9ebe49e962bec1e189"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
@@ -232,7 +232,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "c3f7bd01fa51dee91d50e9024edc67adcb8b29b9"
+        "3569a04d65bbd870af723c6ea760f0876c486c27"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -775,6 +775,33 @@ fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
     assert!(cli.contains("daimon_agent_command::advance"));
     assert!(!cli.contains("AgentCommandV1::Advance"));
+}
+
+#[test]
+fn daimon_cancel_reuses_the_owner_guard_in_standalone_and_workbench() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/daimon_cancel.sh")).expect("Daimon cancel gate");
+    for required in [
+        "agent_cancel_fixture",
+        "daimon-tui",
+        "workbench-tui",
+        "daimon-agent-cancel",
+        "agents.session.cancel.v1",
+        "CANCEL DAIMON SESSION",
+        "standalone.marker",
+        "workbench.marker",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon cancel gate omits {required}"
+        );
+    }
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(cli.contains("daimon_agent_command::cancel"));
+    assert!(!cli.contains("AgentCommandV1::Cancel"));
 }
 
 #[test]
