@@ -191,14 +191,14 @@ standalone and Workbench, bounded to 16 events plus the negotiated frame and
 reporting retention/publication gaps explicitly. Append, acknowledge, and
 compaction remain guarded later operations.
 
-Hermes now also supplies the missing shutdown-aware embedded accept loop: a
-caller-owned stop flag plus an identity-free wake connection yields bounded
-owner-thread and socket cleanup while storage recovery, peer mapping,
-authorization and limits remain deployment inputs. A normal Workbench native
-host cannot yet link truthfully because Chronos and Hermes resolve compatible
-`keystone-storage` code through distinct Cargo source identities. That host
-cell stays absent until the immutable-source item closes; no product Cargo
-patch masks it.
+Hermes now also supplies the shutdown-aware accept loop and a conservative
+standalone read-only daemon. Workbench owns that sovereign process through
+explicit profile inputs, waits for its owner socket, attaches the ordinary
+public client, and records bounded signal shutdown. This avoids combining
+Hermes and Chronos engine graphs or masking their distinct `keystone-storage`
+sources with a product Cargo patch. Headless create/reopen lifecycle is
+qualified; interactive lifecycle and authority-bearing Hermes operations remain
+open.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
@@ -245,7 +245,8 @@ outcome unknown, recovery, and orderly/partial shutdown cases.
 Current status: the standalone and Workbench-attach read cells pass for Agora,
 Chronos, and Vellum with explicit capability IDs and versioned configuration or
 service failure envelopes. All three standalone paths have real-service gates.
-The Workbench-host row passes for Chronos and Vellum in both modes. Agora's
+The Workbench-host row passes for Chronos and Vellum in both modes and for the
+Hermes read-only owner process in headless create/reopen mode. Agora's
 hosted lifecycle, public client, reusable rendering, and headless observation
 pass through an injected factory against its real daemon; the factory's test
 authority is not production credential provenance and is not promoted by this

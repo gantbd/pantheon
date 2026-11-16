@@ -60,7 +60,7 @@
       "readCapability": "ledger.observe.v1",
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
-      "host": { "interactive": "absent", "headless": "absent" },
+      "host": { "interactive": "implemented", "headless": "qualified" },
       "mutation": "planned",
       "disclosureCapabilities": {
         "ledger.events.disclose.v1": "qualified"

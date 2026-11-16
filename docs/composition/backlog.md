@@ -15,8 +15,11 @@ read-only input until that repository settles.
   together in one Workbench invocation, not only as isolated peer attachments.
 - [x] Keep the root repository inventory synchronized with all presentation
   peers and current source state.
-- [ ] Converge Chronos, Agora, and native Hermes hosting on one immutable
-  Keystone source identity so normal product host graphs need no
+- [x] Keep Hermes hosting out of the mixed engine graph: Workbench now owns the
+  owner-supplied standalone daemon process and attaches the same public client,
+  preserving Hermes authentication, authorization, storage and shutdown.
+- [ ] Converge Chronos and Agora hosting on one immutable Keystone source
+  identity so their normal in-process product host graph needs no
   qualification-only patch. Use a
   remotely retrievable pinned Git revision or published artifact; a sibling
   path breaks Chronos's relocatable source-profile gate, while separate vendored
@@ -35,9 +38,12 @@ read-only input until that repository settles.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
   Hermes, Aegis, and Grounding while preserving separate state, authority,
   recovery and shutdown receipts.
-- [ ] Promote those seams to standalone native or supervised profile factories
+- [ ] Promote the remaining seams to standalone native or supervised profile factories
   only after each owner supplies explicit storage, authentication, recovery and
   shutdown composition and passes real lifecycle qualification.
+- [x] Hermes: qualify the owner-supplied read-only daemon under Workbench
+  lifecycle for explicit creation, recovery, public-client observation and clean
+  signal drain without linking engine or substrate internals.
 
 ## P2 — operational depth
 

@@ -16,8 +16,8 @@ use workbench_tui::Shell;
 use workbench_tui_cli::{
     OperationalPeers,
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
-    native_host::{ChronosHostOptions, NativeHost},
-    profile::{AgoraProfile, DeploymentMode, WorkspaceProfile},
+    native_host::{ChronosHostOptions, HermesProcessOptions, NativeHost},
+    profile::{AgoraProfile, DeploymentMode, HermesOpenMode, WorkspaceProfile},
     registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers,
 };
@@ -52,6 +52,7 @@ struct Options {
     hermes_stream: Option<hermes_protocol::StreamIdV1>,
     hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
     hermes_requires: Vec<String>,
+    hermes_host: Option<HermesProcessOptions>,
     aegis_socket: Option<PathBuf>,
     aegis_requires: Vec<String>,
     grounding_endpoint: Option<std::net::SocketAddr>,
@@ -122,6 +123,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut hermes_stream = None;
     let mut hermes_consumer = None;
     let mut hermes_requires = Vec::new();
+    let mut hermes_host = None;
     let mut aegis_socket = None;
     let mut aegis_requires = Vec::new();
     let mut grounding_endpoint = None;
@@ -155,6 +157,21 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             daimon_requires = daimon.requires;
         }
         if let Some(hermes) = profile.hermes {
+            if hermes.deployment == DeploymentMode::Hosted {
+                let host = hermes
+                    .host
+                    .as_ref()
+                    .expect("validated hosted Hermes configuration");
+                hermes_host = Some(HermesProcessOptions {
+                    executable: host.executable.clone(),
+                    directory: host.directory.clone(),
+                    socket: hermes.socket.clone(),
+                    create: host.mode == HermesOpenMode::Create,
+                    effective_uid: host.effective_uid,
+                    effective_gid: host.effective_gid,
+                    subject: host.subject.clone(),
+                });
+            }
             hermes_socket = Some(hermes.socket);
             hermes_stream = hermes
                 .stream
@@ -406,6 +423,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         hermes_stream,
         hermes_consumer,
         hermes_requires,
+        hermes_host,
         aegis_socket,
         aegis_requires,
         grounding_endpoint,
@@ -847,10 +865,10 @@ fn finish_headless(
 }
 
 fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn std::error::Error>> {
-    if !options.host_chronos && !options.host_vellum {
+    if !options.host_chronos && !options.host_vellum && options.hermes_host.is_none() {
         return Ok(None);
     }
-    if options.chronos_streams.is_empty() {
+    if options.host_chronos && options.chronos_streams.is_empty() {
         return Err("--host-chronos requires at least one Chronos workstream".into());
     }
     let mut host = NativeHost::new();
@@ -882,6 +900,10 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
             options.vellum_allow_save,
         )
         .map_err(|failure| format!("hosted Vellum startup refused: {failure:?}"))?;
+    }
+    if let Some(hermes) = &options.hermes_host {
+        host.start_hermes_process(hermes.clone())
+            .map_err(|failure| format!("hosted Hermes startup refused: {failure:?}"))?;
     }
     host.seal()
         .map_err(|error| format!("hosted topology seal refused: {error:?}"))?;

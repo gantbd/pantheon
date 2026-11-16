@@ -3,13 +3,21 @@
 //! This module owns only operational lifecycle. Each peer keeps its own
 //! service, protocol, state root, authority configuration, and concrete client.
 
+#[cfg(target_os = "macos")]
+use std::sync::mpsc;
 #[cfg(any(feature = "native-chronos", target_os = "macos"))]
 use std::thread::JoinHandle;
+#[cfg(unix)]
+use std::{
+    fs,
+    os::unix::fs::FileTypeExt,
+    path::PathBuf,
+    process::{Child, Command, Stdio},
+    time::Duration,
+};
 #[cfg(feature = "native-chronos")]
 use std::{io::Write, os::unix::net::UnixStream};
 use std::{path::Path, thread};
-#[cfg(target_os = "macos")]
-use std::{path::PathBuf, sync::mpsc};
 
 #[cfg(feature = "native-chronos")]
 use chronos_standalone::Server;
@@ -34,6 +42,76 @@ pub struct NativeHost {
     registry: HostRegistry,
 }
 
+#[cfg(unix)]
+fn wait_for_hermes_ready(child: &mut Child, socket: &Path) -> Result<(), String> {
+    for _ in 0..400 {
+        if let Some(status) = child
+            .try_wait()
+            .map_err(|error| format!("Hermes readiness check failed: {error}"))?
+        {
+            return Err(format!("Hermes stopped before readiness: {status}"));
+        }
+        if fs::symlink_metadata(socket).is_ok_and(|metadata| metadata.file_type().is_socket()) {
+            return Ok(());
+        }
+        thread::sleep(Duration::from_millis(5));
+    }
+    Err("Hermes readiness deadline expired".to_owned())
+}
+
+#[cfg(unix)]
+fn signal_hermes(child: &Child) -> Result<(), nix::errno::Errno> {
+    nix::sys::signal::kill(
+        nix::unistd::Pid::from_raw(i32::try_from(child.id()).unwrap_or(i32::MAX)),
+        nix::sys::signal::Signal::SIGTERM,
+    )
+}
+
+#[cfg(unix)]
+fn stop_failed_start(child: &mut Child) {
+    if child.try_wait().ok().flatten().is_none() {
+        let _ = signal_hermes(child);
+        for _ in 0..100 {
+            if child.try_wait().ok().flatten().is_some() {
+                return;
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+}
+
+#[cfg(unix)]
+fn stop_hermes_process(child: &mut Child) -> ShutdownDisposition {
+    if let Ok(Some(status)) = child.try_wait() {
+        return if status.success() {
+            ShutdownDisposition::Clean
+        } else {
+            ShutdownDisposition::Refused
+        };
+    }
+    if signal_hermes(child).is_err() {
+        return ShutdownDisposition::Refused;
+    }
+    for _ in 0..400 {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                return if status.success() {
+                    ShutdownDisposition::Clean
+                } else {
+                    ShutdownDisposition::Refused
+                };
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(5)),
+            Err(_) => return ShutdownDisposition::OutcomeUnknown,
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    ShutdownDisposition::OutcomeUnknown
+}
+
 /// Deployment-neutral options for a Workbench-owned Chronos service.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ChronosHostOptions {
@@ -41,6 +119,19 @@ pub struct ChronosHostOptions {
     pub atomic_state: bool,
     pub observer_history: bool,
     pub allocation_receipts: bool,
+}
+
+/// Explicit deployment inputs for a Workbench-owned, sovereign Hermes daemon.
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HermesProcessOptions {
+    pub executable: PathBuf,
+    pub directory: PathBuf,
+    pub socket: PathBuf,
+    pub create: bool,
+    pub effective_uid: u32,
+    pub effective_gid: u32,
+    pub subject: String,
 }
 
 impl Default for NativeHost {
@@ -151,6 +242,36 @@ impl NativeHost {
         S: FnMut() -> ShutdownDisposition + Send + 'static,
     {
         self.registry.start_or_rollback(HostedPeerId::Hermes, start)
+    }
+
+    /// Starts the owner-supplied read-only Hermes application as a sovereign
+    /// process. Workbench owns readiness and shutdown only; all ledger,
+    /// authentication, authorization, persistence and wire behavior remains in
+    /// Hermes, and ordinary Hermes clients attach to the configured socket.
+    #[cfg(unix)]
+    pub fn start_hermes_process(
+        &mut self,
+        options: HermesProcessOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        self.start_hermes(|| {
+            let mut child = Command::new(&options.executable)
+                .arg(if options.create { "create" } else { "open" })
+                .arg(&options.directory)
+                .arg(&options.socket)
+                .arg(options.effective_uid.to_string())
+                .arg(options.effective_gid.to_string())
+                .arg(&options.subject)
+                .stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|error| format!("Hermes process start refused: {error}"))?;
+            if let Err(error) = wait_for_hermes_ready(&mut child, &options.socket) {
+                stop_failed_start(&mut child);
+                return Err(error);
+            }
+            Ok(((), move || stop_hermes_process(&mut child)))
+        })
     }
 
     /// Starts a deployment-supplied Aegis owner. Workbench does not construct

@@ -136,7 +136,7 @@ inputs are committed and remotely reachable.
 The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Grounding, Hermes, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Workbench's dependency graph.
-The owning engine working trees and remote reachability remain unqualified.
+Remaining owner working trees and remote reachability remain unqualified.
 
 Run `python3 scripts/qualify-source.py WORKBENCH_COMMIT --live` to do both
 from temporary archives of the candidate commits. The command reads the peer
@@ -201,6 +201,14 @@ echoed. The same gate separately qualifies `ledger.events.disclose.v1` with an
 exact stream/start/limit confirmation, a 16-event ceiling, and the negotiated
 frame bound. Routine observation remains content-free; Workbench receives no
 append, acknowledge, or compaction authority.
+
+Run `sh tests/live/hermes_hosted.sh` to qualify Workbench-owned lifecycle for
+Hermes's standalone read-only daemon. The profile supplies explicit
+create/recover mode, daemon path, durable directory, socket, OS peer identity and
+subject. Workbench waits for the owner socket, observes through the same public
+client used for attachment, requests signal drain, verifies clean shutdown and
+reopens the same ledger. It links no Hermes engine/service or Keystone crate and
+does not acquire append, acknowledge or compaction authority.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one

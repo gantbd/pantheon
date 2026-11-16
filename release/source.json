@@ -15,8 +15,8 @@
     },
     "chronos": {
       "repository": "https://github.com/gantbd/chronos",
-      "revision": "982405bdff813e2f8df17d4ec3a827e63ecaf87a",
-      "workingTreeClean": false
+      "revision": "5adf2cbe7b969f3d94dac560d4836a60e1d9ef0b",
+      "workingTreeClean": true
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
@@ -40,7 +40,7 @@
     },
     "hermes": {
       "repository": "https://github.com/gantbd/hermes",
-      "revision": "b92ca5c243df86dc0707d5dba29dc2a555bd98f0",
+      "revision": "c46d3cbcf0d50e95b3f5e51b166966854d037f25",
       "workingTreeClean": true
     },
     "hermesTui": {

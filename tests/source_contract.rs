@@ -154,6 +154,10 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "f0cf0653ef0636a2665c9349a9194a3e05f310ec"
     );
     assert_eq!(
+        source["inputs"]["chronos"]["revision"],
+        "5adf2cbe7b969f3d94dac560d4836a60e1d9ef0b"
+    );
+    assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
         "a59c292c39cc17f545859f4c99aad96a7c2e0931"
     );
@@ -171,7 +175,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
-        "b92ca5c243df86dc0707d5dba29dc2a555bd98f0"
+        "c46d3cbcf0d50e95b3f5e51b166966854d037f25"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
@@ -184,6 +188,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     for input in [
         "agoraTui",
         "chronosTui",
+        "chronos",
         "vellumTui",
         "moiraTui",
         "daimonTui",
@@ -194,9 +199,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in [
-        "agora", "chronos", "vellum", "moira", "daimon", "aegis", "dendrite",
-    ] {
+    for input in ["agora", "vellum", "moira", "daimon", "aegis", "dendrite"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
@@ -450,6 +453,38 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
         assert!(
             !gate.contains(forbidden),
             "Hermes attach gate acquires {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn hermes_hosted_gate_uses_the_owner_daemon_and_public_client() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/hermes_hosted.sh")).expect("hosted Hermes gate");
+    for required in [
+        "--package hermes-daemon",
+        "\"deployment\": \"hosted\"",
+        "\\\"mode\\\": \\\"$mode\\\"",
+        "ledger.observe.v1",
+        "hosted_shutdown",
+        "disposition\": \"clean",
+        "run_profile create",
+        "run_profile open",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted Hermes gate omits {required}"
+        );
+    }
+    for forbidden in [
+        "--package hermes-host",
+        "--package hermes-service",
+        "keystone-storage",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "hosted Hermes gate links owner internals through {forbidden}"
         );
     }
 }

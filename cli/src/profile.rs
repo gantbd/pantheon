@@ -58,11 +58,32 @@ pub struct DaimonProfile {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct HermesProfile {
+    #[serde(default)]
+    pub deployment: DeploymentMode,
     pub socket: PathBuf,
     pub stream: Option<String>,
     pub consumer: Option<String>,
+    pub host: Option<HermesHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct HermesHostProfile {
+    pub executable: PathBuf,
+    pub directory: PathBuf,
+    pub mode: HermesOpenMode,
+    pub effective_uid: u32,
+    pub effective_gid: u32,
+    pub subject: String,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum HermesOpenMode {
+    Create,
+    Open,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -168,6 +189,10 @@ impl WorkspaceProfile {
         }
         if let Some(hermes) = &mut profile.hermes {
             hermes.socket = resolve(base, &hermes.socket);
+            if let Some(host) = &mut hermes.host {
+                host.executable = resolve(base, &host.executable);
+                host.directory = resolve(base, &host.directory);
+            }
         }
         if let Some(aegis) = &mut profile.aegis {
             aegis.socket = resolve(base, &aegis.socket);
@@ -240,6 +265,29 @@ impl WorkspaceProfile {
                 return Err("Hermes configuration requires the Hermes surface");
             }
             validate_path(&hermes.socket)?;
+            match (hermes.deployment, &hermes.host) {
+                (DeploymentMode::Hosted, Some(host)) => {
+                    validate_path(&host.executable)?;
+                    validate_path(&host.directory)?;
+                    if host.subject.len() != 32
+                        || !host
+                            .subject
+                            .bytes()
+                            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+                    {
+                        return Err(
+                            "hosted Hermes subject must be 32 lowercase hexadecimal digits",
+                        );
+                    }
+                }
+                (DeploymentMode::Hosted, None) => {
+                    return Err("hosted Hermes requires an explicit host configuration");
+                }
+                (DeploymentMode::Attach, Some(_)) => {
+                    return Err("attached Hermes cannot declare a host configuration");
+                }
+                (DeploymentMode::Attach, None) => {}
+            }
             if let Some(stream) = &hermes.stream
                 && hermes_tui::parse_stream_id(stream).is_none()
             {
@@ -495,6 +543,36 @@ mod tests {
           "hermes":{"socket":"hermes.sock","stream":null,"consumer":"06060606060606060606060606060606"}
         }"#;
         assert!(WorkspaceProfile::parse(consumer_without_stream, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hosted_hermes_requires_explicit_owner_inputs_and_canonical_subject() {
+        let valid = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"deployment":"hosted","socket":"hermes.sock","stream":null,"consumer":null,
+            "host":{"executable":"bin/hermes-daemon","directory":"ledger","mode":"create",
+              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let host = profile.hermes.unwrap().host.unwrap();
+        assert_eq!(
+            host.executable,
+            Path::new("/tmp/workbench/bin/hermes-daemon")
+        );
+        assert_eq!(host.directory, Path::new("/tmp/workbench/ledger"));
+
+        let missing_host = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"deployment":"hosted","socket":"hermes.sock","stream":null,"consumer":null}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_host, Path::new(".")).is_err());
+        let attached_host = br#"{
+          "version":1,"name":"Hermes","surfaces":["hermes"],
+          "hermes":{"socket":"hermes.sock","stream":null,"consumer":null,
+            "host":{"executable":"hermes-daemon","directory":"ledger","mode":"open",
+              "effective_uid":501,"effective_gid":20,"subject":"07070707070707070707070707070707"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(attached_host, Path::new(".")).is_err());
     }
 
     #[test]

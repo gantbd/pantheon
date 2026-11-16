@@ -11,15 +11,15 @@ authorize Workbench to import an engine or recreate its client semantics.
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation and production Workbench host factory | Attach the typed read-only Grounding peer; MCP remains agent-facing only |
 | Aegis | Administrative/read clients and local daemon; independent `aegis-tui` bounded status, navigable redacted pages, and exact-confirmed epoch revocation in standalone and Workbench | Long-lived guarded issue/attenuation and production Workbench host factory | Attach the read-only peer; invoke the separate revocation command only with exact current-epoch confirmation |
-| Hermes | Ledger/operator clients; durable local adapter; OS-peer authentication; shutdown-aware local daemon; independent content-free observation/cursor peer plus exact-confirmed bounded disclosure | Guarded append/acknowledge/compact and production Workbench host factory; normal linkage currently collides with Chronos's distinct `keystone-storage` source identity | Attach the read-only ledger peer; invoke payload disclosure separately; keep hosting behind the deployment factory seam until immutable source convergence |
+| Hermes | Ledger/operator clients; durable local adapter; OS-peer authentication; standalone read-only daemon; independent content-free observation/cursor peer plus exact-confirmed bounded disclosure; Workbench-owned headless create/reopen lifecycle | Guarded append/acknowledge/compact and interactive hosted-lifecycle qualification | Attach or host the same read-only peer; invoke payload disclosure separately; keep mutation authority outside Workbench |
 
 Federation peers and cross-engine adapters remain subordinate to their owning
 engine or workflow presentation. Keystone remains presentation-free.
 
-Workbench now has deployment-owned typed lifecycle registration seams for all
-five attach-only peers. Those seams accept an owner factory and return its
-concrete client unchanged. They do not yet provide profile-driven native hosting
-or process supervision, so the host cells below remain open.
+Workbench has deployment-owned typed lifecycle registration seams for all five
+formerly attach-only peers. Those seams accept an owner factory and return its
+concrete client unchanged. Hermes now supplies the first profile-driven
+sovereign process host; the other host cells remain open.
 
 ## Current qualification state
 
@@ -38,7 +38,7 @@ connection without treating a manifest match as service authorization.
 | Vellum | Reused TUI; real-daemon edit/save journey | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon | Native owner; bounded roots/auth/action ceiling; joined drain |
 | Moira | Reused saga TUI; real-daemon census/evidence/receipt journey | `sagas.inspect.v1`; real SQLite daemon | Interactive evidence/receipt component + aggregate census; real daemon | Open; attach only |
 | Daimon | Reused redacted presence TUI; public-port rendering gate | `agents.presence.v1`; real durable daemon and roster | Interactive component + aggregate headless; real daemon | Open; attach only |
-| Hermes | Reused ledger TUI | `ledger.observe.v1`; real durable daemon | Interactive component + aggregate headless; real daemon | Open; attach only |
+| Hermes | Reused ledger TUI | `ledger.observe.v1`; real durable daemon | Interactive component + aggregate headless; real daemon | Owner daemon process; headless create/reopen/public-client observation and clean drain qualified; interactive lifecycle implemented |
 | Aegis | Reused read-only authority TUI plus peer-owned epoch-revocation guard | `authority.observe.v1` and `authority.revoke-epoch.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed one-attempt revocation command | Native host and long-lived issue/attenuate remain open |
 | Grounding | Reused typed Grounding TUI | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Open; attach only |
 

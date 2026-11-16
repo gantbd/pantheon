@@ -60,7 +60,7 @@ implies production credential provenance.
 | Vellum | qualified editor/read | qualified | qualified local owner | newer durable operations and release-qualified platform composition |
 | Moira | qualified read/reconciliation, census, evidence and receipt projections | qualified attach with the same component and census | absent | guarded reconciliation and native host factory |
 | Daimon | qualified redacted presence | qualified attach | absent | settle active engine work, then exact execution evidence and guarded dispatch/resume |
-| Hermes | qualified content-free observation/cursor plus separate exact-confirmed bounded event disclosure | qualified attach and the same disclosure guard | absent | production host factory and guarded ledger mutations |
+| Hermes | qualified content-free observation/cursor plus separate exact-confirmed bounded event disclosure | qualified attach and the same disclosure guard | qualified headless owner process; interactive path implemented | interactive lifecycle qualification and guarded ledger mutations |
 | Aegis | qualified read-only authority observation, bounded pages and exact-confirmed epoch revocation | qualified observation/navigation plus the same one-attempt revocation guard | absent | long-lived guarded issue/attenuate and deployment-owned hosting |
 | Grounding/Dendrite | qualified typed observation | qualified typed attach | absent | selected surface/read DTOs and deployment-owned hosting |
 
