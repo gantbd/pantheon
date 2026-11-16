@@ -103,9 +103,9 @@ preserves refused or outcome-unknown shutdown receipts, and rolls back partial
 assembly with exact receipts when a guarded factory start fails. An injected
 Agora authority factory is qualified against the real daemon and public client;
 Agora now owns the single-principal private-endpoint authenticator and
-non-regressing Unix-epoch clock, while the standalone Workbench profile still
-lacks bounded bootstrap, public Aegis session/grant/resource selection, durable
-recovery, and a process shell. A single Workbench process and lock
+non-regressing Unix-epoch clock plus an adopted bounded fresh-engine bootstrap,
+while the standalone Workbench profile still lacks public Aegis
+session/grant/resource selection, durable recovery, and a process shell. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
@@ -162,8 +162,7 @@ against the real daemon in the same process as the Chronos and Vellum owners,
 including reusable interactive rendering, the shared headless observer, and
 clean reverse shutdown. The same lifecycle seam also qualifies scheduled
 publish/observe through Agora's public composition client under test-only
-authority. Production credential-to-principal/participant/subject binding,
-live Aegis grant issuance, trusted time, restart, and
+authority. Production Aegis session/grant/resource selection, restart, and
 induced partial-shutdown qualification remain open.
 
 Chronos's selected guarded-write profile is also qualified through the hosted
@@ -308,7 +307,7 @@ Presentation and invocation parity are therefore closed for the current
 read-only peer surfaces: each peer supplies a reusable component, a separate
 standalone CLI, an explicit headless path, a peer-owned capability manifest,
 and both Workbench attach and host composition. Production activation is a
-separate deployment claim. It remains gated by an Agora-owned or
-deployment-owned bootstrap/Aegis/durable process composition and by convergence
+separate deployment claim. It remains gated by completion of Agora's
+owner-side Aegis/durable process composition and by convergence
 on one Keystone source identity; Workbench must not absorb either policy merely
 to make the matrix appear complete.
