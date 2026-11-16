@@ -46,7 +46,7 @@ def archive(repo, revision, output):
             source.extractall(output, filter="data")
 
 
-def run_live_evidence(stage):
+def run_live_evidence(stage, environment):
     status = json.loads(
         (stage / "workbench-tui" / "composition-status.json").read_text()
     )
@@ -62,18 +62,76 @@ def run_live_evidence(stage):
         if not script.is_file() or stage not in script.resolve().parents:
             raise SystemExit(f"missing live evidence in source closure: {relative}")
         repository, script_relative = relative.split("/", 1)
-        subprocess.run(["sh", script_relative], cwd=stage / repository, check=True)
+        subprocess.run(
+            ["sh", script_relative],
+            cwd=stage / repository,
+            env=environment,
+            check=True,
+        )
 
 
-def prepare_live_dependency_closure(stage):
+def prepare_live_dependency_closure(stage, environment):
     """Materialize lock-pinned non-Rust dependencies inside the archive."""
-    environment = {**os.environ, "MIX_ENV": "test"}
+    environment = {**environment, "MIX_ENV": "test"}
     subprocess.run(
         ["mix", "deps.get", "--only", "test"],
         cwd=stage / "dendrite",
         env=environment,
         check=True,
     )
+
+
+def prepare_cargo_source_closure(stage, directory, keystone_revision):
+    """Seed the declared Keystone Git identity from its exact local object."""
+    ambient_cargo_home = Path(
+        os.environ.get("CARGO_HOME", Path.home() / ".cargo")
+    ).resolve()
+    cargo_home = stage / ".cargo-home"
+    cargo_home.mkdir()
+    registry = ambient_cargo_home / "registry"
+    if not registry.is_dir():
+        raise SystemExit("ambient Cargo registry closure is unavailable")
+    (cargo_home / "registry").symlink_to(registry, target_is_directory=True)
+
+    git_source = stage / ".source-git" / "keystone.git"
+    git_source.parent.mkdir()
+    subprocess.run(["git", "init", "--bare", str(git_source)], check=True)
+    subprocess.run(
+        [
+            "git",
+            "-C",
+            str(git_source),
+            "fetch",
+            "--no-tags",
+            str(ROOT.parent / "keystone"),
+            f"{keystone_revision}:refs/commit/{keystone_revision}",
+        ],
+        check=True,
+    )
+
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("GIT_CONFIG_")
+    }
+    source_url = git_source.resolve().as_uri()
+    environment.update(
+        {
+            "CARGO_HOME": str(cargo_home),
+            "CARGO_NET_GIT_FETCH_WITH_CLI": "true",
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"url.{source_url}.insteadOf",
+            "GIT_CONFIG_VALUE_0": "https://github.com/gantbd/keystone",
+        }
+    )
+    subprocess.run(
+        ["cargo", "fetch", "--locked"],
+        cwd=directory,
+        env=environment,
+        check=True,
+    )
+    environment["CARGO_NET_OFFLINE"] = "true"
+    return environment
 
 
 def validate_direct_path_closure(directory, stage):
@@ -166,14 +224,18 @@ def main():
             archive(ROOT.parent / name, pins[name], stage / name)
         directory = stage / "workbench-tui"
         validate_direct_path_closure(directory, stage)
+        environment = prepare_cargo_source_closure(
+            stage, directory, pins["keystone"]
+        )
         subprocess.run(
             ["cargo", "test", "--all-targets", "--locked", "--offline"],
             cwd=directory,
+            env=environment,
             check=True,
         )
         if args.live:
-            prepare_live_dependency_closure(stage)
-            run_live_evidence(stage)
+            prepare_live_dependency_closure(stage, environment)
+            run_live_evidence(stage, environment)
     print(json.dumps({"workbench-tui": workbench, **pins}, indent=2, sort_keys=True))
 
 

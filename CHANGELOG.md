@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Normalized the Vellum and Workbench source closures on the workspace's exact
+  Keystone revision. Archived qualification now materializes that immutable
+  local Git object under the declared GitHub identity in a private Cargo home,
+  removing ambient-cache dependence without claiming remote reachability.
 - Added the bounded Chronos/Vellum Ratatui composition root.
 - Kept terminal lifecycle, focus, layout, and global exit routing host-owned.
 - Repaired coordinated sibling-source paths after relocation under

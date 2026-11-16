@@ -43,11 +43,12 @@ connection without treating a manifest match as service authorization.
 | Aegis | Reused read-only authority TUI plus peer-owned authority guards | `authority.observe.v1`, `authority.revoke-epoch.v1`, bounded `authority.attenuate-authorize-once.v1`, and `aegis.admin-session.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed owner commands and long-lived named manager; grant handles never escape | Owner daemon, managed session, disconnect abandonment and deliberate rebuild qualified; replay/reconciliation remain nonclaims |
 | Grounding | Reused typed Grounding TUI | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Not applicable; attach to independently deployed Dendrite |
 
-This is qualified local working-tree evidence, not an immutable release
-qualification. The eight peer TUI source revisions are pinned in Workbench's
-source receipt and clean, but several engine trees differ from their recorded
-revisions,
-remote reachability is unqualified. Agora's production-shaped standalone and
+This is qualified immutable local-source evidence, not a remotely reachable
+release qualification. The eight peer TUI and eight owner source revisions are
+pinned in Workbench's source receipt and clean; the archived qualifier rebuilds
+that exact graph and seeds Vellum's declared Keystone Git identity from the
+same pinned local object before entering offline mode. Remote reachability is
+unqualified. Agora's production-shaped standalone and
 supervised process boundaries are locally qualified, but immutable provenance
 is not. The joint Chronos/Vellum hosted graph is locally qualified. The
 all-three in-process graph is locally qualified with an injected explicitly

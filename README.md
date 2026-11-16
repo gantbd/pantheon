@@ -139,9 +139,9 @@ gantbd/
 
 Run `cargo test --workspace --all-targets --locked --offline`. Nothing is published to
 crates.io and no remote, release, signing or activation action is performed.
-The machine source receipt records the current dirty coordinated closure as
-unqualified; immutable-revision CI is intentionally deferred until those
-inputs are committed and remotely reachable.
+The machine source receipt records the clean committed local closure. Remote
+CI and release qualification remain deferred until those exact inputs are
+remotely reachable.
 
 The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Grounding, Hermes, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
@@ -149,26 +149,19 @@ standalone CLI/application concerns outside Workbench's dependency graph.
 It also pins Keystone as an explicit substrate source input because selected
 owner crates resolve its local mechanisms; this records source closure without
 making Keystone a product, presentation, or semantic integration layer.
-Remaining owner working trees and remote reachability remain unqualified.
-The archived-source preflight additionally proves that the recorded Vellum and
-Daimon revisions predate direct boundaries consumed by Workbench:
-`vellum-workspace`, `daimon-client`, `daimon-protocol`, and `daimon-wire`.
-Source qualification therefore requires explicit committed `--vellum` and
-`--daimon` candidates; active working trees are never copied or inferred as
-release evidence.
+Remote reachability remains unqualified. Active working trees are never copied
+or inferred as release evidence.
 
 Run `python3 scripts/qualify-source.py WORKBENCH_COMMIT --live` to run the
 locked Rust suite and every deduplicated real-service gate named by the
 candidate's `composition-status.json`, all from temporary archives of the
 candidate commits. The command reads the peer
-pins from the source receipts and accepts full candidate commit IDs for
-Chronos, Vellum, and Vellum TUI while evaluating an updated set. It emits the
-tested revisions after success and leaves the sibling checkouts untouched.
-
-The local `qualification/chronos-workbench` branches record the passing
-immutable candidate, with Workbench at `693b68d9a29b59ed313b09589864e5b0da864c58`.
-Its locked tests, dual-service tmux gate, and the Chronos capture integration's
-hosted handoff tmux journey passed on macOS.
+pins from the source receipts and accepts explicit full candidate commit IDs
+for peer owners while evaluating an updated set. Before entering offline mode,
+it seeds a private Cargo Git cache from the exact archived Keystone object
+under the declared GitHub identity; it never relies on ambient Git checkout
+state or remote reachability. It emits the tested revisions after success and
+leaves the sibling checkouts untouched.
 
 For attempt inspection, pass `--chronos-moira WORKSTREAM SOCKET SCOPE`
 and optionally `--chronos-daimon WORKSTREAM SOCKET`. Use `Chronos` for the

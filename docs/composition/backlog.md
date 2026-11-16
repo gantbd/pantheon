@@ -172,7 +172,7 @@ read-only input until that repository settles.
 
 ## P4 — distribution and additional presentation
 
-- [ ] Capture immutable peer and engine revisions and rerun the full standalone,
+- [x] Capture immutable peer and engine revisions and rerun the full standalone,
   attach and host matrix.
 - [ ] Close source/legal review, upgrade/migration, supported-platform and
   artifact gates for the selected local deployment.
