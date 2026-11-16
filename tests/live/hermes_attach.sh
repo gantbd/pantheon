@@ -25,6 +25,22 @@ start_fixture() {
 
 finish_fixture() { wait "$pid"; pid=; }
 
+start_consumer_fixture() {
+  name=$1
+  rm -rf "$tmp/$name-ledger"
+  rm -f "$tmp/$name.sock"
+  cargo run --quiet --manifest-path "$workspace/hermes-tui/Cargo.toml" \
+    -p hermes-tui-cli --example consumer_daemon_fixture -- \
+    "$tmp/$name-ledger" "$tmp/$name.sock" >"$tmp/$name.out" 2>"$tmp/$name.err" &
+  pid=$!
+  i=0
+  while [ ! -S "$tmp/$name.sock" ]; do
+    i=$((i+1))
+    if [ "$i" -ge 100 ]; then cat "$tmp/$name.err" >&2; exit 1; fi
+    sleep 0.05
+  done
+}
+
 start_fixture observe
 printf '%s\n' '{' '"version":1,' '"name":"Hermes attach qualification",' '"surfaces":["hermes"],' "\"hermes\":{\"socket\":\"$tmp/observe.sock\",\"stream\":\"05050505050505050505050505050505\",\"consumer\":\"06060606060606060606060606060606\",\"requires\":[\"ledger.observe.v1\",\"ledger.cursor.observe.v1\"]}," '"agora":null,"moira":null,"daimon":null,"chronos":null,"vellum":null' '}' >"$tmp/profile.json"
 output=$(cargo run --quiet --manifest-path "$root/Cargo.toml" -p workbench-tui-cli -- headless --workspace-profile "$tmp/profile.json")
@@ -68,4 +84,36 @@ assert value["start"] == 0 and value["limit"] == 1 and value["gap"] is None
 assert len(value["events"]) == 1 and value["events"][0]["payload_hex"] == "0a"
 '
 
-echo 'PASS: real Hermes daemon -> content-free attach and exact-confirmed bounded disclosure -> Workbench'
+start_consumer_fixture acknowledge-refused
+if refused=$(cargo run --quiet --manifest-path "$root/Cargo.toml" -p workbench-tui-cli -- \
+  hermes-acknowledge "$tmp/acknowledge-refused.sock" \
+  06060606060606060606060606060606 05050505050505050505050505050505 1 1 \
+  'acknowledge' 2>"$tmp/acknowledge-refused-client.err"); then
+  echo 'FAIL: Workbench accepted an inexact Hermes acknowledgement confirmation' >&2
+  exit 1
+fi
+finish_fixture
+printf '%s' "$refused" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "hermes"
+assert not value["complete"] and value["status"] == "confirmation_refused"
+assert value["required_confirmation"] == "ACKNOWLEDGE HERMES CONSUMER 06060606060606060606060606060606 STREAM 05050505050505050505050505050505 FROM 1 THROUGH 1"
+'
+
+start_consumer_fixture acknowledge
+acknowledged=$(cargo run --quiet --manifest-path "$root/Cargo.toml" -p workbench-tui-cli -- \
+  hermes-acknowledge "$tmp/acknowledge.sock" \
+  06060606060606060606060606060606 05050505050505050505050505050505 1 1 \
+  'ACKNOWLEDGE HERMES CONSUMER 06060606060606060606060606060606 STREAM 05050505050505050505050505050505 FROM 1 THROUGH 1')
+finish_fixture
+printf '%s' "$acknowledged" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "hermes"
+assert value["complete"] and value["capability"] == "ledger.acknowledge.v1"
+assert value["status"] == "acknowledged"
+assert value["previous_next_sequence"] == 1 and value["next_sequence"] == 2
+'
+
+echo 'PASS: real Hermes daemon -> content-free attach, bounded disclosure and same-connection acknowledgement -> Workbench'

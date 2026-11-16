@@ -188,8 +188,8 @@ through the read-only facade in both products; the presentation never acquires
 acknowledgement authority. A separate `ledger.events.disclose.v1` command now
 reuses Hermes's `DisclosureClient` and exact stream/start/limit guard in both
 standalone and Workbench, bounded to 16 events plus the negotiated frame and
-reporting retention/publication gaps explicitly. Append, acknowledge, and
-compaction remain guarded later operations.
+reporting retention/publication gaps explicitly. Append and compaction remain
+guarded later operations.
 
 Hermes now also supplies the shutdown-aware accept loop and a conservative
 standalone read-only daemon. Workbench owns that sovereign process through
@@ -200,6 +200,14 @@ sources with a product Cargo patch. Headless create/reopen lifecycle is
 qualified. The interactive Workbench path now renders the same public-client
 observation, drains the owner on shell exit, removes the socket, and proves a
 subsequent headless reopen. Authority-bearing Hermes operations remain open.
+
+Hermes acknowledgement now has one deliberately narrow authority-bearing path.
+The standalone and Workbench commands reuse the same owner guard: exact
+confirmation precedes traffic, the current cursor is observed and compared on
+the same connection, and one acknowledgement is attempted. A stale cursor
+prevents mutation and a post-send transport failure remains outcome-unknown
+without retry. The reusable component and hosted read-only daemon retain no
+consumer authority; append and compaction remain open.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,

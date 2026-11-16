@@ -175,7 +175,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "91b6e0fd8e92f013a9c7d0d802a138344fa573e4"
+        "fc6edec70ec5092e2c3638116a06f76ecf6b0508"
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
@@ -207,18 +207,16 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "chronosTui",
         "chronos",
         "vellumTui",
-        "moiraTui",
         "daimonTui",
         "hermes",
         "hermesTui",
         "aegisTui",
         "aegis",
-        "moira",
         "groundingTui",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["vellum", "daimon", "dendrite"] {
+    for input in ["vellum", "daimon", "dendrite", "moira", "moiraTui"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
@@ -465,6 +463,11 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
         "configured_cursor",
         "next_sequence",
         "backlog",
+        "consumer_daemon_fixture",
+        "hermes-acknowledge",
+        "ledger.acknowledge.v1",
+        "previous_next_sequence",
+        "ACKNOWLEDGE HERMES CONSUMER",
     ] {
         assert!(
             gate.contains(required),

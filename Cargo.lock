@@ -543,6 +543,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-consumer-command"
+version = "0.1.0"
+dependencies = [
+ "hermes-client",
+ "hermes-protocol",
+]
+
+[[package]]
 name = "hermes-disclosure-command"
 version = "0.1.0"
 dependencies = [
@@ -1526,6 +1534,7 @@ dependencies = [
  "grounding-tui",
  "grounding-tui-local-client",
  "hermes-client",
+ "hermes-consumer-command",
  "hermes-disclosure-command",
  "hermes-protocol",
  "hermes-tui",

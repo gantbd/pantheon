@@ -202,7 +202,11 @@ facade. Exact opaque selectors are profile inputs and are never catalogued or
 echoed. The same gate separately qualifies `ledger.events.disclose.v1` with an
 exact stream/start/limit confirmation, a 16-event ceiling, and the negotiated
 frame bound. Routine observation remains content-free; Workbench receives no
-append, acknowledge, or compaction authority.
+append or compaction authority. The gate also qualifies
+`ledger.acknowledge.v1`: standalone and Workbench reuse one peer-owned guard
+that observes the expected cursor and attempts one exact-confirmed
+acknowledgement on the same connection. Consumer authority remains outside the
+reusable component and hosted read-only daemon.
 
 Run `sh tests/live/hermes_hosted.sh` to qualify Workbench-owned lifecycle for
 Hermes's standalone read-only daemon. The profile supplies explicit

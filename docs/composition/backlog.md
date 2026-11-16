@@ -59,6 +59,9 @@ read-only input until that repository settles.
 - [x] Hermes: add exact-confirmed event disclosure through a separate read-only
   facade, bounded to 16 events and the negotiated frame ceiling, with explicit
   retention/publication gaps and no global stream or consumer catalogue.
+- [x] Hermes: reuse the peer-owned same-connection consumer guard for one
+  exact-confirmed acknowledgement in standalone and Workbench, fencing stale
+  cursors and never retrying an uncertain mutation.
 - [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
   one-attempt epoch revocation in standalone and Workbench, preserving
   `outcome_unknown` without retry.
