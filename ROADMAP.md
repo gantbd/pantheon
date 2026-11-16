@@ -205,10 +205,14 @@ durable receipt, and uncertain delivery contracts can be preserved end to end.
 Native Workbench hosting also remains open.
 
 Daimon now likewise has an independent reusable TUI, standalone CLI,
-`agents.presence.v1` headless observation, and Workbench attach composition. The
-initial surface is deliberately redacted to age and stale/current classification;
-it neither exposes agent identity nor dispatches a provider. Exact execution
-inspection and guarded execute/resume operations remain later slices.
+`agents.presence.v1` headless observation, and Workbench attach composition. Its
+default surface remains deliberately redacted to age and stale/current
+classification. An explicit opaque profile selector now reuses
+`agents.session.inspect.v1` in standalone and Workbench modes for stable phase,
+provider-profile digest, capability and bounded event evidence without exposing
+a session catalogue. It cannot dispatch, prompt, decide permission, advance,
+cancel, close, resume or reattach a provider session. Guarded operations remain
+later slices.
 
 Hermes now has an independent reusable ledger TUI, standalone CLI,
 `ledger.observe.v1` status/usage/signals observation, and Workbench attachment.

@@ -25,17 +25,17 @@
     },
     "daimon": {
       "repository": "https://github.com/gantbd/daimon",
-      "revision": "db8efdaf83a148434bc7bca70c10822b7808f92c",
+      "revision": "fe793a7274efba24becc52f28fed5cd634998186",
       "workingTreeClean": true
     },
     "daimonTui": {
       "repository": "https://github.com/gantbd/daimon-tui",
-      "revision": "b4e7412e0d4dcc9f8fce928b83eac41a84bcc6f9",
+      "revision": "9e11dc556ce89cc7750f4567c77f3498ea86e9b1",
       "workingTreeClean": true
     },
     "moira": {
       "repository": "https://github.com/gantbd/moira",
-      "revision": "172950aa02e0971adcc92eb5111d16095ff9096d",
+      "revision": "ce0022845178df9584b0081469c49eab5cfbe04e",
       "workingTreeClean": true
     },
     "hermes": {

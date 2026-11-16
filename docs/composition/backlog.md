@@ -115,8 +115,11 @@ read-only input until that repository settles.
   receipted cancellation, scheduling enablement, global/task pause, capacity,
   and not-before controls through Workbench; prove clean drain and exact
   independent durable reopen without importing mutation semantics.
-- [ ] Daimon: after active work settles, exact execution/provider evidence and
-  guarded dispatch/resume with no-redispatch qualification.
+- [x] Daimon: reuse exact configured agent-session/provider evidence through
+  standalone and Workbench without exposing a session catalogue or mutation
+  client.
+- [ ] Daimon: add guarded dispatch/resume/permission only with current authority,
+  exact confirmation, durable reconciliation and no-redispatch qualification.
 - [ ] Agora, Chronos and Vellum: add remaining mutations only where standalone
   and Workbench paths preserve identical peer-owned confirmation and receipts.
 

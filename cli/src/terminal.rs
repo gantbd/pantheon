@@ -66,6 +66,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             agora,
             moira,
             daimon,
+            daimon_agent: None,
             hermes: None,
             aegis: None,
             grounding: None,
@@ -77,6 +78,7 @@ pub struct OperationalPeers {
     pub agora: Option<agora_tui::Component>,
     pub moira: Option<moira_tui::Component>,
     pub daimon: Option<daimon_tui::Component>,
+    pub daimon_agent: Option<daimon_tui::AgentComponent>,
     pub hermes: Option<hermes_tui::Component>,
     pub aegis: Option<aegis_tui::Component>,
     pub grounding: Option<grounding_tui::Component>,
@@ -92,6 +94,7 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
         mut agora,
         mut moira,
         mut daimon,
+        mut daimon_agent,
         mut hermes,
         mut aegis,
         mut grounding,
@@ -113,6 +116,9 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                 moira.poll();
             }
             if let Some(daimon) = &mut daimon {
+                daimon.poll();
+            }
+            if let Some(daimon) = &mut daimon_agent {
                 daimon.poll();
             }
             if let Some(hermes) = &mut hermes {
@@ -144,6 +150,7 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                         agora: agora.as_ref(),
                         moira: moira.as_ref(),
                         daimon: daimon.as_ref(),
+                        daimon_agent: daimon_agent.as_ref(),
                         hermes: hermes.as_ref(),
                         aegis: aegis.as_ref(),
                         grounding: grounding.as_ref(),
@@ -225,7 +232,13 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
-                    if let Some(daimon) = &mut daimon {
+                    if let Some(daimon) = &mut daimon_agent {
+                        if let Some(input) = daimon_tui::translate_key(key)
+                            && daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else if let Some(daimon) = &mut daimon {
                         if let Some(input) = daimon_tui::translate_key(key)
                             && daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested
                         {

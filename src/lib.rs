@@ -121,6 +121,7 @@ pub fn draw_shell(
             agora,
             moira: None,
             daimon: None,
+            daimon_agent: None,
             hermes: None,
             aegis: None,
             grounding: None,
@@ -136,6 +137,7 @@ pub struct PeerViews<'a> {
     pub agora: Option<&'a agora_tui::Component>,
     pub moira: Option<&'a moira_tui::Component>,
     pub daimon: Option<&'a daimon_tui::Component>,
+    pub daimon_agent: Option<&'a daimon_tui::AgentComponent>,
     pub hermes: Option<&'a hermes_tui::Component>,
     pub aegis: Option<&'a aegis_tui::Component>,
     pub grounding: Option<&'a grounding_tui::Component>,
@@ -156,6 +158,7 @@ pub fn draw_shell_with_moira(
         agora,
         moira,
         daimon,
+        daimon_agent,
         hermes,
         aegis,
         grounding,
@@ -216,7 +219,7 @@ pub fn draw_shell_with_moira(
                 vellum: vellum.is_some(),
                 agora: agora.is_some(),
                 moira: moira.is_some(),
-                daimon: daimon.is_some(),
+                daimon: daimon.is_some() || daimon_agent.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
                 grounding: grounding.is_some(),
@@ -227,6 +230,11 @@ pub fn draw_shell_with_moira(
         }
         Surface::Moira if moira.is_some() => {
             moira.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Daimon if daimon_agent.is_some() => {
+            daimon_agent
+                .expect("matched above")
+                .draw_in(frame, body, true);
         }
         Surface::Daimon if daimon.is_some() => {
             daimon.expect("matched above").draw_in(frame, body, true);
@@ -595,6 +603,7 @@ mod tests {
                             agora: None,
                             moira: Some(&moira),
                             daimon: None,
+                            daimon_agent: None,
                             hermes: None,
                             aegis: None,
                             grounding: None,
@@ -638,6 +647,7 @@ mod tests {
                             agora: None,
                             moira: None,
                             daimon: Some(&daimon),
+                            daimon_agent: None,
                             hermes: None,
                             aegis: None,
                             grounding: None,
@@ -681,6 +691,7 @@ mod tests {
                             agora: None,
                             moira: None,
                             daimon: None,
+                            daimon_agent: None,
                             hermes: None,
                             aegis: Some(&aegis),
                             grounding: None,

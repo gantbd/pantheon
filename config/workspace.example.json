@@ -22,7 +22,9 @@
   },
   "daimon": {
     "socket": "../run/daimon.sock",
-    "requires": ["agents.presence.v1"]
+    "agent_socket": "../run/daimon-agent.sock",
+    "agent_session": "00000000000000000000000000000000",
+    "requires": ["agents.presence.v1", "agents.session.inspect.v1"]
   },
   "hermes": {
     "socket": "../run/hermes.sock",

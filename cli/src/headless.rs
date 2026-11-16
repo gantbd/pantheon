@@ -24,6 +24,8 @@ pub struct HeadlessRequest {
     pub moira_socket: Option<PathBuf>,
     pub moira_requires: Vec<String>,
     pub daimon_socket: Option<PathBuf>,
+    pub daimon_agent_socket: Option<PathBuf>,
+    pub daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     pub daimon_requires: Vec<String>,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
@@ -104,7 +106,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete &= current;
     }
     if let Some(socket) = request.daimon_socket {
-        let (observation, current) = observe_daimon(socket);
+        let (observation, current) = observe_daimon(
+            socket,
+            request.daimon_agent_socket,
+            request.daimon_agent_session,
+        );
         peers.push(observation);
         complete &= current;
     }
@@ -334,7 +340,11 @@ fn observe_hermes(
     }
 }
 
-fn observe_daimon(socket: PathBuf) -> (serde_json::Value, bool) {
+fn observe_daimon(
+    socket: PathBuf,
+    agent_socket: Option<PathBuf>,
+    agent_session: Option<daimon_protocol::AgentSessionIdV1>,
+) -> (serde_json::Value, bool) {
     use daimon_client::ReadOnlyClient;
     use daimon_client::unix::ClientErrorV1;
     use daimon_protocol::{OutcomeV1, ReplyV1};
@@ -363,17 +373,31 @@ fn observe_daimon(socket: PathBuf) -> (serde_json::Value, bool) {
     match client.read_presence(64) {
         Ok(ReplyV1::Accepted(OutcomeV1::Presence { entries, truncated })) => {
             let current = entries.iter().filter(|entry| !entry.stale).count();
+            let (agent, agent_current) = match (agent_socket, agent_session) {
+                (Some(socket), Some(session)) => observe_daimon_agent(socket, session),
+                (None, None) => (serde_json::Value::Null, true),
+                _ => (
+                    serde_json::json!({"status": "configuration_refused"}),
+                    false,
+                ),
+            };
             (
                 serde_json::json!({
                     "peer": "daimon",
                     "capability": capability,
-                    "status": "current",
+                    "capabilities": if agent.is_null() {
+                        vec![capability]
+                    } else {
+                        vec![capability, "agents.session.inspect.v1"]
+                    },
+                    "status": if agent_current { "current" } else { "partial" },
                     "agents": entries.len(),
                     "current": current,
                     "stale": entries.len().saturating_sub(current),
                     "truncated": truncated,
+                    "configured_agent_session": agent,
                 }),
-                true,
+                agent_current,
             )
         }
         Ok(ReplyV1::Refused(reason)) => (
@@ -396,6 +420,106 @@ fn observe_daimon(socket: PathBuf) -> (serde_json::Value, bool) {
             )
         }
     }
+}
+
+fn observe_daimon_agent(
+    socket: PathBuf,
+    agent_session: daimon_protocol::AgentSessionIdV1,
+) -> (serde_json::Value, bool) {
+    use daimon_client::AgentReadOnlyClient;
+    use std::time::Duration;
+
+    let (service_session, port) = match daimon_client::unix::connect_agent(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => {
+            return (
+                serde_json::json!({
+                    "status": "connect_refused",
+                    "error": format!("{error:?}"),
+                }),
+                false,
+            );
+        }
+    };
+    let mut client = AgentReadOnlyClient::new(service_session, port);
+    match daimon_tui::observe_agent(&mut client, agent_session) {
+        Ok(observation) => {
+            let view = observation.view;
+            let capabilities = view.capabilities;
+            let events = observation
+                .events
+                .entries
+                .iter()
+                .map(|record| {
+                    serde_json::json!({
+                        "cursor": record.cursor,
+                        "kind": daimon_agent_event_kind(&record.event),
+                    })
+                })
+                .collect::<Vec<_>>();
+            (
+                serde_json::json!({
+                    "status": "current",
+                    "revision": view.revision,
+                    "phase": format!("{:?}", view.phase),
+                    "active_turn": view.active_turn.map(|_| "present"),
+                    "last_event_cursor": view.last_event_cursor,
+                    "profile_document_digest": hex_bytes(&view.profile_document_digest.into_bytes()),
+                    "capabilities": {
+                        "load_session": capabilities.load_session,
+                        "resume_session": capabilities.resume_session,
+                        "permissions": capabilities.permissions,
+                        "filesystem_read": capabilities.filesystem_read,
+                        "filesystem_write": capabilities.filesystem_write,
+                        "terminal": capabilities.terminal,
+                        "session_modes": capabilities.session_modes,
+                        "session_models": capabilities.session_models,
+                    },
+                    "events": events,
+                    "truncated": observation.events.next_after.is_some(),
+                }),
+                true,
+            )
+        }
+        Err(error) => {
+            let status = if error.contains("refused") {
+                "refused"
+            } else {
+                "unavailable"
+            };
+            (serde_json::json!({"status": status, "error": error}), false)
+        }
+    }
+}
+
+fn daimon_agent_event_kind(event: &daimon_protocol::agent::AgentEventV1) -> &'static str {
+    use daimon_protocol::agent::AgentEventV1;
+    match event {
+        AgentEventV1::AssistantMessage { .. } => "assistant_message",
+        AgentEventV1::Thought { .. } => "thought",
+        AgentEventV1::Plan { .. } => "plan",
+        AgentEventV1::ToolCall { .. } => "tool_call",
+        AgentEventV1::Terminal { .. } => "terminal",
+        AgentEventV1::Permission(_) => "permission",
+        AgentEventV1::FileChange { .. } => "file_change",
+        AgentEventV1::FileRead { .. } => "file_read",
+        AgentEventV1::Usage { .. } => "usage",
+        AgentEventV1::TurnFinished { .. } => "turn_finished",
+    }
+}
+
+fn hex_bytes(bytes: &[u8]) -> String {
+    let mut value = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        use std::fmt::Write;
+        write!(&mut value, "{byte:02x}").expect("writing to String cannot fail");
+    }
+    value
 }
 
 fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
@@ -777,6 +901,8 @@ mod tests {
             moira_socket: None,
             moira_requires: Vec::new(),
             daimon_socket: None,
+            daimon_agent_socket: None,
+            daimon_agent_session: None,
             daimon_requires: Vec::new(),
             hermes_socket: None,
             hermes_stream: None,

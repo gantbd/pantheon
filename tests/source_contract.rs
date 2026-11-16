@@ -200,7 +200,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "b4e7412e0d4dcc9f8fce928b83eac41a84bcc6f9"
+        "9e11dc556ce89cc7750f4567c77f3498ea86e9b1"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
@@ -220,11 +220,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "172950aa02e0971adcc92eb5111d16095ff9096d"
+        "ce0022845178df9584b0081469c49eab5cfbe04e"
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "db8efdaf83a148434bc7bca70c10822b7808f92c"
+        "fe793a7274efba24becc52f28fed5cd634998186"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -701,6 +701,40 @@ fn moira_live_gate_reuses_selected_saga_evidence_in_both_workbench_modes() {
         assert!(
             !gate.contains(forbidden),
             "Moira attach gate acquires or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn daimon_live_gate_reuses_exact_agent_session_evidence_in_both_workbench_modes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/daimon_attach.sh")).expect("Daimon attach gate");
+    for required in [
+        "agent_daemon_fixture",
+        "agents.presence.v1",
+        "agents.session.inspect.v1",
+        "agent_session",
+        "ReattachRequired",
+        "headless",
+        "interactive",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon attach gate omits {required}"
+        );
+    }
+    for forbidden in [
+        "AgentSessionClient",
+        "AgentCommandV1::Open",
+        "AgentCommandV1::Prompt",
+        "AgentCommandV1::Reattach",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Daimon attach gate acquires mutation authority through {forbidden}"
         );
     }
 }

@@ -66,6 +66,12 @@ authenticated peer context; it is neither a credential nor authority.
 Unknown fields, versions, duplicate surfaces, control characters, excessive
 workstreams/bindings and files larger than 64 KiB are refused.
 
+A Daimon profile may pair `agent_socket` with one exact 32-hex-digit
+`agent_session`. Workbench then reuses Daimon's read-only client to present the
+stable session view and bounded event page in both headless and interactive
+modes. The two fields are all-or-nothing; they confer no open, prompt,
+permission, reattach, cancel, or close authority.
+
 Use `--chronos-profile PATH` in place of the initial service directory to
 reopen a workspace saved by `chronos-tui --save-profile`. Relative service
 paths resolve from the profile directory. Peer flags use the exact names in
@@ -254,6 +260,13 @@ Run `sh tests/live/moira_attach.sh` to qualify Moira's content-free census in
 headless mode and the same reusable component's bounded selected-saga evidence
 and operator receipts interactively. The gate uses only `SagaReadOnlyClient`;
 it grants Workbench no reconciliation authority.
+
+Run `sh tests/live/daimon_attach.sh` to qualify Daimon's redacted presence plus
+one exact configured `agents.session.inspect.v1` projection in both Workbench
+modes. The agent projection double-reads the stable session around a bounded
+contiguous event page and exposes phase, profile digest, capabilities and event
+kinds without cataloguing sessions or acquiring open, prompt, permission,
+advance, cancel, close, resume or reattach authority.
 
 Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
 configured consumer's content-free cursor/backlog through Hermes's read-only

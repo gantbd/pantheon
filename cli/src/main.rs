@@ -54,6 +54,8 @@ struct Options {
     moira_socket: Option<PathBuf>,
     moira_requires: Vec<String>,
     daimon_socket: Option<PathBuf>,
+    daimon_agent_socket: Option<PathBuf>,
+    daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     daimon_requires: Vec<String>,
     hermes_socket: Option<PathBuf>,
     hermes_stream: Option<hermes_protocol::StreamIdV1>,
@@ -127,6 +129,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut moira_socket = None;
     let mut moira_requires = Vec::new();
     let mut daimon_socket = None;
+    let mut daimon_agent_socket = None;
+    let mut daimon_agent_session = None;
     let mut daimon_requires = Vec::new();
     let mut hermes_socket = None;
     let mut hermes_stream = None;
@@ -177,6 +181,11 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         }
         if let Some(daimon) = profile.daimon {
             daimon_socket = Some(daimon.socket);
+            daimon_agent_socket = daimon.agent_socket;
+            daimon_agent_session = daimon
+                .agent_session
+                .as_deref()
+                .and_then(daimon_tui::parse_agent_session);
             daimon_requires = daimon.requires;
         }
         if let Some(hermes) = profile.hermes {
@@ -465,6 +474,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_socket,
         moira_requires,
         daimon_socket,
+        daimon_agent_socket,
+        daimon_agent_session,
         daimon_requires,
         hermes_socket,
         hermes_stream,
@@ -1433,6 +1444,24 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let daimon_agent = if let (Some(socket), Some(agent_session)) =
+        (options.daimon_agent_socket, options.daimon_agent_session)
+    {
+        let (service_session, port) = daimon_client::unix::connect_agent(
+            socket,
+            daimon_wire::LimitsV1::default(),
+            daimon_wire::agent::AgentWireLimitsV1::default(),
+            std::time::Duration::from_secs(5),
+        )
+        .map_err(|error| format!("Daimon agent service refused: {error:?}"))?;
+        Some(daimon_tui::AgentComponent::new(
+            service_session,
+            port,
+            agent_session,
+        ))
+    } else {
+        None
+    };
     let hermes = if let Some(socket) = options.hermes_socket {
         let port = hermes_local_client::LocalPort::connect(
             socket,
@@ -1515,6 +1544,7 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
             agora,
             moira,
             daimon,
+            daimon_agent,
             hermes,
             aegis,
             grounding,
@@ -1529,6 +1559,8 @@ fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error:
         moira_socket: options.moira_socket,
         moira_requires: options.moira_requires,
         daimon_socket: options.daimon_socket,
+        daimon_agent_socket: options.daimon_agent_socket,
+        daimon_agent_session: options.daimon_agent_session,
         daimon_requires: options.daimon_requires,
         hermes_socket: options.hermes_socket,
         hermes_stream: options.hermes_stream,

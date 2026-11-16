@@ -48,6 +48,10 @@
       "owner": "daimon",
       "presentation": "daimon-tui",
       "readCapability": "agents.presence.v1",
+      "readCapabilities": ["agents.presence.v1", "agents.session.inspect.v1"],
+      "observationCapabilities": {
+        "agents.session.inspect.v1": "qualified"
+      },
       "client": { "contract": "daimon-client", "connection": "daimon-client", "ownership": "peer" },
       "evidence": ["daimon-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/daimon_attach.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },

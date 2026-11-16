@@ -71,6 +71,8 @@ pub struct MoiraProfile {
 #[serde(deny_unknown_fields)]
 pub struct DaimonProfile {
     pub socket: PathBuf,
+    pub agent_socket: Option<PathBuf>,
+    pub agent_session: Option<String>,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -250,6 +252,9 @@ impl WorkspaceProfile {
         }
         if let Some(daimon) = &mut profile.daimon {
             daimon.socket = resolve(base, &daimon.socket);
+            if let Some(socket) = &mut daimon.agent_socket {
+                *socket = resolve(base, socket);
+            }
         }
         if let Some(hermes) = &mut profile.hermes {
             hermes.socket = resolve(base, &hermes.socket);
@@ -342,6 +347,16 @@ impl WorkspaceProfile {
                 return Err("Daimon configuration requires the Daimon surface");
             }
             validate_path(&daimon.socket)?;
+            match (&daimon.agent_socket, &daimon.agent_session) {
+                (Some(socket), Some(session)) => {
+                    validate_path(socket)?;
+                    if daimon_tui::parse_agent_session(session).is_none() {
+                        return Err("Daimon agent session must be 32 hexadecimal digits");
+                    }
+                }
+                (None, None) => {}
+                _ => return Err("Daimon agent socket and session must be configured together"),
+            }
             validate_required_capabilities(&daimon.requires)?;
         }
         if let Some(hermes) = &self.hermes {
@@ -677,6 +692,38 @@ mod tests {
           "hermes":{"socket":"hermes.sock","stream":null,"consumer":"06060606060606060606060606060606"}
         }"#;
         assert!(WorkspaceProfile::parse(consumer_without_stream, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn profile_accepts_only_a_complete_exact_daimon_agent_selection() {
+        let valid = br#"{
+          "version":1,"name":"Daimon","surfaces":["daimon"],
+          "daimon":{"socket":"presence.sock","agent_socket":"agent.sock",
+            "agent_session":"07070707070707070707070707070707",
+            "requires":["agents.presence.v1","agents.session.inspect.v1"]}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let daimon = profile.daimon.unwrap();
+        assert_eq!(
+            daimon.agent_socket.unwrap(),
+            Path::new("/tmp/workbench/agent.sock")
+        );
+        assert_eq!(
+            daimon.agent_session.as_deref(),
+            Some("07070707070707070707070707070707")
+        );
+
+        let incomplete = br#"{
+          "version":1,"name":"Daimon","surfaces":["daimon"],
+          "daimon":{"socket":"presence.sock","agent_socket":"agent.sock"}
+        }"#;
+        assert!(WorkspaceProfile::parse(incomplete, Path::new(".")).is_err());
+        let invalid = br#"{
+          "version":1,"name":"Daimon","surfaces":["daimon"],
+          "daimon":{"socket":"presence.sock","agent_socket":"agent.sock",
+            "agent_session":"not-an-opaque-id"}
+        }"#;
+        assert!(WorkspaceProfile::parse(invalid, Path::new(".")).is_err());
     }
 
     #[test]
