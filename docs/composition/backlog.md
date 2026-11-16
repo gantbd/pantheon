@@ -94,8 +94,14 @@ read-only input until that repository settles.
 
 ## P3 — cross-engine completion
 
-- [ ] Close Agora–Chronos atomic admission/eligibility, cancellation,
-  reconciliation and Aegis mapping.
+- [x] Close Agora–Chronos's adapter-owned Aegis mapping through five explicit
+  session-local grant selections: Chronos Submit/Observe/Modify and Agora
+  Execute/Observe over the opaque publication resource. The public-client
+  mapping is qualified against the real Aegis daemon with fresh trusted time,
+  fail-closed replies, live epoch revocation, and clean drain.
+- [ ] Close Agora–Chronos atomic admission/eligibility plus Chronos
+  cancellation and V3/V4 lookup reconciliation. The adapter continues to
+  refuse the unsafe separate V3 admission then V5 eligibility sequence.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
   the real Aegis daemon and public Unix client, including live epoch revocation
