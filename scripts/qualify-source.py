@@ -64,22 +64,36 @@ def run_live_evidence(stage):
         subprocess.run(["sh", script_relative], cwd=stage / repository, check=True)
 
 
-def validate_direct_path_closure(directory, stage):
-    missing = []
-    for relative_manifest in ("Cargo.toml", "cli/Cargo.toml"):
-        manifest_path = directory / relative_manifest
+def dependency_tables(manifest):
+    for name in ("dependencies", "dev-dependencies", "build-dependencies"):
+        yield manifest.get(name, {})
+        yield manifest.get("workspace", {}).get(name, {})
+    for target in manifest.get("target", {}).values():
+        for name in ("dependencies", "dev-dependencies", "build-dependencies"):
+            yield target.get(name, {})
+    for source in manifest.get("patch", {}).values():
+        yield source
+    yield manifest.get("replace", {})
+
+
+def validate_archived_path_closure(stage):
+    missing = set()
+    for manifest_path in sorted(stage.glob("**/Cargo.toml")):
         manifest = tomllib.loads(manifest_path.read_text())
-        for dependency, declaration in manifest.get("dependencies", {}).items():
-            if not isinstance(declaration, dict) or "path" not in declaration:
-                continue
-            target = (manifest_path.parent / declaration["path"]).resolve()
-            if stage not in target.parents or not (target / "Cargo.toml").is_file():
-                missing.append(
-                    f"{dependency} ({declaration['path']} from {relative_manifest})"
-                )
+        relative_manifest = manifest_path.relative_to(stage)
+        for dependencies in dependency_tables(manifest):
+            for dependency, declaration in dependencies.items():
+                if not isinstance(declaration, dict) or "path" not in declaration:
+                    continue
+                target = (manifest_path.parent / declaration["path"]).resolve()
+                if stage not in target.parents or not (target / "Cargo.toml").is_file():
+                    missing.add(
+                        f"{dependency} ({declaration['path']} from {relative_manifest})"
+                    )
     if missing:
         raise SystemExit(
-            "candidate source closure omits direct dependencies: " + "; ".join(missing)
+            "candidate source closure omits path dependencies: "
+            + "; ".join(sorted(missing))
         )
 
 
@@ -153,7 +167,7 @@ def main():
         for name in PROJECTS:
             archive(ROOT.parent / name, pins[name], stage / name)
         directory = stage / "workbench-tui"
-        validate_direct_path_closure(directory, stage)
+        validate_archived_path_closure(stage)
         subprocess.run(
             ["cargo", "test", "--all-targets", "--locked", "--offline"],
             cwd=directory,
