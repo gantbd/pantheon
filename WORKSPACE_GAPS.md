@@ -92,7 +92,3 @@ qualified across all three interactive panes and one aggregate headless report.
 5. Keep Hermes payload disclosure separate from routine observation and retain
    its exact selector and bounds. Add ledger mutations only with authorization,
    uncertainty, retention and content-minimization laws intact.
-6. Keep Aegis issue and attenuation unavailable until a long-lived session can
-   preserve its handles and reconcile a lost reply to an exact operation;
-   epoch revocation already reuses the qualified exact-confirmation,
-   current-epoch and no-retry guard.
