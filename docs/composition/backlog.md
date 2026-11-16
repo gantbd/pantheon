@@ -203,7 +203,9 @@ read-only input until that repository settles.
   Agora retains a caller-stable actor operation, its durable daemon commits one
   addressed response in a separate process, Moira discards the successful reply,
   and a fresh authenticated public client observes the exact result without
-  republishing. The Vellum segment is now independently closed as well: its
+  republishing. That proof now uses the exact standalone Aegis and Agora owners,
+  current bounded grants, and ordered clean shutdown. The Vellum segment is now
+  independently closed as well: its
   exact standalone authenticated daemon commits one revision-bound durable edit,
   loses the reply, and a fresh public client performs historical lookup without
   execution fallback before public control-socket drain. The composed
