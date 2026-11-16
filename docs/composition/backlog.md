@@ -135,9 +135,12 @@ read-only input until that repository settles.
 - [ ] Vellum: promote the implemented edit/save path to qualified only after
   standalone and Workbench gates preserve its revision witness, persistence
   projection, save receipt and exact outcome-unknown replay law.
-- [ ] Agora: select guarded domain mutations only where the public client and
-  owner service can preserve the same actor-bound authority, confirmation,
-  durable receipt and uncertainty behavior in standalone and Workbench paths.
+- [x] Agora: qualify selected `rooms.create.v2` through one owner-client guard
+  in standalone and Workbench. The command binds the exact room facts and
+  current revision, refuses an inexact confirmation before connection, returns
+  the durable owner receipt, and resolves a discarded reply only by replaying
+  the identical retained request identity. Broader Agora mutations remain
+  unclaimed rather than becoming generic Workbench commands.
 
 ## P3 — cross-engine completion
 

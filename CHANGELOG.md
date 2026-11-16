@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Qualified selected Agora room creation across the standalone and Workbench
+  shells through one owner-client guard. The real-daemon gates cover zero-contact
+  confirmation refusal, stale revision refusal, durable receipt publication and
+  exact retained-request replay after a deliberately discarded reply.
 - Qualified Moira's explicit Aegis-backed operator profile and shared
   reconciliation guard across standalone and Workbench. Exact server-prepared
   confirmations are submitted once, unselected sagas are refused without

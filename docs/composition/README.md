@@ -70,7 +70,7 @@ implies production credential provenance.
 
 | Peer | Standalone interactive/headless | Workbench attach | Workbench host | Next boundary |
 | --- | --- | --- | --- | --- |
-| Agora | qualified read plus production-shaped durable process | qualified read | qualified sovereign process with real Aegis | immutable/release provenance and integration-specific mutations; Workbench passes the opaque owner config unchanged and selects the routed public client explicitly |
+| Agora | qualified read plus exact-confirmed room creation and production-shaped durable process | qualified read plus the same guarded room creation | qualified sovereign process with real Aegis | immutable/release provenance; broader domain mutations remain peer-selected rather than generic Workbench commands |
 | Chronos | qualified read and selected guarded writes | qualified, including the selected guarded-write profile | qualified local owner with exact durable mutation reopen | mutations beyond the selected task/scheduling profile; Agora remains a supervised process rather than a merged Cargo graph |
 | Vellum | qualified editor/read | qualified | qualified local owner | newer durable operations and release-qualified platform composition |
 | Moira | qualified read/reconciliation, census, evidence, exact-confirmed mutation and durable receipt recovery over the peer-owned Unix client | qualified attach plus the same Moira-owned reconciliation guard | qualified sovereign saga owner in both modes with durable mutation/reopen and clean drain | no selected-profile parity gap; broader process-separated Agora/Vellum workflows remain owner/adapter work |

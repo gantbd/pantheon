@@ -27,11 +27,14 @@
       "presentation": "agora-tui",
       "readCapability": "rooms.read.v2",
       "client": { "contract": "agora-client", "connection": "agora-local-client", "ownership": "peer" },
-      "evidence": ["agora-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/agora_hosted.sh", "workbench-tui/qualification/agora-host/qualify.sh"],
+      "evidence": ["agora-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/agora_mutation.sh", "workbench-tui/tests/live/agora_hosted.sh", "workbench-tui/qualification/agora-host/qualify.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "planned"
+      "mutation": "qualified",
+      "mutationCapabilities": {
+        "rooms.create.v2": "qualified"
+      }
     },
     "chronos": {
       "owner": "chronos",

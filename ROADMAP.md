@@ -191,6 +191,15 @@ cancellation, scheduling enablement, global/task pause, capacity, and
 not-before controls survive clean drain and exact independent service reopen.
 This does not claim mutations beyond that profile.
 
+Agora's selected `rooms.create.v2` profile is qualified through one
+owner-client guard shared by its standalone shell and Workbench command. It
+binds room identifier, name, admission and expected revision to an exact
+confirmation before connection; the authenticated service supplies the actor
+and publishes the durable revision receipt. Real-daemon evidence covers stale
+revision refusal and an intentionally discarded reply recovered only through
+the exact retained request identity. This does not claim a generic conversation
+mutation bus or Agora commands beyond room creation.
+
 ### 5. Extend peer coverage
 
 Moira now has an independent reusable TUI, standalone interactive/headless CLI,

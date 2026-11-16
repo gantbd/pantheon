@@ -138,6 +138,12 @@ parity matrix and Axon/Engram prior-art routing live in
 their behavior; this repository owns product composition and its evidence. The
 closed machine-readable parity matrix is [`composition-status.json`](composition-status.json).
 
+The separate `agora-create-room` command reuses Agora's owner-client
+`rooms.create.v2` guard rather than routing a generic Workbench mutation. It
+accepts the explicit conversation or composition transport, exact room facts,
+expected revision and literal confirmation; an inexact confirmation is refused
+before connection and an uncertain outcome is never retried by the shell.
+
 Local coordinated source layout:
 
 ```text
@@ -237,6 +243,13 @@ explicit prior/next incarnation recovery retains the room. The profile carries o
 executable, opaque config path, public socket, and explicit composition
 transport; all authority, residue validation, and bootstrap policy remain
 Agora-owned.
+
+Run `sh tests/live/agora_mutation.sh` for selected Agora mutation parity. The
+gate drives the same owner guard through Workbench against the real daemon,
+proving pre-connection confirmation refusal, stale-revision refusal and the
+exact durable room-creation receipt. Agora's standalone real-daemon gate also
+discards one accepted reply and proves the retained client request is replayed
+unchanged; broader conversation mutations remain unclaimed.
 
 Run `sh tests/live/aegis_attach.sh` to qualify the independently packaged
 read-only Aegis peer through the real durable daemon in both Workbench headless

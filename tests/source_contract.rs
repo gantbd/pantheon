@@ -497,6 +497,44 @@ fn chronos_mutation_gate_uses_the_peer_component_and_proves_durable_reopen() {
 }
 
 #[test]
+fn agora_mutation_gate_reuses_the_owner_guard_in_both_shells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/agora_mutation.sh"))
+        .expect("Agora mutation live gate");
+    for required in [
+        "real_daemon_fixture",
+        "agora-create-room",
+        "rooms.create.v2",
+        "confirmation_refused",
+        "Stale Room",
+        "Delivery Room",
+        "revision\": 4",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Agora mutation gate omits {required}"
+        );
+    }
+    let shell = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(shell.contains("agora_client::room_command"));
+    for forbidden in [
+        "agora_engine::",
+        "agora_service::",
+        "cargo publish",
+        "git push",
+        "gh release",
+        "curl ",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Agora mutation gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");
