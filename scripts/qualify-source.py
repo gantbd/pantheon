@@ -7,6 +7,7 @@ import re
 import subprocess
 import tarfile
 import tempfile
+import tomllib
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,6 +61,21 @@ def run_live_evidence(stage):
             raise SystemExit(f"missing live evidence in source closure: {relative}")
         repository, script_relative = relative.split("/", 1)
         subprocess.run(["sh", script_relative], cwd=stage / repository, check=True)
+
+
+def validate_direct_path_closure(directory, stage):
+    for relative_manifest in ("Cargo.toml", "cli/Cargo.toml"):
+        manifest_path = directory / relative_manifest
+        manifest = tomllib.loads(manifest_path.read_text())
+        for dependency, declaration in manifest.get("dependencies", {}).items():
+            if not isinstance(declaration, dict) or "path" not in declaration:
+                continue
+            target = (manifest_path.parent / declaration["path"]).resolve()
+            if stage not in target.parents or not (target / "Cargo.toml").is_file():
+                raise SystemExit(
+                    f"candidate source closure omits direct dependency {dependency}: "
+                    f"{declaration['path']} from {relative_manifest}"
+                )
 
 
 def main():
@@ -129,6 +145,7 @@ def main():
         for name in PROJECTS:
             archive(ROOT.parent / name, pins[name], stage / name)
         directory = stage / "workbench-tui"
+        validate_direct_path_closure(directory, stage)
         subprocess.run(
             ["cargo", "test", "--all-targets", "--locked", "--offline"],
             cwd=directory,
