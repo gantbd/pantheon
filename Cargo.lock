@@ -67,10 +67,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "agora-delivery-projection-port"
+version = "0.1.0"
+
+[[package]]
 name = "agora-local-client"
 version = "0.1.0"
 dependencies = [
  "agora-client",
+ "agora-delivery-projection-port",
  "agora-protocol",
  "agora-scheduled-publication-port",
  "agora-wire",
@@ -98,6 +103,7 @@ dependencies = [
 name = "agora-wire"
 version = "0.1.0"
 dependencies = [
+ "agora-delivery-projection-port",
  "agora-protocol",
  "agora-scheduled-publication-port",
  "keystone-codec 0.0.1",

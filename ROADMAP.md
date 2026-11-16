@@ -284,8 +284,11 @@ component; any hosted operator authority is an explicit exact-stream Hermes
 process input. Generic append is deliberately not a Workbench capability because
 its domain envelope belongs to a producer-specific integration. Moira's
 workflow-event publisher and Agora's minimized-wake adapter already qualify two
-such public-client profiles; Agora's concrete endpoint/deployment profile stays
-open in `agora-hermes-adapter`.
+such public-client profiles. The latter now has a separately classified local
+application with current-visibility projection, deployment-issued Aegis grant,
+non-regressing trusted time, a bounded durable receipt spool, Hermes
+acknowledgement and exact reopen across real sovereign processes. Remote
+provider endpoints remain adapter-owned rather than becoming Workbench commands.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,

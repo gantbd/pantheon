@@ -183,12 +183,21 @@ read-only input until that repository settles.
   adapter's local release profile is separately closed over pinned clean Aegis,
   Agora, Chronos and Keystone revisions, optimized tests, 10,000 checkpoint
   mutations, 10,000 recovery cycles, and the real lost-reply/revocation gate.
-- [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
-  The adapter-owned public-Aegis-client authority wiring is qualified against
-  the real Aegis daemon and public Unix client, including live epoch revocation
-  fencing a previously valid grant; the deployment must still select peer
-  provenance, production session/grant issuance, trusted time source, endpoint
-  receipts/network policy, and durable owner lifecycle.
+- [x] Close the Agora–Hermes concrete endpoint and deployed local production
+  profile. Agora now exposes its existing content-minimized projection through
+  the sovereign composition client and durable daemon. Hermes supplies an
+  exact-stream delivery profile with append, cursor observation and
+  acknowledgement but no payload read, compaction, other-stream or service
+  authority. The separately classified `agora-hermes-local` application verifies
+  private same-owner sockets, obtains current Aegis epoch, issues only the
+  create/recovery actions it needs, uses non-regressing Unix-epoch time, owns
+  separate durable journal and bounded receipt-spool directories, and drives
+  only the public Agora and Hermes clients. The real gate runs explicit
+  separate Agora-participant and delivery-subscription Aegis realms plus Agora
+  and Hermes owner processes, proves durable endpoint receipt before Hermes
+  acknowledgement, exact application reopen and clean owner drain. The selected
+  endpoint has no network, URL, token, secret or payload field; remote-provider
+  profiles and cross-realm revocation remain explicit nonclaims.
 - [ ] Complete Moira's process-separated Agora/Vellum workflow and every-boundary
   lost-reply matrix.
 - [ ] Complete physical authority/transport/revocation composition for Chronos

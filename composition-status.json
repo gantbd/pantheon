@@ -108,7 +108,7 @@
         "agora.minimized-wake.v1": {
           "owner": "agora-hermes-adapter",
           "state": "qualified",
-          "evidence": "agora-hermes-adapter/scripts/check-qualification.sh"
+          "evidence": "agora-hermes-adapter/qualification/local-profile/qualify.sh"
         }
       },
       "disclosureCapabilities": {
