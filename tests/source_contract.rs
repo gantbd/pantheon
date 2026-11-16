@@ -377,8 +377,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(qualifier.contains("\"agora-tui\","));
     assert!(qualifier.contains("\"keystone\","));
     assert!(qualifier.contains("run_live_evidence(stage)"));
-    assert!(qualifier.contains("validate_archived_path_closure(stage)"));
-    assert!(qualifier.contains("candidate source closure omits path dependencies"));
+    assert!(qualifier.contains("validate_direct_path_closure(directory, stage)"));
+    assert!(qualifier.contains("candidate source closure omits direct dependencies"));
     assert!(qualifier.contains("status[\"peers\"][peer][\"evidence\"]"));
     assert!(!qualifier.contains("[\"sh\", \"tests/live/dual_service.sh\"]"));
     assert!(
