@@ -222,6 +222,25 @@ def check_profile(binary, profile_path, environment, expected_success):
         )
 
 
+def package_legal_files(package, stage):
+    root = Path(package["manifest_path"]).resolve().parent
+    candidates = []
+    current = root
+    for _ in range(12):
+        candidates = sorted(
+            path
+            for path in current.iterdir()
+            if path.is_file()
+            and path.name.lower().startswith(
+                ("license", "copying", "notice", "copyright")
+            )
+        )
+        if candidates or current == stage or current.parent == current:
+            break
+        current = current.parent
+    return candidates
+
+
 def qualify_local_release(stage, directory, environment, receipt, artifact_output):
     release = receipt.get("localRelease", {})
     if release.get("qualified") is not True:
@@ -265,14 +284,29 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
 
     metadata = json.loads(
         subprocess.check_output(
-            ["cargo", "metadata", "--locked", "--offline", "--format-version", "1"],
+            [
+                "cargo",
+                "metadata",
+                "--locked",
+                "--offline",
+                "--format-version",
+                "1",
+                "--filter-platform",
+                host,
+            ],
             cwd=directory,
             env=release_environment,
             text=True,
         )
     )
+    selected_package_ids = {node["id"] for node in metadata["resolve"]["nodes"]}
+    selected_packages = [
+        package
+        for package in metadata["packages"]
+        if package["id"] in selected_package_ids
+    ]
     inventory = set()
-    for package in metadata["packages"]:
+    for package in selected_packages:
         license_expression = package.get("license")
         if license_expression not in ALLOWED_LICENSE_EXPRESSIONS:
             raise SystemExit(
@@ -316,6 +350,46 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
         "name\tversion\tlicense\tsource\n"
         + "".join("\t".join(row) + "\n" for row in sorted(inventory))
     )
+    notices = documentation / "THIRD_PARTY_NOTICES"
+    notices.mkdir()
+    notice_index = ["name\tversion\tlicense\tfiles\n"]
+    copied_notices = {}
+    for package in sorted(
+        selected_packages, key=lambda item: (item["name"], item["version"], item["id"])
+    ):
+        legal_files = package_legal_files(package, stage)
+        references = []
+        for legal_file in legal_files:
+            digest = sha256(legal_file)
+            destination_name = copied_notices.get(digest)
+            if destination_name is None:
+                safe_name = re.sub(r"[^A-Za-z0-9_.-]", "-", legal_file.name)
+                destination_name = f"{digest}-{safe_name}"
+                shutil.copy2(legal_file, notices / destination_name)
+                copied_notices[digest] = destination_name
+            references.append(f"THIRD_PARTY_NOTICES/{destination_name}")
+        if not references:
+            if (
+                package.get("source") is None
+                and "Apache-2.0" in package["license"]
+            ):
+                references.append("LICENSE-APACHE (selected distribution license)")
+            else:
+                raise SystemExit(
+                    f"no distributable legal text for {package['name']} {package['version']}"
+                )
+        notice_index.append(
+            "\t".join(
+                (
+                    package["name"],
+                    package["version"],
+                    package["license"],
+                    ",".join(references),
+                )
+            )
+            + "\n"
+        )
+    (documentation / "THIRD_PARTY_NOTICES.tsv").write_text("".join(notice_index))
 
     checksums = []
     for path in sorted(package_root.rglob("*")):
@@ -368,7 +442,7 @@ def qualify_local_release(stage, directory, environment, receipt, artifact_outpu
         "sha256": archive_digest,
         "target": host,
         "qualifiedHost": qualified_host,
-        "packages": len(inventory),
+        "packages": len(selected_packages),
         "profileSchema": release["profileSchema"],
         "replacement": "atomic-same-version-profile-preserved",
     }

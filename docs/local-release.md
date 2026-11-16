@@ -8,7 +8,8 @@ notarized, universal-macOS, Linux, Windows, or GUI distribution claim.
 
 The release unit is the `workbench-tui` executable plus its operator profile
 example, source receipt, Workbench license texts, security and change records,
-an exact transitive package/license inventory, and a SHA-256 file manifest. The
+an exact selected-target package/license inventory, available third-party legal
+texts and their package mapping, and a SHA-256 file manifest. The
 source qualifier reconstructs Workbench and every direct peer from the full Git
 commits in `release/source.json`, separately seeds the lock-pinned Keystone Git
 identity from its exact declared object, switches Cargo offline, tests the
@@ -56,8 +57,11 @@ explicit old-to-new migration and rollback fixture before extending this claim.
 Every package in the lock-selected Cargo graph must carry one of the exact
 reviewed SPDX expressions enforced by `scripts/qualify-source.py`. The artifact
 records package name, version, expression, and source identity in
-`THIRD_PARTY_LICENSES.tsv`; a new or missing expression fails qualification.
-The top-level dual-license texts cover Workbench itself.
+`THIRD_PARTY_LICENSES.tsv`. `THIRD_PARTY_NOTICES.tsv` maps every selected-target
+package to its bundled legal text. Internal path packages declared under the
+dual license but carrying no nearer notice use the bundled Apache-2.0 text as
+the selected distribution license. A new expression or a dependency without a
+distributable legal text fails qualification.
 
 The selected support boundary is local Apple-silicon macOS on the exact host
 profile above. Remote source reachability, crates.io publication, automatic

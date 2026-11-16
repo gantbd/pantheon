@@ -440,6 +440,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "--local-release",
         "ALLOWED_LICENSE_EXPRESSIONS",
         "THIRD_PARTY_LICENSES.tsv",
+        "THIRD_PARTY_NOTICES.tsv",
+        "no distributable legal text",
         "SHA256SUMS",
         "write_deterministic_tar_gz",
         "os.replace(replacement, deployed_binary)",
