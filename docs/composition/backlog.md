@@ -121,7 +121,10 @@ read-only input until that repository settles.
   The isolated host qualification also returns this exact client from
   `NativeHost` and proves publish/observe under Workbench lifecycle with
   explicitly test-only authority. Supplying the production owner factory
-  remains part of the P1 Agora provenance/grant/time/durability item.
+  remains part of the P1 Agora provenance/grant/time/durability item. The
+  adapter's local release profile is separately closed over pinned clean Aegis,
+  Agora, Chronos and Keystone revisions, optimized tests, 10,000 checkpoint
+  mutations, 10,000 recovery cycles, and the real lost-reply/revocation gate.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
   the real Aegis daemon and public Unix client, including live epoch revocation
