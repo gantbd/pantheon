@@ -275,6 +275,11 @@ owner guard and exact confirmation across turn-active and permission-waiting
 states. Cancellation is attempted once with a stable idempotency key; an
 uncertain delivery is never retried and must be reconciled by inspection.
 
+Run `sh tests/live/daimon_close.sh` to qualify `agents.session.close.v1`.
+Both shells reuse the owner guard that accepts only an exact Ready revision
+with no active turn, so active work must be cancelled first. Close is attempted
+once and an uncertain delivery remains an inspection/reconciliation problem.
+
 Run `sh tests/live/daimon_prompt.sh` to qualify
 `agents.session.prompt.v1`. Standalone Daimon and Workbench parse the same
 strict credential-free request document and invoke the same owner guard. Prompt

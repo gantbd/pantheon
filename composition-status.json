@@ -53,7 +53,7 @@
         "agents.session.inspect.v1": "qualified"
       },
       "client": { "contract": "daimon-client", "connection": "daimon-client", "ownership": "peer" },
-      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "daimon-tui/tests/live/agent_cancel.sh", "daimon-tui/tests/live/agent_prompt.sh", "daimon-tui/tests/live/agent_permission.sh", "workbench-tui/tests/live/daimon_attach.sh", "workbench-tui/tests/live/daimon_advance.sh", "workbench-tui/tests/live/daimon_cancel.sh", "workbench-tui/tests/live/daimon_prompt.sh", "workbench-tui/tests/live/daimon_permission.sh"],
+      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "daimon-tui/tests/live/agent_cancel.sh", "daimon-tui/tests/live/agent_close.sh", "daimon-tui/tests/live/agent_prompt.sh", "daimon-tui/tests/live/agent_permission.sh", "workbench-tui/tests/live/daimon_attach.sh", "workbench-tui/tests/live/daimon_advance.sh", "workbench-tui/tests/live/daimon_cancel.sh", "workbench-tui/tests/live/daimon_close.sh", "workbench-tui/tests/live/daimon_prompt.sh", "workbench-tui/tests/live/daimon_permission.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "absent", "headless": "absent" },
@@ -61,6 +61,7 @@
       "mutationCapabilities": {
         "agents.session.advance.v1": "qualified",
         "agents.session.cancel.v1": "qualified",
+        "agents.session.close.v1": "qualified",
         "agents.session.prompt.v1": "qualified",
         "agents.session.permission.v1": "qualified"
       }
