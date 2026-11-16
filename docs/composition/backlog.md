@@ -204,10 +204,10 @@ read-only input until that repository settles.
   addressed response in a separate process, Moira discards the successful reply,
   and a fresh authenticated public client observes the exact result without
   republishing. The Vellum segment is now independently closed as well: its
-  authenticated daemon commits one revision-bound durable edit, loses the reply,
-  and a fresh public client performs historical lookup without execution
-  fallback. The composed Agora→Vellum journey and every-effect fault matrix
-  remain open.
+  exact standalone authenticated daemon commits one revision-bound durable edit,
+  loses the reply, and a fresh public client performs historical lookup without
+  execution fallback before public control-socket drain. The composed
+  Agora→Vellum journey and every-effect fault matrix remain open.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
   and Vellum federation; finish immutable release qualification for Agora
   federation.
