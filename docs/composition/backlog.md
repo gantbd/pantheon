@@ -109,8 +109,11 @@ read-only input until that repository settles.
   both admission and cancellation replies without a second mutation.
 - [x] Preserve the post-offer cut: even known Chronos cancellation remains
   reconciliation-required and is never treated as proof Agora did not publish.
-- [ ] Supply the deployed Agora retained-observation endpoint that can resolve
-  the remaining post-offer cut from Agora's own authoritative evidence.
+- [x] Add Agora's actor-bound, read-only retained-observation owner contract
+  and adapter reconciliation: accepted evidence wins; authoritative absence
+  closes only with independently terminal Chronos cancellation.
+- [ ] Deploy that Agora observation contract through a dedicated composition
+  transport and public client; ordinary participant Wire V2 remains unchanged.
 - [ ] Close the Agora–Hermes concrete endpoint and deployed production profile.
   The adapter-owned public-Aegis-client authority wiring is qualified against
   the real Aegis daemon and public Unix client, including live epoch revocation
