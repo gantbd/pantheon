@@ -199,14 +199,20 @@ Workbench attach composition through the same read-only client. Its
 read-only component exposes bounded saga, reconciliation, effect-evidence, and
 operator-receipt projections through the public client. The real-daemon journey
 is qualified interactively both standalone and through Workbench, while the
-headless path preserves the content-free census. Operator reconciliation remains
-deliberately absent until its confirmation, command-scoped authority, revision,
-durable receipt, and uncertain delivery contracts can be preserved end to end.
+headless path preserves the content-free census. Operator reconciliation now
+reuses one Moira-owned guard in standalone and Workbench commands: the server
+prepares the exact revision-bound challenge, confirmation is submitted once,
+and an uncertain delivery is resolved only from the exact durable receipt.
 The selected ordinary saga profile now has a sovereign `moira-saga-local`
 application. Workbench supervises its exact process from an opaque owner config,
 attaches with Moira's peer-owned public Unix client, and qualifies durable
 mutation/reopen plus clean drain in both headless and interactive modes. This
-owner explicitly denies reconciliation authority; supervision cannot upgrade it.
+owner defaults to denying reconciliation authority; supervision cannot upgrade
+it. Its explicit production Aegis profile owns the public-client session,
+short-lived selected-saga grant and monotonic time inside the opaque config. A
+real-process gate qualifies both shell directions, unselected-saga refusal
+without revision movement, attributed receipt recovery after hosted reopen and
+clean drain.
 
 Daimon now likewise has an independent reusable TUI, standalone CLI,
 `agents.presence.v1` headless observation, and Workbench attach composition. Its

@@ -39,6 +39,7 @@ moira-tui = { version = "=0.1.0", path = "../../moira-tui" }
 moira-tui-local-client = { version = "=0.1.0", path = "../../moira-tui/local-client" }
 moira-client = { version = "=0.1.0", path = "../../moira/crates/moira-client", features = ["unix"] }
 moira-protocol = { version = "=0.1.0", path = "../../moira/crates/moira-protocol" }
+moira-reconciliation-command = { version = "=0.1.0", path = "../../moira/crates/moira-reconciliation-command" }
 daimon-tui = { version = "=0.1.0", path = "../../daimon-tui" }
 daimon-agent-command = { version = "=0.1.0", path = "../../daimon/crates/daimon-agent-command" }
 daimon-client = { version = "=0.1.0", path = "../../daimon/crates/daimon-client", features = ["unix"] }

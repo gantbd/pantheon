@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Qualified Moira's explicit Aegis-backed operator profile and shared
+  reconciliation guard across standalone and Workbench. Exact server-prepared
+  confirmations are submitted once, unselected sagas are refused without
+  revision movement, and indeterminate outcomes recover only from exact durable
+  receipts retained across hosted reopen.
 - Added Moira's sovereign durable saga owner to Workbench hosting. Standalone
   and Workbench now reuse Moira's peer-owned reconnectable Unix saga client;
   durable mutation/reopen and clean headless/interactive drain are qualified,

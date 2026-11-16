@@ -558,7 +558,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\nworkbench-tui daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\nworkbench-tui daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nworkbench-tui moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\nworkbench-tui moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\nworkbench-tui moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -581,6 +581,24 @@ fn vellum_connector(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "moira-reconciliation-view")
+    {
+        return moira_reconciliation_view(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "moira-reconciliation-confirm")
+    {
+        return moira_reconciliation_confirm(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "moira-reconciliation-recover")
+    {
+        return moira_reconciliation_recover(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "daimon-agent-close")
@@ -679,6 +697,354 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn moira_reconciliation_view(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use moira_reconciliation_command::{PrepareError, prepare};
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let saga = moira_protocol::SagaIdV1(parse_moira_u64(args.next())?);
+    let disposition = parse_moira_disposition(&mut args)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let port = match moira_client::unix::SagaUnixPort::connect(
+        socket,
+        moira_client::unix::SagaClientLimitsV1::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return moira_reconciliation_failure(
+                moira_reconciliation_command::PREPARE_CAPABILITY,
+                "not_sent",
+                &format!("{error:?}"),
+                None,
+            );
+        }
+    };
+    let proposal = moira_protocol::ReconciliationProposalV1 { saga, disposition };
+    match prepare(port, proposal) {
+        Ok(value) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "moira",
+                    "capability": moira_reconciliation_command::PREPARE_CAPABILITY,
+                    "complete": true,
+                    "status": "current",
+                    "storage_revision": value.storage_revision,
+                    "saga": value.saga.0,
+                    "disposition": format!("{:?}", value.disposition),
+                    "action": moira_hex(&value.action.0),
+                    "confirmation_digest": moira_hex(&value.confirmation_digest),
+                }))?
+            );
+            Ok(())
+        }
+        Err(PrepareError::NotAvailable) => moira_reconciliation_failure(
+            moira_reconciliation_command::PREPARE_CAPABILITY,
+            "not_available",
+            "no current reconciliation challenge",
+            None,
+        ),
+        Err(PrepareError::Refused(refusal)) => moira_reconciliation_failure(
+            moira_reconciliation_command::PREPARE_CAPABILITY,
+            "refused",
+            "reconciliation preparation refused",
+            Some(format!("{refusal:?}")),
+        ),
+        Err(PrepareError::Transport(error)) => moira_reconciliation_failure(
+            moira_reconciliation_command::PREPARE_CAPABILITY,
+            "unavailable",
+            &format!("{error:?}"),
+            None,
+        ),
+        Err(PrepareError::InvalidReply) => moira_reconciliation_failure(
+            moira_reconciliation_command::PREPARE_CAPABILITY,
+            "invalid_reply",
+            "unexpected reconciliation preparation reply",
+            None,
+        ),
+    }
+}
+
+fn moira_reconciliation_confirm(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use moira_client::unix::SagaClientErrorV1;
+    use moira_protocol::SagaOutcomeV1;
+    use moira_reconciliation_command::{ConfirmError, confirm};
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let storage_revision = parse_moira_u64(args.next())?;
+    let saga = moira_protocol::SagaIdV1(parse_moira_u64(args.next())?);
+    let disposition = parse_moira_disposition(&mut args)?;
+    let action = moira_protocol::OperatorActionIdV1(parse_moira_hex::<16>(args.next())?);
+    let confirmation_digest = parse_moira_hex::<32>(args.next())?;
+    if args.next().as_deref() != Some(std::ffi::OsStr::new("CONFIRM")) || args.next().is_some() {
+        return Err(usage().into());
+    }
+    let action_hex = moira_hex(&action.0);
+    let port = match moira_client::unix::SagaUnixPort::connect(
+        socket,
+        moira_client::unix::SagaClientLimitsV1::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return moira_reconciliation_failure(
+                moira_reconciliation_command::CONFIRM_CAPABILITY,
+                "not_sent",
+                &format!("{error:?}"),
+                Some(action_hex),
+            );
+        }
+    };
+    let confirmation = moira_protocol::ConfirmedReconciliationV1 {
+        storage_revision,
+        saga,
+        disposition,
+        action,
+        confirmation_digest,
+    };
+    match confirm(port, confirmation) {
+        Ok(SagaOutcomeV1::Applied {
+            storage_revision,
+            transition,
+            replayed,
+        }) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "moira",
+                    "capability": moira_reconciliation_command::CONFIRM_CAPABILITY,
+                    "complete": true,
+                    "status": "accepted",
+                    "storage_revision": storage_revision,
+                    "transition": format!("{transition:?}"),
+                    "action": action_hex,
+                    "replayed": replayed,
+                }))?
+            );
+            Ok(())
+        }
+        Ok(_) | Err(ConfirmError::InvalidReply) => moira_reconciliation_failure(
+            moira_reconciliation_command::CONFIRM_CAPABILITY,
+            "invalid_reply",
+            "unexpected reconciliation confirmation reply",
+            Some(action_hex),
+        ),
+        Err(ConfirmError::Refused(refusal)) => moira_reconciliation_failure(
+            moira_reconciliation_command::CONFIRM_CAPABILITY,
+            "refused",
+            "reconciliation confirmation refused",
+            Some(format!("{refusal:?}")),
+        ),
+        Err(ConfirmError::Transport(SagaClientErrorV1::NotSent(error))) => {
+            moira_reconciliation_failure(
+                moira_reconciliation_command::CONFIRM_CAPABILITY,
+                "not_sent",
+                &format!("{error:?}"),
+                Some(action_hex),
+            )
+        }
+        Err(ConfirmError::Transport(SagaClientErrorV1::OutcomeUnknown(error))) => {
+            moira_reconciliation_failure(
+                moira_reconciliation_command::CONFIRM_CAPABILITY,
+                "outcome_unknown",
+                &format!("{error:?}"),
+                Some(action_hex),
+            )
+        }
+        Err(ConfirmError::Transport(error)) => moira_reconciliation_failure(
+            moira_reconciliation_command::CONFIRM_CAPABILITY,
+            "unavailable",
+            &format!("{error:?}"),
+            Some(action_hex),
+        ),
+    }
+}
+
+fn moira_reconciliation_recover(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use moira_reconciliation_command::{RecoverError, recover};
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let saga = moira_protocol::SagaIdV1(parse_moira_u64(args.next())?);
+    let action = moira_protocol::OperatorActionIdV1(parse_moira_hex::<16>(args.next())?);
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let action_hex = moira_hex(&action.0);
+    let port = match moira_client::unix::SagaUnixPort::connect(
+        socket,
+        moira_client::unix::SagaClientLimitsV1::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return moira_reconciliation_failure(
+                moira_reconciliation_command::RECOVER_CAPABILITY,
+                "not_sent",
+                &format!("{error:?}"),
+                Some(action_hex),
+            );
+        }
+    };
+    match recover(port, saga, action) {
+        Ok(receipt) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "moira",
+                    "capability": moira_reconciliation_command::RECOVER_CAPABILITY,
+                    "complete": true,
+                    "status": "recovered",
+                    "action": action_hex,
+                    "saga": receipt.saga.0,
+                    "authority_decision": receipt.authority_decision,
+                    "authority_epoch": receipt.authority_epoch,
+                    "disposition": format!("{:?}", receipt.disposition),
+                    "phase": format!("{:?}", receipt.phase),
+                    "prepared_effect": receipt.prepared.map(|effect| effect.0),
+                }))?
+            );
+            Ok(())
+        }
+        Err(RecoverError::NotFound) => moira_reconciliation_failure(
+            moira_reconciliation_command::RECOVER_CAPABILITY,
+            "not_found",
+            "durable operator receipt not found",
+            Some(action_hex),
+        ),
+        Err(RecoverError::Mismatch) => moira_reconciliation_failure(
+            moira_reconciliation_command::RECOVER_CAPABILITY,
+            "mismatch",
+            "operator receipt identity mismatch",
+            Some(action_hex),
+        ),
+        Err(RecoverError::Refused(refusal)) => moira_reconciliation_failure(
+            moira_reconciliation_command::RECOVER_CAPABILITY,
+            "refused",
+            "operator receipt recovery refused",
+            Some(format!("{refusal:?}")),
+        ),
+        Err(RecoverError::Transport(error)) => moira_reconciliation_failure(
+            moira_reconciliation_command::RECOVER_CAPABILITY,
+            "unavailable",
+            &format!("{error:?}"),
+            Some(action_hex),
+        ),
+        Err(RecoverError::InvalidReply) => moira_reconciliation_failure(
+            moira_reconciliation_command::RECOVER_CAPABILITY,
+            "invalid_reply",
+            "unexpected operator receipt reply",
+            Some(action_hex),
+        ),
+    }
+}
+
+fn parse_moira_disposition<I>(
+    args: &mut I,
+) -> Result<moira_protocol::OperatorDispositionV1, Box<dyn std::error::Error>>
+where
+    I: Iterator<Item = std::ffi::OsString>,
+{
+    use moira_protocol::{OperatorDispositionV1, SagaEffectIdV1, SagaEffectOutcomeV1};
+    let kind = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    Ok(match kind.as_str() {
+        "keep-uncertain" => OperatorDispositionV1::KeepUncertain,
+        "fail-terminal" => OperatorDispositionV1::FailTerminal,
+        "retry" => OperatorDispositionV1::Retry {
+            failed_effect: SagaEffectIdV1(parse_moira_u64(args.next())?),
+            now: parse_moira_u64(args.next())?,
+        },
+        "compensate" => OperatorDispositionV1::Compensate {
+            now: parse_moira_u64(args.next())?,
+        },
+        "cancel" => OperatorDispositionV1::Cancel {
+            now: parse_moira_u64(args.next())?,
+        },
+        "admit-evidence" => {
+            let effect = SagaEffectIdV1(parse_moira_u64(args.next())?);
+            let outcome = match args
+                .next()
+                .and_then(|value| value.into_string().ok())
+                .as_deref()
+            {
+                Some("succeeded") => SagaEffectOutcomeV1::Succeeded,
+                Some("failed") => SagaEffectOutcomeV1::Failed,
+                _ => return Err(usage().into()),
+            };
+            OperatorDispositionV1::AdmitEvidence {
+                effect,
+                outcome,
+                observed_at: parse_moira_u64(args.next())?,
+            }
+        }
+        _ => return Err(usage().into()),
+    })
+}
+
+fn parse_moira_u64(value: Option<std::ffi::OsString>) -> Result<u64, Box<dyn std::error::Error>> {
+    Ok(value.ok_or_else(usage)?.to_string_lossy().parse()?)
+}
+
+fn parse_moira_hex<const N: usize>(
+    value: Option<std::ffi::OsString>,
+) -> Result<[u8; N], Box<dyn std::error::Error>> {
+    let value = value
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if value.len() != N * 2 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(usage().into());
+    }
+    let mut result = [0_u8; N];
+    for (index, byte) in result.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)?;
+    }
+    Ok(result)
+}
+
+fn moira_hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut encoded = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        encoded.push(HEX[usize::from(byte >> 4)] as char);
+        encoded.push(HEX[usize::from(byte & 0x0f)] as char);
+    }
+    encoded
+}
+
+fn moira_reconciliation_failure(
+    capability: &str,
+    status: &str,
+    message: &str,
+    detail: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "moira",
+            "capability": capability,
+            "complete": false,
+            "status": status,
+            "detail": detail,
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn daimon_agent_advance(

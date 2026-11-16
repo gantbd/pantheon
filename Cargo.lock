@@ -806,6 +806,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "moira-reconciliation-command"
+version = "0.1.0"
+dependencies = [
+ "moira-client",
+ "moira-protocol",
+]
+
+[[package]]
 name = "moira-tui"
 version = "0.1.0"
 dependencies = [
@@ -1582,6 +1590,7 @@ dependencies = [
  "hermes-tui",
  "moira-client",
  "moira-protocol",
+ "moira-reconciliation-command",
  "moira-tui",
  "moira-tui-local-client",
  "nix",

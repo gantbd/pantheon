@@ -89,6 +89,12 @@ invokes the exact supervised lifecycle, waits for the private saga socket and
 attaches through `moira-client::unix::SagaUnixPort`; it cannot turn ordinary
 read/mutate access into reconciliation authority.
 
+The separate `moira-reconciliation-view`, `moira-reconciliation-confirm` and
+`moira-reconciliation-recover` commands reuse Moira's owner-side guard. They
+accept only an exact server-prepared challenge, submit confirmation once without
+retrying an unknown outcome, and resolve uncertainty only from the exact durable
+operator receipt. Workbench never parses the Aegis portion of the owner config.
+
 Use `--chronos-profile PATH` in place of the initial service directory to
 reopen a workspace saved by `chronos-tui --save-profile`. Relative service
 paths resolve from the profile directory. Peer flags use the exact names in
@@ -276,6 +282,12 @@ The journey seeds one durable saga through Moira's public client, drains the
 standalone owner, then reopens it under Workbench in headless and interactive
 modes. Both paths observe the retained census and end with a clean supervised
 receipt and removed socket; a final headless reopen proves persistence.
+
+Run `sh tests/live/moira_reconciliation.sh` to qualify the selected production
+Aegis profile and shared reconciliation guard. Standalone and Workbench prepare
+and confirm in opposite directions, both recover attributed receipts, an
+unselected saga is refused without revision change, and Workbench hosts and
+cleanly drains the same durable owner before receipt recovery after reopen.
 
 Run `sh tests/live/daimon_attach.sh` to qualify Daimon's redacted presence plus
 one exact configured `agents.session.inspect.v1` projection in both Workbench

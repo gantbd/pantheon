@@ -219,7 +219,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "237858f5c87ff8a1eace9462c019311ae81ff71b"
+        "7f51d0b904ae8b1f66b4d16c38b9bffeeb5726d8"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -243,7 +243,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "a3e9554f6a82e3f63a90875bd94202c6d42d61c8"
+        "4c650bce6eef21d5c61d3e8538a0a81dccfe81c6"
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
@@ -777,6 +777,39 @@ fn moira_hosted_gate_reopens_real_durable_saga_in_both_workbench_modes() {
             "hosted Moira gate omits {required}"
         );
     }
+}
+
+#[test]
+fn moira_reconciliation_reuses_the_owner_guard_in_both_shells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/moira_reconciliation.sh"))
+        .expect("Moira reconciliation gate");
+    for required in [
+        "aegis-daemon",
+        "moira-saga-local",
+        "moira-reconciliation-view",
+        "moira-reconciliation-confirm",
+        "moira-reconciliation-recover",
+        "sagas.reconciliation.confirm.v1",
+        "sagas.reconciliation.recovery.v1",
+        "unselected saga reconciliation was accepted",
+        "hosted_shutdown",
+        "authority_epoch",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Moira reconciliation gate omits {required}"
+        );
+    }
+    let manifest = fs::read_to_string(root.join("cli/Cargo.toml")).expect("CLI manifest");
+    assert!(manifest.contains("moira-reconciliation-command"));
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(cli.contains("moira_reconciliation_command::{PrepareError, prepare}"));
+    assert!(cli.contains("moira_reconciliation_command::{ConfirmError, confirm}"));
+    assert!(cli.contains("moira_reconciliation_command::{RecoverError, recover}"));
+    assert!(!cli.contains("SagaOperatorClient"));
 }
 
 #[test]

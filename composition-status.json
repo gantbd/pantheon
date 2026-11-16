@@ -117,11 +117,16 @@
       "presentation": "moira-tui",
       "readCapability": "sagas.inspect.v1",
       "client": { "contract": "moira-client", "connection": "moira-client::unix::SagaUnixPort", "ownership": "peer" },
-      "evidence": ["moira-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/moira_attach.sh", "workbench-tui/tests/live/moira_hosted.sh"],
+      "evidence": ["moira-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/moira_attach.sh", "workbench-tui/tests/live/moira_hosted.sh", "workbench-tui/tests/live/moira_reconciliation.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "planned"
+      "mutation": "qualified",
+      "mutationCapabilities": {
+        "sagas.reconciliation.confirmation.v1": "qualified",
+        "sagas.reconciliation.confirm.v1": "qualified",
+        "sagas.reconciliation.recovery.v1": "qualified"
+      }
     },
     "vellum": {
       "owner": "vellum",

@@ -88,7 +88,7 @@ read-only input until that repository settles.
 - [x] Moira: carry bounded selected-saga effect evidence and operator receipts
   through the same read-only component in standalone and Workbench interactive
   paths.
-- [ ] Moira: keep reconciliation mutation guarded until exact confirmation,
+- [x] Moira: keep reconciliation mutation guarded until exact confirmation,
   current authority, revision, durable receipt, and outcome-unknown recovery
   are public and qualified end to end.
 - [x] Hermes: carry a read-only cursor observation plus exact opaque stream and
