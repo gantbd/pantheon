@@ -204,8 +204,14 @@ Vellum's ordinary `workspace.edit.v1` and `workspace.save.v1` profile is also
 qualified through the shared `ServiceEditor` in standalone and hosted
 Workbench. The real owner preserves revision witnesses and exact source bytes,
 refuses save without its independent persistence ceiling, and leaves uncertain
-persistence indeterminate until the exact retained save is replayed. Newer
-durable-operation profiles remain outside this claim.
+persistence indeterminate until the exact retained save is replayed. The
+selected `workspace.durable-save.execute.v1` and
+`workspace.durable-save.lookup.v1` profile now reuses one Vellum-TUI guard and
+the public Vellum client in both shells. It binds the caller-persisted operation
+reference to the current service-owned document identity and exact revision;
+the authenticated daemon and its action ceiling/filesystem adapter remain the
+only effect authority. Save As submission, retirement and other durable intents
+remain outside this claim.
 
 ### 5. Extend peer coverage
 

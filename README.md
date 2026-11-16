@@ -224,6 +224,14 @@ service refusal leaves source bytes unchanged. The standalone Vellum gate owns
 the complementary lost-reply proof: `Indeterminate` resolves only by replaying
 the exact retained save request.
 
+Run `sh tests/live/vellum_durable_save.sh` for the selected restart-stable Save
+profile. One authenticated real Vellum daemon receives the caller-persisted
+operation/document/revision through Vellum-TUI's public-client guard; the
+standalone command executes it and the Workbench command performs only exact
+historical lookup. Authentication, the Persist ceiling, filesystem work and
+receipt truth remain Vellum-owned. The gate does not expose Save As submission,
+receipt retirement, arbitrary destinations or other durable intents.
+
 Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
 owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
 public Unix client. The same process observes all three peers through the

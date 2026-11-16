@@ -576,6 +576,44 @@ fn vellum_mutation_gate_reuses_the_editor_and_preserves_service_authority() {
 }
 
 #[test]
+fn vellum_durable_save_gate_reuses_the_peer_guard_and_exact_historical_receipt() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/vellum_durable_save.sh"))
+        .expect("Vellum durable-save live gate");
+    for required in [
+        "durable-save-execute",
+        "vellum-durable-save lookup",
+        "workspace.durable-save.execute.v1",
+        "workspace.durable-save.lookup.v1",
+        "--credential",
+        "--allow-save",
+        "--locked",
+        "--offline",
+        "historical lookup reused Vellum public authority",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Vellum durable-save gate omits {required}"
+        );
+    }
+    let shell = fs::read_to_string(root.join("cli/src/main.rs")).expect("Workbench CLI");
+    assert!(shell.contains("run_durable_save_v1"));
+    for forbidden in [
+        "vellum_engine::",
+        "vellum_service::",
+        "cargo publish",
+        "git push",
+        "gh release",
+        "curl ",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Vellum durable-save gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
 fn agora_live_gate_runs_the_isolated_real_daemon_owner_qualification() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_host.sh")).expect("Agora live gate");

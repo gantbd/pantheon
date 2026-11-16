@@ -558,7 +558,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui agora-create-room SOCKET PARTICIPANT <conversation|composition> ROOM_ID NAME <open|invite-only> EXPECTED_REVISION 'CREATE AGORA ROOM ROOM_ID NAMED NAME ADMISSION <OPEN|INVITE ONLY> AT REVISION EXPECTED_REVISION'\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\nworkbench-tui daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nworkbench-tui moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\nworkbench-tui moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\nworkbench-tui moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Agora room creation binds the exact room facts and current revision, uses the actor-bound owner client and does not retry an uncertain outcome; Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui vellum-durable-save <execute|lookup> SOCKET CREDENTIAL vdo1.OPERATION_HEX DOCUMENT_ORDINAL EXPECTED_REVISION\nworkbench-tui agora-create-room SOCKET PARTICIPANT <conversation|composition> ROOM_ID NAME <open|invite-only> EXPECTED_REVISION 'CREATE AGORA ROOM ROOM_ID NAMED NAME ADMISSION <OPEN|INVITE ONLY> AT REVISION EXPECTED_REVISION'\nworkbench-tui daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\nworkbench-tui daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\nworkbench-tui daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\nworkbench-tui daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\nworkbench-tui daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\nworkbench-tui daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui aegis-manage-session SOCKET\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nworkbench-tui moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\nworkbench-tui moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\nworkbench-tui moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards and application contracts: Agora room creation binds the exact room facts and current revision, uses the actor-bound owner client and does not retry an uncertain outcome; Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. Vellum durable save execute/lookup uses the peer-owned public-client guard and caller-persisted identity; Workbench grants no authentication, action authority, persistence or retry permission. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -581,6 +581,12 @@ fn vellum_connector(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "vellum-durable-save")
+    {
+        return vellum_durable_save(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "agora-create-room")
@@ -703,6 +709,73 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn vellum_durable_save(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use vellum_tui::{DurableSaveCommandV1, run_durable_save_v1};
+
+    let command = match required_arg(&mut args, usage())?.to_str() {
+        Some("execute") => DurableSaveCommandV1::Execute,
+        Some("lookup") => DurableSaveCommandV1::Lookup,
+        _ => return Err("Vellum durable save command must be execute or lookup".into()),
+    };
+    let socket = PathBuf::from(required_arg(&mut args, usage())?);
+    let credential = PathBuf::from(required_arg(&mut args, usage())?);
+    let operation = parse_vellum_durable_operation(
+        required_arg(&mut args, usage())?
+            .to_str()
+            .ok_or("Vellum operation identity refused")?,
+    )?;
+    let document = required_arg(&mut args, usage())?
+        .to_str()
+        .and_then(|value| value.parse::<u64>().ok())
+        .filter(|value| *value != 0)
+        .ok_or("Vellum document ordinal refused")?;
+    let revision = required_arg(&mut args, usage())?
+        .to_str()
+        .and_then(|value| value.parse::<u64>().ok())
+        .ok_or("Vellum expected revision refused")?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let connector = vellum_connector(socket, Some(&credential))?;
+    let transport = RemoteTransport::new(connector, TransportLimits::reference())
+        .map_err(|error| format!("Vellum transport refused: {error:?}"))?;
+    let report = run_durable_save_v1(transport, command, operation, document, revision)?;
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "peer": "vellum",
+            "host": "workbench",
+            "capability": match command {
+                DurableSaveCommandV1::Execute => "workspace.durable-save.execute.v1",
+                DurableSaveCommandV1::Lookup => "workspace.durable-save.lookup.v1",
+            },
+            "status": report.outcome.status(),
+            "disconnect": report.disconnect.status(),
+        }))?
+    );
+    Ok(())
+}
+
+fn parse_vellum_durable_operation(
+    value: &str,
+) -> Result<vellum_sdk_client::protocol::DurableOperationRefV1, Box<dyn std::error::Error>> {
+    let hex = value
+        .strip_prefix("vdo1.")
+        .filter(|hex| hex.len() == 32)
+        .ok_or("Vellum operation identity refused")?;
+    let mut bytes = [0_u8; 16];
+    for (index, pair) in hex.as_bytes().chunks_exact(2).enumerate() {
+        let pair = std::str::from_utf8(pair)?;
+        bytes[index] =
+            u8::from_str_radix(pair, 16).map_err(|_| "Vellum operation identity refused")?;
+    }
+    vellum_sdk_client::protocol::DurableOperationRefV1::new(bytes)
+        .ok_or_else(|| "Vellum operation identity refused".into())
 }
 
 fn agora_create_room(

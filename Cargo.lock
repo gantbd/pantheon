@@ -59,6 +59,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "agora-actor-publication-port"
+version = "0.1.0"
+
+[[package]]
 name = "agora-client"
 version = "0.1.0"
 dependencies = [
@@ -74,6 +78,7 @@ version = "0.1.0"
 name = "agora-local-client"
 version = "0.1.0"
 dependencies = [
+ "agora-actor-publication-port",
  "agora-client",
  "agora-delivery-projection-port",
  "agora-protocol",
@@ -103,6 +108,7 @@ dependencies = [
 name = "agora-wire"
 version = "0.1.0"
 dependencies = [
+ "agora-actor-publication-port",
  "agora-delivery-projection-port",
  "agora-protocol",
  "agora-scheduled-publication-port",
@@ -786,9 +792,9 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "mio"
-version = "1.2.3"
+version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b18443e9c262bfe8fa82f51666e2642c53393f7e5c27b3e1aeab922cff5b9d8"
+checksum = "20521a903f02b0a573cd6840e9d0a5a0cc043d361fe924092cd70f8556cc9c4a"
 dependencies = [
  "libc",
  "log",

@@ -233,8 +233,16 @@ read-only input until that repository settles.
   remote-transport, and Keystone inputs are reconstructed from Git archives,
   the full physical mutual-TLS/current-policy/durable gate passes, and an
   evidence-only follow-up records that candidate without changing it.
-- [ ] Install Vellum's newer durable operations only through their selected
-  authority and platform adapters.
+- [x] Install Vellum's selected newer durable operation only through its owner
+  authority and platform adapter. `workspace.durable-save.execute.v1` and
+  `workspace.durable-save.lookup.v1` share one Vellum-TUI guard over the public
+  Vellum client in standalone and Workbench. The caller persists the operation
+  reference, while the authenticated daemon resolves the exact current
+  document, enforces its Persist ceiling, performs filesystem work, and owns
+  receipt truth. A real-daemon gate executes in standalone and recovers the
+  exact receipt through Workbench. Save As submission, receipt retirement,
+  arbitrary destinations and other durable intents remain unselected and are
+  not implied by this cell.
 
 ## P4 — distribution and additional presentation
 
