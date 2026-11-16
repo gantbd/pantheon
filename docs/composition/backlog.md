@@ -199,7 +199,12 @@ read-only input until that repository settles.
   endpoint has no network, URL, token, secret or payload field; remote-provider
   profiles and cross-realm revocation remain explicit nonclaims.
 - [ ] Complete Moira's process-separated Agora/Vellum workflow and every-boundary
-  lost-reply matrix.
+  lost-reply matrix. The Agora response segment is now closed independently:
+  Agora retains a caller-stable actor operation, its durable daemon commits one
+  addressed response in a separate process, Moira discards the successful reply,
+  and a fresh authenticated public client observes the exact result without
+  republishing. Vellum process qualification, the composed Agora→Vellum journey,
+  and the every-effect fault matrix remain open.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
   and Vellum federation; finish immutable release qualification for Agora
   federation.
