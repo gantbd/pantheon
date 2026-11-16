@@ -60,7 +60,7 @@
     },
     "dendrite": {
       "repository": "https://github.com/gantbd/dendrite",
-      "revision": "ead4062f5a10851abe64637847e8cb9728f9321e",
+      "revision": "5e9c73f646b824ff2db31612084496c7e2b0c3b2",
       "workingTreeClean": true
     },
     "groundingTui": {

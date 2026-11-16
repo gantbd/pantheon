@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -62,6 +63,17 @@ def run_live_evidence(stage):
             raise SystemExit(f"missing live evidence in source closure: {relative}")
         repository, script_relative = relative.split("/", 1)
         subprocess.run(["sh", script_relative], cwd=stage / repository, check=True)
+
+
+def prepare_live_dependency_closure(stage):
+    """Materialize lock-pinned non-Rust dependencies inside the archive."""
+    environment = {**os.environ, "MIX_ENV": "test"}
+    subprocess.run(
+        ["mix", "deps.get", "--only", "test"],
+        cwd=stage / "dendrite",
+        env=environment,
+        check=True,
+    )
 
 
 def validate_direct_path_closure(directory, stage):
@@ -160,6 +172,7 @@ def main():
             check=True,
         )
         if args.live:
+            prepare_live_dependency_closure(stage)
             run_live_evidence(stage)
     print(json.dumps({"workbench-tui": workbench, **pins}, indent=2, sort_keys=True))
 

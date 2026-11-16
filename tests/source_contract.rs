@@ -228,7 +228,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
-        "ead4062f5a10851abe64637847e8cb9728f9321e"
+        "5e9c73f646b824ff2db31612084496c7e2b0c3b2"
     );
     assert_eq!(
         source["inputs"]["vellum"]["revision"],
@@ -393,6 +393,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert!(qualifier.contains("\"agora-tui\","));
     assert!(qualifier.contains("\"keystone\","));
     assert!(qualifier.contains("run_live_evidence(stage)"));
+    assert!(qualifier.contains("prepare_live_dependency_closure(stage)"));
+    assert!(qualifier.contains("[\"mix\", \"deps.get\", \"--only\", \"test\"]"));
     assert!(qualifier.contains("validate_direct_path_closure(directory, stage)"));
     assert!(qualifier.contains("candidate source closure omits direct dependencies"));
     assert!(qualifier.contains("status[\"peers\"][peer][\"evidence\"]"));
