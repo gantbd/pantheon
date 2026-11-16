@@ -37,8 +37,8 @@ read-only input until that repository settles.
   concrete provisioner now issues one exact conversation or
   scheduled-composition scope using deployment-supplied authority epoch,
   lifetime, resource, subject, and administrator credential mapping. Remaining
-  inputs are durable create/open plus residue recovery and the standalone
-  signal/drain shell.
+  The owner factory now orders durable create, clean open, and exact endpoint
+  residue recovery. The remaining input is the standalone signal/drain shell.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,

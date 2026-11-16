@@ -6,7 +6,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 
 | Surface | Available boundary | Missing boundary | Current fallback |
 | --- | --- | --- | --- |
-| Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory; Agora-owned single-principal private-endpoint authentication, non-regressing system time, adopted bounded create-time participant/room bootstrap, public-Aegis connection, and exact same-session conversation/scheduled-composition grant provisioning; Agora–Hermes supplies the concrete authority adapter with fresh trusted-time input and live epoch-revocation evidence | Durable create/open and residue recovery, and the standalone process shell for the Workbench-hostable profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
+| Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory; Agora-owned single-principal private-endpoint authentication, non-regressing system time, adopted bounded create-time participant/room bootstrap, public-Aegis connection, exact same-session conversation/scheduled-composition grant provisioning, and ordered durable create/open/residue recovery; Agora–Hermes supplies the concrete authority adapter with fresh trusted-time input and live epoch-revocation evidence | Standalone signal/drain process shell for the Workbench-hostable profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
 | Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench census plus bounded selected-saga evidence/operator receipts | Guarded operator reconciliation actions and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation and production Workbench host factory | Attach the typed read-only Grounding peer; MCP remains agent-facing only |
@@ -73,11 +73,12 @@ qualified across all three interactive panes and one aggregate headless report.
 
 1. Converge Chronos and Agora on one Keystone source identity so the already
    qualified all-three owner graph builds without a local source patch.
-2. Complete Agora's production durable-host factory around its implemented
-   private-endpoint identity, system-clock, bounded-bootstrap, and public-Aegis
-   provisioner: durable recovery and process drain remain owner-side and must
-   not move into Workbench. Deployment continues to supply credential mapping,
-   authority epoch, lifetime, resource, and subject unchanged.
+2. Complete Agora's production standalone signal/drain shell around its
+   implemented private-endpoint identity, system clock, bounded bootstrap,
+   public-Aegis provisioner, and durable create/open/residue-recovery factory.
+   Process drain remains owner-side and must not move into Workbench. Deployment
+   continues to supply credential mapping, authority epoch, lifetime, resource,
+   and subject unchanged.
 3. Expose Moira reconciliation actions only with exact confirmation, current
    authority, revision, durable receipts, and outcome-unknown recovery; retain
    the now-qualified read-only evidence/receipt path unchanged.
