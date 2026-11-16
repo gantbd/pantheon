@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Closed the 50-item selected local composition program across standalone and
+  Workbench presentations. Grounding surface/read DTOs, signed GUI
+  distribution, remote delivery, and wider GUI/platform coverage are explicit
+  future product decisions rather than incomplete claims of this release.
 - Added the selected unsigned local `aarch64-apple-darwin` release gate. It
   reconstructs exact peer commits, builds offline, emits a checksummed artifact
   with a reviewed transitive license inventory, preserves the operator profile

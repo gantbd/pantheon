@@ -9,7 +9,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 | Agora | Native protocol, service, clients and wire; engine-owned service-free public Unix client for conversation and scheduled-publication profiles; independent read-only `agora-tui` with compatibility client facade; exact-confirmed, revision-bound `rooms.create.v2` guard reused by standalone and Workbench; explicit conversation-only and routed-composition transports; real Aegis-backed standalone create/publish/observe/drain/reopen; Workbench-supervised exact process in headless and interactive modes; owner-side identity, time, bootstrap, grant provisioning, durability and cleanup receipts; stale-command, refused-cleanup, abrupt-stop, outcome-unknown, exact-replay, continued-drain, exact-residue-rotation and reopen cuts | Immutable/release provenance; broader domain mutations remain deliberately unclaimed until peer-selected | Attach either explicit transport or supervise the exact standalone binary from its opaque owner config; invoke selected mutations only through Agora's guard and public client; Workbench never interprets authority facts |
 | Moira | Native read/reconciliation clients, peer-owned reconnectable Unix saga port, sovereign durable saga owner, and independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench census plus bounded selected-saga evidence/operator receipts; qualified Workbench supervision in both product modes; shared exact-confirmation and durable-recovery guard over an explicitly selected production Aegis owner profile | No selected-profile composition gap; broader process-separated Agora/Vellum workflow qualification remains open | Attach or host the peer and invoke the same owner guard; retain attempt receipt inspection through Chronos; never infer reconciliation authority from local identity or supervision |
 | Daimon | Execution/status and agent-session clients; local daemon and supervisor census; independent `daimon-tui` redacted presence plus exact configured session/event evidence; exact-confirmed current-state-fenced active-turn advance/cancellation, ready-session close, detached-session reattach, prompt dispatch and permission decisions reused by standalone and Workbench; qualified production owner hosting with durable session reopen | Broader owner-side provider/platform qualification and immutable release provenance | Attach the read-only presence peer or host the sovereign production agent application with an exact agent selection; invoke bounded advance, cancel, close, reattach, prompt or permission decision through owner guards; retain attempt inspection through Chronos |
-| Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation; Workbench hosting and mutation are intentionally not applicable | Attach the typed read-only Grounding peer; Dendrite retains its IDE/agent bridge lifecycle and MCP remains agent-facing only |
+| Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | No selected-profile composition gap; surface/read DTOs are deliberately unselected until Dendrite owns their disclosure contract, and Workbench hosting and mutation are intentionally not applicable | Attach the typed read-only Grounding peer; Dendrite retains its IDE/agent bridge lifecycle and MCP remains agent-facing only |
 | Aegis | Administrative/read clients, engine-owned service-free public Unix client, standalone owner daemon, independent `aegis-tui` bounded status with compatibility client facade, navigable redacted pages, exact-confirmed epoch revocation, shared long-lived named grant management, qualified reconnect/rebuild, and Workbench supervision | No selected-profile session-parity gap; durable grant replay and lost-reply reconciliation are explicit nonclaims | Attach or supervise the read-only peer; invoke the same owner-side bounded administration protocol with exact confirmations in standalone or Workbench |
 | Hermes | Ledger/operator clients plus engine-owned service-free public Unix client; durable local adapter; OS-peer authentication; explicit observer/exact-stream operator daemon and least-privilege exact-stream delivery daemon; independent content-free observation/cursor peer plus exact-confirmed bounded disclosure, acknowledgement and compaction guards; Workbench-owned headless/interactive create/reopen and operator-command lifecycle; qualified Moira workflow-event producer plus deployed Agora minimized-wake local application and durable receipt endpoint | No presentation-parity mutation gap. Remote provider endpoints and cross-realm revocation remain adapter/deployment work, not Workbench capability gaps | Attach or host the same public peer; select operator authority explicitly at the Hermes boundary; keep every producer envelope and delivery policy in its producer or cross-engine adapter, never Workbench |
 
@@ -75,11 +75,17 @@ artifact rather than a workspace-only path assumption.
 The mixed deployment that owns Chronos and Vellum while attaching Agora is also
 qualified across all three interactive panes and one aggregate headless report.
 The separate macOS Workbench GUI now has a clean committed local dependency
-closure across the Chronos/Vellum engines and their GUI peers. Artifact
-distribution, signing, notarization and remote immutable reachability remain
-open and are not inferred from that local source closure.
+closure across the Chronos/Vellum engines and their GUI peers, plus a qualified
+unsigned prepared artifact with an exact legal and checksum closure. GUI
+distribution, signing, notarization and remote immutable reachability are
+explicitly deferred outside the selected local delivery and are not inferred
+from that prepared artifact.
 
-## Reconciliation order
+## Future reopening conditions
+
+The selected local standalone-and-Workbench program has no remaining delivery
+items. The following broader work stays outside its claims and must be reopened
+by a concrete owner or product profile rather than absorbed into Workbench:
 
 1. Promote Agora's now-qualified real standalone and Workbench-supervised
    process journeys to immutable release evidence. Process drain remains owner-side. Deployment continues
@@ -92,11 +98,14 @@ open and are not inferred from that local source closure.
    advance, cancellation, close, reattach, prompt-dispatch and
    permission-decision paths plus qualified sovereign hosting; keep broader
    provider, credential and platform qualification owner-side.
-4. Extend the typed Dendrite presentation boundary with selected surface/read
-   DTOs only after their content disclosure, provenance, freshness, and bounds
-   are fixed; MCP remains outside Workbench's internal protocol.
+4. Reopen typed Dendrite surface/read DTOs only after Dendrite owns their exact
+   content disclosure, provenance, freshness, and bounds; MCP remains outside
+   Workbench's internal protocol.
 5. Keep Hermes payload disclosure separate from routine observation and retain
    its exact selector and bounds. Do not add generic append to Workbench:
    Moira's qualified workflow-event publisher and the qualified Agora minimized-
    wake adapter own their schemas and exact replay law. Close Agora endpoint and
    deployment policy in that adapter, not in Hermes presentation.
+6. Reopen GUI signing, notarization, distribution, wider-platform coverage, or
+   remote delivery only with a concrete product decision and the required
+   credentials, deployment policy, and support profile.

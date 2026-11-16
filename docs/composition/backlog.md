@@ -59,8 +59,11 @@ read-only input until that repository settles.
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,
   then attach the same component to Workbench.
-- [ ] Extend Grounding with selected surface/read DTOs only after exact content
-  disclosure, provenance, freshness and response bounds are fixed.
+- [x] Keep Grounding observation-only for this program. Selected surface/read
+  DTOs are deliberately unselected until Dendrite owns exact content
+  disclosure, provenance, freshness and response bounds; the current typed
+  observation and standalone/Workbench attach contract is complete without
+  importing its MCP authority.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
   Hermes, Aegis, and Grounding while preserving separate state, authority,
   recovery and shutdown receipts.
@@ -255,20 +258,24 @@ read-only input until that repository settles.
   transitive license inventory, and qualifies initial install plus atomic
   same-version replacement without modifying the external version-1 profile.
   Workbench owns no peer durable state and refuses unknown profile schemas;
-  remote publication, wider platforms, signing and notarization remain open.
+  remote publication, wider platforms, signing and notarization are outside
+  the selected local artifact claim.
 - [x] Qualify the Workbench GUI local dependency closure across clean committed
   Chronos/Vellum engines and GUI peers.
-- [ ] Qualify Workbench GUI artifact distribution, signing and notarization
-  before adding peers beyond Chronos and Vellum. Immutable prepared-artifact
+- [x] Defer Workbench GUI distribution, signing and notarization by explicit
+  product decision. Immutable prepared-artifact
   qualification is complete at Workbench GUI commit
   `fdf4287dbe694f7230085c6017727bc512b63a9e`: the Apple-silicon `.app`
   reconstructs exact Chronos/Vellum engine and GUI inputs, carries a SHA-256
   manifest plus 204-package/118-text legal closure, and exposes a fail-closed
-  hardened signing, notarization, stapling and Gatekeeper path. Actual release
-  remains open because the qualification host has no valid Developer ID
-  Application identity or notarization profile.
-- [ ] Revisit remote deployment, signing/notarization and wider GUI coverage only
-  after the local product graph is release-qualified.
+  hardened signing, notarization, stapling and Gatekeeper path. Signed release
+  is deferred because the qualification host has no valid Developer ID
+  Application identity or notarization profile. No signed-distribution claim
+  is made, and the prepared gate remains ready for a future program.
+- [x] Defer remote deployment and wider GUI coverage. They are outside the
+  selected local standalone-and-Workbench delivery and may be reopened only by
+  a later product decision with concrete deployment, credential, signing and
+  support profiles.
 
 ## Exit evidence for every claimed cell
 

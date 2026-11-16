@@ -237,8 +237,9 @@ The selected local release profile is documented in
 source closure, builds one unsigned `aarch64-apple-darwin` artifact, records the
 exact transitive license inventory and SHA-256 manifest, and qualifies initial
 install plus atomic same-version replacement without rewriting the external
-version-1 profile. It does not authorize publication, automatic update, wider
-platform support, signing, notarization, or GUI distribution.
+version-1 profile. Publication, automatic update, wider platform support,
+signing, notarization, and GUI distribution are explicitly deferred and are not
+claims of the selected local product.
 
 Run `sh qualification/agora-host/qualify.sh` to qualify one Workbench process
 owning Chronos, Vellum, and the real Agora local daemon while serving Agora's
