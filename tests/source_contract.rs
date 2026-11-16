@@ -182,6 +182,10 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "52681dc6a2c43f37ef9cfb3871c3da88af3b2ee2"
     );
     assert_eq!(
+        source["inputs"]["aegis"]["revision"],
+        "38147c8d42679eac69577f535af482d7cd3d21ed"
+    );
+    assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
         "11d75c218e2e9614ae6bef6bde05b9eb96222c62"
     );
@@ -195,11 +199,12 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "hermes",
         "hermesTui",
         "aegisTui",
+        "aegis",
         "groundingTui",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["agora", "vellum", "moira", "daimon", "aegis", "dendrite"] {
+    for input in ["agora", "vellum", "moira", "daimon", "dendrite"] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], false);
     }
     assert_eq!(source["coordinatedWorkingTreeQualified"], false);
