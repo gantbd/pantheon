@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - name: Check out Pantheon
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { path: pantheon, persist-credentials: false }
+      - name: Check out Keystone
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/keystone, ref: 2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4, path: keystone, persist-credentials: false }
+      - name: Check out Aegis
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/aegis, ref: 0446e4fcf7412be9e0313523235d4e674d2fdd94, path: aegis, persist-credentials: false }
+      - name: Check out Aegis TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/aegis-tui, ref: 258065605c86ebccf375aea47521a858f8f723b1, path: aegis-tui, persist-credentials: false }
+      - name: Check out Agora
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/agora, ref: a86a8a6eba54a5191c245f87f3664f026403f051, path: agora, persist-credentials: false }
+      - name: Check out Agora TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/agora-tui, ref: df128d4968003b41a2c267d01672b6ff511b8bea, path: agora-tui, persist-credentials: false }
+      - name: Check out Chronos
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/chronos, ref: 88f009130f1b19babe92edb4008b112159888ef3, path: chronos, persist-credentials: false }
+      - name: Check out Chronos TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/chronos-tui, ref: 94a805a2b02af5a75d113dc3447d610b9f1b900f, path: chronos-tui, persist-credentials: false }
+      - name: Check out Daimon
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/daimon, ref: 07caa33d835c634947cc16109d1c999581501835, path: daimon, persist-credentials: false }
+      - name: Check out Daimon TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/daimon-tui, ref: e66aabc3dfd4abe3ec84ecf55d5663aef47af273, path: daimon-tui, persist-credentials: false }
+      - name: Check out Hermes
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/hermes, ref: f5e5f12a5cd258f38bf5f1b004ed7a961d14bf08, path: hermes, persist-credentials: false }
+      - name: Check out Hermes TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/hermes-tui, ref: 27f857df701edf6261f09cf38d74f1a48ba0cb7e, path: hermes-tui, persist-credentials: false }
+      - name: Check out Moira
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/moira, ref: f18da96ae4ba584e1e2f01fdd7e39d04b34b1b95, path: moira, persist-credentials: false }
+      - name: Check out Moira TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/moira-tui, ref: f29bab484f94a11c7c9dc1b1b40eb9a563e4fca0, path: moira-tui, persist-credentials: false }
+      - name: Check out Tellus
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/tellus, ref: 03a920e9b1457ae33428acb9672c5fd320c69e72, path: tellus, persist-credentials: false }
+      - name: Check out Vellum
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/vellum, ref: a59d8a343145b31ff5288499903fb002a1b61a84, path: vellum, persist-credentials: false }
+      - name: Check out Vellum TUI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with: { repository: gantbd/vellum-tui, ref: b88fafc78ee72028f79ebbc38450dc84e9b82f63, path: vellum-tui, persist-credentials: false }
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal --component clippy,rustfmt
+      - name: Fetch locked dependencies
+        working-directory: pantheon
+        run: cargo fetch --locked
+      - name: Audit current RustSec advisories
+        working-directory: pantheon
+        run: |
+          cargo install cargo-audit --version 0.23.0 --locked
+          cargo audit --deny warnings
+      - name: Verify workspace
+        working-directory: pantheon
+        run: make check
