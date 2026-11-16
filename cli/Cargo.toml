@@ -44,9 +44,9 @@ daimon-client = { version = "=0.1.0", path = "../../daimon/crates/daimon-client"
 daimon-protocol = { version = "=0.1.0", path = "../../daimon/crates/daimon-protocol" }
 daimon-wire = { version = "=0.1.0", path = "../../daimon/crates/daimon-wire" }
 hermes-tui = { version = "=0.1.0", path = "../../hermes-tui" }
-hermes-consumer-command = { version = "=0.1.0", path = "../../hermes-tui/consumer-command" }
-hermes-disclosure-command = { version = "=0.1.0", path = "../../hermes-tui/disclosure-command" }
-hermes-operator-command = { version = "=0.1.0", path = "../../hermes-tui/operator-command" }
+hermes-consumer-command = { version = "=0.1.0", path = "../../hermes/crates/hermes-consumer-command" }
+hermes-disclosure-command = { version = "=0.1.0", path = "../../hermes/crates/hermes-disclosure-command" }
+hermes-operator-command = { version = "=0.1.0", path = "../../hermes/crates/hermes-operator-command" }
 hermes-tui-local-client = { version = "=0.1.0", path = "../../hermes-tui/local-client" }
 hermes-client = { version = "=0.1.0", path = "../../hermes/crates/hermes-client" }
 hermes-protocol = { version = "=0.1.0", path = "../../hermes/crates/hermes-protocol" }
