@@ -83,7 +83,10 @@ The detailed open-boundary ledger remains `WORKSPACE_GAPS.md`. The ordered
 delivery sequence is in `backlog.md`; Axon and Engram adoption decisions are in
 `prior-art.md`. The checked cell classification is
 [`composition-status.json`](../../composition-status.json); prose must not claim
-a stronger state than that file.
+a stronger state than that file. Each peer entry names the exact public contract
+and concrete connection client used by standalone and Workbench paths. An
+`ownership` value of `presentation-deferred` is an explicit normalization gap,
+not evidence that transport mechanics belong to presentation.
 
 ## On-disk routing
 
