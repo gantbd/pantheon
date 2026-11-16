@@ -198,7 +198,7 @@ read-only input until that repository settles.
   acknowledgement, exact application reopen and clean owner drain. The selected
   endpoint has no network, URL, token, secret or payload field; remote-provider
   profiles and cross-realm revocation remain explicit nonclaims.
-- [ ] Complete Moira's process-separated Agora/Vellum workflow and every-boundary
+- [x] Complete Moira's process-separated Agora/Vellum workflow and every-boundary
   lost-reply matrix. The Agora response segment is now closed independently:
   Agora retains a caller-stable actor operation, its durable daemon commits one
   addressed response in a separate process, Moira discards the successful reply,
@@ -208,8 +208,14 @@ read-only input until that repository settles.
   independently closed as well: its
   exact standalone authenticated daemon commits one revision-bound durable edit,
   loses the reply, and a fresh public client performs historical lookup without
-  execution fallback before public control-socket drain. The composed
-  Agora→Vellum journey and every-effect fault matrix remain open.
+  execution fallback before public control-socket drain. The combined gate now
+  admits both effects into one SQLite-backed Moira saga against the exact
+  standalone Aegis, Agora, and Vellum owners, discards both accepted replies in
+  provider order, reopens Moira between fences, reconciles Agora only through
+  actor observation and Vellum only through historical lookup, and proves
+  completed replay makes no peer call. The wider ingress/execution/event fault
+  chain remains Moira-owned roadmap work rather than part of this peer-effect
+  composition cell.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
   and Vellum federation; finish immutable release qualification for Agora
   federation.
