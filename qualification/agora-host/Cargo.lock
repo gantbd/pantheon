@@ -29,6 +29,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "aegis-local-client"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "aegis-wire",
+]
+
+[[package]]
 name = "aegis-protocol"
 version = "0.1.0"
 
@@ -40,15 +49,6 @@ dependencies = [
  "aegis-protocol",
  "crossterm",
  "ratatui",
-]
-
-[[package]]
-name = "aegis-tui-local-client"
-version = "0.1.0"
-dependencies = [
- "aegis-client",
- "aegis-protocol",
- "aegis-wire",
 ]
 
 [[package]]
@@ -884,9 +884,9 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "mio"
-version = "1.2.3"
+version = "1.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b18443e9c262bfe8fa82f51666e2642c53393f7e5c27b3e1aeab922cff5b9d8"
+checksum = "20521a903f02b0a573cd6840e9d0a5a0cc043d361fe924092cd70f8556cc9c4a"
 dependencies = [
  "libc",
  "log",
@@ -1667,8 +1667,8 @@ dependencies = [
  "aegis-admin-command",
  "aegis-admin-session",
  "aegis-client",
+ "aegis-local-client",
  "aegis-tui",
- "aegis-tui-local-client",
  "aegis-wire",
  "agora-client",
  "agora-local-client",
