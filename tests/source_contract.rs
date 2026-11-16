@@ -163,7 +163,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "a59c292c39cc17f545859f4c99aad96a7c2e0931"
+        "66a2702d515392b6ed6c0e845811081cb9b6eabc"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
