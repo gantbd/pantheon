@@ -25,8 +25,8 @@
     },
     "daimon": {
       "repository": "https://github.com/gantbd/daimon",
-      "revision": "4a440defb95cbeb0a853886e295685d42ff4fc0c",
-      "workingTreeClean": false
+      "revision": "db8efdaf83a148434bc7bca70c10822b7808f92c",
+      "workingTreeClean": true
     },
     "daimonTui": {
       "repository": "https://github.com/gantbd/daimon-tui",
@@ -35,8 +35,8 @@
     },
     "moira": {
       "repository": "https://github.com/gantbd/moira",
-      "revision": "3fb39f7ddece119868e016cb639d6644f32207a7",
-      "workingTreeClean": false
+      "revision": "172950aa02e0971adcc92eb5111d16095ff9096d",
+      "workingTreeClean": true
     },
     "hermes": {
       "repository": "https://github.com/gantbd/hermes",
@@ -60,8 +60,8 @@
     },
     "dendrite": {
       "repository": "https://github.com/gantbd/dendrite",
-      "revision": "7a449d7f4008972d09fafd1c9ad71c73f28ea0de",
-      "workingTreeClean": false
+      "revision": "ead4062f5a10851abe64637847e8cb9728f9321e",
+      "workingTreeClean": true
     },
     "groundingTui": {
       "repository": "https://github.com/gantbd/grounding-tui",
@@ -75,13 +75,13 @@
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "e14077c723d99d0f60b7687ad0e4dda26efd5364",
-      "workingTreeClean": false
+      "revision": "8f574343bbe9fa91efcac5322596f52ff9eca52c",
+      "workingTreeClean": true
     },
     "vellum": {
       "repository": "https://github.com/gantbd/vellum",
-      "revision": "d7de5f2587b3299983792c95f83fcff39ca54d0c",
-      "workingTreeClean": false
+      "revision": "3843307d26ef918b4ad8d76b4e283031644cdde2",
+      "workingTreeClean": true
     },
     "vellumTui": {
       "repository": "https://github.com/gantbd/vellum-tui",
@@ -89,14 +89,10 @@
       "workingTreeClean": true
     }
   },
-  "coordinatedWorkingTreeQualified": false,
+  "coordinatedWorkingTreeQualified": true,
   "ci": {
     "qualified": false,
-    "blockers": [
-      "dependency working trees differ from their recorded revisions",
-      "the pinned Vellum and Daimon revisions predate direct boundaries consumed by Workbench: vellum-workspace plus daimon-client, daimon-protocol, and daimon-wire; explicit committed candidates are required",
-      "immutable remote reachability is not yet authorized or qualified"
-    ]
+    "blockers": ["immutable remote reachability is not yet authorized or qualified"]
   },
   "remoteReachabilityQualified": false,
   "cratesIoPublished": false

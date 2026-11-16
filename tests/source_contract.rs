@@ -196,7 +196,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "e14077c723d99d0f60b7687ad0e4dda26efd5364"
+        "8f574343bbe9fa91efcac5322596f52ff9eca52c"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -220,7 +220,19 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "3fb39f7ddece119868e016cb639d6644f32207a7"
+        "172950aa02e0971adcc92eb5111d16095ff9096d"
+    );
+    assert_eq!(
+        source["inputs"]["daimon"]["revision"],
+        "db8efdaf83a148434bc7bca70c10822b7808f92c"
+    );
+    assert_eq!(
+        source["inputs"]["dendrite"]["revision"],
+        "ead4062f5a10851abe64637847e8cb9728f9321e"
+    );
+    assert_eq!(
+        source["inputs"]["vellum"]["revision"],
+        "3843307d26ef918b4ad8d76b4e283031644cdde2"
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
@@ -243,19 +255,23 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "aegis",
         "groundingTui",
         "keystone",
+        "vellum",
+        "daimon",
+        "dendrite",
+        "moira",
+        "moiraTui",
     ] {
         assert_eq!(source["inputs"][input]["workingTreeClean"], true);
     }
-    for input in ["vellum", "daimon", "dendrite", "moira", "moiraTui"] {
-        assert_eq!(source["inputs"][input]["workingTreeClean"], false);
-    }
-    assert_eq!(source["coordinatedWorkingTreeQualified"], false);
+    assert_eq!(source["coordinatedWorkingTreeQualified"], true);
     assert_eq!(source["ci"]["qualified"], false);
-    assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 3);
-    assert!(source["ci"]["blockers"][1]
-        .as_str()
-        .unwrap()
-        .contains("pinned Vellum and Daimon revisions predate direct boundaries"));
+    assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 1);
+    assert!(
+        source["ci"]["blockers"][0]
+            .as_str()
+            .unwrap()
+            .contains("immutable remote reachability")
+    );
     assert_eq!(source["remoteReachabilityQualified"], false);
     assert_eq!(source["cratesIoPublished"], false);
 
