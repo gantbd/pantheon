@@ -192,7 +192,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "e225c2f95d3481497214483b6fd483c6e97870c1"
+        "16f28cb4d7f9c31fc362fb09ce23cb2a9730ce56"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
@@ -224,7 +224,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
-        "4ccbb75ac4b2f3c11eacd96c14ab61c3da9a8aba"
+        "982f26afc36f2657777036e1e2d9d4bd45d1a8b5"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
@@ -282,7 +282,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "name = \"workbench-tui-cli\"",
         "name = \"workbench-tui\"",
         "workbench-tui =",
-        "agora-tui-local-client",
+        "agora-local-client",
         "moira-tui-local-client",
         "daimon-client",
         "hermes-local-client",
@@ -297,6 +297,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         assert!(cli_manifest.contains(required), "CLI omits {required}");
     }
     assert!(!cli_manifest.contains("hermes-tui-local-client"));
+    assert!(!cli_manifest.contains("agora-tui-local-client"));
     assert!(cli_manifest.contains("default = [\"native-chronos\"]"));
     assert!(cli_manifest.contains("chronos-standalone = {"));
     assert!(cli_manifest.contains("optional = true"));

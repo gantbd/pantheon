@@ -254,10 +254,10 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     );
     assert_eq!(observation.peers[0]["rooms"], 1);
 
-    let (client_id, port) = agora_tui_local_client::LocalServicePort::connect(
+    let (client_id, port) = agora_local_client::LocalServicePort::connect(
         &socket,
         "operator",
-        agora_tui_local_client::LocalClientLimits::default(),
+        agora_local_client::LocalClientLimits::default(),
     )
     .unwrap();
     let mut component = agora_tui::Component::new(ClientV2::new(client_id, port));

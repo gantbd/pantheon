@@ -4,7 +4,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use agora_client::v2::ClientV2 as AgoraClientV2;
-use agora_tui_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
+use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::Workstream;
 use moira_client::SagaReadOnlyClient;
 use moira_protocol::{SagaOutcomeV1, SagaReplyV1};

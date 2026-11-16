@@ -1,7 +1,7 @@
 #![forbid(unsafe_code)]
 
 use agora_client::v2::ClientV2 as AgoraClientV2;
-use agora_tui_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
+use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::{Hub, Workstream};
 use std::path::PathBuf;
 use vellum_sdk_client::{

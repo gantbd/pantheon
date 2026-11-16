@@ -12,7 +12,6 @@ workbench-tui-cli = { path = "../../cli" }
 workbench-tui = { path = "../.." }
 chronos-tui = { path = "../../../chronos-tui" }
 agora-tui = { path = "../../../agora-tui" }
-agora-tui-local-client = { path = "../../../agora-tui/local-client" }
 agora-client = { path = "../../../agora/client/agora-client" }
 agora-local-client = { path = "../../../agora/client/agora-local-client" }
 agora-protocol = { path = "../../../agora/protocol/agora-protocol" }

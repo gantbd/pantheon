@@ -32,7 +32,7 @@ chronos-protocol = { version = "=0.1.0", path = "../../chronos/protocol/chronos-
 chronos-local = { version = "=0.1.0", path = "../../chronos/transport/chronos-local" }
 chronos-standalone = { version = "=0.1.0", path = "../../chronos/applications/chronos-daemon", optional = true }
 agora-tui = { version = "=0.1.0", path = "../../agora-tui" }
-agora-tui-local-client = { version = "=0.1.0", path = "../../agora-tui/local-client" }
+agora-local-client = { version = "=0.1.0", path = "../../agora/client/agora-local-client" }
 agora-client = { version = "=0.1.0", path = "../../agora/client/agora-client" }
 agora-protocol = { version = "=0.1.0", path = "../../agora/protocol/agora-protocol" }
 moira-tui = { version = "=0.1.0", path = "../../moira-tui" }

@@ -210,16 +210,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "agora-tui-local-client"
-version = "0.1.0"
-dependencies = [
- "agora-client",
- "agora-protocol",
- "agora-wire",
- "rustix",
-]
-
-[[package]]
 name = "agora-wire"
 version = "0.1.0"
 dependencies = [
@@ -1645,7 +1635,6 @@ dependencies = [
  "agora-scheduled-publication-port",
  "agora-service",
  "agora-tui",
- "agora-tui-local-client",
  "agora-wire",
  "chronos-tui",
  "ratatui",
@@ -1682,9 +1671,9 @@ dependencies = [
  "aegis-tui-local-client",
  "aegis-wire",
  "agora-client",
+ "agora-local-client",
  "agora-protocol",
  "agora-tui",
- "agora-tui-local-client",
  "chronos-client",
  "chronos-local",
  "chronos-protocol",
