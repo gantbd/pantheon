@@ -18,12 +18,14 @@ without the rest of Workbench. Such a peer should provide, as its domain earns
 the layers:
 
 1. a public client contract with in-process and/or transport interpretations;
-2. a reusable presentation component that owns only peer-local projection and
-   confirmation state;
-3. a standalone application shell for terminal/window lifecycle, arguments,
+2. peer-owned reusable command guards where effects require exact confirmation,
+   current-state fencing, or uncertainty handling;
+3. a reusable presentation component that owns only peer-local projection,
+   form and armed/disarmed confirmation state;
+4. a standalone application shell for terminal/window lifecycle, arguments,
    headless operation and process exit;
-4. Workbench attachment through the same client and presentation component;
-5. optional Workbench hosting when production adapter, authority, recovery and
+5. Workbench attachment through the same client, command guards and presentation component;
+6. optional Workbench hosting when production adapter, authority, recovery and
    shutdown composition are explicit.
 
 The invariant is shared; the interaction is not. Vellum may be an editor,
