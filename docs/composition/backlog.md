@@ -259,7 +259,14 @@ read-only input until that repository settles.
 - [x] Qualify the Workbench GUI local dependency closure across clean committed
   Chronos/Vellum engines and GUI peers.
 - [ ] Qualify Workbench GUI artifact distribution, signing and notarization
-  before adding peers beyond Chronos and Vellum.
+  before adding peers beyond Chronos and Vellum. Immutable prepared-artifact
+  qualification is complete at Workbench GUI commit
+  `fdf4287dbe694f7230085c6017727bc512b63a9e`: the Apple-silicon `.app`
+  reconstructs exact Chronos/Vellum engine and GUI inputs, carries a SHA-256
+  manifest plus 204-package/118-text legal closure, and exposes a fail-closed
+  hardened signing, notarization, stapling and Gatekeeper path. Actual release
+  remains open because the qualification host has no valid Developer ID
+  Application identity or notarization profile.
 - [ ] Revisit remote deployment, signing/notarization and wider GUI coverage only
   after the local product graph is release-qualified.
 
