@@ -218,7 +218,12 @@ read-only input until that repository settles.
   composition cell.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
   and Vellum federation; finish immutable release qualification for Agora
-  federation.
+  federation. Chronos and Vellum now own transport-neutral connection
+  lifecycles that revalidate current session trust, make revocation terminal,
+  hide revoked sessions, and close the injected transport exactly once;
+  Vellum applies the same rule to disclosure downgrade. Physical authenticated
+  transports, runtime revalidation cadence, and integrated qualification remain
+  open, so this cell is not yet closed.
 - [ ] Install Vellum's newer durable operations only through their selected
   authority and platform adapters.
 
