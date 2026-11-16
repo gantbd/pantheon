@@ -188,11 +188,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["chronos"]["revision"],
-        "5adf2cbe7b969f3d94dac560d4836a60e1d9ef0b"
+        "840569516b769b263232c3d814517c66dcadcdf0"
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "66a2702d515392b6ed6c0e845811081cb9b6eabc"
+        "e225c2f95d3481497214483b6fd483c6e97870c1"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
@@ -204,11 +204,11 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "c4f35d1c51c720fa1628f541f48a4c1f797d5d92"
+        "609120e9d1a35fb9c8303b22c32bc057d161b5ef"
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
-        "7c37d24ce6a6bbaec237907e1253cc42254d1b00"
+        "4b343a7d114fd8fb61c5fe978b050db783500fa8"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
@@ -216,7 +216,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
-        "b7557a60c0904c8847e603235be8fb477335984f"
+        "a50c621b2cb69542eef2d0b88518a9cbbc8d4d06"
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
@@ -224,7 +224,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
-        "915970cd14120e6e75a3ae7b7d856c235f5828df"
+        "4ccbb75ac4b2f3c11eacd96c14ab61c3da9a8aba"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
@@ -285,7 +285,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "agora-tui-local-client",
         "moira-tui-local-client",
         "daimon-client",
-        "hermes-tui-local-client",
+        "hermes-local-client",
         "aegis-tui-local-client",
         "aegis-admin-session",
         "grounding-tui-local-client",
@@ -296,6 +296,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     ] {
         assert!(cli_manifest.contains(required), "CLI omits {required}");
     }
+    assert!(!cli_manifest.contains("hermes-tui-local-client"));
     assert!(cli_manifest.contains("default = [\"native-chronos\"]"));
     assert!(cli_manifest.contains("chronos-standalone = {"));
     assert!(cli_manifest.contains("optional = true"));

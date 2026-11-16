@@ -621,9 +621,9 @@ fn hermes_compact(
     if args.next().is_some() {
         return Err(usage().into());
     }
-    let port = match hermes_tui_local_client::LocalPort::connect(
+    let port = match hermes_local_client::LocalPort::connect(
         socket,
-        hermes_tui_local_client::ClientLimits::default(),
+        hermes_local_client::ClientLimits::default(),
     ) {
         Ok(port) => port,
         Err(error) => {
@@ -637,7 +637,7 @@ fn hermes_compact(
         through: hermes_protocol::EventSequenceV1(through),
     };
     match hermes_operator_command::compact(
-        hermes_tui_local_client::CONNECTION_SESSION,
+        hermes_local_client::CONNECTION_SESSION,
         port,
         request,
         &confirmation,
@@ -696,7 +696,7 @@ fn hermes_compact(
             )
         }
         Err(hermes_operator_command::CompactError::MutationTransport(
-            hermes_tui_local_client::ClientError::OutcomeUnknown(error),
+            hermes_local_client::ClientError::OutcomeUnknown(error),
         )) => hermes_compact_failure("outcome_unknown", &format!("{error:?}"), None, None),
         Err(hermes_operator_command::CompactError::MutationRefused(refusal)) => {
             hermes_compact_failure("refused", &format!("{refusal:?}"), None, None)
@@ -766,9 +766,9 @@ fn hermes_acknowledge(
     if args.next().is_some() {
         return Err(usage().into());
     }
-    let port = match hermes_tui_local_client::LocalPort::connect(
+    let port = match hermes_local_client::LocalPort::connect(
         socket,
-        hermes_tui_local_client::ClientLimits::default(),
+        hermes_local_client::ClientLimits::default(),
     ) {
         Ok(port) => port,
         Err(error) => {
@@ -782,7 +782,7 @@ fn hermes_acknowledge(
         through: hermes_protocol::EventSequenceV1(through),
     };
     match hermes_consumer_command::acknowledge(
-        hermes_tui_local_client::CONNECTION_SESSION,
+        hermes_local_client::CONNECTION_SESSION,
         port,
         request,
         &confirmation,
@@ -829,7 +829,7 @@ fn hermes_acknowledge(
             )
         }
         Err(hermes_consumer_command::AcknowledgeError::MutationTransport(
-            hermes_tui_local_client::ClientError::OutcomeUnknown(error),
+            hermes_local_client::ClientError::OutcomeUnknown(error),
         )) => hermes_acknowledge_failure("outcome_unknown", &format!("{error:?}"), None, None),
         Err(hermes_consumer_command::AcknowledgeError::MutationRefused(refusal)) => {
             hermes_acknowledge_failure("refused", &format!("{refusal:?}"), None, None)
@@ -885,9 +885,9 @@ fn hermes_disclose_events(
     if args.next().is_some() {
         return Err(usage().into());
     }
-    let port = match hermes_tui_local_client::LocalPort::connect(
+    let port = match hermes_local_client::LocalPort::connect(
         socket,
-        hermes_tui_local_client::ClientLimits::default(),
+        hermes_local_client::ClientLimits::default(),
     ) {
         Ok(port) => port,
         Err(error) => return hermes_command_failure("not_sent", &format!("{error:?}"), None),
@@ -898,7 +898,7 @@ fn hermes_disclose_events(
         limit,
     };
     match hermes_disclosure_command::disclose(
-        hermes_tui_local_client::CONNECTION_SESSION,
+        hermes_local_client::CONNECTION_SESSION,
         port,
         request,
         &confirmation,
@@ -959,7 +959,7 @@ fn hermes_disclose_events(
             None,
         ),
         Err(hermes_disclosure_command::DisclosureError::Transport(
-            hermes_tui_local_client::ClientError::OutcomeUnknown(error),
+            hermes_local_client::ClientError::OutcomeUnknown(error),
         )) => hermes_command_failure("outcome_unknown", &format!("{error:?}"), None),
         Err(hermes_disclosure_command::DisclosureError::Refused(refusal)) => {
             hermes_command_failure("refused", &format!("{refusal:?}"), None)
@@ -1434,13 +1434,13 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
         None
     };
     let hermes = if let Some(socket) = options.hermes_socket {
-        let port = hermes_tui_local_client::LocalPort::connect(
+        let port = hermes_local_client::LocalPort::connect(
             socket,
-            hermes_tui_local_client::ClientLimits::default(),
+            hermes_local_client::ClientLimits::default(),
         )
         .map_err(|error| format!("Hermes service refused: {error:?}"))?;
         Some(hermes_tui::Component::new_with_selection(
-            hermes_tui_local_client::CONNECTION_SESSION,
+            hermes_local_client::CONNECTION_SESSION,
             port,
             options.hermes_stream,
             options.hermes_consumer,

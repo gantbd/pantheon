@@ -15,7 +15,7 @@
     },
     "chronos": {
       "repository": "https://github.com/gantbd/chronos",
-      "revision": "5adf2cbe7b969f3d94dac560d4836a60e1d9ef0b",
+      "revision": "840569516b769b263232c3d814517c66dcadcdf0",
       "workingTreeClean": true
     },
     "chronosTui": {
@@ -40,17 +40,17 @@
     },
     "hermes": {
       "repository": "https://github.com/gantbd/hermes",
-      "revision": "7c37d24ce6a6bbaec237907e1253cc42254d1b00",
+      "revision": "4b343a7d114fd8fb61c5fe978b050db783500fa8",
       "workingTreeClean": true
     },
     "hermesTui": {
       "repository": "https://github.com/gantbd/hermes-tui",
-      "revision": "c4f35d1c51c720fa1628f541f48a4c1f797d5d92",
+      "revision": "609120e9d1a35fb9c8303b22c32bc057d161b5ef",
       "workingTreeClean": true
     },
     "aegis": {
       "repository": "https://github.com/gantbd/aegis",
-      "revision": "b7557a60c0904c8847e603235be8fb477335984f",
+      "revision": "a50c621b2cb69542eef2d0b88518a9cbbc8d4d06",
       "workingTreeClean": true
     },
     "aegisTui": {

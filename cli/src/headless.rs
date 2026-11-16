@@ -262,9 +262,9 @@ fn observe_hermes(
     configured_consumer: Option<hermes_protocol::ConsumerIdV1>,
 ) -> (serde_json::Value, bool) {
     let capability = hermes_tui::CAPABILITIES.headless[0];
-    let port = match hermes_tui_local_client::LocalPort::connect(
+    let port = match hermes_local_client::LocalPort::connect(
         socket,
-        hermes_tui_local_client::ClientLimits::default(),
+        hermes_local_client::ClientLimits::default(),
     ) {
         Ok(port) => port,
         Err(error) => {
@@ -280,7 +280,7 @@ fn observe_hermes(
         }
     };
     let mut client =
-        hermes_client::ReadOnlyClient::new(hermes_tui_local_client::CONNECTION_SESSION, port);
+        hermes_client::ReadOnlyClient::new(hermes_local_client::CONNECTION_SESSION, port);
     match hermes_tui::observe_selected(&mut client, configured_stream, configured_consumer) {
         Ok(value) => {
             let stream = value.configured_stream.map(|selection| match selection {
