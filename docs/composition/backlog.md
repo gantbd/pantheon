@@ -15,8 +15,9 @@ read-only input until that repository settles.
   together in one Workbench invocation, not only as isolated peer attachments.
 - [x] Keep the root repository inventory synchronized with all presentation
   peers and current source state.
-- [ ] Converge Chronos and Agora on one immutable Keystone source identity so
-  the normal all-three host graph needs no qualification-only patch. Use a
+- [ ] Converge Chronos, Agora, and native Hermes hosting on one immutable
+  Keystone source identity so normal product host graphs need no
+  qualification-only patch. Use a
   remotely retrievable pinned Git revision or published artifact; a sibling
   path breaks Chronos's relocatable source-profile gate, while separate vendored
   paths cannot share one Cargo lock identity.

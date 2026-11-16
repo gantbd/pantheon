@@ -191,6 +191,15 @@ standalone and Workbench, bounded to 16 events plus the negotiated frame and
 reporting retention/publication gaps explicitly. Append, acknowledge, and
 compaction remain guarded later operations.
 
+Hermes now also supplies the missing shutdown-aware embedded accept loop: a
+caller-owned stop flag plus an identity-free wake connection yields bounded
+owner-thread and socket cleanup while storage recovery, peer mapping,
+authorization and limits remain deployment inputs. A normal Workbench native
+host cannot yet link truthfully because Chronos and Hermes resolve compatible
+`keystone-storage` code through distinct Cargo source identities. That host
+cell stays absent until the immutable-source item closes; no product Cargo
+patch masks it.
+
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,
 and Workbench attachment qualified against the real durable daemon in both
