@@ -64,6 +64,7 @@ def run_live_evidence(stage):
 
 
 def validate_direct_path_closure(directory, stage):
+    missing = []
     for relative_manifest in ("Cargo.toml", "cli/Cargo.toml"):
         manifest_path = directory / relative_manifest
         manifest = tomllib.loads(manifest_path.read_text())
@@ -72,10 +73,13 @@ def validate_direct_path_closure(directory, stage):
                 continue
             target = (manifest_path.parent / declaration["path"]).resolve()
             if stage not in target.parents or not (target / "Cargo.toml").is_file():
-                raise SystemExit(
-                    f"candidate source closure omits direct dependency {dependency}: "
-                    f"{declaration['path']} from {relative_manifest}"
+                missing.append(
+                    f"{dependency} ({declaration['path']} from {relative_manifest})"
                 )
+    if missing:
+        raise SystemExit(
+            "candidate source closure omits direct dependencies: " + "; ".join(missing)
+        )
 
 
 def main():
