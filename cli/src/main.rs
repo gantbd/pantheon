@@ -16,10 +16,13 @@ use workbench_tui::Shell;
 use workbench_tui_cli::{
     OperationalPeers,
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
-    native_host::{AegisProcessOptions, ChronosHostOptions, HermesProcessOptions, NativeHost},
+    native_host::{
+        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, HermesProcessOptions,
+        NativeHost,
+    },
     profile::{
-        AegisOpenMode, AegisRole, AgoraProfile, DeploymentMode, HermesAccessProfile,
-        HermesOpenMode, WorkspaceProfile,
+        AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, DeploymentMode,
+        HermesAccessProfile, HermesOpenMode, WorkspaceProfile,
     },
     registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers,
@@ -47,6 +50,7 @@ struct Options {
     workspace_name: String,
     shell: Shell,
     agora: Option<AgoraProfile>,
+    agora_host: Option<AgoraProcessOptions>,
     moira_socket: Option<PathBuf>,
     moira_requires: Vec<String>,
     daimon_socket: Option<PathBuf>,
@@ -119,6 +123,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut shell = Shell::dual_peer();
     let mut workspace_name = "Workbench".to_owned();
     let mut agora = None;
+    let mut agora_host = None;
     let mut moira_socket = None;
     let mut moira_requires = Vec::new();
     let mut daimon_socket = None;
@@ -153,6 +158,19 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         agora = profile.agora.inspect(|configured| {
             agora_requires = configured.requires.clone();
         });
+        if let Some(configured) = &agora
+            && configured.deployment == DeploymentMode::Hosted
+        {
+            let host = configured
+                .host
+                .as_ref()
+                .expect("validated hosted Agora configuration");
+            agora_host = Some(AgoraProcessOptions {
+                executable: host.executable.clone(),
+                config: host.config.clone(),
+                socket: configured.socket.clone(),
+            });
+        }
         if let Some(moira) = profile.moira {
             moira_socket = Some(moira.socket);
             moira_requires = moira.requires;
@@ -443,6 +461,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         workspace_name,
         shell,
         agora,
+        agora_host,
         moira_socket,
         moira_requires,
         daimon_socket,
@@ -1315,6 +1334,7 @@ fn finish_headless(
 fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn std::error::Error>> {
     if !options.host_chronos
         && !options.host_vellum
+        && options.agora_host.is_none()
         && options.hermes_host.is_none()
         && options.aegis_host.is_none()
     {
@@ -1361,6 +1381,10 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
         host.start_aegis_process(aegis.clone())
             .map_err(|failure| format!("hosted Aegis startup refused: {failure:?}"))?;
     }
+    if let Some(agora) = &options.agora_host {
+        host.start_agora_process(agora.clone())
+            .map_err(|failure| format!("hosted Agora startup refused: {failure:?}"))?;
+    }
     host.seal()
         .map_err(|error| format!("hosted topology seal refused: {error:?}"))?;
     Ok(Some(host))
@@ -1368,12 +1392,20 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
 
 fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     let agora = if let Some(profile) = options.agora {
-        let (client_id, port) = AgoraLocalServicePort::connect(
-            &profile.socket,
-            &profile.participant,
-            LocalClientLimits::default(),
-        )
-        .map_err(|error| format!("Agora service refused: {error:?}"))?;
+        let connection = match profile.transport {
+            AgoraTransportProfile::Conversation => AgoraLocalServicePort::connect(
+                &profile.socket,
+                &profile.participant,
+                LocalClientLimits::default(),
+            ),
+            AgoraTransportProfile::Composition => AgoraLocalServicePort::connect_composition(
+                &profile.socket,
+                &profile.participant,
+                LocalClientLimits::default(),
+            ),
+        };
+        let (client_id, port) =
+            connection.map_err(|error| format!("Agora service refused: {error:?}"))?;
         Some(agora_tui::Component::new(AgoraClientV2::new(
             client_id, port,
         )))

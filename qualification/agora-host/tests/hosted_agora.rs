@@ -205,8 +205,11 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     let observation = observe_headless(HeadlessRequest {
         workspace: "All peers".into(),
         agora: Some(AgoraProfile {
+            deployment: workbench_tui_cli::profile::DeploymentMode::Attach,
+            transport: workbench_tui_cli::profile::AgoraTransportProfile::Conversation,
             socket: socket.clone(),
             participant: "operator".into(),
+            host: None,
             requires: vec!["rooms.read.v2".into()],
         }),
         moira_socket: None,

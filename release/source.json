@@ -5,12 +5,12 @@
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
-      "revision": "915970cd14120e6e75a3ae7b7d856c235f5828df",
+      "revision": "4ccbb75ac4b2f3c11eacd96c14ab61c3da9a8aba",
       "workingTreeClean": true
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
-      "revision": "66a2702d515392b6ed6c0e845811081cb9b6eabc",
+      "revision": "e225c2f95d3481497214483b6fd483c6e97870c1",
       "workingTreeClean": true
     },
     "chronos": {

@@ -112,7 +112,10 @@ resource, and opaque subject. Agora now also owns an ordered durable create, cle
 exact endpoint-residue-recovery factory. Its shared owner loop now accepts an
 idempotent shutdown wakeup and returns the exact drain/cleanup receipt. Its
 bounded standalone configuration and POSIX signal wrapper reuse that owner;
-real standalone and Workbench process qualification remain. A single Workbench process and lock
+the real standalone journey and Workbench-supervised exact process now qualify
+create, public-client observation, clean drain, and durable reopen. Workbench
+receives only the executable, opaque config path, public socket, and explicit
+composition transport; it does not interpret authority or bootstrap facts. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
@@ -139,7 +142,9 @@ Chronos and Vellum while attaching Agora, and can present and observe all three
 in one interactive or headless invocation. Together with the all-three owner
 qualification this proves the composition and lifecycle seams separately; it
 does not substitute test authority or attachment for the still-open production
-Agora owner factory.
+Agora owner factory. The production-shaped alternative supervises Agora's exact
+standalone process rather than linking its engine graph and is qualified with a
+real Workbench-hosted Aegis owner in both headless and interactive modes.
 
 ### 4. Qualify headless parity
 
@@ -169,9 +174,10 @@ against the real daemon in the same process as the Chronos and Vellum owners,
 including reusable interactive rendering, the shared headless observer, and
 clean reverse shutdown. The same lifecycle seam also qualifies scheduled
 publish/observe through Agora's public composition client under test-only
-authority. Durable Agora restart and induced partial-shutdown qualification
-remain open; grant provisioning is now owner-side and must stay outside
-Workbench.
+authority. Durable Agora restart now passes through the exact standalone
+process in both standalone and Workbench-supervised journeys. Induced
+partial-shutdown qualification remains
+open; grant provisioning stays owner-side and outside Workbench.
 
 Chronos's selected guarded-write profile is also qualified through the hosted
 Workbench path using the peer-owned public Hub: task creation, receipted

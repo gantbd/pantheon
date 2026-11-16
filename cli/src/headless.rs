@@ -16,7 +16,7 @@ use vellum_sdk_client::{
     workspace::WorkspaceClientV1,
 };
 
-use crate::profile::AgoraProfile;
+use crate::profile::{AgoraProfile, AgoraTransportProfile};
 
 pub struct HeadlessRequest {
     pub workspace: String,
@@ -500,11 +500,19 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
     use agora_protocol::v2::{CommandV2, OutcomeV2, ReplyV2};
     let capability = agora_tui::CAPABILITIES.headless[0];
 
-    let (client_id, port) = match AgoraLocalServicePort::connect(
-        &profile.socket,
-        &profile.participant,
-        LocalClientLimits::default(),
-    ) {
+    let connection = match profile.transport {
+        AgoraTransportProfile::Conversation => AgoraLocalServicePort::connect(
+            &profile.socket,
+            &profile.participant,
+            LocalClientLimits::default(),
+        ),
+        AgoraTransportProfile::Composition => AgoraLocalServicePort::connect_composition(
+            &profile.socket,
+            &profile.participant,
+            LocalClientLimits::default(),
+        ),
+    };
+    let (client_id, port) = match connection {
         Ok(connection) => connection,
         Err(error) => {
             return (
@@ -759,8 +767,11 @@ mod tests {
         let failure = observe(HeadlessRequest {
             workspace: "gate".into(),
             agora: Some(AgoraProfile {
+                deployment: crate::profile::DeploymentMode::Attach,
+                transport: crate::profile::AgoraTransportProfile::Conversation,
                 socket: "/definitely/not/a/socket".into(),
                 participant: "operator".into(),
+                host: None,
                 requires: vec!["messages.read.v2".into()],
             }),
             moira_socket: None,

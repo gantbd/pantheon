@@ -33,10 +33,30 @@ pub struct WorkspaceProfile {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AgoraProfile {
+    #[serde(default)]
+    pub deployment: DeploymentMode,
+    #[serde(default)]
+    pub transport: AgoraTransportProfile,
     pub socket: PathBuf,
     pub participant: String,
+    pub host: Option<AgoraHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum AgoraTransportProfile {
+    #[default]
+    Conversation,
+    Composition,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct AgoraHostProfile {
+    pub executable: PathBuf,
+    pub config: PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -220,6 +240,10 @@ impl WorkspaceProfile {
         profile.validate()?;
         if let Some(agora) = &mut profile.agora {
             agora.socket = resolve(base, &agora.socket);
+            if let Some(host) = &mut agora.host {
+                host.executable = resolve(base, &host.executable);
+                host.config = resolve(base, &host.config);
+            }
         }
         if let Some(moira) = &mut profile.moira {
             moira.socket = resolve(base, &moira.socket);
@@ -288,6 +312,22 @@ impl WorkspaceProfile {
             }
             validate_path(&agora.socket)?;
             validate_text(&agora.participant, "Agora participant")?;
+            match (agora.deployment, &agora.host) {
+                (DeploymentMode::Hosted, Some(host)) => {
+                    if agora.transport != AgoraTransportProfile::Composition {
+                        return Err("hosted Agora requires the composition transport");
+                    }
+                    validate_path(&host.executable)?;
+                    validate_path(&host.config)?;
+                }
+                (DeploymentMode::Hosted, None) => {
+                    return Err("hosted Agora requires an owner configuration");
+                }
+                (DeploymentMode::Attach, None) => {}
+                (DeploymentMode::Attach, Some(_)) => {
+                    return Err("attached Agora cannot carry owner configuration");
+                }
+            }
             validate_required_capabilities(&agora.requires)?;
         }
         if let Some(moira) = &self.moira {
@@ -692,6 +732,37 @@ mod tests {
               "access":"operator","operator_stream":"05050505050505050505050505050505"}}
         }"#;
         assert!(WorkspaceProfile::parse(mismatched_operator, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hosted_agora_requires_only_opaque_owner_inputs() {
+        let valid = br#"{
+          "version":1,"name":"Agora","surfaces":["agora"],
+          "agora":{"deployment":"hosted","transport":"composition","socket":"agora.sock","participant":"alice",
+            "host":{"executable":"bin/agora-private-local","config":"private/agora.conf"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let agora = profile.agora.unwrap();
+        let host = agora.host.unwrap();
+        assert_eq!(agora.deployment, DeploymentMode::Hosted);
+        assert_eq!(agora.transport, AgoraTransportProfile::Composition);
+        assert_eq!(
+            host.executable,
+            Path::new("/tmp/workbench/bin/agora-private-local")
+        );
+        assert_eq!(host.config, Path::new("/tmp/workbench/private/agora.conf"));
+
+        let missing_host = br#"{
+          "version":1,"name":"Agora","surfaces":["agora"],
+          "agora":{"deployment":"hosted","socket":"agora.sock","participant":"alice"}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_host, Path::new(".")).is_err());
+        let attached_host = br#"{
+          "version":1,"name":"Agora","surfaces":["agora"],
+          "agora":{"socket":"agora.sock","participant":"alice",
+            "host":{"executable":"agora-private-local","config":"agora.conf"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(attached_host, Path::new(".")).is_err());
     }
 
     #[test]

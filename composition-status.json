@@ -26,7 +26,7 @@
       "readCapability": "rooms.read.v2",
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
-      "host": { "interactive": "implemented", "headless": "implemented" },
+      "host": { "interactive": "qualified", "headless": "qualified" },
       "mutation": "planned"
     },
     "chronos": {

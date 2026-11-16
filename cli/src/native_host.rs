@@ -3,6 +3,8 @@
 //! This module owns only operational lifecycle. Each peer keeps its own
 //! service, protocol, state root, authority configuration, and concrete client.
 
+#[cfg(feature = "native-chronos")]
+use std::os::unix::net::UnixStream;
 #[cfg(target_os = "macos")]
 use std::sync::mpsc;
 #[cfg(any(feature = "native-chronos", target_os = "macos"))]
@@ -10,13 +12,12 @@ use std::thread::JoinHandle;
 #[cfg(unix)]
 use std::{
     fs,
+    io::{Read, Write},
     os::unix::fs::FileTypeExt,
     path::PathBuf,
-    process::{Child, Command, Stdio},
+    process::{Child, ChildStdin, ChildStdout, Command, Stdio},
     time::Duration,
 };
-#[cfg(feature = "native-chronos")]
-use std::{io::Write, os::unix::net::UnixStream};
 use std::{path::Path, thread};
 
 #[cfg(feature = "native-chronos")]
@@ -153,6 +154,17 @@ pub struct AegisProcessOptions {
     pub administrator: bool,
 }
 
+/// Opaque deployment inputs for Agora's sovereign private-local application.
+/// The config remains Agora-owned; Workbench uses the socket only for
+/// readiness and ordinary public-client attachment.
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AgoraProcessOptions {
+    pub executable: PathBuf,
+    pub config: PathBuf,
+    pub socket: PathBuf,
+}
+
 impl Default for NativeHost {
     fn default() -> Self {
         Self::new()
@@ -224,6 +236,35 @@ impl NativeHost {
         S: FnMut() -> ShutdownDisposition + Send + 'static,
     {
         self.registry.start_or_rollback(HostedPeerId::Agora, start)
+    }
+
+    /// Starts Agora's standalone private-local application unchanged.
+    /// Workbench owns only readiness and process drain. Authority, bootstrap,
+    /// trusted time, durable storage, and grant selection stay in Agora's
+    /// opaque deployment config, and clients attach to the public socket.
+    #[cfg(unix)]
+    pub fn start_agora_process(
+        &mut self,
+        options: AgoraProcessOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        self.start_agora(|| {
+            let mut child = Command::new(&options.executable)
+                .arg(&options.config)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|error| format!("Agora process start refused: {error}"))?;
+            if let Err(error) = wait_for_process_ready(&mut child, &options.socket, "Agora") {
+                stop_failed_process_start(&mut child);
+                return Err(error);
+            }
+            let mut input = child.stdin.take();
+            let mut output = child.stdout.take();
+            Ok(((), move || {
+                stop_agora_process(&mut child, &mut input, &mut output)
+            }))
+        })
     }
 
     /// Starts a deployment-supplied Moira owner. The deployment retains
@@ -431,6 +472,86 @@ impl NativeHost {
     }
 }
 
+#[cfg(unix)]
+fn stop_agora_process(
+    child: &mut Child,
+    input: &mut Option<ChildStdin>,
+    output: &mut Option<ChildStdout>,
+) -> ShutdownDisposition {
+    if child.try_wait().ok().flatten().is_some() {
+        return ShutdownDisposition::Refused;
+    }
+    let Some(mut shutdown) = input.take() else {
+        return ShutdownDisposition::Refused;
+    };
+    if shutdown.write_all(b"x").is_err() {
+        return ShutdownDisposition::Refused;
+    }
+    drop(shutdown);
+    for _ in 0..400 {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                if !status.success() {
+                    return ShutdownDisposition::Refused;
+                }
+                let clean = output
+                    .take()
+                    .is_some_and(|mut receipt| agora_cleanup_receipt_is_clean(&mut receipt));
+                return if clean {
+                    ShutdownDisposition::Clean
+                } else {
+                    ShutdownDisposition::Refused
+                };
+            }
+            Ok(None) => thread::sleep(Duration::from_millis(5)),
+            Err(_) => return ShutdownDisposition::OutcomeUnknown,
+        }
+    }
+    let _ = child.kill();
+    let _ = child.wait();
+    ShutdownDisposition::OutcomeUnknown
+}
+
+#[cfg(unix)]
+fn agora_cleanup_receipt_is_clean(output: &mut impl Read) -> bool {
+    const MAX_RECEIPT_BYTES: u64 = 4 * 1_024;
+    let mut bytes = Vec::new();
+    if output
+        .take(MAX_RECEIPT_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .is_err()
+        || bytes.is_empty()
+        || bytes.len() as u64 > MAX_RECEIPT_BYTES
+    {
+        return false;
+    }
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return false;
+    };
+    let Some(receipt) = value.as_object() else {
+        return false;
+    };
+    receipt.len() == 6
+        && receipt.get("schema").and_then(serde_json::Value::as_u64) == Some(1)
+        && receipt
+            .get("priorLifecycle")
+            .and_then(serde_json::Value::as_str)
+            == Some("draining")
+        && receipt.get("cleanup").and_then(serde_json::Value::as_str) == Some("clean")
+        && [
+            "acceptedConnections",
+            "completedConnections",
+            "refusedConnections",
+        ]
+        .iter()
+        .all(|key| {
+            receipt
+                .get(*key)
+                .and_then(serde_json::Value::as_u64)
+                .is_some()
+        })
+}
+
 #[cfg(target_os = "macos")]
 fn vellum_control_path(socket: &Path) -> Result<PathBuf, String> {
     let parent = socket
@@ -587,10 +708,30 @@ fn chronos_shutdown(
 #[cfg(test)]
 mod deployment_factory_tests {
     use super::*;
+    use std::io::Cursor;
     use std::sync::{Arc, Mutex};
 
     type TestShutdown = Box<dyn FnMut() -> ShutdownDisposition + Send + 'static>;
     type TestStart<C> = Result<(C, TestShutdown), String>;
+
+    #[cfg(unix)]
+    #[test]
+    fn agora_cleanup_receipt_requires_exact_bounded_clean_shape() {
+        let clean = br#"{"schema":1,"priorLifecycle":"draining","cleanup":"clean","acceptedConnections":2,"completedConnections":2,"refusedConnections":0}
+"#;
+        assert!(agora_cleanup_receipt_is_clean(&mut Cursor::new(clean)));
+
+        let residue = br#"{"schema":1,"priorLifecycle":"draining","cleanup":"residue-preserved","acceptedConnections":2,"completedConnections":2,"refusedConnections":0}
+"#;
+        assert!(!agora_cleanup_receipt_is_clean(&mut Cursor::new(residue)));
+        let extra = br#"{"schema":1,"priorLifecycle":"draining","cleanup":"clean","acceptedConnections":2,"completedConnections":2,"refusedConnections":0,"authority":"leak"}
+"#;
+        assert!(!agora_cleanup_receipt_is_clean(&mut Cursor::new(extra)));
+        assert!(!agora_cleanup_receipt_is_clean(&mut Cursor::new(vec![
+            b'x';
+            4 * 1_024 + 1
+        ])));
+    }
 
     #[test]
     fn deployment_owned_peer_factories_keep_typed_clients_and_reverse_drain() {

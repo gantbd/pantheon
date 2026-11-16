@@ -51,9 +51,9 @@ cargo run -p workbench-tui-cli --bin workbench-tui --locked --offline -- interac
 Profiles contain connection configuration, presentation selection and explicit
 cross-service scope mappings. They cannot enable Chronos writes or carry grant
 handles. Continue to pass `--chronos-allow-writes` at launch when intended.
-Chronos, Vellum, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
+Agora, Chronos, Vellum, Hermes and Aegis profiles may select `"deployment":"hosted"`. Workbench then
 owns their real local service lifecycles while the same peer clients and TUI
-components are used. Hermes and Aegis remain sovereign supervised owner
+components are used. Agora, Hermes and Aegis remain sovereign supervised owner
 processes rather than linked semantic engines. Hosted Vellum requires a bounded non-empty `roots` list;
 attached profiles must not include roots. Edit and save authority remain
 launch-only through `--vellum-allow-edit` and `--vellum-allow-save`.
@@ -97,9 +97,11 @@ The standalone socket CLI starts with handoff controls disabled.
 The Workbench executable can natively host Chronos and Vellum together in
 interactive or headless mode. Services bind before clients are constructed;
 startup refusal rolls back earlier owners, and shutdown drains in reverse order
-with explicit clean, refused, or outcome-unknown receipts. Agora remains an
-attached or host-injected peer until a deployment supplies its required Aegis
-authentication, policy, clock, and durable-host composition.
+with explicit clean, refused, or outcome-unknown receipts. It can also supervise
+Agora's exact `agora-private-local` process from an opaque owner config, wait for
+its public socket, select the routed public client explicitly, request Agora's
+stdin drain, and validate the bounded cleanup receipt. Workbench never parses
+the config's Aegis, grant, clock, bootstrap, or durable-storage facts.
 
 The workspace-wide standalone/Workbench pattern, composition taxonomy, current
 parity matrix and Axon/Engram prior-art routing live in
@@ -187,6 +189,14 @@ Chronos standalone and Agora resolve the compatible checkpoint/commit subset of
 `keystone-storage` from different local identities. It qualifies the all-three lifecycle graph,
 but not the production Agora authority factory or a normal unpatched release
 build.
+
+Run `sh tests/live/agora_hosted.sh` for the production-shaped process boundary.
+Workbench first hosts the real Aegis daemon and then Agora's exact standalone
+private-local binary, observes both through their public clients, drains Agora
+before Aegis, reopens both durable stores, and repeats the same path through the
+interactive Agora component. The profile carries only Agora's executable,
+opaque config path, public socket, and explicit composition transport; all
+authority and bootstrap policy remains Agora-owned.
 
 Run `sh tests/live/aegis_attach.sh` to qualify the independently packaged
 read-only Aegis peer through the real durable daemon in both Workbench headless

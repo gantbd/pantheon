@@ -27,7 +27,7 @@ read-only input until that repository settles.
 
 ## P1 — production composition
 
-- [ ] Complete Agora's production durable owner factory without putting
+- [x] Complete Agora's production durable owner factory without putting
   credential policy in Workbench. Agora now owns the qualified single-principal
   private-endpoint authenticator, non-regressing Unix-epoch clock, and an
   adopted `agora-private-local` bounded create-time participant/room bootstrap.
@@ -40,8 +40,11 @@ read-only input until that repository settles.
   The owner factory now orders durable create, clean open, and exact endpoint
   residue recovery, and the shared owner loop returns an exact cleanup receipt
   after explicit shutdown and drain. The bounded standalone configuration and
-  POSIX signal entrypoint now reuse that owner. Remaining work is a real
-  Aegis/Agora standalone journey and Workbench-owned process qualification.
+  POSIX signal entrypoint reuse that owner. The real Aegis/Agora standalone
+  journey now publishes/observes through the public scheduled client, drains,
+  and reopens retained state. Workbench supervises the exact same binary from
+  an opaque config, uses the routed public Protocol V2 client in headless and
+  interactive modes, drains Agora before Aegis, and qualifies durable reopen.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,
