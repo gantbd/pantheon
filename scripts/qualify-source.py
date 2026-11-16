@@ -140,7 +140,9 @@ def main():
         git(repo, "cat-file", "-e", f"{revision}^{{commit}}")
 
     with tempfile.TemporaryDirectory(prefix="workbench-source-", dir="/tmp") as tmp:
-        stage = Path(tmp)
+        # macOS commonly exposes /tmp as a symlink to /private/tmp. Canonicalize
+        # once so containment checks compare one path identity.
+        stage = Path(tmp).resolve()
         archive(ROOT, workbench, stage / "workbench-tui")
         for name in PROJECTS:
             archive(ROOT.parent / name, pins[name], stage / name)
