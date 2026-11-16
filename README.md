@@ -261,6 +261,14 @@ contiguous event page and exposes phase, profile digest, capabilities and event
 kinds without cataloguing sessions or acquiring open, prompt, permission,
 advance, cancel, close, resume or reattach authority.
 
+Run `sh tests/live/daimon_advance.sh` to qualify the separate
+`agents.session.advance.v1` operator path. Standalone Daimon and Workbench reuse
+the same Daimon-owned exact-state guard: it observes the configured session on
+the mutation connection, requires the exact active turn, revision, idempotency
+key and confirmation, and attempts one bounded provider slice. An uncertain
+delivery is never retried; retained session inspection is the reconciliation
+path. The reusable Daimon presentation remains read-only.
+
 Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
 configured consumer's content-free cursor/backlog through Hermes's read-only
 facade. Exact opaque selectors are profile inputs and are never catalogued or

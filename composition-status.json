@@ -53,11 +53,14 @@
         "agents.session.inspect.v1": "qualified"
       },
       "client": { "contract": "daimon-client", "connection": "daimon-client", "ownership": "peer" },
-      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "workbench-tui/tests/live/daimon_attach.sh"],
+      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "workbench-tui/tests/live/daimon_attach.sh", "workbench-tui/tests/live/daimon_advance.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "absent", "headless": "absent" },
-      "mutation": "planned"
+      "mutation": "qualified",
+      "mutationCapabilities": {
+        "agents.session.advance.v1": "qualified"
+      }
     },
     "grounding": {
       "owner": "dendrite",

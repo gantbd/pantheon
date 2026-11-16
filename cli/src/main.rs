@@ -552,6 +552,12 @@ fn vellum_connector(
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if std::env::args_os()
         .nth(1)
+        .is_some_and(|arg| arg == "daimon-agent-advance")
+    {
+        return daimon_agent_advance(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
         .is_some_and(|arg| arg == "hermes-disclose-events")
     {
         return hermes_disclose_events(std::env::args_os().skip(2));
@@ -612,6 +618,143 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn daimon_agent_advance(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use daimon_agent_command::{AdvanceError, AdvanceRequest};
+    use daimon_client::unix::AgentClientErrorV1;
+    use daimon_protocol::agent::AgentOutcomeV1;
+    use std::time::Duration;
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let session = args
+        .next()
+        .and_then(|value| daimon_tui::parse_agent_session(&value.to_string_lossy()))
+        .ok_or("agent session must be 32 hexadecimal digits")?;
+    let turn = args
+        .next()
+        .and_then(|value| daimon_tui::parse_agent_turn(&value.to_string_lossy()))
+        .ok_or("agent turn must be 32 hexadecimal digits")?;
+    let expected_revision = parse_daimon_u64(args.next())?;
+    let idempotency_key = args
+        .next()
+        .and_then(|value| daimon_tui::parse_idempotency_key(&value.to_string_lossy()))
+        .ok_or("idempotency key must be 32 hexadecimal digits")?;
+    let now = parse_daimon_u64(args.next())?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let (service_session, port) = match daimon_client::unix::connect_agent(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => {
+            return daimon_advance_failure("not_sent", &format!("{error:?}"), None, None);
+        }
+    };
+    let request = AdvanceRequest {
+        session,
+        turn,
+        expected_revision,
+        idempotency_key,
+        now,
+    };
+    match daimon_agent_command::advance(service_session, port, request, &confirmation) {
+        Ok(AgentOutcomeV1::Session(view)) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "daimon",
+                    "capability": daimon_agent_command::CAPABILITY,
+                    "complete": true,
+                    "status": "advanced",
+                    "revision": view.revision,
+                    "phase": format!("{:?}", view.phase),
+                    "active_turn": view.active_turn.map(|_| "present"),
+                    "last_event_cursor": view.last_event_cursor,
+                }))?
+            );
+            Ok(())
+        }
+        Ok(AgentOutcomeV1::OutcomeUnknown { .. }) => daimon_advance_failure(
+            "outcome_unknown",
+            "Daimon retained an indeterminate advance outcome; inspect before any further action",
+            None,
+            None,
+        ),
+        Ok(AgentOutcomeV1::Events(_)) => daimon_advance_failure(
+            "invalid_reply",
+            "unexpected Daimon advance reply",
+            None,
+            None,
+        ),
+        Err(AdvanceError::ConfirmationMismatch { required }) => daimon_advance_failure(
+            "confirmation_refused",
+            "exact Daimon advance confirmation required",
+            Some(&required),
+            None,
+        ),
+        Err(AdvanceError::SessionChanged { actual }) => daimon_advance_failure(
+            "stale_session",
+            "Daimon session revision, phase, or active turn changed",
+            None,
+            Some(&actual),
+        ),
+        Err(AdvanceError::MutationTransport(AgentClientErrorV1::OutcomeUnknown(error))) => {
+            daimon_advance_failure("outcome_unknown", &format!("{error:?}"), None, None)
+        }
+        Err(AdvanceError::ObservationTransport(AgentClientErrorV1::NotSent(error)))
+        | Err(AdvanceError::MutationTransport(AgentClientErrorV1::NotSent(error))) => {
+            daimon_advance_failure("not_sent", &format!("{error:?}"), None, None)
+        }
+        Err(AdvanceError::ObservationRefused(refusal))
+        | Err(AdvanceError::MutationRefused(refusal)) => {
+            daimon_advance_failure("refused", &format!("{refusal:?}"), None, None)
+        }
+        Err(error) => daimon_advance_failure("unavailable", &format!("{error:?}"), None, None),
+    }
+}
+
+fn parse_daimon_u64(value: Option<std::ffi::OsString>) -> Result<u64, Box<dyn std::error::Error>> {
+    value
+        .and_then(|value| value.into_string().ok())
+        .and_then(|value| value.parse().ok())
+        .ok_or_else(|| usage().into())
+}
+
+fn daimon_advance_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+    actual: Option<&daimon_protocol::agent::AgentSessionViewV1>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "daimon",
+            "capability": daimon_agent_command::CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation,
+            "actual_revision": actual.map(|view| view.revision),
+            "actual_phase": actual.map(|view| format!("{:?}", view.phase)),
+            "actual_active_turn": actual.and_then(|view| view.active_turn).map(|_| "present"),
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn hermes_compact(

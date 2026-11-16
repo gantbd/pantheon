@@ -348,6 +348,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "daimon-agent-command"
+version = "0.1.0"
+dependencies = [
+ "daimon-client",
+ "daimon-protocol",
+]
+
+[[package]]
 name = "daimon-client"
 version = "0.1.0"
 dependencies = [
@@ -1554,6 +1562,7 @@ dependencies = [
  "chronos-standalone",
  "chronos-tui",
  "crossterm",
+ "daimon-agent-command",
  "daimon-client",
  "daimon-protocol",
  "daimon-tui",
