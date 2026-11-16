@@ -191,7 +191,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "4264323fabf93c6ec121797b5efc2d06dccd904e"
+        "3fb39f7ddece119868e016cb639d6644f32207a7"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
