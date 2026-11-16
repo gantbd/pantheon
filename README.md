@@ -195,10 +195,11 @@ Workbench first hosts the real Aegis daemon and then Agora's exact standalone
 private-local binary, observes both through their public clients, drains Agora
 before Aegis, reopens both durable stores, and repeats the same path through the
 interactive Agora component. A test-only process proxy then preserves a real
-Agora cleanup result as residue and separately kills the exact child at the
-shutdown edge. Workbench refuses aggregate success, still drains Aegis, waits
-for a safe replacement endpoint, and proves Agora's explicit prior/next
-incarnation recovery retains the room. The profile carries only Agora's
+Agora cleanup result as residue, kills the exact child at the shutdown edge,
+and withholds a terminal owner receipt through Workbench's bounded deadline.
+Workbench reports refused or outcome-unknown rather than aggregate success,
+still drains Aegis, waits for a safe replacement endpoint, and proves Agora's
+explicit prior/next incarnation recovery retains the room. The profile carries only Agora's
 executable, opaque config path, public socket, and explicit composition
 transport; all authority, residue validation, and bootstrap policy remain
 Agora-owned.

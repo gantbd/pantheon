@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 
 def main() -> int:
@@ -24,6 +25,11 @@ def main() -> int:
         child.kill()
         child.wait()
         return 70
+    if mode == "hang-after-child-kill":
+        child.kill()
+        child.wait()
+        time.sleep(60)
+        return 71
     if mode != "residue-receipt":
         raise SystemExit(f"unknown WORKBENCH_AGORA_PROXY_MODE: {mode}")
     if request:

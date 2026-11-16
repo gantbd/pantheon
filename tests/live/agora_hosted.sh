@@ -366,4 +366,53 @@ assert report["hosted_shutdown"]["status"] == "clean"
 [ ! -e "$scratch/agora.sock" ]
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: Workbench-hosted Aegis -> exact Agora process -> refused receipt and abrupt-stop cuts -> continued reverse drain -> residue recovery -> durable reopen'
+unknown_profile=$(run_profile open 7 \
+  10101010101010101010101010101010 prepare "$cleanup_proxy")
+unknown_report="$scratch/unknown-shutdown-report.json"
+if WORKBENCH_AGORA_REAL_EXECUTABLE="$agora" \
+  WORKBENCH_AGORA_PROXY_MODE=hang-after-child-kill \
+  "$workbench" headless --workspace-profile "$unknown_profile" \
+    >"$unknown_report" 2>"$scratch/unknown-shutdown.err"; then
+  echo 'FAIL: Workbench accepted an Agora owner without a terminal receipt' >&2
+  exit 1
+fi
+grep -q 'one or more peer observations or hosted shutdowns were incomplete' \
+  "$scratch/unknown-shutdown.err"
+python3 - "$unknown_report" <<'PYTHON'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    report = json.load(source)
+assert not report["complete"]
+peers = {peer["peer"]: peer for peer in report["peers"]}
+assert peers["agora"]["status"] == "current"
+assert peers["agora"]["rooms"] == 1
+assert peers["aegis"]["status"] == "current"
+assert report["hosted_shutdown"] == {
+    "status": "incomplete",
+    "receipts": [
+        {"peer": "agora", "instance": None, "disposition": "outcome_unknown"},
+        {"peer": "aegis", "instance": None, "disposition": "clean"},
+    ],
+}
+PYTHON
+[ -S "$scratch/agora.sock" ]
+[ ! -e "$scratch/aegis.sock" ]
+
+after_unknown=$(run_profile recover 8 \
+  10101010101010101010101010101010 headless "$agora" \
+  11111111111111111111111111111111)
+printf '%s' "$after_unknown" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"]
+peers = {peer["peer"]: peer for peer in report["peers"]}
+assert peers["agora"]["rooms"] == 1
+assert peers["aegis"]["epoch"] == 8
+assert report["hosted_shutdown"]["status"] == "clean"
+'
+[ ! -e "$scratch/agora.sock" ]
+[ ! -e "$scratch/aegis.sock" ]
+
+echo 'PASS: Workbench-hosted Aegis -> exact Agora process -> refused, abrupt, and outcome-unknown cuts -> continued reverse drain -> exact residue recovery'

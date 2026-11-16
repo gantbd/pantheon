@@ -181,8 +181,9 @@ process in both standalone and Workbench-supervised journeys. An induced
 non-clean Agora receipt now proves aggregate refusal, continued reverse drain
 of Aegis, and durable reopen. A separate shutdown-edge process cut proves
 abrupt child death, visible endpoint residue, safe replacement readiness, exact
-incarnation rotation, and retained-room recovery. A genuinely outcome-unknown
-drain remains open; grant provisioning stays owner-side and outside Workbench.
+incarnation rotation, and retained-room recovery. A bounded missing-receipt cut
+also proves `outcome_unknown`, continued Aegis drain, and the same explicit
+residue recovery. Grant provisioning stays owner-side and outside Workbench.
 
 Chronos's selected guarded-write profile is also qualified through the hosted
 Workbench path using the peer-owned public Hub: task creation, receipted

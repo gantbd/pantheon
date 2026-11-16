@@ -6,7 +6,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 
 | Surface | Available boundary | Missing boundary | Current fallback |
 | --- | --- | --- | --- |
-| Agora | Native protocol, service, clients and wire; independent read-only `agora-tui`; explicit conversation-only and routed-composition public-client transports; real Aegis-backed standalone create/publish/observe/drain/reopen; Workbench-supervised exact process in headless and interactive modes; owner-side identity, time, bootstrap, grant provisioning, durability and cleanup receipts; refused-cleanup/continued-drain/reopen cut; abrupt-stop/exact-residue-rotation/reopen cut | Immutable/release provenance, an outcome-unknown drain cut, and guarded domain mutations | Attach either explicit transport or supervise the exact standalone binary from its opaque owner config; Workbench never interprets authority facts |
+| Agora | Native protocol, service, clients and wire; independent read-only `agora-tui`; explicit conversation-only and routed-composition public-client transports; real Aegis-backed standalone create/publish/observe/drain/reopen; Workbench-supervised exact process in headless and interactive modes; owner-side identity, time, bootstrap, grant provisioning, durability and cleanup receipts; refused-cleanup, abrupt-stop, outcome-unknown, continued-drain, exact-residue-rotation and reopen cuts | Immutable/release provenance and guarded domain mutations | Attach either explicit transport or supervise the exact standalone binary from its opaque owner config; Workbench never interprets authority facts |
 | Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench census plus bounded selected-saga evidence/operator receipts | Guarded operator reconciliation actions and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation; Workbench hosting and mutation are intentionally not applicable | Attach the typed read-only Grounding peer; Dendrite retains its IDE/agent bridge lifecycle and MCP remains agent-facing only |
@@ -77,8 +77,7 @@ qualified across all three interactive panes and one aggregate headless report.
 ## Reconciliation order
 
 1. Promote Agora's now-qualified real standalone and Workbench-supervised
-   process journeys to immutable release evidence, then add an outcome-unknown
-   shutdown cut. Process drain remains owner-side. Deployment continues
+   process journeys to immutable release evidence. Process drain remains owner-side. Deployment continues
    to supply credential mapping, authority epoch, lifetime, resource, and
    subject unchanged through the opaque Agora config.
 2. Expose Moira reconciliation actions only with exact confirmation, current

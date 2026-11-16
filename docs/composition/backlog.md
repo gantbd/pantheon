@@ -49,7 +49,8 @@ read-only input until that repository settles.
   aggregate success without suppressing the later Aegis drain, followed by an
   exact durable reopen. A separate shutdown-edge child kill proves explicit
   residue preservation, safe replacement readiness, exact incarnation rotation,
-  and retained-room recovery. Outcome-unknown drain remains open.
+  and retained-room recovery. A bounded missing-receipt cut proves
+  `outcome_unknown`, continued Aegis drain, and the same exact recovery.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,
