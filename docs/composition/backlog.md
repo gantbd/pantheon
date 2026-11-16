@@ -33,9 +33,12 @@ read-only input until that repository settles.
   adopted `agora-private-local` bounded create-time participant/room bootstrap.
   Aegis now supplies a service-free `aegis-local-client`; Agora connects through
   it, binds the bootstrap principal before socket I/O, and invokes a
-  deployment-owned grant selector only on the exact live Aegis session.
-  Remaining inputs are the concrete deployment grant provisioner, durable
-  create/open plus residue recovery, and the standalone signal/drain shell.
+  deployment-owned grant selector only on the exact live Aegis session. Agora's
+  concrete provisioner now issues one exact conversation or
+  scheduled-composition scope using deployment-supplied authority epoch,
+  lifetime, resource, subject, and administrator credential mapping. Remaining
+  inputs are durable create/open plus residue recovery and the standalone
+  signal/drain shell.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,

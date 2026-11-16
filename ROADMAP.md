@@ -105,8 +105,10 @@ Agora authority factory is qualified against the real daemon and public client;
 Agora now owns the single-principal private-endpoint authenticator and
 non-regressing Unix-epoch clock plus an adopted bounded fresh-engine bootstrap,
 and its standalone application connects through Aegis's service-free public
-Unix client with a deployment-owned same-session grant selector. The profile
-still lacks a concrete deployment grant provisioner, durable recovery, and a
+Unix client with a concrete same-session grant provisioner for exact
+conversation or scheduled-composition actions. The deployment still supplies
+the administrator credential mapping, authority epoch, grant lifetime,
+resource, and opaque subject. The profile still lacks durable recovery and a
 process shell. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
@@ -164,8 +166,9 @@ against the real daemon in the same process as the Chronos and Vellum owners,
 including reusable interactive rendering, the shared headless observer, and
 clean reverse shutdown. The same lifecycle seam also qualifies scheduled
 publish/observe through Agora's public composition client under test-only
-authority. Concrete production Aegis grant provisioning, restart, and
-induced partial-shutdown qualification remain open.
+authority. Durable Agora restart and induced partial-shutdown qualification
+remain open; grant provisioning is now owner-side and must stay outside
+Workbench.
 
 Chronos's selected guarded-write profile is also qualified through the hosted
 Workbench path using the peer-owned public Hub: task creation, receipted
@@ -310,6 +313,6 @@ read-only peer surfaces: each peer supplies a reusable component, a separate
 standalone CLI, an explicit headless path, a peer-owned capability manifest,
 and both Workbench attach and host composition. Production activation is a
 separate deployment claim. It remains gated by completion of Agora's
-owner-side Aegis/durable process composition and by convergence
+owner-side durable process composition and by convergence
 on one Keystone source identity; Workbench must not absorb either policy merely
 to make the matrix appear complete.
