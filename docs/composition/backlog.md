@@ -217,13 +217,16 @@ read-only input until that repository settles.
   chain remains Moira-owned roadmap work rather than part of this peer-effect
   composition cell.
 - [ ] Complete physical authority/transport/revocation composition for Chronos
-  and Vellum federation; finish immutable release qualification for Agora
-  federation. Chronos and Vellum now own transport-neutral connection
+  and Vellum federation. Chronos and Vellum now own transport-neutral connection
   lifecycles that revalidate current session trust, make revocation terminal,
   hide revoked sessions, and close the injected transport exactly once;
   Vellum applies the same rule to disclosure downgrade. Physical authenticated
   transports, runtime revalidation cadence, and integrated qualification remain
-  open, so this cell is not yet closed.
+  open, so this cell is not yet closed. Agora federation's immutable release
+  qualification is complete: its exact source candidate and Aegis, Agora,
+  remote-transport, and Keystone inputs are reconstructed from Git archives,
+  the full physical mutual-TLS/current-policy/durable gate passes, and an
+  evidence-only follow-up records that candidate without changing it.
 - [ ] Install Vellum's newer durable operations only through their selected
   authority and platform adapters.
 
