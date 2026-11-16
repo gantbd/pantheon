@@ -57,7 +57,7 @@ implies production credential provenance.
 
 | Peer | Standalone interactive/headless | Workbench attach | Workbench host | Next boundary |
 | --- | --- | --- | --- | --- |
-| Agora | qualified read | qualified read | implemented with test-only authority | signal/drain process shell; private-endpoint identity, time, bounded bootstrap, public Aegis connection, exact conversation/scheduled-composition grant provisioning, and durable create/open/residue recovery are implemented owner-side |
+| Agora | qualified read | qualified read | implemented with test-only authority | standalone configuration/OS-signal entrypoint; private-endpoint identity, time, bounded bootstrap, public Aegis connection, exact conversation/scheduled-composition grant provisioning, durable create/open/residue recovery, and shutdown/drain receipts are implemented owner-side |
 | Chronos | qualified read and selected guarded writes | qualified, including the selected guarded-write profile | qualified local owner with exact durable mutation reopen | immutable shared Keystone source and mutations beyond the selected task/scheduling profile |
 | Vellum | qualified editor/read | qualified | qualified local owner | newer durable operations and release-qualified platform composition |
 | Moira | qualified read/reconciliation, census, evidence and receipt projections | qualified attach with the same component and census | absent | guarded reconciliation and native host factory |
