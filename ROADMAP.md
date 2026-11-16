@@ -102,8 +102,10 @@ shutdown callbacks, refuses duplicate/post-seal starts, drains in reverse order,
 preserves refused or outcome-unknown shutdown receipts, and rolls back partial
 assembly with exact receipts when a guarded factory start fails. An injected
 Agora authority factory is qualified against the real daemon and public client;
-the standalone Workbench profile still lacks a production peer-provenance,
-Aegis grant/time, and durable-host factory. A single Workbench process and lock
+Agora now owns the single-principal private-endpoint authenticator and
+non-regressing Unix-epoch clock, while the standalone Workbench profile still
+lacks bounded bootstrap, public Aegis session/grant/resource selection, durable
+recovery, and a process shell. A single Workbench process and lock
 closure now own all three peers and drain them in reverse order under an
 explicitly test-only Agora authority composition. While all three owners are
 live, that qualifier also runs the reusable headless aggregation API used by
@@ -307,6 +309,6 @@ read-only peer surfaces: each peer supplies a reusable component, a separate
 standalone CLI, an explicit headless path, a peer-owned capability manifest,
 and both Workbench attach and host composition. Production activation is a
 separate deployment claim. It remains gated by an Agora-owned or
-deployment-owned authenticator/clock composition and by convergence on one
-Keystone source identity; Workbench must not absorb either policy merely to
-make the matrix appear complete.
+deployment-owned bootstrap/Aegis/durable process composition and by convergence
+on one Keystone source identity; Workbench must not absorb either policy merely
+to make the matrix appear complete.

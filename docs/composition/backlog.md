@@ -27,8 +27,12 @@ read-only input until that repository settles.
 
 ## P1 — production composition
 
-- [ ] Supply Agora's production peer-provenance, Aegis grant/time and durable
-  owner factory without putting credential policy in Workbench.
+- [ ] Complete Agora's production durable owner factory without putting
+  credential policy in Workbench. Agora now owns the qualified single-principal
+  private-endpoint authenticator and non-regressing Unix-epoch clock. Remaining
+  inputs are bounded create-time bootstrap, public Aegis Unix session/grant and
+  resource selection, durable create/open plus residue recovery, and the
+  standalone signal/drain shell.
 - [x] Define a typed Grounding presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `grounding-tui` and its standalone interactive/headless application,

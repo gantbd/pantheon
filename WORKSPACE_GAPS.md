@@ -6,7 +6,7 @@ authorize Workbench to import an engine or recreate its client semantics.
 
 | Surface | Available boundary | Missing boundary | Current fallback |
 | --- | --- | --- | --- |
-| Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory; Agora–Hermes supplies the concrete public-Aegis-client authority adapter with fresh trusted-time input, now qualified against the real Aegis owner daemon/public Unix client including a live epoch-revocation fence | Deployment selection of peer provenance, production Aegis session/grant/time source, concrete endpoint, and durable-host factory for the standalone Workbench profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
+| Agora | Native protocol, service, client and wire; independent read-only `agora-tui`; selected private Unix client with endpoint ownership checks, bounded handshake/framing and truthful transmission uncertainty; real local daemon lifecycle qualified through a deployment-owned factory; Agora-owned single-principal private-endpoint authentication and non-regressing system time; Agora–Hermes supplies the concrete public-Aegis-client authority adapter with fresh trusted-time input, qualified against the real Aegis owner daemon/public Unix client including a live epoch-revocation fence | Bounded create-time bootstrap, production public-Aegis session/grant/resource selection, durable create/open and residue recovery, and the standalone process shell for the Workbench-hostable profile | A profile can attach an existing socket; a trusted host can inject the authority-bearing peer |
 | Moira | Native read/reconciliation clients and local daemon; independent `moira-tui` saga inspection/reconciliation component; standalone and Workbench census plus bounded selected-saga evidence/operator receipts | Guarded operator reconciliation actions and production Workbench host factory | Attach the read-only peer; retain attempt receipt inspection through Chronos |
 | Daimon | Execution/status clients, local daemon and supervisor census; independent `daimon-tui` redacted presence peer | Exact-ID execution detail, guarded dispatch/resume, and production Workbench host factory | Attach the read-only presence peer; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `grounding-tui` with bounded provenance/freshness projection | Selected surface/read navigation and production Workbench host factory | Attach the typed read-only Grounding peer; MCP remains agent-facing only |
@@ -73,8 +73,10 @@ qualified across all three interactive panes and one aggregate headless report.
 
 1. Converge Chronos and Agora on one Keystone source identity so the already
    qualified all-three owner graph builds without a local source patch.
-2. Supply Agora's production peer-provenance, Aegis grant/time, and durable-host
-   factory without moving those authority semantics into Workbench.
+2. Complete Agora's production durable-host factory around its implemented
+   private-endpoint identity and system-clock inputs: bounded bootstrap, public
+   Aegis session/grant/resource selection, durable recovery, and process drain
+   remain owner-side and must not move into Workbench.
 3. Expose Moira reconciliation actions only with exact confirmation, current
    authority, revision, durable receipts, and outcome-unknown recovery; retain
    the now-qualified read-only evidence/receipt path unchanged.
