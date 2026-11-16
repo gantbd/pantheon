@@ -116,4 +116,35 @@ assert value["status"] == "acknowledged"
 assert value["previous_next_sequence"] == 1 and value["next_sequence"] == 2
 '
 
-echo 'PASS: real Hermes daemon -> content-free attach, bounded disclosure and same-connection acknowledgement -> Workbench'
+start_consumer_fixture compact-refused
+if refused=$(cargo run --quiet --manifest-path "$root/Cargo.toml" -p workbench-tui-cli -- \
+  hermes-compact "$tmp/compact-refused.sock" \
+  05050505050505050505050505050505 0 1 0 \
+  'compact' 2>"$tmp/compact-refused-client.err"); then
+  echo 'FAIL: Workbench accepted an inexact Hermes compaction confirmation' >&2
+  exit 1
+fi
+finish_fixture
+printf '%s' "$refused" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "hermes"
+assert not value["complete"] and value["status"] == "confirmation_refused"
+assert value["required_confirmation"] == "COMPACT HERMES STREAM 05050505050505050505050505050505 RETAINED FROM 0 PUBLISHED EDGE 1 THROUGH 0"
+'
+
+start_consumer_fixture compact
+compacted=$(cargo run --quiet --manifest-path "$root/Cargo.toml" -p workbench-tui-cli -- \
+  hermes-compact "$tmp/compact.sock" 05050505050505050505050505050505 0 1 0 \
+  'COMPACT HERMES STREAM 05050505050505050505050505050505 RETAINED FROM 0 PUBLISHED EDGE 1 THROUGH 0')
+finish_fixture
+printf '%s' "$compacted" | python3 -c '
+import json, sys
+value = json.load(sys.stdin)
+assert value["shell"] == "workbench" and value["peer"] == "hermes"
+assert value["complete"] and value["capability"] == "ledger.compact.v1"
+assert value["status"] == "compacted"
+assert value["removed"] == 1 and value["retained_from"] == 1
+'
+
+echo 'PASS: real Hermes daemon -> observation, disclosure, acknowledgement and compaction owner guards -> Workbench'

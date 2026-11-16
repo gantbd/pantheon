@@ -559,6 +559,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermes-operator-command"
+version = "0.1.0"
+dependencies = [
+ "hermes-client",
+ "hermes-protocol",
+]
+
+[[package]]
 name = "hermes-protocol"
 version = "0.1.0"
 
@@ -1536,6 +1544,7 @@ dependencies = [
  "hermes-client",
  "hermes-consumer-command",
  "hermes-disclosure-command",
+ "hermes-operator-command",
  "hermes-protocol",
  "hermes-tui",
  "hermes-tui-local-client",

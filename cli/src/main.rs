@@ -468,7 +468,7 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards: Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded and acknowledgement observes then mutates once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    "workbench-tui [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\nworkbench-tui aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\nworkbench-tui aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\nworkbench-tui hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\nworkbench-tui hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\nworkbench-tui hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Workbench owns service startup and drain. Peer commands reuse their owner guards: Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
 }
 
 fn vellum_connector(
@@ -502,6 +502,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "hermes-acknowledge")
     {
         return hermes_acknowledge(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "hermes-compact")
+    {
+        return hermes_compact(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)
@@ -541,6 +547,140 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn hermes_compact(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let stream = args
+        .next()
+        .and_then(|value| hermes_tui::parse_stream_id(&value.to_string_lossy()))
+        .ok_or("stream must be 32 hexadecimal digits")?;
+    let expected_retained_from = parse_hermes_sequence(args.next())?;
+    let expected_published_edge = parse_hermes_sequence(args.next())?;
+    let through = parse_hermes_sequence(args.next())?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let port = match hermes_tui_local_client::LocalPort::connect(
+        socket,
+        hermes_tui_local_client::ClientLimits::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return hermes_compact_failure("not_sent", &format!("{error:?}"), None, None);
+        }
+    };
+    let request = hermes_operator_command::CompactRequest {
+        stream,
+        expected_retained_from: hermes_protocol::EventSequenceV1(expected_retained_from),
+        expected_published_edge: hermes_protocol::EventSequenceV1(expected_published_edge),
+        through: hermes_protocol::EventSequenceV1(through),
+    };
+    match hermes_operator_command::compact(
+        hermes_tui_local_client::CONNECTION_SESSION,
+        port,
+        request,
+        &confirmation,
+    ) {
+        Ok(outcome) => {
+            let (status, removed, retained_from) = match outcome {
+                hermes_protocol::CompactionOutcomeV1::Compacted {
+                    removed,
+                    retained_from,
+                } => ("compacted", removed, retained_from.0),
+                hermes_protocol::CompactionOutcomeV1::Identity { retained_from } => {
+                    ("identity", 0, retained_from.0)
+                }
+            };
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "hermes",
+                    "capability": hermes_operator_command::CAPABILITY,
+                    "complete": true,
+                    "status": status,
+                    "removed": removed,
+                    "retained_from": retained_from,
+                }))?
+            );
+            Ok(())
+        }
+        Err(hermes_operator_command::CompactError::ConfirmationMismatch { required }) => {
+            hermes_compact_failure(
+                "confirmation_refused",
+                "exact compaction confirmation required",
+                Some(&required),
+                None,
+            )
+        }
+        Err(hermes_operator_command::CompactError::InvalidRange) => hermes_compact_failure(
+            "range_refused",
+            "compaction boundary must be inside the observed retained range",
+            None,
+            None,
+        ),
+        Err(hermes_operator_command::CompactError::StreamMissing) => {
+            hermes_compact_failure("stream_absent", "stream is absent", None, None)
+        }
+        Err(hermes_operator_command::CompactError::StreamChanged { actual }) => {
+            hermes_compact_failure(
+                "stale_stream",
+                "stream retention or publication edge changed",
+                None,
+                Some((
+                    actual.retained_from.0,
+                    actual.published_edge.map(|edge| edge.0),
+                )),
+            )
+        }
+        Err(hermes_operator_command::CompactError::MutationTransport(
+            hermes_tui_local_client::ClientError::OutcomeUnknown(error),
+        )) => hermes_compact_failure("outcome_unknown", &format!("{error:?}"), None, None),
+        Err(hermes_operator_command::CompactError::MutationRefused(refusal)) => {
+            hermes_compact_failure("refused", &format!("{refusal:?}"), None, None)
+        }
+        Err(error) => hermes_compact_failure("unavailable", &format!("{error:?}"), None, None),
+    }
+}
+
+fn parse_hermes_sequence(
+    value: Option<std::ffi::OsString>,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    value
+        .and_then(|value| value.into_string().ok())
+        .and_then(|value| value.parse::<u64>().ok())
+        .ok_or_else(|| usage().into())
+}
+
+fn hermes_compact_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+    actual_stream: Option<(u64, Option<u64>)>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "hermes",
+            "capability": hermes_operator_command::CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation,
+            "actual_retained_from": actual_stream.map(|value| value.0),
+            "actual_published_edge": actual_stream.and_then(|value| value.1),
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
 }
 
 fn hermes_acknowledge(

@@ -207,7 +207,15 @@ confirmation precedes traffic, the current cursor is observed and compared on
 the same connection, and one acknowledgement is attempted. A stale cursor
 prevents mutation and a post-send transport failure remains outcome-unknown
 without retry. The reusable component and hosted read-only daemon retain no
-consumer authority; append and compaction remain open.
+consumer authority; generic append remains open.
+
+Hermes compaction follows the same pattern through a distinct owner guard. The
+standalone and Workbench commands observe the retained frontier and published
+edge, compare both with exact operator expectations, and attempt one confirmed
+compaction on the same connection. Stale state prevents mutation and uncertain
+delivery is never retried. `OperatorClient` remains outside the reusable
+component and hosted read-only daemon; generic append remains open because its
+domain envelope belongs to a producer-specific integration.
 
 Aegis now has an independent read-only authority TUI, standalone CLI,
 `authority.observe.v1` bounded status/grant-summary/decision-summary observation,

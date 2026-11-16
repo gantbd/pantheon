@@ -207,6 +207,10 @@ append or compaction authority. The gate also qualifies
 that observes the expected cursor and attempts one exact-confirmed
 acknowledgement on the same connection. Consumer authority remains outside the
 reusable component and hosted read-only daemon.
+The gate also qualifies `ledger.compact.v1` through the same pattern: exact
+retained-frontier and published-edge observation precede one confirmed
+compaction, with no retry after uncertain delivery. Operator authority remains
+outside the reusable component and hosted read-only daemon.
 
 Run `sh tests/live/hermes_hosted.sh` to qualify Workbench-owned lifecycle for
 Hermes's standalone read-only daemon. The profile supplies explicit

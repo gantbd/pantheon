@@ -62,6 +62,9 @@ read-only input until that repository settles.
 - [x] Hermes: reuse the peer-owned same-connection consumer guard for one
   exact-confirmed acknowledgement in standalone and Workbench, fencing stale
   cursors and never retrying an uncertain mutation.
+- [x] Hermes: reuse the peer-owned exact-stream-state guard for one compaction
+  in standalone and Workbench, keeping operator authority out of the reusable
+  component and hosted read-only daemon.
 - [x] Aegis: reuse the peer-owned exact-confirmation/current-epoch guard for
   one-attempt epoch revocation in standalone and Workbench, preserving
   `outcome_unknown` without retry.

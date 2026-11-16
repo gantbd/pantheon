@@ -175,7 +175,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "fc6edec70ec5092e2c3638116a06f76ecf6b0508"
+        "a3f3a027b31cc376a5daca6ed979d99d735a782f"
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
@@ -468,6 +468,10 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
         "ledger.acknowledge.v1",
         "previous_next_sequence",
         "ACKNOWLEDGE HERMES CONSUMER",
+        "hermes-compact",
+        "ledger.compact.v1",
+        "COMPACT HERMES STREAM",
+        "removed",
     ] {
         assert!(
             gate.contains(required),
