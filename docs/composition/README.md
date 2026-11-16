@@ -86,7 +86,9 @@ delivery sequence is in `backlog.md`; Axon and Engram adoption decisions are in
 a stronger state than that file. Each peer entry names the exact public contract
 and concrete connection client used by standalone and Workbench paths. An
 `ownership` value of `presentation-deferred` is an explicit normalization gap,
-not evidence that transport mechanics belong to presentation.
+not evidence that transport mechanics belong to presentation. The `evidence`
+list names executable real-service gates for the claimed standalone and
+Workbench cells; deleting or renaming a gate invalidates the root check.
 
 ## On-disk routing
 
