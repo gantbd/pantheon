@@ -2143,3 +2143,40 @@ fn interactive_reconfiguration_drains_and_replaces_a_real_hosted_topology() {
         );
     }
 }
+
+#[test]
+fn moira_participation_gate_proves_restart_and_honest_failure_projections() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let manifest = fs::read_to_string(root.join("qualification/moira-participation/Cargo.toml"))
+        .expect("Moira participation qualification manifest");
+    for owner in [
+        "moira-local-daemon",
+        "moira-sqlite",
+        "moira-service",
+        "moira-client",
+        "moira-tui",
+    ] {
+        assert!(manifest.contains(owner), "qualification omits {owner}");
+    }
+    let gate = fs::read_to_string(
+        root.join("qualification/moira-participation/tests/live_participation.rs"),
+    )
+    .expect("Moira participation live gate");
+    for required in [
+        "current-before-restart",
+        "current-after-restart",
+        "not_found",
+        "connect_refused",
+        "read-refused",
+        "Current governed revision 2",
+        "persona: Researcher",
+        "grounding depth: Activated",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Moira participation qualification omits {required}"
+        );
+    }
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
+    assert!(makefile.contains("qualify-moira-participation"));
+}

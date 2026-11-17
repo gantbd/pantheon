@@ -1,0 +1,28 @@
+[package]
+name = "pantheon-moira-participation-qualification"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+resolver = "3"
+
+[dependencies]
+pantheon = { path = "../.." }
+pantheon-cli = { path = "../../cli" }
+moira-client = { path = "../../../moira/crates/moira-client" }
+moira-core = { path = "../../../moira" }
+moira-local-daemon = { path = "../../../moira/crates/moira-local-daemon" }
+moira-protocol = { path = "../../../moira/crates/moira-protocol" }
+moira-service = { path = "../../../moira/crates/moira-service" }
+moira-sqlite = { path = "../../../moira/adapters/moira-sqlite" }
+moira-tui = { path = "../../../moira-tui" }
+moira-wire = { path = "../../../moira/crates/moira-wire" }
+ratatui = { version = "=0.30.2", default-features = false }
+serde_json = "1"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "warn"

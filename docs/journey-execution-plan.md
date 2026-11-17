@@ -73,8 +73,10 @@ for governed agent participation. Pantheon is a client and projection host.
 - [x] Audit existing owner contracts before admitting a new service.
 - [x] Compose Moira's exact selected participation in workspace-profile,
   capability-negotiation, headless and TUI paths.
-- [ ] Prove the composed path against a real restarted Moira local daemon,
-  including not-found, refusal and transport failure.
+- [x] Prove the composed path against a real restarted Moira local daemon,
+  including not-found, refusal and transport failure. The isolated
+  `qualification/moira-participation` gate crosses Moira's durable SQLite owner,
+  public Unix client, Pantheon headless projection, and Pantheon TUI rendering.
 - [ ] Define a Keystone participation projection law only after a second
   sovereign human/freeform participation record proves the shared fields.
 - [ ] Project current and prior owner revision consistently without copying the
