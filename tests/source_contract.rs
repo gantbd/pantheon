@@ -10,9 +10,13 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
             .expect("composition status contract"),
     )
     .expect("composition status JSON");
-    assert_eq!(status["schema"], 1);
+    assert_eq!(status["schema"], 2);
     assert_eq!(status["owner"], "pantheon");
     assert_eq!(status["priorArt"], serde_json::json!(["axon", "engram"]));
+    assert_eq!(
+        status["capabilityPlanes"],
+        serde_json::json!(["observation", "operator", "control", "management"])
+    );
 
     let states = status["states"]
         .as_array()
@@ -30,6 +34,74 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
             "qualified",
             "release-qualified",
         ])
+    );
+
+    let plane_qualification = status["planeQualification"]
+        .as_object()
+        .expect("plane qualification matrix");
+    assert_eq!(
+        plane_qualification
+            .keys()
+            .map(String::as_str)
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from(["control", "management", "observation", "operator"])
+    );
+    for (plane, qualification) in plane_qualification {
+        let state = qualification["state"]
+            .as_str()
+            .unwrap_or_else(|| panic!("{plane} qualification state"));
+        assert!(states.contains(state), "unknown {plane} state {state}");
+        let evidence = qualification["evidence"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{plane} qualification evidence"));
+        assert!(!evidence.is_empty(), "{plane} has no executable evidence");
+        for path in evidence {
+            let path = path.as_str().expect("qualification evidence path");
+            assert!(root.join(path).is_file(), "missing {plane} evidence {path}");
+        }
+    }
+    assert_eq!(plane_qualification["management"]["state"], "qualified");
+    assert_eq!(
+        plane_qualification["management"]["profile"],
+        "single-user-local-stdio"
+    );
+    assert!(
+        !plane_qualification["management"]["remaining"]
+            .as_array()
+            .expect("management remaining work")
+            .is_empty()
+    );
+    assert_eq!(status["releaseQualification"]["state"], "qualified");
+    assert_eq!(
+        status["releaseQualification"]["profile"],
+        "unsigned-local-aarch64-apple-darwin"
+    );
+    assert!(
+        root.join(
+            status["releaseQualification"]["sourceContract"]
+                .as_str()
+                .expect("release source contract")
+        )
+        .is_file()
+    );
+    for evidence in status["releaseQualification"]["evidence"]
+        .as_array()
+        .expect("release evidence")
+    {
+        assert!(
+            root.join(evidence.as_str().expect("release evidence path"))
+                .is_file()
+        );
+    }
+    assert_eq!(
+        status["releaseQualification"]["broaderDistribution"]["state"],
+        "planned"
+    );
+    assert!(
+        !status["releaseQualification"]["broaderDistribution"]["remaining"]
+            .as_array()
+            .expect("broader release remaining work")
+            .is_empty()
     );
 
     let peers = status["peers"].as_object().expect("peer matrix");
@@ -60,6 +132,30 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
             states.contains(mutation),
             "unknown mutation state {mutation}"
         );
+        for mode in ["interactive", "headless"] {
+            let mut identifiers = BTreeSet::new();
+            let routes = peer["pantheonRoutes"][mode]
+                .as_array()
+                .unwrap_or_else(|| panic!("missing Pantheon {mode} route catalog"));
+            assert!(!routes.is_empty(), "empty Pantheon {mode} route catalog");
+            for route in routes {
+                let identifier = route["id"].as_str().expect("route capability id");
+                assert!(identifiers.insert(identifier), "duplicate route capability");
+                assert!(
+                    status["capabilityPlanes"]
+                        .as_array()
+                        .expect("capability planes")
+                        .iter()
+                        .any(|plane| plane.as_str() == route["plane"].as_str()),
+                    "unknown route capability plane"
+                );
+                assert_eq!(route["state"], "qualified");
+            }
+            assert!(
+                identifiers.contains(peer["readCapability"].as_str().expect("read capability")),
+                "Pantheon route omits primary read capability"
+            );
+        }
         let non_applicable = peer.get("nonApplicable").and_then(Value::as_object);
         for topology in ["standalone", "attach", "host"] {
             let selected = ["interactive", "headless"]
@@ -105,6 +201,16 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
                 assert!(!capability.is_empty(), "empty disclosure capability");
                 let state = state.as_str().expect("disclosure capability state");
                 assert!(states.contains(state), "unknown disclosure state {state}");
+            }
+        }
+        if let Some(capabilities) = peer.get("uncomposedPeerCapabilities") {
+            for (capability, classification) in capabilities
+                .as_object()
+                .expect("uncomposed peer capability matrix")
+            {
+                assert!(!capability.is_empty(), "empty uncomposed capability");
+                assert_eq!(classification["peer"], "qualified");
+                assert_eq!(classification["pantheon"], "absent");
             }
         }
 
@@ -163,6 +269,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
     assert_eq!(peers["moira"]["host"]["interactive"], "qualified");
     assert_eq!(peers["moira"]["host"]["headless"], "qualified");
     assert_eq!(peers["moira"]["client"]["ownership"], "peer");
+    assert_eq!(
+        peers["moira"]["uncomposedPeerCapabilities"]["deliberation.inspect.v1"]["pantheon"],
+        "absent"
+    );
 
     let capabilities = [
         ("aegis", aegis_tui::CAPABILITIES.headless[0]),
@@ -370,7 +480,13 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     let cli_entry = fs::read_to_string(root.join("cli/src/main.rs")).expect("CLI entry point");
     let headless = fs::read_to_string(root.join("cli/src/headless.rs"))
         .expect("reusable headless composition");
-    assert!(cli_entry.contains("observe_headless(HeadlessRequest"));
+    let capability_routes = fs::read_to_string(root.join("cli/src/capabilities.rs"))
+        .expect("Pantheon route capability catalog");
+    assert!(cli_entry.contains("fn headless_request("));
+    assert!(cli_entry.contains("observe_headless(headless_request(&options, operation_id))"));
+    assert!(
+        cli_entry.contains("observe_headless(headless_request(&options, requested.to_owned()))")
+    );
     assert!(!cli_entry.contains("fn observe_agora"));
     for peer_observer in ["observe_agora", "observe_chronos", "observe_vellum"] {
         assert!(
@@ -378,24 +494,38 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
             "headless composition omits {peer_observer}"
         );
     }
-    for peer_manifest in [
-        "agora_tui::CAPABILITIES.headless",
-        "chronos_tui::CAPABILITIES.headless",
-        "vellum_tui::CAPABILITIES.headless",
+    for peer_route in [
+        "capabilities::agora",
+        "capabilities::chronos",
+        "capabilities::vellum",
     ] {
         assert!(
-            headless.contains(peer_manifest),
-            "headless composition does not negotiate {peer_manifest}"
+            headless.contains(peer_route),
+            "headless composition does not negotiate {peer_route}"
         );
     }
-    for peer_manifest in [
-        "agora_tui::CAPABILITIES",
-        "chronos_tui::CAPABILITIES",
-        "vellum_tui::CAPABILITIES",
+    for peer_route in [
+        "capabilities::agora",
+        "capabilities::chronos",
+        "capabilities::vellum",
     ] {
         assert!(
-            cli_entry.contains(peer_manifest),
-            "CLI does not negotiate {peer_manifest}"
+            cli_entry.contains(peer_route),
+            "CLI does not negotiate {peer_route}"
+        );
+    }
+    for required in [
+        "GUARDED_CONTROL_CAPABILITIES",
+        "topology.attach.v1",
+        "topology.host.v1",
+        "tasks.mutate.v1",
+        "scheduling.mutate.v5",
+        "workspace.durable-save.execute.v1",
+        "agent.prompt.submit.v1",
+    ] {
+        assert!(
+            capability_routes.contains(required),
+            "route capability catalog omits {required}"
         );
     }
     for forbidden in [

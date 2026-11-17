@@ -7,7 +7,7 @@ authorize Pantheon to import an engine or recreate its client semantics.
 | Surface | Available boundary | Missing boundary | Current fallback |
 | --- | --- | --- | --- |
 | Agora | Native protocol, service, clients and wire; engine-owned service-free public Unix client for conversation and scheduled-publication profiles; independent read-only `agora-tui` with compatibility client facade; exact-confirmed, revision-bound `rooms.create.v2` guard reused by standalone and Pantheon; explicit conversation-only and routed-composition transports; real Aegis-backed standalone create/publish/observe/drain/reopen; Pantheon-supervised exact process in headless and interactive modes; owner-side identity, time, bootstrap, grant provisioning, durability and cleanup receipts; stale-command, refused-cleanup, abrupt-stop, outcome-unknown, exact-replay, continued-drain, exact-residue-rotation and reopen cuts | Immutable/release provenance; broader domain mutations remain deliberately unclaimed until peer-selected | Attach either explicit transport or supervise the exact standalone binary from its opaque owner config; invoke selected mutations only through Agora's guard and public client; Pantheon never interprets authority facts |
-| Moira | Native read/reconciliation clients, peer-owned reconnectable Unix saga port, sovereign durable saga owner, and independent `moira-tui` saga inspection/reconciliation component; standalone and Pantheon census plus bounded selected-saga evidence/operator receipts; qualified Pantheon supervision in both product modes; shared exact-confirmation and durable-recovery guard over an explicitly selected production Aegis owner profile | No selected-profile composition gap; broader process-separated Agora/Vellum workflow qualification remains open | Attach or host the peer and invoke the same owner guard; retain attempt receipt inspection through Chronos; never infer reconciliation authority from local identity or supervision |
+| Moira | Native read/reconciliation clients, peer-owned reconnectable Unix saga port, sovereign durable saga owner, and independent `moira-tui` saga inspection/reconciliation component; standalone and Pantheon census plus bounded selected-saga evidence/operator receipts; qualified Pantheon supervision in both product modes; shared exact-confirmation and durable-recovery guard over an explicitly selected production Aegis owner profile | No selected saga-profile gap; Moira's newer agent, participation and deliberation routes are qualified peer capabilities but explicitly uncomposed by Pantheon; broader process-separated Agora/Vellum workflow qualification remains open | Attach or host the saga peer and invoke the same owner guard; retain attempt receipt inspection through Chronos; never infer reconciliation authority or agent-route support from local identity, supervision, or Moira's package-wide manifest |
 | Daimon | Execution/status and agent-session clients; local daemon and supervisor census; independent `daimon-tui` redacted presence plus exact configured session/event evidence; exact-confirmed current-state-fenced active-turn advance/cancellation, ready-session close, detached-session reattach, prompt dispatch and permission decisions reused by standalone and Pantheon; qualified production owner hosting with durable session reopen | Broader owner-side provider/platform qualification and immutable release provenance | Attach the read-only presence peer or host the sovereign production agent application with an exact agent selection; invoke bounded advance, cancel, close, reattach, prompt or permission decision through owner guards; retain attempt inspection through Chronos |
 | Grounding | Dendrite typed authenticated `grounding.observe.v1` endpoint alongside MCP; independent `tellus` with bounded provenance/freshness projection | No selected-profile composition gap; surface/read DTOs are deliberately unselected until Dendrite owns their disclosure contract, and Pantheon hosting and mutation are intentionally not applicable | Attach the typed read-only Grounding peer; Dendrite retains its IDE/agent bridge lifecycle and MCP remains agent-facing only |
 | Aegis | Administrative/read clients, engine-owned service-free public Unix client, standalone owner daemon, independent `aegis-tui` bounded status with compatibility client facade, navigable redacted pages, exact-confirmed epoch revocation, shared long-lived named grant management, qualified reconnect/rebuild, and Pantheon supervision | No selected-profile session-parity gap; durable grant replay and lost-reply reconciliation are explicit nonclaims | Attach or supervise the read-only peer; invoke the same owner-side bounded administration protocol with exact confirmations in standalone or Pantheon |
@@ -29,18 +29,48 @@ Agora, Chronos, Vellum, Moira, Daimon, Hermes, Aegis, Grounding, and Pantheon. E
 read capability and constructs no TUI state in headless mode. Pantheon attaches
 the same clients and preserves healthy observations beside a failed peer.
 Each peer also owns a closed presentation capability manifest; Pantheon
-negotiates bounded profile requirements against the selected mode before any
-connection without treating a manifest match as service authorization.
+uses those declarations as source material but negotiates bounded profile
+requirements against a Pantheon-owned exact route catalog. Mode, topology,
+selectors and launch features determine the delivered route before any
+connection. Separate guarded commands cannot satisfy an aggregate profile
+requirement, and a route match is never service authorization.
+
+For the initial single-user/local-machine management scope, the headless
+aggregate also publishes readiness at observation time, revision where exposed,
+certainty and fencing, attached versus hosted lifecycle, the peer-owned
+read-only authority boundary, and exact hosted drain dispositions. It leaves
+unknown revisions null, does not treat attachment as health, and requires a
+restart for topology reconfiguration. Live reconfiguration, fleet management,
+and graphical management surfaces remain later scope. One bounded local
+operation identifier correlates the observation, management, and drain evidence
+without being forwarded as identity, authority, or idempotency.
+`reconfigure-plan` compares two validated profiles without connecting and
+machine-classifies shell-only versus full-local-topology restart. Embedding hosts can execute an
+exact-peer restart with a typed stop/start receipt; refused or uncertain stops
+fence further changes and remain visible during final drain. Pantheon does not
+mutate a live profile in place. The standalone management session now preflights
+the exact next profile, drains the current topology, emits correlated receipts,
+and replaces its own process on the retained stdio channel; refusal or
+uncertainty fences that handoff. Embedding hosts can apply the host portion of a
+validated full-topology plan with typed client
+retention, correlated old/new receipts, atomic replacement sealing, and partial
+replacement rollback.
+The same live host exposes a typed in-process status snapshot containing
+lifecycle, hosted peers, reconfiguration eligibility and retained restart
+receipts. A bounded long-running `pantheon manage` stdio session exposes status,
+fresh observation and drain to a single-user parent supervisor without opening
+a socket or gaining peer authority. No remote or ambient-authority endpoint is
+claimed.
 
 | Core peer | Standalone interactive | Standalone headless | Pantheon attach | Pantheon host |
 | --- | --- | --- | --- | --- |
 | Agora | Reused TUI; real-daemon room/message journey plus real Aegis-backed durable process | `rooms.read.v2`; real daemon | Interactive + headless over explicit conversation or composition transport | Exact sovereign process; real Aegis, public client, reverse drain, and durable create/open qualified in both modes |
 | Chronos | Reused TUI; real-service read and selected guarded-write journeys | `tasks.observe.v1`; real service; partial workstreams | Interactive + headless; real service; selected guarded-write profile with exact durable reopen | Native owner; interactive + headless client path; joined drain; selected guarded-write profile with exact durable reopen |
 | Vellum | Reused TUI; real-daemon `workspace.edit.v1`/`workspace.save.v1` journey with witnessed edits, dirty/clean/indeterminate projection and exact uncertain replay | `workspace.inventory.v1`; real daemon | Interactive + headless; real daemon; same reusable editor and save refusal | Native owner; bounded roots/auth/action ceiling; authorized exact persistence, denied-save unchanged source, and joined drain |
-| Moira | Reused saga TUI; real-daemon census/evidence/receipt and exact reconciliation journeys | `sagas.inspect.v1`, `sagas.reconciliation.confirmation.v1`, `sagas.reconciliation.confirm.v1`, `sagas.reconciliation.recovery.v1`; real SQLite/Aegis owners | Interactive evidence/receipt component + aggregate census and same shared guarded commands; real daemons | Sovereign `moira-saga-local`; opaque Aegis profile, durable mutation/receipt reopen and clean drain qualified |
-| Daimon | Reused redacted presence plus exact configured agent-session TUI; separate guarded advance, cancel, close, reattach, prompt and permission commands | `agents.presence.v1`, `agents.session.inspect.v1`, exact-confirmed `agents.session.advance.v1`, `agents.session.cancel.v1`, `agents.session.close.v1`, and `agents.session.reattach.v1`, digest-bound `agents.session.prompt.v1`, and exact-challenge `agents.session.permission.v1`; real bounded Unix profiles | Interactive component + aggregate headless with stable bounded events; same owner mutation guards and strict operator documents | Qualified sovereign supervised agent host in both modes with real Aegis/Chronos admission, durable session reopen and clean drain |
-| Hermes | Reused ledger TUI plus owner guards | `ledger.observe.v1`, `ledger.acknowledge.v1`, `ledger.compact.v1`; real durable selected daemon | Interactive component + aggregate headless; exact-confirmed owner commands | Observer/operator owner process; create/reopen, guarded mutation and clean drain qualified in both modes |
-| Aegis | Reused read-only authority TUI plus peer-owned authority guards | `authority.observe.v1`, `authority.revoke-epoch.v1`, bounded `authority.attenuate-authorize-once.v1`, and `aegis.admin-session.v1`; real durable daemon | Interactive/read-only aggregate plus the same exact-confirmed owner commands and long-lived named manager; grant handles never escape | Owner daemon, managed session, disconnect abandonment and deliberate rebuild qualified; replay/reconciliation remain nonclaims |
+| Moira | Reused saga TUI; real-daemon census/evidence/receipt and exact reconciliation journeys | Aggregate `sagas.inspect.v1`; reconciliation confirmation/recovery and newer agent/participation/deliberation controls remain separate peer routes | Interactive saga evidence/receipt component + aggregate census; separately invoked shared reconciliation guards; real daemons | Sovereign `moira-saga-local`; opaque Aegis profile, durable mutation/receipt reopen and clean drain qualified |
+| Daimon | Reused redacted presence plus exact configured agent-session TUI; separate guarded advance, cancel, close, reattach, prompt and permission commands | Aggregate selected presence/session observation; guarded mutations remain separate commands | Presence and selected-agent projections render together when both are configured; aggregate headless preserves both; same owner mutation guards and strict operator documents | Qualified sovereign supervised agent host in both modes with real Aegis/Chronos admission, durable session reopen and clean drain |
+| Hermes | Reused ledger TUI plus owner guards | Aggregate `ledger.observe.v1` and selected cursor observation; acknowledge/compact/disclose remain separate guarded commands | Interactive component + aggregate headless; exact-confirmed owner commands are independently classified | Observer/operator owner process; create/reopen, guarded mutation and clean drain qualified in both modes |
+| Aegis | Reused read-only authority TUI plus peer-owned authority guards | Aggregate `authority.observe.v1`; revoke/attenuate/admin-session remain separate guarded commands | Interactive/read-only aggregate plus independently classified exact-confirmed owner commands and long-lived named manager; grant handles never escape | Owner daemon, managed session, disconnect abandonment and deliberate rebuild qualified; replay/reconciliation remain nonclaims |
 | Grounding | Reused typed Tellus | `grounding.observe.v1`; real Dendrite + Rune fixture | Interactive component + aggregate headless; real service | Not applicable; attach to independently deployed Dendrite |
 
 This is qualified immutable local-source evidence, not a remotely reachable
@@ -92,8 +122,11 @@ by a concrete owner or product profile rather than absorbed into Pantheon:
    to supply credential mapping, authority epoch, lifetime, resource, and
    subject unchanged through the opaque Agora config.
 2. Retain Moira's qualified exact-confirmation, current-authority, revision,
-   durable-receipt and outcome-unknown recovery guard while broader
-   process-separated Agora/Vellum workflows are qualified by their owners.
+   durable-receipt and outcome-unknown recovery guard. Compose its separate
+   agent, participation or deliberation routes only through their owning public
+   clients and components; until then they remain machine-classified as absent
+   from Pantheon. Broader process-separated Agora/Vellum workflows stay with
+   their owners.
 3. Retain Daimon's qualified exact-session evidence, bounded active-turn
    advance, cancellation, close, reattach, prompt-dispatch and
    permission-decision paths plus qualified sovereign hosting; keep broader

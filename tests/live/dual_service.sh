@@ -147,10 +147,13 @@ printf '%s\n' \
   '{"version":1,"name":"Live gate","surfaces":["overview","workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null}}' \
   >"$workspace_profile"
 profile_check=$("$workbench_bin" --workspace-profile "$workspace_profile" --check-profile)
-if [ "$profile_check" != 'workspace profile valid: 3 surfaces' ]; then
-  echo 'FAIL: workbench did not validate the workspace profile' >&2
-  exit 1
-fi
+case "$profile_check" in
+  'workspace profile valid: 3 surfaces'*) ;;
+  *)
+    echo 'FAIL: workbench did not validate the workspace profile' >&2
+    exit 1
+    ;;
+esac
 
 triple_profile="$scratch/triple-workspace.json"
 printf '%s\n' \

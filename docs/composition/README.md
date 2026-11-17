@@ -42,6 +42,11 @@ Agora a room/message surface, Chronos a task hub, Moira a reconciliation view,
 Daimon an execution inspector, Hermes a ledger view, Aegis an authority
 inspector and Grounding a provenance/freshness view. Capability identifiers,
 commands, confirmations, projections and failure vocabulary stay peer-owned.
+Pantheon separately owns the truth of composition: a profile requirement is
+accepted only when the exact selected route delivers it. A peer package's
+aggregate manifest cannot stand in for route, selector, topology or launch-flag
+resolution, and a one-shot guarded command cannot satisfy an aggregate
+interactive/headless requirement.
 
 Headless mode is a first-class peer interface, not a hidden TUI invocation. It
 uses the same public client, constructs no cursor/focus/widget state and emits a
@@ -73,7 +78,7 @@ implies production credential provenance.
 | Agora | qualified read plus exact-confirmed room creation and production-shaped durable process | qualified read plus the same guarded room creation | qualified sovereign process with real Aegis | immutable/release provenance; broader domain mutations remain peer-selected rather than generic Pantheon commands |
 | Chronos | qualified read and selected guarded writes | qualified, including the selected guarded-write profile | qualified local owner with exact durable mutation reopen | mutations beyond the selected task/scheduling profile; Agora remains a supervised process rather than a merged Cargo graph |
 | Vellum | qualified inventory, witnessed edit/save, and selected restart-stable Save execute/lookup | qualified read/editor plus the same durable-save guard and public client | qualified local owner with save-authority refusal, exact persisted bytes and authenticated durable receipt recovery | Save As/retirement/other durable intents and release-qualified platform composition |
-| Moira | qualified read/reconciliation, census, evidence, exact-confirmed mutation and durable receipt recovery over the peer-owned Unix client | qualified attach plus the same Moira-owned reconciliation guard | qualified sovereign saga owner in both modes with durable mutation/reopen and clean drain | no selected-profile parity gap; broader process-separated Agora/Vellum workflows remain owner/adapter work |
+| Moira | qualified read/reconciliation, census, evidence, exact-confirmed mutation and durable receipt recovery over the peer-owned Unix client | qualified saga attach plus the same Moira-owned reconciliation guard | qualified sovereign saga owner in both modes with durable mutation/reopen and clean drain | newer agent/participation/deliberation peer routes are explicitly uncomposed; broader process-separated Agora/Vellum workflows remain owner/adapter work |
 | Daimon | qualified redacted presence plus exact configured agent-session evidence and guarded advance/cancel/close/reattach/prompt/permission | qualified attach with the same stable bounded event projection and owner guards | qualified sovereign `daimon-local-agent` process in both modes with durable session reopen and clean drain | no selected-profile parity gap; broader provider/platform qualification remains owner-side |
 | Hermes | qualified content-free observation/cursor plus separate exact-confirmed bounded event disclosure | qualified attach and the same disclosure guard | qualified owner process in both modes | no presentation-parity gap; producer schemas stay in qualified Moira and Agora adapter profiles, and Agora minimized-wake delivery has a separate deployed local application/receipt endpoint; remote-provider profiles remain adapter-owned |
 | Aegis | qualified read-only authority observation, bounded pages, exact-confirmed epoch revocation and named managed authority session | qualified observation/navigation plus the same owner guards, managed session, disconnect abandonment and deliberate rebuild | qualified owner process in both modes | no selected-profile parity gap; durable replay/reconciliation are nonclaims |
@@ -83,12 +88,29 @@ The detailed open-boundary ledger remains `WORKSPACE_GAPS.md`. The ordered
 delivery sequence is in `backlog.md`; Axon and Engram adoption decisions are in
 `prior-art.md`. The checked cell classification is
 [`composition-status.json`](../../composition-status.json); prose must not claim
-a stronger state than that file. Each peer entry names the exact public contract
+a stronger state than that file. Schema 2 also classifies every resolved route
+capability by observation, operator, control or management plane and records
+its selection condition. Peer capabilities that are qualified standalone but
+not composed by Pantheon are recorded explicitly as `uncomposedPeerCapabilities`
+rather than disappearing into prose or passing aggregate negotiation. Each peer entry names the exact public contract
 and concrete connection client used by standalone and Pantheon paths. An
 `ownership` value of `presentation-deferred` is an explicit normalization gap,
 not evidence that transport mechanics belong to presentation. The `evidence`
 list names executable real-service gates for the claimed standalone and
 Pantheon cells; deleting or renaming a gate invalidates the root check.
+The top-level `planeQualification` map separately states the strongest proven
+state for observation, operator, control and management planes and names its
+executable evidence. Management is qualified only for the named
+`single-user-local-stdio` profile: the bounded `pantheon manage` session can
+observe, drain, and carry a preflighted whole-profile change through an exact
+process replacement while retaining the parent-supervisor channel. Refused or
+uncertain drain fences the replacement. Service-manager and authenticated-IPC
+profiles remain open and are not inferred from this local qualification.
+`releaseQualification` separately preserves the qualified unsigned local
+`aarch64-apple-darwin` profile and its source/build evidence. Its nested broader
+distribution state remains `planned` for remote publication, automatic update
+and artifact rollback, signing/notarization, service-manager integration and
+additional platforms.
 
 ## On-disk routing
 

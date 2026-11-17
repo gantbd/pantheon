@@ -77,9 +77,12 @@ uses their public clients directly, and refuses aggregate success on partial
 failure. The executable, profile parser, terminal lifecycle, and hosted-service
 helpers now live in the separate `pantheon-cli` package; the root package
 contains the reusable shell and peer-presentation composition only.
-Profiles may require bounded peer-owned capability identifiers. Pantheon
-negotiates them against the selected mode before any connection while leaving
-runtime authorization and refusal with the owning service.
+Profiles may require bounded Pantheon route identifiers derived from peer-owned
+contracts. Pantheon
+negotiates them against its exact selected route—mode, topology, selectors and
+launch features—before any connection while leaving runtime authorization and
+refusal with the owning service. Profile validation also reports the resolved
+observation/operator/control/management plan.
 Explicit headless configuration or capability negotiation failures retain the
 versioned aggregate envelope and cannot fall through to interactive startup.
 
@@ -153,10 +156,10 @@ real Pantheon-hosted Aegis owner in both headless and interactive modes.
 The headless observer is now an application-library API rather than CLI-private
 code. Deployments can supply the same typed Agora profile, Chronos workstreams,
 and Vellum endpoint used by the standalone parser and receive the same bounded
-peer observations without constructing TUI state. The API independently checks
-every requested capability against the peer-owned headless manifests before
-opening any connection, so a deployment cannot bypass negotiation by omitting
-the CLI parser.
+peer observations without constructing TUI state. The API independently
+resolves the same Pantheon-owned headless route catalog before opening any
+connection, so a deployment cannot bypass negotiation by omitting the CLI
+parser or claim a peer's separate guarded command as an aggregate observation.
 
 - Run the same hosted topology without Ratatui, focus, selection, or cursor state.
 - Provide bounded per-peer command and snapshot routing plus aggregate health;
@@ -171,7 +174,33 @@ Status: attached read parity is qualified for Agora, Chronos, and Vellum,
 including one unavailable Chronos workstream alongside healthy peers. Hosted
 Chronos/Vellum read parity and clean reverse shutdown are qualified in both
 product modes; their headless aggregate publishes lifecycle receipts before
-claiming success. An injected, deployment-owned Agora factory is also qualified
+claiming success. The aggregate now also emits an additive typed local-machine
+management snapshot: deployment, readiness at observation time, revision,
+certainty/fencing, peer-owned read-only authority, restart-required
+reconfiguration, hosted lifecycle, and exact drain disposition. The contract
+does not infer health from attachment and is qualified end to end with the
+hosted Chronos/Vellum topology. A separate `pantheon controls` JSON catalog
+maps every qualified guarded capability to a concrete local command while
+retaining peer-owned authority, route-specific confirmation, and explicit
+separation from aggregate observation. A bounded operation identifier now
+correlates the complete peer observation set, local management snapshot, and
+hosted drain receipts without becoming a peer identity or mutation key. The
+versioned `reconfigure-plan` command now compares validated profiles and
+classifies the minimum safe restart boundary; it explicitly refuses to imply
+live apply. The host registry now supplies the underlying exact-peer restart
+transaction with typed stop/start receipts, clean-stop gating, degraded-state
+fencing, and continued final drain. `NativeHost::restart_topology` now applies
+the host portion of a validated full-topology plan, returns typed replacement
+clients and correlated old/new evidence, and rolls back partial replacement
+assembly. The live host now exposes lifecycle, exact hosted peers,
+reconfiguration eligibility and retained restart receipts through a typed
+in-process status API. `pantheon manage` now provides the corresponding bounded
+long-running local stdio session with live public-client observation and exact
+drain-on-command/EOF receipts. It can also preflight a whole replacement
+profile, drain with correlated evidence, and replace its own process on the
+retained stdio channel; no-change and fenced-drain outcomes remain explicit.
+Service-manager integration and authenticated IPC remain open. An injected,
+deployment-owned Agora factory is also qualified
 against the real daemon in the same process as the Chronos and Vellum owners,
 including reusable interactive rendering, the shared headless observer, and
 clean reverse shutdown. The same lifecycle seam also qualifies scheduled

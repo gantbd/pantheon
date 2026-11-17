@@ -34,10 +34,35 @@ use vellum_daemon::{
 #[cfg(target_os = "macos")]
 use vellum_host::authority::{AuthorityActionSetV1, AuthorityActionV1};
 
+use crate::reconfiguration::ReconfigurationPlan;
 use crate::registry::{
-    HostRegistry, HostedPeerId, RegistryError, ShutdownDisposition, StartupFailure,
-    TopologyShutdown,
+    HostRegistry, HostedPeerId, RegistryError, RegistryLifecycle, RestartFailure, RestartReceipt,
+    RuntimeStatus, ShutdownDisposition, StartupFailure, TopologyShutdown,
 };
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TopologyRestartReceipt {
+    pub operation_id: String,
+    pub stopped: TopologyShutdown,
+    pub started: Vec<HostedPeerId>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum TopologyRestartFailure<E> {
+    Plan,
+    Lifecycle(RegistryError),
+    Stop(TopologyRestartReceipt),
+    Build {
+        cause: E,
+        receipt: TopologyRestartReceipt,
+        rollback: Option<TopologyShutdown>,
+    },
+    Seal {
+        cause: RegistryError,
+        receipt: TopologyRestartReceipt,
+        rollback: Option<TopologyShutdown>,
+    },
+}
 
 pub struct NativeHost {
     registry: HostRegistry,
@@ -236,6 +261,76 @@ impl NativeHost {
         Self {
             registry: HostRegistry::new(),
         }
+    }
+
+    pub fn status(&self) -> RuntimeStatus {
+        self.registry.status()
+    }
+
+    /// Replaces one exact hosted peer after topology assembly. The peer's
+    /// ordinary client is returned unchanged, alongside a stop/start receipt.
+    /// The registry never invokes `start` after a refused or uncertain stop.
+    pub fn restart_peer<C, E, S>(
+        &mut self,
+        peer: HostedPeerId,
+        start: impl FnOnce() -> Result<(C, S), E>,
+    ) -> Result<(C, RestartReceipt), RestartFailure<E>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        self.registry.restart(peer, start)
+    }
+
+    /// Applies the host portion of a validated full-topology restart plan.
+    /// The old topology drains before replacement assembly begins. The caller
+    /// retains a concrete typed client bundle; the host retains only lifecycle
+    /// callbacks. Any partial replacement is rolled back before return.
+    pub fn restart_topology<C, E>(
+        mut self,
+        plan: &ReconfigurationPlan,
+        build: impl FnOnce(&mut NativeHost) -> Result<C, E>,
+    ) -> Result<(NativeHost, C, TopologyRestartReceipt), TopologyRestartFailure<E>> {
+        if plan.version != 1
+            || plan.scope != "single_user_local_machine"
+            || plan.operation_id.is_empty()
+            || plan.minimum_action != "full_local_topology_restart"
+            || plan.changes.is_empty()
+        {
+            return Err(TopologyRestartFailure::Plan);
+        }
+        let stopped = self.shutdown().map_err(TopologyRestartFailure::Lifecycle)?;
+        let mut receipt = TopologyRestartReceipt {
+            operation_id: plan.operation_id.clone(),
+            stopped,
+            started: Vec::new(),
+        };
+        if !receipt.stopped.clean() {
+            return Err(TopologyRestartFailure::Stop(receipt));
+        }
+
+        let mut replacement = NativeHost::new();
+        let clients = match build(&mut replacement) {
+            Ok(clients) => clients,
+            Err(cause) => {
+                receipt.started = replacement.registry.hosted_peers();
+                let rollback = rollback_replacement(&mut replacement);
+                return Err(TopologyRestartFailure::Build {
+                    cause,
+                    receipt,
+                    rollback,
+                });
+            }
+        };
+        receipt.started = replacement.registry.hosted_peers();
+        if let Err(cause) = replacement.seal() {
+            let rollback = rollback_replacement(&mut replacement);
+            return Err(TopologyRestartFailure::Seal {
+                cause,
+                receipt,
+                rollback,
+            });
+        }
+        Ok((replacement, clients, receipt))
     }
 
     /// Binds and starts one Chronos owner. The endpoint is fully bound before
@@ -599,6 +694,14 @@ impl NativeHost {
     }
 }
 
+fn rollback_replacement(host: &mut NativeHost) -> Option<TopologyShutdown> {
+    match host.registry.lifecycle() {
+        RegistryLifecycle::Assembling => host.registry.abort().ok(),
+        RegistryLifecycle::Ready | RegistryLifecycle::Degraded => host.registry.shutdown().ok(),
+        RegistryLifecycle::Draining | RegistryLifecycle::Stopped => None,
+    }
+}
+
 #[cfg(unix)]
 fn stop_agora_process(
     child: &mut Child,
@@ -868,6 +971,7 @@ fn chronos_shutdown(
 #[cfg(test)]
 mod deployment_factory_tests {
     use super::*;
+    use crate::reconfiguration::{ReconfigurationChange, ReconfigurationPlan};
     use std::io::Cursor;
     use std::sync::{Arc, Mutex};
 
@@ -941,6 +1045,122 @@ mod deployment_factory_tests {
                 &HostedPeerId::Moira,
             ]
         );
+    }
+
+    #[test]
+    fn deployment_owned_peer_restart_returns_typed_client_and_receipt() {
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let mut host = NativeHost::new();
+        host.start_moira(factory(1_u8, "first", order.clone()))
+            .unwrap();
+        host.seal().unwrap();
+        let (client, receipt) = host
+            .restart_peer(
+                HostedPeerId::Moira,
+                factory(2_u16, "replacement", order.clone()),
+            )
+            .unwrap();
+        assert_eq!(client, 2_u16);
+        assert_eq!(
+            receipt,
+            RestartReceipt {
+                peer: HostedPeerId::Moira,
+                stopped: ShutdownDisposition::Clean,
+                replacement_started: true,
+            }
+        );
+        assert_eq!(*order.lock().unwrap(), ["first"]);
+        assert!(host.shutdown().unwrap().clean());
+        assert_eq!(*order.lock().unwrap(), ["first", "replacement"]);
+    }
+
+    fn topology_plan(operation_id: &str) -> ReconfigurationPlan {
+        ReconfigurationPlan {
+            version: 1,
+            operation_id: operation_id.into(),
+            scope: "single_user_local_machine",
+            live_apply_supported: false,
+            minimum_action: "full_local_topology_restart",
+            changes: vec![ReconfigurationChange {
+                target: "moira",
+                change: "changed",
+                required_action: "full_local_topology_restart_required",
+            }],
+        }
+    }
+
+    #[test]
+    fn full_topology_restart_drains_then_returns_typed_replacement_bundle() {
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let mut host = NativeHost::new();
+        host.start_moira(factory(1_u8, "old", order.clone()))
+            .unwrap();
+        host.seal().unwrap();
+
+        let (mut replacement, client, receipt) = host
+            .restart_topology(&topology_plan("replace-1"), |replacement| {
+                replacement.start_moira(factory(2_u16, "new", order.clone()))
+            })
+            .unwrap();
+        assert_eq!(client, 2_u16);
+        assert_eq!(receipt.operation_id, "replace-1");
+        assert_eq!(
+            receipt.stopped.receipts,
+            vec![crate::registry::ShutdownReceipt {
+                peer: HostedPeerId::Moira,
+                disposition: ShutdownDisposition::Clean,
+            }]
+        );
+        assert_eq!(receipt.started, vec![HostedPeerId::Moira]);
+        let status = replacement.status();
+        assert_eq!(status.lifecycle, RegistryLifecycle::Ready);
+        assert_eq!(status.hosted_peers, vec![HostedPeerId::Moira]);
+        assert!(status.reconfiguration_allowed);
+        assert_eq!(*order.lock().unwrap(), ["old"]);
+        assert!(replacement.shutdown().unwrap().clean());
+        assert_eq!(*order.lock().unwrap(), ["old", "new"]);
+    }
+
+    #[test]
+    fn full_topology_restart_rolls_back_partial_replacement() {
+        let order = Arc::new(Mutex::new(Vec::new()));
+        let mut host = NativeHost::new();
+        host.start_moira(factory(1_u8, "old", order.clone()))
+            .unwrap();
+        host.seal().unwrap();
+
+        let failure = host.restart_topology(&topology_plan("replace-2"), |replacement| {
+            replacement
+                .start_daimon(factory(2_u16, "partial", order.clone()))
+                .unwrap();
+            Err::<(), _>("replacement refused")
+        });
+        let Err(failure) = failure else {
+            panic!("partial replacement unexpectedly succeeded");
+        };
+        assert_eq!(
+            failure,
+            TopologyRestartFailure::Build {
+                cause: "replacement refused",
+                receipt: TopologyRestartReceipt {
+                    operation_id: "replace-2".into(),
+                    stopped: TopologyShutdown {
+                        receipts: vec![crate::registry::ShutdownReceipt {
+                            peer: HostedPeerId::Moira,
+                            disposition: ShutdownDisposition::Clean,
+                        }],
+                    },
+                    started: vec![HostedPeerId::Daimon],
+                },
+                rollback: Some(TopologyShutdown {
+                    receipts: vec![crate::registry::ShutdownReceipt {
+                        peer: HostedPeerId::Daimon,
+                        disposition: ShutdownDisposition::Clean,
+                    }],
+                }),
+            }
+        );
+        assert_eq!(*order.lock().unwrap(), ["old", "partial"]);
     }
 
     fn factory<C: Send + 'static>(

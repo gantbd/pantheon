@@ -203,6 +203,7 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
     assert!(vellum.exists());
 
     let observation = observe_headless(HeadlessRequest {
+        operation_id: "qualified-agora-host".into(),
         workspace: "All peers".into(),
         agora: Some(AgoraProfile {
             deployment: pantheon_cli::profile::DeploymentMode::Attach,
@@ -212,18 +213,23 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
             host: None,
             requires: vec!["rooms.read.v2".into()],
         }),
+        agora_hosted: false,
         moira_socket: None,
         moira_requires: Vec::new(),
+        moira_hosted: false,
         daimon_socket: None,
         daimon_agent_socket: None,
         daimon_agent_session: None,
         daimon_requires: Vec::new(),
+        daimon_hosted: false,
         hermes_socket: None,
         hermes_stream: None,
         hermes_consumer: None,
         hermes_requires: Vec::new(),
+        hermes_hosted: false,
         aegis_socket: None,
         aegis_requires: Vec::new(),
+        aegis_hosted: false,
         grounding_endpoint: None,
         grounding_token: None,
         grounding_requires: Vec::new(),
@@ -232,9 +238,11 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
             directory: chronos.clone(),
         }],
         chronos_requires: vec!["tasks.observe.v1".into()],
+        chronos_hosted: true,
         vellum_socket: Some(vellum.clone()),
         vellum_credential: None,
         vellum_requires: vec!["workspace.inventory.v1".into()],
+        vellum_hosted: true,
     })
     .unwrap();
     assert!(observation.complete);

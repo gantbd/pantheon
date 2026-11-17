@@ -231,6 +231,17 @@ pub fn draw_shell_with_moira(
         Surface::Moira if moira.is_some() => {
             moira.expect("matched above").draw_in(frame, body, true);
         }
+        Surface::Daimon if daimon.is_some() && daimon_agent.is_some() => {
+            let [presence, agent] =
+                Layout::horizontal([Constraint::Percentage(38), Constraint::Percentage(62)])
+                    .areas(body);
+            daimon
+                .expect("matched above")
+                .draw_in(frame, presence, false);
+            daimon_agent
+                .expect("matched above")
+                .draw_in(frame, agent, true);
+        }
         Surface::Daimon if daimon_agent.is_some() => {
             daimon_agent
                 .expect("matched above")

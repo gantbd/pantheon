@@ -59,9 +59,14 @@ processes rather than linked semantic engines. Hosted Vellum requires a bounded 
 attached profiles must not include roots. Edit and save authority remain
 launch-only through `--vellum-allow-edit` and `--vellum-allow-save`.
 Each configured peer may also carry a bounded `requires` list. Pantheon checks
-those exact identifiers against the peer-owned TUI manifest for the selected
-interactive or headless mode before connecting. A match describes composition
-support only; the service still owns authorization and may refuse the request.
+those exact identifiers against its own resolved route catalog for the selected
+interactive/headless mode, attach/host topology, configured selectors and
+launch-only feature flags before connecting. It does not accept a capability
+merely because a separate command exists somewhere in the peer TUI package.
+`--check-profile` prints the resolved observation, operator, control and
+management-plane capabilities without contacting a peer. A match describes
+composition support only; the service still owns authorization and may refuse
+the request. Hyphens are valid in the bounded capability identifier grammar.
 The Agora participant value is an identity claim checked against the daemon's
 authenticated peer context; it is neither a credential nor authority.
 Unknown fields, versions, duplicate surfaces, control characters, excessive
@@ -70,7 +75,9 @@ workstreams/bindings and files larger than 64 KiB are refused.
 A Daimon profile may pair `agent_socket` with one exact 32-hex-digit
 `agent_session`. Pantheon then reuses Daimon's read-only client to present the
 stable session view and bounded event page in both headless and interactive
-modes. The two fields are all-or-nothing; they confer no open, prompt,
+modes. When a presence socket is also selected, the interactive Daimon surface
+renders presence beside the focused agent projection rather than silently
+hiding the polled presence component. The two agent fields are all-or-nothing; they confer no open, prompt,
 permission, reattach, cancel, or close authority.
 
 A hosted Daimon profile requires that exact agent selection plus an owner
@@ -95,6 +102,10 @@ The separate `moira-reconciliation-view`, `moira-reconciliation-confirm` and
 accept only an exact server-prepared challenge, submit confirmation once without
 retrying an unknown outcome, and resolve uncertainty only from the exact durable
 operator receipt. Pantheon never parses the Aegis portion of the owner config.
+Moira-TUI's newer agent, participation and deliberation capabilities are not
+silently inherited by this saga route. They are recorded as qualified peer but
+absent Pantheon capabilities in `composition-status.json` until Pantheon binds
+their independent public clients and components deliberately.
 
 Use `--chronos-profile PATH` in place of the initial service directory to
 reopen a workspace saved by `chronos-tui --save-profile`. Relative service
@@ -112,11 +123,93 @@ handshake. In hosted mode the same private record configures both the daemon
 verifier and client claim provider without placing credential material in the
 profile or lifecycle receipt. Tab changes focus and Ctrl-Q requests
 whole-workbench exit.
+The exact interactive Chronos route advertises `tasks.mutate.v1` only with
+`--chronos-allow-writes`, `scheduling.observe.v5` with
+`--chronos-scheduling`, `scheduling.mutate.v5` only when both selections are
+present, and `tasks.cancel-receipt.v3` only for writable receipted cancellation.
+Watch, planning, and selected Moira/Daimon attempt projections are likewise
+conditional route capabilities. Headless Chronos remains observation-only.
 Use the explicit `headless` command for a bounded, versioned JSON observation of every configured
 Agora, Chronos, Vellum, Moira, Daimon, Hermes, Aegis, and Grounding peer. Each row names its peer-owned capability and
 truthful status. Healthy rows remain visible when another peer is unavailable,
 but the command refuses aggregate success. `--headless` and `--snapshot` remain
 compatibility aliases for invocations without an explicit command.
+The same report includes a `management` object for the first supported
+deployment scope, `single_user_local_machine`. It classifies attachment versus
+hosting, readiness at observation time, revision when the peer supplies one,
+certainty, fencing, the peer-owned read-only authority path, and the current
+reconfiguration boundary. Hosted rows are reconciled with exact reverse-drain
+receipts before output; attached rows remain `external`. Attachment alone is
+never reported as readiness, and a missing peer revision remains `null`.
+Every headless report also carries one bounded `operation_id` in both the
+top-level envelope and management snapshot, tying all peer observations and
+hosted drain receipts to the same local operation. Supply it with
+`--operation-id ID` for an external audit/recovery workflow, or let Pantheon
+generate a process-and-time-scoped local identifier. The identifier is
+correlation only: it grants no authority and is never forwarded as a peer
+request identity or idempotency key.
+
+Run `pantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE` to compare two
+fully validated local profiles without opening peer connections. The versioned
+JSON plan classifies workspace-shell and per-peer changes and reports the
+minimum safe action. The current boundary is explicit: shell-only changes need
+a shell restart; any peer addition, removal, endpoint, selector, deployment,
+authority input, or requirement change needs a full local-topology restart.
+Live apply is reported as unsupported. An optional `--operation-id` connects
+the plan to the subsequent headless drain/restart evidence.
+
+Embedding deployments also have a bounded runtime `NativeHost::restart_peer`
+primitive. It targets one exact hosted peer, returns the replacement's concrete
+client plus a typed stop/start receipt, and invokes the replacement factory only
+after a confirmed clean stop. Refused or outcome-unknown stops fence further
+reconfiguration by moving the registry to `Degraded`; final shutdown still
+reports that unresolved peer and drains every unaffected sibling. A clean stop
+followed by replacement refusal likewise leaves a degraded but drainable
+topology. This is the execution substrate for later CLI plan application, not
+permission to reinterpret any peer's state or authority.
+`NativeHost::restart_topology` wires a validated full-topology plan to that
+substrate: it drains the old host first, assembles and seals the replacement as
+one unit, returns the caller's concrete typed client bundle, and rolls back a
+partial replacement. Its correlated receipt records the old drain and exact
+replacement peer set. Standalone CLI plan application remains intentionally
+separate until it can retain a long-running replacement instead of immediately
+draining a one-shot headless invocation.
+While an embedding host is live, `NativeHost::status` returns the registry
+lifecycle, exact hosted-peer set, whether reconfiguration is currently allowed,
+and retained restart receipts. A degraded topology therefore remains
+inspectable after a refused replacement or uncertain stop instead of losing the
+evidence that fenced further changes. This is an in-process management API; no
+remotely reachable or ambient-authority control endpoint is claimed.
+
+`pantheon manage --workspace-profile PATH` exposes that boundary as a
+long-running, bounded local stdio session. It emits one-line versioned JSON and
+accepts only `status`, `observe [OPERATION_ID]`,
+`reconfigure OPERATION_ID NEXT_PROFILE`, and `drain`. Observations use
+the same public clients while hosted peers remain live; `drain` and EOF both
+perform the ordinary reverse shutdown and emit exact receipts. Commands are
+bounded to 4 KiB, unknown commands are refused, and the session opens no socket,
+does not interpret peer mutations, and gains no authority beyond the supplied
+profile. This is suitable for a single-user parent supervisor; service-manager
+and authenticated IPC profiles remain separate work.
+The protocol is explicitly one-request-in-flight: a parent waits for the
+corresponding event (and, after reconfiguration, the replacement's `ready`
+event) before sending another command.
+
+`reconfigure` loads and fully capability-checks the replacement profile before
+touching the current topology. No-change requests return in place. A real
+change drains the old topology, emits its exact correlated receipt, and then
+replaces the Pantheon process with the same executable and the validated next
+profile while retaining the stdio channel. The replacement emits a new `ready`
+event under the requested operation identifier. A refused or uncertain drain
+fences the handoff, and an exec or replacement-start failure remains explicit;
+this is a bounded process restart, not a claim of live mutation.
+
+Run `pantheon controls` for the machine-readable local guarded-control catalog.
+Each entry maps one qualified capability to its concrete CLI command and marks
+it as a separate control-plane route with peer-owned authority and
+route-specific confirmation. These entries are deliberately absent from the
+aggregate workspace capability route; discovering a command does not grant
+permission to execute it.
 
 A Vellum-owned integration host can also call `pantheon_cli::run_hosted_terminal`
 with a Chronos `Hub` and a factory for the Vellum service and handoff handler.
@@ -215,7 +308,9 @@ creates a task, enables scheduling, changes capacity and not-before, pauses the
 task and scheduler, performs receipted cancellation, drains Pantheon, then
 reopens the state with an independent `chronos-service` and verifies the exact
 durable result. This qualifies that profile locally; it does not invent mutation
-capability IDs or grant wider authority.
+authority or grant wider authority. Pantheon's route catalog names the selected
+control boundaries as `tasks.mutate.v1`, `scheduling.mutate.v5`, and
+`tasks.cancel-receipt.v3` without replacing Chronos's protocol or authorization.
 
 Run `sh tests/live/vellum_mutation.sh` for ordinary witnessed Vellum mutation
 parity. Pantheon hosts the real owner with explicit edit/save ceilings, drives

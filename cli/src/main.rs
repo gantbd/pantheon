@@ -6,7 +6,9 @@ use chronos_tui::{Hub, Workstream};
 use pantheon::Shell;
 use pantheon_cli::{
     OperationalPeers,
+    capabilities::{self, ChronosFeatures, Mode},
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
+    management::LocalManagementSnapshot,
     native_host::{
         AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, DaimonProcessOptions,
         HermesProcessOptions, MoiraProcessOptions, NativeHost,
@@ -15,10 +17,15 @@ use pantheon_cli::{
         AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, DeploymentMode,
         HermesAccessProfile, HermesOpenMode, WorkspaceProfile,
     },
-    registry::{HostedPeerId, ShutdownDisposition, TopologyShutdown},
+    registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers,
 };
-use std::path::PathBuf;
+use std::{
+    io::{BufRead, Write},
+    os::unix::process::CommandExt,
+    path::PathBuf,
+    process::Command,
+};
 use vellum_sdk_client::{
     transport::{
         AuthenticatedUnixConnector, FrameExchange, RemoteTransport, TransportError,
@@ -47,6 +54,8 @@ impl FrameExchange for VellumConnector {
 }
 
 struct Options {
+    operation_id: Option<String>,
+    workspace_profile: Option<WorkspaceProfile>,
     workspace_name: String,
     shell: Shell,
     agora: Option<AgoraProfile>,
@@ -77,6 +86,7 @@ struct Options {
     vellum_requires: Vec<String>,
     chronos_writes: bool,
     headless: bool,
+    management: bool,
     chronos_watch: bool,
     chronos_scheduling: bool,
     chronos_planning: Option<PathBuf>,
@@ -89,6 +99,7 @@ struct Options {
     moira_bindings: Vec<(String, PathBuf, String)>,
     daimon_bindings: Vec<(String, PathBuf)>,
     check_profile: bool,
+    capability_plan: Vec<(&'static str, Vec<capabilities::Capability>)>,
 }
 
 fn required_arg(
@@ -100,32 +111,60 @@ fn required_arg(
         .ok_or(usage)
 }
 
+fn valid_operation_id(value: &str) -> bool {
+    (1..=64).contains(&value.len())
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b':' | b'-'))
+}
+
+fn generated_operation_id() -> String {
+    let elapsed = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    format!("pantheon-{}-{:x}", std::process::id(), elapsed.as_nanos())
+}
+
 fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut args = std::env::args_os().skip(1);
     let Some(mut first) = args.next() else {
-        return Err(usage().into());
+        return Err(format!(
+            "pantheon controls\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}",
+            usage()
+        )
+        .into());
     };
-    let explicit_mode = if first == "interactive" {
+    let (explicit_mode, management) = if first == "interactive" {
         first = args
             .next()
             .ok_or("interactive requires a workspace or Chronos configuration")?;
-        Some(false)
+        (Some(false), false)
     } else if first == "headless" {
         first = args
             .next()
             .ok_or("headless requires a workspace or Chronos configuration")?;
-        Some(true)
+        (Some(true), false)
+    } else if first == "manage" {
+        first = args.next().ok_or("manage requires a workspace profile")?;
+        (Some(true), true)
     } else {
-        None
+        (None, false)
     };
     if first == "--help" {
-        println!("{}", usage());
+        println!(
+            "pantheon controls\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}",
+            usage()
+        );
         std::process::exit(0);
     }
     let workspace_profile = first == "--workspace-profile";
     let chronos_profile = first == "--chronos-profile";
+    if management && !workspace_profile {
+        return Err("manage requires --workspace-profile PATH".into());
+    }
     let mut shell = Shell::dual_peer();
     let mut workspace_name = "Pantheon".to_owned();
+    let mut loaded_workspace_profile = None;
     let mut agora = None;
     let mut agora_host = None;
     let mut moira_socket = None;
@@ -160,7 +199,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut vellum_requires = Vec::new();
     let mut chronos_streams = if workspace_profile {
         let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
-        let profile = WorkspaceProfile::load(std::path::Path::new(&path))?;
+        let path = PathBuf::from(path);
+        let profile = WorkspaceProfile::load(&path)?;
+        loaded_workspace_profile = Some(profile.clone());
         workspace_name = profile.name.clone();
         shell = profile.shell()?;
         agora = profile.agora.inspect(|configured| {
@@ -323,6 +364,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut chronos_scheduling = false;
     let mut chronos_cancel_receipts = false;
     let mut check_profile = false;
+    let mut operation_id = None;
     let mut vellum_allow_edit = false;
     let mut vellum_allow_save = false;
     while let Some(argument) = args.next() {
@@ -395,6 +437,17 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             headless = true;
         } else if argument == "--check-profile" && workspace_profile && !check_profile {
             check_profile = true;
+        } else if argument == "--operation-id" && operation_id.is_none() {
+            let value = required_arg(&mut args, "--operation-id requires ID")?
+                .into_string()
+                .map_err(|_| "--operation-id must be UTF-8")?;
+            if !valid_operation_id(&value) {
+                return Err(
+                    "--operation-id must be 1-64 ASCII letters, digits, '.', '_', ':', or '-'"
+                        .into(),
+                );
+            }
+            operation_id = Some(value);
         } else {
             return Err("unknown or duplicate option".into());
         }
@@ -414,88 +467,81 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if (vellum_allow_edit || vellum_allow_save) && !host_vellum {
         return Err("Vellum authority ceiling flags require hosted Vellum".into());
     }
-    let mode = if headless { "headless" } else { "interactive" };
-    negotiate_capabilities(
-        "agora",
+    if operation_id.is_some() && !headless {
+        return Err("--operation-id is available only in headless mode".into());
+    }
+    let mode = if headless {
+        Mode::Headless
+    } else {
+        Mode::Interactive
+    };
+    let agora_capabilities = capabilities::agora(mode, agora_host.is_some());
+    let moira_capabilities = capabilities::moira(mode, moira_host.is_some());
+    let daimon_capabilities = capabilities::daimon(
         mode,
-        &agora_requires,
-        if headless {
-            agora_tui::CAPABILITIES.headless
-        } else {
-            agora_tui::CAPABILITIES.interactive
-        },
-    )?;
-    negotiate_capabilities(
-        "moira",
+        daimon_host.is_some(),
+        daimon_socket.is_some(),
+        daimon_agent_socket.is_some() && daimon_agent_session.is_some(),
+    );
+    let hermes_capabilities =
+        capabilities::hermes(mode, hermes_host.is_some(), hermes_consumer.is_some());
+    let aegis_capabilities = capabilities::aegis(aegis_host.is_some());
+    let grounding_capabilities = capabilities::grounding();
+    let chronos_capabilities = capabilities::chronos(
         mode,
-        &moira_requires,
-        if headless {
-            moira_tui::CAPABILITIES.headless
-        } else {
-            moira_tui::CAPABILITIES.interactive
+        host_chronos,
+        ChronosFeatures {
+            writes: chronos_writes,
+            scheduling: chronos_scheduling,
+            watch: chronos_watch,
+            planning: chronos_planning.is_some(),
+            cancel_receipts: chronos_cancel_receipts,
+            moira_attempts: !moira_bindings.is_empty(),
+            daimon_attempts: !daimon_bindings.is_empty(),
         },
-    )?;
-    negotiate_capabilities(
-        "daimon",
-        mode,
-        &daimon_requires,
-        if headless {
-            daimon_tui::CAPABILITIES.headless
-        } else {
-            daimon_tui::CAPABILITIES.interactive
-        },
-    )?;
-    negotiate_capabilities(
-        "hermes",
-        mode,
-        &hermes_requires,
-        if headless {
-            hermes_tui::CAPABILITIES.headless
-        } else {
-            hermes_tui::CAPABILITIES.interactive
-        },
-    )?;
-    negotiate_capabilities(
-        "aegis",
-        mode,
-        &aegis_requires,
-        if headless {
-            aegis_tui::CAPABILITIES.headless
-        } else {
-            aegis_tui::CAPABILITIES.interactive
-        },
-    )?;
+    );
+    let vellum_capabilities = capabilities::vellum(mode, host_vellum);
+    negotiate_capabilities("agora", mode, &agora_requires, &agora_capabilities)?;
+    negotiate_capabilities("moira", mode, &moira_requires, &moira_capabilities)?;
+    negotiate_capabilities("daimon", mode, &daimon_requires, &daimon_capabilities)?;
+    negotiate_capabilities("hermes", mode, &hermes_requires, &hermes_capabilities)?;
+    negotiate_capabilities("aegis", mode, &aegis_requires, &aegis_capabilities)?;
     negotiate_capabilities(
         "grounding",
         mode,
         &grounding_requires,
-        if headless {
-            tellus::CAPABILITIES.headless
-        } else {
-            tellus::CAPABILITIES.interactive
-        },
+        &grounding_capabilities,
     )?;
-    negotiate_capabilities(
-        "chronos",
-        mode,
-        &chronos_requires,
-        if headless {
-            chronos_tui::CAPABILITIES.headless
-        } else {
-            chronos_tui::CAPABILITIES.interactive
-        },
-    )?;
-    negotiate_capabilities(
-        "vellum",
-        mode,
-        &vellum_requires,
-        if headless {
-            vellum_tui::CAPABILITIES.headless
-        } else {
-            vellum_tui::CAPABILITIES.interactive
-        },
-    )?;
+    negotiate_capabilities("chronos", mode, &chronos_requires, &chronos_capabilities)?;
+    negotiate_capabilities("vellum", mode, &vellum_requires, &vellum_capabilities)?;
+    let mut capability_plan = Vec::new();
+    if agora.is_some() {
+        capability_plan.push(("agora", agora_capabilities));
+    }
+    if moira_socket.is_some() {
+        capability_plan.push(("moira", moira_capabilities));
+    }
+    if daimon_socket.is_some() || daimon_agent_socket.is_some() {
+        capability_plan.push(("daimon", daimon_capabilities));
+    }
+    if hermes_socket.is_some() {
+        capability_plan.push(("hermes", hermes_capabilities));
+    }
+    if aegis_socket.is_some() {
+        capability_plan.push(("aegis", aegis_capabilities));
+    }
+    if grounding_endpoint.is_some() {
+        capability_plan.push(("grounding", grounding_capabilities));
+    }
+    if !chronos_streams.is_empty() {
+        capability_plan.push(("chronos", chronos_capabilities));
+    }
+    if vellum_socket.is_some() {
+        capability_plan.push(("vellum", vellum_capabilities));
+    }
     Ok(Options {
+        operation_id,
+        workspace_profile: loaded_workspace_profile,
         workspace_name,
         shell,
         agora,
@@ -526,6 +572,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         vellum_requires,
         chronos_writes,
         headless,
+        management,
         chronos_watch,
         chronos_scheduling,
         chronos_planning,
@@ -538,23 +585,17 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_bindings,
         daimon_bindings,
         check_profile,
+        capability_plan,
     })
 }
 
 fn negotiate_capabilities(
     peer: &str,
-    mode: &str,
+    mode: Mode,
     required: &[String],
-    supported: &[&str],
+    supported: &[capabilities::Capability],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    for capability in required {
-        if !supported.contains(&capability.as_str()) {
-            return Err(
-                format!("{peer} does not support required {mode} capability {capability}").into(),
-            );
-        }
-    }
-    Ok(())
+    capabilities::negotiate(peer, mode, required, supported).map_err(Into::into)
 }
 
 fn usage() -> &'static str {
@@ -580,7 +621,90 @@ fn vellum_connector(
     }
 }
 
+fn guarded_control_catalog(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if args.next().is_some() {
+        return Err("pantheon controls accepts no arguments".into());
+    }
+    let controls = capabilities::GUARDED_CONTROL_ROUTES
+        .iter()
+        .map(|route| {
+            serde_json::json!({
+                "peer": route.peer,
+                "capability": route.capability,
+                "plane": "control",
+                "command": route.command,
+                "aggregate_route": false,
+                "authority": "peer_owned",
+                "confirmation": "route_specific",
+            })
+        })
+        .collect::<Vec<_>>();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "mode": "guarded_control_catalog",
+            "scope": "single_user_local_machine",
+            "controls": controls,
+        }))?
+    );
+    Ok(())
+}
+
+fn reconfiguration_plan(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let current = PathBuf::from(required_arg(
+        &mut args,
+        "pantheon reconfigure-plan requires CURRENT_PROFILE NEXT_PROFILE",
+    )?);
+    let next = PathBuf::from(required_arg(
+        &mut args,
+        "pantheon reconfigure-plan requires CURRENT_PROFILE NEXT_PROFILE",
+    )?);
+    let operation_id = match (args.next(), args.next(), args.next()) {
+        (None, None, None) => generated_operation_id(),
+        (Some(flag), Some(value), None) if flag == "--operation-id" => {
+            let value = value
+                .into_string()
+                .map_err(|_| "--operation-id must be UTF-8")?;
+            if !valid_operation_id(&value) {
+                return Err(
+                    "--operation-id must be 1-64 ASCII letters, digits, '.', '_', ':', or '-'"
+                        .into(),
+                );
+            }
+            value
+        }
+        _ => {
+            return Err(
+                "pantheon reconfigure-plan accepts only CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]"
+                    .into(),
+            );
+        }
+    };
+    let current = WorkspaceProfile::load(&current)?;
+    let next = WorkspaceProfile::load(&next)?;
+    let plan = pantheon_cli::reconfiguration::plan(operation_id, &current, &next);
+    println!("{}", serde_json::to_string_pretty(&plan)?);
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "controls")
+    {
+        return guarded_control_catalog(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "reconfigure-plan")
+    {
+        return reconfiguration_plan(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "vellum-durable-save")
@@ -683,13 +807,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         return aegis_manage_session(std::env::args_os().skip(2));
     }
-    let explicit_headless = std::env::args_os()
-        .nth(1)
-        .is_some_and(|arg| arg == "headless");
+    let explicit_machine_mode = std::env::args_os().nth(1).and_then(|arg| {
+        if arg == "headless" {
+            Some("headless")
+        } else if arg == "manage" {
+            Some("management")
+        } else {
+            None
+        }
+    });
     let options = match options() {
         Ok(options) => options,
-        Err(error) if explicit_headless => {
-            return workbench_headless_configuration_failure(&error.to_string());
+        Err(error) if explicit_machine_mode.is_some() => {
+            return workbench_machine_configuration_failure(
+                explicit_machine_mode.expect("matched above"),
+                &error.to_string(),
+            );
         }
         Err(error) => return Err(error),
     };
@@ -698,9 +831,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "workspace profile valid: {} surfaces",
             options.shell.surfaces().len()
         );
+        print_capability_plan(&options.capability_plan);
         return Ok(());
     }
-    let mut native_host = start_native_host(&options)?;
+    let mut native_host = match start_native_host(&options) {
+        Ok(host) => host,
+        Err(error) if explicit_machine_mode.is_some() => {
+            return workbench_machine_startup_failure(
+                explicit_machine_mode.expect("matched above"),
+                &error.to_string(),
+            );
+        }
+        Err(error) => return Err(error),
+    };
+    if options.management {
+        return management_session(options, native_host);
+    }
     if options.headless {
         let observation = headless(options);
         let shutdown = shutdown_native_host(&mut native_host);
@@ -709,6 +855,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = interactive(options);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
+}
+
+fn print_capability_plan(plan: &[(&str, Vec<capabilities::Capability>)]) {
+    for (peer, peer_capabilities) in plan {
+        let rendered = [
+            capabilities::Plane::Observation,
+            capabilities::Plane::Operator,
+            capabilities::Plane::Control,
+            capabilities::Plane::Management,
+        ]
+        .into_iter()
+        .filter_map(|plane| {
+            let identifiers = peer_capabilities
+                .iter()
+                .filter(|capability| capability.plane == plane)
+                .map(|capability| capability.id)
+                .collect::<Vec<_>>();
+            (!identifiers.is_empty())
+                .then(|| format!("{}={}", plane.label(), identifiers.join(",")))
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+        println!("{peer}: {rendered}");
+    }
 }
 
 fn vellum_durable_save(
@@ -2607,7 +2777,8 @@ fn aegis_manage_session(
     }
 }
 
-fn workbench_headless_configuration_failure(
+fn workbench_machine_configuration_failure(
+    mode: &str,
     message: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     println!(
@@ -2615,9 +2786,29 @@ fn workbench_headless_configuration_failure(
         serde_json::to_string_pretty(&serde_json::json!({
             "version": 1,
             "workspace": serde_json::Value::Null,
-            "mode": "headless",
+            "mode": mode,
             "complete": false,
             "status": "configuration_refused",
+            "peers": [],
+            "hosted_shutdown": serde_json::Value::Null,
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
+}
+
+fn workbench_machine_startup_failure(
+    mode: &str,
+    message: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "workspace": serde_json::Value::Null,
+            "mode": mode,
+            "complete": false,
+            "status": "startup_refused",
+            "detail": message,
             "peers": [],
             "hosted_shutdown": serde_json::Value::Null,
         }))?
@@ -2665,6 +2856,15 @@ fn finish_headless(
         Ok(observation) => observation,
         Err(error) => return finish_interactive(Err(error), shutdown),
     };
+    let operation_id = observation.operation_id;
+    let management = LocalManagementSnapshot::after_shutdown(
+        operation_id.clone(),
+        observation.management,
+        shutdown
+            .as_ref()
+            .map(|shutdown| shutdown.as_ref())
+            .map_err(|_| ()),
+    );
     let (shutdown_report, shutdown_clean) = match shutdown {
         Ok(None) => (serde_json::Value::Null, true),
         Ok(Some(receipt)) => {
@@ -2713,9 +2913,11 @@ fn finish_headless(
         serde_json::to_string_pretty(&serde_json::json!({
             "version": 1,
             "workspace": observation.workspace,
+            "operation_id": operation_id,
             "mode": "headless",
             "complete": complete,
             "peers": observation.peers,
+            "management": management,
             "hosted_shutdown": shutdown_report,
         }))?
     );
@@ -2944,31 +3146,474 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error::Error>> {
-    observe_headless(HeadlessRequest {
-        workspace: options.workspace_name,
-        agora: options.agora,
-        moira_socket: options.moira_socket,
-        moira_requires: options.moira_requires,
-        daimon_socket: options.daimon_socket,
-        daimon_agent_socket: options.daimon_agent_socket,
+    let operation_id = options
+        .operation_id
+        .clone()
+        .unwrap_or_else(generated_operation_id);
+    observe_headless(headless_request(&options, operation_id)).map_err(|error| error.into())
+}
+
+fn management_session(
+    options: Options,
+    native_host: Option<NativeHost>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut native_host = ManagementHostGuard(native_host);
+    let session_id = options
+        .operation_id
+        .clone()
+        .unwrap_or_else(generated_operation_id);
+    let stdin = std::io::stdin();
+    let stdout = std::io::stdout();
+    let mut input = stdin.lock();
+    let mut output = stdout.lock();
+    write_json_line(
+        &mut output,
+        &serde_json::json!({
+            "version": 1,
+            "mode": "management",
+            "event": "ready",
+            "session_id": session_id,
+            "scope": "single_user_local_machine",
+            "request_flow": "one_in_flight",
+            "commands": [
+                "status",
+                "observe [OPERATION_ID]",
+                "reconfigure OPERATION_ID NEXT_PROFILE",
+                "drain"
+            ],
+            "topology": runtime_status_value(native_host.0.as_ref()),
+        }),
+    )?;
+
+    loop {
+        let Some(line) = read_bounded_management_line(&mut input)? else {
+            return drain_management_session(&mut output, &session_id, &mut native_host.0);
+        };
+        let line = line.trim();
+        if line == "status" {
+            write_json_line(
+                &mut output,
+                &serde_json::json!({
+                    "version": 1,
+                    "mode": "management",
+                    "event": "status",
+                    "session_id": session_id,
+                    "topology": runtime_status_value(native_host.0.as_ref()),
+                }),
+            )?;
+        } else if line == "observe" || line.starts_with("observe ") {
+            let requested = line.strip_prefix("observe ").unwrap_or(&session_id);
+            if !valid_operation_id(requested) {
+                write_management_refusal(&mut output, &session_id, "operation_id_refused")?;
+                continue;
+            }
+            match observe_headless(headless_request(&options, requested.to_owned())) {
+                Ok(observation) => {
+                    let lifecycle = native_host.0.as_ref().map(|host| host.status().lifecycle);
+                    let management = LocalManagementSnapshot::live(
+                        observation.operation_id.clone(),
+                        observation.management,
+                        lifecycle,
+                    );
+                    write_json_line(
+                        &mut output,
+                        &serde_json::json!({
+                            "version": 1,
+                            "mode": "management",
+                            "event": "observation",
+                            "session_id": session_id,
+                            "operation_id": observation.operation_id,
+                            "workspace": observation.workspace,
+                            "complete": observation.complete,
+                            "peers": observation.peers,
+                            "management": management,
+                        }),
+                    )?;
+                }
+                Err(error) => write_json_line(
+                    &mut output,
+                    &serde_json::json!({
+                        "version": 1,
+                        "mode": "management",
+                        "event": "observation",
+                        "session_id": session_id,
+                        "operation_id": requested,
+                        "complete": false,
+                        "status": "refused",
+                        "detail": error,
+                    }),
+                )?,
+            }
+        } else if line == "reconfigure" || line.starts_with("reconfigure ") {
+            reconfigure_management_session(
+                &mut output,
+                &session_id,
+                line,
+                &options,
+                &mut native_host.0,
+            )?;
+        } else if line == "drain" {
+            return drain_management_session(&mut output, &session_id, &mut native_host.0);
+        } else {
+            write_management_refusal(&mut output, &session_id, "unknown_command")?;
+        }
+    }
+}
+
+struct ManagementHostGuard(Option<NativeHost>);
+
+impl Drop for ManagementHostGuard {
+    fn drop(&mut self) {
+        let _ = shutdown_native_host(&mut self.0);
+    }
+}
+
+fn read_bounded_management_line(
+    input: &mut impl BufRead,
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    const MAX_COMMAND_BYTES: usize = 4 * 1_024;
+    let mut bytes = Vec::new();
+    loop {
+        let available = input.fill_buf()?;
+        if available.is_empty() {
+            if bytes.is_empty() {
+                return Ok(None);
+            }
+            break;
+        }
+        let end = available
+            .iter()
+            .position(|byte| *byte == b'\n')
+            .map_or(available.len(), |index| index + 1);
+        if bytes.len() + end > MAX_COMMAND_BYTES {
+            return Err("management command exceeds 4 KiB".into());
+        }
+        bytes.extend_from_slice(&available[..end]);
+        input.consume(end);
+        if bytes.last() == Some(&b'\n') {
+            bytes.pop();
+            if bytes.last() == Some(&b'\r') {
+                bytes.pop();
+            }
+            break;
+        }
+    }
+    Ok(Some(String::from_utf8(bytes)?))
+}
+
+fn write_json_line(
+    output: &mut impl Write,
+    value: &serde_json::Value,
+) -> Result<(), Box<dyn std::error::Error>> {
+    serde_json::to_writer(&mut *output, value)?;
+    output.write_all(b"\n")?;
+    output.flush()?;
+    Ok(())
+}
+
+fn write_management_refusal(
+    output: &mut impl Write,
+    session_id: &str,
+    status: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    write_json_line(
+        output,
+        &serde_json::json!({
+            "version": 1,
+            "mode": "management",
+            "event": "refusal",
+            "session_id": session_id,
+            "status": status,
+        }),
+    )
+}
+
+fn reconfigure_management_session(
+    output: &mut impl Write,
+    session_id: &str,
+    command: &str,
+    options: &Options,
+    native_host: &mut Option<NativeHost>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let Some(arguments) = command.strip_prefix("reconfigure ") else {
+        return write_management_refusal(output, session_id, "reconfiguration_syntax_refused");
+    };
+    let Some((operation_id, path)) = arguments.split_once(' ') else {
+        return write_management_refusal(output, session_id, "reconfiguration_syntax_refused");
+    };
+    let path = path.trim();
+    if !valid_operation_id(operation_id) || path.is_empty() {
+        return write_management_refusal(output, session_id, "reconfiguration_syntax_refused");
+    }
+    let next_path = PathBuf::from(path);
+    let next = match preflight_management_profile(&next_path) {
+        Ok(profile) => profile,
+        Err(detail) => {
+            return write_json_line(
+                output,
+                &serde_json::json!({
+                    "version": 1,
+                    "mode": "management",
+                    "event": "refusal",
+                    "session_id": session_id,
+                    "operation_id": operation_id,
+                    "status": "replacement_profile_refused",
+                    "detail": detail,
+                }),
+            );
+        }
+    };
+    let current = options
+        .workspace_profile
+        .as_ref()
+        .expect("management requires a workspace profile");
+    let plan = pantheon_cli::reconfiguration::plan(operation_id.to_owned(), current, &next);
+    if plan.minimum_action == "none" {
+        return write_json_line(
+            output,
+            &serde_json::json!({
+                "version": 1,
+                "mode": "management",
+                "event": "reconfigure",
+                "session_id": session_id,
+                "operation_id": operation_id,
+                "complete": true,
+                "status": "no_change",
+                "plan": plan,
+                "topology": runtime_status_value(native_host.as_ref()),
+            }),
+        );
+    }
+
+    let shutdown = shutdown_native_host(native_host);
+    let (clean, shutdown) = management_shutdown_report(shutdown);
+    if !clean {
+        write_json_line(
+            output,
+            &serde_json::json!({
+                "version": 1,
+                "mode": "management",
+                "event": "reconfigure",
+                "session_id": session_id,
+                "operation_id": operation_id,
+                "complete": false,
+                "status": "restart_fenced",
+                "plan": plan,
+                "shutdown": shutdown,
+            }),
+        )?;
+        return Err("management reconfiguration fenced by incomplete shutdown".into());
+    }
+    write_json_line(
+        output,
+        &serde_json::json!({
+            "version": 1,
+            "mode": "management",
+            "event": "reconfigure",
+            "session_id": session_id,
+            "operation_id": operation_id,
+            "complete": false,
+            "status": "old_topology_drained",
+            "plan": plan,
+            "shutdown": shutdown,
+            "replacement": "exec_pending",
+        }),
+    )?;
+
+    let error = Command::new(std::env::current_exe()?)
+        .arg("manage")
+        .arg("--workspace-profile")
+        .arg(next_path)
+        .arg("--operation-id")
+        .arg(operation_id)
+        .exec();
+    write_json_line(
+        output,
+        &serde_json::json!({
+            "version": 1,
+            "mode": "management",
+            "event": "reconfigure",
+            "session_id": session_id,
+            "operation_id": operation_id,
+            "complete": false,
+            "status": "replacement_exec_refused",
+            "detail": error.to_string(),
+        }),
+    )?;
+    Err(error.into())
+}
+
+fn preflight_management_profile(path: &std::path::Path) -> Result<WorkspaceProfile, String> {
+    let profile = WorkspaceProfile::load(path).map_err(|error| error.to_string())?;
+    let output = Command::new(std::env::current_exe().map_err(|error| error.to_string())?)
+        .arg("manage")
+        .arg("--workspace-profile")
+        .arg(path)
+        .arg("--check-profile")
+        .output()
+        .map_err(|error| error.to_string())?;
+    if output.status.success() {
+        Ok(profile)
+    } else {
+        let detail = String::from_utf8_lossy(&output.stderr).trim().to_owned();
+        Err(if detail.is_empty() {
+            "replacement profile preflight refused".to_owned()
+        } else {
+            detail
+        })
+    }
+}
+
+fn runtime_status_value(host: Option<&NativeHost>) -> serde_json::Value {
+    let Some(status) = host.map(NativeHost::status) else {
+        return serde_json::json!({
+            "lifecycle": "external",
+            "hosted_peers": [],
+            "reconfiguration_allowed": false,
+            "restart_receipts": [],
+        });
+    };
+    serde_json::json!({
+        "lifecycle": registry_lifecycle_label(status.lifecycle),
+        "hosted_peers": status.hosted_peers.iter().map(hosted_peer_value).collect::<Vec<_>>(),
+        "reconfiguration_allowed": status.reconfiguration_allowed,
+        "restart_receipts": status.restart_receipts.iter().map(|receipt| {
+            let (peer, instance) = hosted_peer_identity(&receipt.peer);
+            serde_json::json!({
+                "peer": peer,
+                "instance": instance,
+                "stopped": shutdown_disposition_label(receipt.stopped),
+                "replacement_started": receipt.replacement_started,
+            })
+        }).collect::<Vec<_>>(),
+    })
+}
+
+fn hosted_peer_value(peer: &HostedPeerId) -> serde_json::Value {
+    let (peer, instance) = hosted_peer_identity(peer);
+    serde_json::json!({"peer":peer, "instance":instance})
+}
+
+fn hosted_peer_identity(peer: &HostedPeerId) -> (&'static str, Option<&str>) {
+    match peer {
+        HostedPeerId::Agora => ("agora", None),
+        HostedPeerId::Moira => ("moira", None),
+        HostedPeerId::Daimon => ("daimon", None),
+        HostedPeerId::Hermes => ("hermes", None),
+        HostedPeerId::Aegis => ("aegis", None),
+        HostedPeerId::Grounding => ("grounding", None),
+        HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
+        HostedPeerId::Vellum => ("vellum", None),
+    }
+}
+
+const fn registry_lifecycle_label(lifecycle: RegistryLifecycle) -> &'static str {
+    match lifecycle {
+        RegistryLifecycle::Assembling => "assembling",
+        RegistryLifecycle::Ready => "ready",
+        RegistryLifecycle::Degraded => "degraded",
+        RegistryLifecycle::Draining => "draining",
+        RegistryLifecycle::Stopped => "stopped",
+    }
+}
+
+const fn shutdown_disposition_label(disposition: ShutdownDisposition) -> &'static str {
+    match disposition {
+        ShutdownDisposition::Clean => "clean",
+        ShutdownDisposition::Refused => "refused",
+        ShutdownDisposition::OutcomeUnknown => "outcome_unknown",
+    }
+}
+
+fn drain_management_session(
+    output: &mut impl Write,
+    session_id: &str,
+    native_host: &mut Option<NativeHost>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let (complete, report) = management_shutdown_report(shutdown_native_host(native_host));
+    write_json_line(
+        output,
+        &serde_json::json!({
+            "version": 1,
+            "mode": "management",
+            "event": "drain",
+            "session_id": session_id,
+            "complete": complete,
+            "shutdown": report,
+        }),
+    )?;
+    if complete {
+        Ok(())
+    } else {
+        Err("management drain incomplete".into())
+    }
+}
+
+fn management_shutdown_report(
+    shutdown: Result<Option<TopologyShutdown>, String>,
+) -> (bool, serde_json::Value) {
+    match shutdown {
+        Ok(None) => (true, serde_json::Value::Null),
+        Ok(Some(receipt)) => {
+            let complete = receipt.clean();
+            let receipts = receipt
+                .receipts
+                .iter()
+                .map(|receipt| {
+                    let (peer, instance) = hosted_peer_identity(&receipt.peer);
+                    serde_json::json!({
+                        "peer": peer,
+                        "instance": instance,
+                        "disposition": shutdown_disposition_label(receipt.disposition),
+                    })
+                })
+                .collect::<Vec<_>>();
+            (complete, serde_json::json!({"receipts":receipts}))
+        }
+        Err(error) => (false, serde_json::json!({"detail":error})),
+    }
+}
+
+fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest {
+    HeadlessRequest {
+        operation_id,
+        workspace: options.workspace_name.clone(),
+        agora: options.agora.clone(),
+        agora_hosted: options.agora_host.is_some(),
+        moira_socket: options.moira_socket.clone(),
+        moira_requires: options.moira_requires.clone(),
+        moira_hosted: options.moira_host.is_some(),
+        daimon_socket: options.daimon_socket.clone(),
+        daimon_agent_socket: options.daimon_agent_socket.clone(),
         daimon_agent_session: options.daimon_agent_session,
-        daimon_requires: options.daimon_requires,
-        hermes_socket: options.hermes_socket,
+        daimon_requires: options.daimon_requires.clone(),
+        daimon_hosted: options.daimon_host.is_some(),
+        hermes_socket: options.hermes_socket.clone(),
         hermes_stream: options.hermes_stream,
         hermes_consumer: options.hermes_consumer,
-        hermes_requires: options.hermes_requires,
-        aegis_socket: options.aegis_socket,
-        aegis_requires: options.aegis_requires,
+        hermes_requires: options.hermes_requires.clone(),
+        hermes_hosted: options.hermes_host.is_some(),
+        aegis_socket: options.aegis_socket.clone(),
+        aegis_requires: options.aegis_requires.clone(),
+        aegis_hosted: options.aegis_host.is_some(),
         grounding_endpoint: options.grounding_endpoint,
-        grounding_token: options.grounding_token,
-        grounding_requires: options.grounding_requires,
-        chronos: options.chronos_streams,
-        chronos_requires: options.chronos_requires,
-        vellum_socket: options.vellum_socket,
-        vellum_credential: options.vellum_credential,
-        vellum_requires: options.vellum_requires,
-    })
-    .map_err(|error| error.into())
+        grounding_token: options.grounding_token.clone(),
+        grounding_requires: options.grounding_requires.clone(),
+        chronos: options
+            .chronos_streams
+            .iter()
+            .map(|stream| Workstream {
+                name: stream.name.clone(),
+                directory: stream.directory.clone(),
+            })
+            .collect(),
+        chronos_requires: options.chronos_requires.clone(),
+        chronos_hosted: options.host_chronos,
+        vellum_socket: options.vellum_socket.clone(),
+        vellum_credential: options.vellum_credential.clone(),
+        vellum_requires: options.vellum_requires.clone(),
+        vellum_hosted: options.host_vellum,
+    }
 }
 
 fn read_grounding_token(path: &std::path::PathBuf) -> Result<String, Box<dyn std::error::Error>> {

@@ -1,8 +1,39 @@
 {
-  "schema": 1,
+  "schema": 2,
   "owner": "pantheon",
   "states": ["not-applicable", "absent", "planned", "implemented", "qualified", "release-qualified"],
+  "capabilityPlanes": ["observation", "operator", "control", "management"],
   "priorArt": ["axon", "engram"],
+  "planeQualification": {
+    "observation": {
+      "state": "qualified",
+      "evidence": ["tests/live/operational_attach.sh", "tests/live/dual_service.sh"]
+    },
+    "operator": {
+      "state": "qualified",
+      "evidence": ["tests/live/moira_attach.sh", "tests/live/daimon_attach.sh", "tests/live/hermes_attach.sh"]
+    },
+    "control": {
+      "state": "qualified",
+      "evidence": ["tests/live/chronos_mutation.sh", "tests/live/moira_reconciliation.sh", "tests/live/vellum_durable_save.sh"]
+    },
+    "management": {
+      "state": "qualified",
+      "profile": "single-user-local-stdio",
+      "evidence": ["cli/tests/profile_cli.rs", "cli/src/registry.rs"],
+      "remaining": ["service-manager and authenticated IPC profiles"]
+    }
+  },
+  "releaseQualification": {
+    "state": "qualified",
+    "profile": "unsigned-local-aarch64-apple-darwin",
+    "sourceContract": "release/source.json",
+    "evidence": ["docs/local-release.md", "scripts/qualify-source.py"],
+    "broaderDistribution": {
+      "state": "planned",
+      "remaining": ["remote publication", "automatic update and artifact rollback", "signing and notarization", "service-manager profiles", "additional platform qualification"]
+    }
+  },
   "peers": {
     "aegis": {
       "owner": "aegis",
@@ -13,6 +44,18 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "authority.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "authority.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
       "mutation": "qualified",
       "mutationCapabilities": {
         "authority.revoke-epoch.v1": "qualified",
@@ -31,6 +74,19 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "rooms.read.v2", "plane": "observation", "state": "qualified" },
+          { "id": "messages.read.v2", "plane": "operator", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "rooms.read.v2", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
       "mutation": "qualified",
       "mutationCapabilities": {
         "rooms.create.v2": "qualified"
@@ -45,7 +101,32 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
-      "mutation": "qualified"
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "tasks.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tasks.mutate.v1", "plane": "control", "state": "qualified", "when": "writes=true" },
+          { "id": "scheduling.observe.v5", "plane": "operator", "state": "qualified", "when": "scheduling=true" },
+          { "id": "scheduling.mutate.v5", "plane": "control", "state": "qualified", "when": "writes=true,scheduling=true" },
+          { "id": "tasks.feed.observe.v3", "plane": "operator", "state": "qualified", "when": "watch=true" },
+          { "id": "planning.observe.v1", "plane": "operator", "state": "qualified", "when": "planning=true" },
+          { "id": "tasks.cancel-receipt.v3", "plane": "control", "state": "qualified", "when": "writes=true,cancel-receipts=true" },
+          { "id": "attempts.moira.inspect.v1", "plane": "operator", "state": "qualified", "when": "moira-binding-selected" },
+          { "id": "attempts.daimon.inspect.v1", "plane": "operator", "state": "qualified", "when": "daimon-binding-selected" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "tasks.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
+      "mutation": "qualified",
+      "mutationCapabilities": {
+        "tasks.mutate.v1": "qualified",
+        "scheduling.mutate.v5": "qualified",
+        "tasks.cancel-receipt.v3": "qualified"
+      }
     },
     "daimon": {
       "owner": "daimon",
@@ -60,6 +141,20 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "agents.presence.v1", "plane": "observation", "state": "qualified", "when": "presence-selected" },
+          { "id": "agents.session.inspect.v1", "plane": "operator", "state": "qualified", "when": "agent-selected" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "agents.presence.v1", "plane": "observation", "state": "qualified", "when": "presence-selected" },
+          { "id": "agents.session.inspect.v1", "plane": "observation", "state": "qualified", "when": "agent-selected" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
       "mutation": "qualified",
       "mutationCapabilities": {
         "agents.session.advance.v1": "qualified",
@@ -79,6 +174,16 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "not-applicable", "headless": "not-applicable" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "grounding.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
+        ],
+        "headless": [
+          { "id": "grounding.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
+        ]
+      },
       "mutation": "not-applicable",
       "nonApplicable": {
         "host": "Dendrite is an independently deployed IDE and agent bridge; Pantheon attaches only to its bounded typed Grounding endpoint.",
@@ -94,6 +199,20 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "ledger.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "ledger.cursor.observe.v1", "plane": "operator", "state": "qualified", "when": "consumer-selected" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "ledger.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "ledger.cursor.observe.v1", "plane": "observation", "state": "qualified", "when": "consumer-selected" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
       "mutation": "qualified",
       "mutationCapabilities": {
         "ledger.acknowledge.v1": "qualified",
@@ -124,11 +243,40 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "sagas.inspect.v1", "plane": "observation", "state": "qualified" },
+          { "id": "sagas.reconciliation.v1", "plane": "operator", "state": "qualified" },
+          { "id": "sagas.evidence.v1", "plane": "operator", "state": "qualified" },
+          { "id": "sagas.operator-receipts.v1", "plane": "operator", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "sagas.inspect.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
       "mutation": "qualified",
       "mutationCapabilities": {
         "sagas.reconciliation.confirmation.v1": "qualified",
         "sagas.reconciliation.confirm.v1": "qualified",
         "sagas.reconciliation.recovery.v1": "qualified"
+      },
+      "uncomposedPeerCapabilities": {
+        "agent.participation.inspect.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.session.observe.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.session.inspect.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.events.observe.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.prompt.submit.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.permission.confirmation-view.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.permission.confirm.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.cancel.confirmation-view.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.cancel.confirm.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.reattach.confirmation-view.v1": { "peer": "qualified", "pantheon": "absent" },
+        "agent.reattach.confirm.v1": { "peer": "qualified", "pantheon": "absent" },
+        "deliberation.inspect.v1": { "peer": "qualified", "pantheon": "absent" }
       }
     },
     "vellum": {
@@ -140,6 +288,20 @@
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "workspace.inventory.v1", "plane": "observation", "state": "qualified" },
+          { "id": "workspace.edit.v1", "plane": "operator", "state": "qualified" },
+          { "id": "workspace.save.v1", "plane": "control", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ],
+        "headless": [
+          { "id": "workspace.inventory.v1", "plane": "observation", "state": "qualified" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
+          { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
+        ]
+      },
       "mutation": "qualified",
       "mutationCapabilities": {
         "workspace.edit.v1": "qualified",

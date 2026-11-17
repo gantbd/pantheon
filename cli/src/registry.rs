@@ -23,6 +23,7 @@ pub enum RegistryLifecycle {
     #[default]
     Assembling,
     Ready,
+    Degraded,
     Draining,
     Stopped,
 }
@@ -43,6 +44,29 @@ pub struct ShutdownReceipt {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TopologyShutdown {
     pub receipts: Vec<ShutdownReceipt>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RestartReceipt {
+    pub peer: HostedPeerId,
+    pub stopped: ShutdownDisposition,
+    pub replacement_started: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RuntimeStatus {
+    pub lifecycle: RegistryLifecycle,
+    pub hosted_peers: Vec<HostedPeerId>,
+    pub reconfiguration_allowed: bool,
+    pub restart_receipts: Vec<RestartReceipt>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum RestartFailure<E> {
+    Lifecycle(RegistryLifecycle),
+    Missing,
+    Stop(RestartReceipt),
+    Start { cause: E, receipt: RestartReceipt },
 }
 
 impl TopologyShutdown {
@@ -78,6 +102,7 @@ pub struct HostRegistry {
     lifecycle: RegistryLifecycle,
     peers: HashSet<HostedPeerId>,
     shutdown: Vec<(HostedPeerId, Shutdown)>,
+    restart_receipts: Vec<RestartReceipt>,
 }
 
 impl Default for HostRegistry {
@@ -92,11 +117,25 @@ impl HostRegistry {
             lifecycle: RegistryLifecycle::Assembling,
             peers: HashSet::new(),
             shutdown: Vec::new(),
+            restart_receipts: Vec::new(),
         }
     }
 
     pub fn lifecycle(&self) -> RegistryLifecycle {
         self.lifecycle
+    }
+
+    pub fn hosted_peers(&self) -> Vec<HostedPeerId> {
+        self.shutdown.iter().map(|(peer, _)| peer.clone()).collect()
+    }
+
+    pub fn status(&self) -> RuntimeStatus {
+        RuntimeStatus {
+            lifecycle: self.lifecycle,
+            hosted_peers: self.hosted_peers(),
+            reconfiguration_allowed: self.lifecycle == RegistryLifecycle::Ready,
+            restart_receipts: self.restart_receipts.clone(),
+        }
     }
 
     /// Starts one peer and returns its concrete client while retaining only its
@@ -157,12 +196,74 @@ impl HostRegistry {
         Ok(())
     }
 
+    /// Restarts one exact hosted peer without disturbing its siblings. The
+    /// replacement factory is invoked only after a confirmed clean stop. A
+    /// refused or uncertain stop is retained as unresolved drain evidence and
+    /// fences further reconfiguration by moving the registry to `Degraded`.
+    pub fn restart<C, E, S>(
+        &mut self,
+        peer: HostedPeerId,
+        start: impl FnOnce() -> Result<(C, S), E>,
+    ) -> Result<(C, RestartReceipt), RestartFailure<E>>
+    where
+        S: FnMut() -> ShutdownDisposition + Send + 'static,
+    {
+        if self.lifecycle != RegistryLifecycle::Ready {
+            return Err(RestartFailure::Lifecycle(self.lifecycle));
+        }
+        let Some(index) = self
+            .shutdown
+            .iter()
+            .position(|(candidate, _)| candidate == &peer)
+        else {
+            return Err(RestartFailure::Missing);
+        };
+        let (_, mut shutdown) = self.shutdown.remove(index);
+        let stopped = shutdown();
+        let receipt = RestartReceipt {
+            peer: peer.clone(),
+            stopped,
+            replacement_started: false,
+        };
+        if stopped != ShutdownDisposition::Clean {
+            self.lifecycle = RegistryLifecycle::Degraded;
+            self.restart_receipts.push(receipt.clone());
+            self.shutdown.insert(
+                index,
+                (
+                    peer,
+                    Box::new(move || stopped) as Box<dyn FnMut() -> ShutdownDisposition + Send>,
+                ),
+            );
+            return Err(RestartFailure::Stop(receipt));
+        }
+        self.peers.remove(&peer);
+        let (client, replacement_shutdown) = match start() {
+            Ok(replacement) => replacement,
+            Err(cause) => {
+                self.lifecycle = RegistryLifecycle::Degraded;
+                self.restart_receipts.push(receipt.clone());
+                return Err(RestartFailure::Start { cause, receipt });
+            }
+        };
+        self.peers.insert(peer.clone());
+        self.shutdown
+            .insert(index, (peer.clone(), Box::new(replacement_shutdown)));
+        let receipt = RestartReceipt {
+            peer,
+            stopped,
+            replacement_started: true,
+        };
+        self.restart_receipts.push(receipt.clone());
+        Ok((client, receipt))
+    }
+
     /// Drains in reverse startup order. Every callback is attempted exactly
     /// once; refused or uncertain peers do not suppress later receipts.
     pub fn shutdown(&mut self) -> Result<TopologyShutdown, RegistryError> {
         if !matches!(
             self.lifecycle,
-            RegistryLifecycle::Assembling | RegistryLifecycle::Ready
+            RegistryLifecycle::Assembling | RegistryLifecycle::Ready | RegistryLifecycle::Degraded
         ) {
             return Err(RegistryError::Lifecycle(self.lifecycle));
         }
@@ -295,6 +396,120 @@ mod tests {
                 Ok::<_, ()>(((), || ShutdownDisposition::Clean))
             }),
             Err(StartError::Lifecycle(RegistryLifecycle::Ready))
+        );
+    }
+
+    #[test]
+    fn restart_requires_clean_stop_and_preserves_exact_receipts() {
+        let mut registry = HostRegistry::new();
+        registry
+            .start(HostedPeerId::Chronos("Atlas".into()), || {
+                Ok::<_, ()>(("first", || ShutdownDisposition::Clean))
+            })
+            .unwrap();
+        registry.seal().unwrap();
+        let (client, receipt) = registry
+            .restart(HostedPeerId::Chronos("Atlas".into()), || {
+                Ok::<_, ()>(("replacement", || ShutdownDisposition::Clean))
+            })
+            .unwrap();
+        assert_eq!(client, "replacement");
+        assert_eq!(
+            receipt,
+            RestartReceipt {
+                peer: HostedPeerId::Chronos("Atlas".into()),
+                stopped: ShutdownDisposition::Clean,
+                replacement_started: true,
+            }
+        );
+        assert_eq!(registry.lifecycle(), RegistryLifecycle::Ready);
+        assert_eq!(
+            registry.status(),
+            RuntimeStatus {
+                lifecycle: RegistryLifecycle::Ready,
+                hosted_peers: vec![HostedPeerId::Chronos("Atlas".into())],
+                reconfiguration_allowed: true,
+                restart_receipts: vec![receipt],
+            }
+        );
+        assert!(registry.shutdown().unwrap().clean());
+    }
+
+    #[test]
+    fn uncertain_restart_fences_reconfiguration_and_survives_final_drain() {
+        let mut registry = HostRegistry::new();
+        registry
+            .start(HostedPeerId::Agora, || {
+                Ok::<_, ()>(((), || ShutdownDisposition::OutcomeUnknown))
+            })
+            .unwrap();
+        registry.seal().unwrap();
+        let mut replacement_invoked = false;
+        let failure = registry.restart(HostedPeerId::Agora, || {
+            replacement_invoked = true;
+            Ok::<_, ()>(((), || ShutdownDisposition::Clean))
+        });
+        assert_eq!(
+            failure,
+            Err(RestartFailure::Stop(RestartReceipt {
+                peer: HostedPeerId::Agora,
+                stopped: ShutdownDisposition::OutcomeUnknown,
+                replacement_started: false,
+            }))
+        );
+        assert!(!replacement_invoked);
+        assert_eq!(registry.lifecycle(), RegistryLifecycle::Degraded);
+        let status = registry.status();
+        assert!(!status.reconfiguration_allowed);
+        assert_eq!(status.hosted_peers, vec![HostedPeerId::Agora]);
+        assert_eq!(status.restart_receipts.len(), 1);
+        assert_eq!(
+            status.restart_receipts[0].stopped,
+            ShutdownDisposition::OutcomeUnknown
+        );
+        assert_eq!(
+            registry.shutdown().unwrap().receipts,
+            vec![ShutdownReceipt {
+                peer: HostedPeerId::Agora,
+                disposition: ShutdownDisposition::OutcomeUnknown,
+            }]
+        );
+    }
+
+    #[test]
+    fn failed_replacement_leaves_a_degraded_but_drainable_topology() {
+        let mut registry = HostRegistry::new();
+        registry
+            .start(HostedPeerId::Agora, || {
+                Ok::<_, &'static str>(((), || ShutdownDisposition::Clean))
+            })
+            .unwrap();
+        registry
+            .start(HostedPeerId::Vellum, || {
+                Ok::<_, &'static str>(((), || ShutdownDisposition::Clean))
+            })
+            .unwrap();
+        registry.seal().unwrap();
+        assert_eq!(
+            registry.restart(HostedPeerId::Agora, || {
+                Err::<((), fn() -> ShutdownDisposition), _>("replacement refused")
+            }),
+            Err(RestartFailure::Start {
+                cause: "replacement refused",
+                receipt: RestartReceipt {
+                    peer: HostedPeerId::Agora,
+                    stopped: ShutdownDisposition::Clean,
+                    replacement_started: false,
+                },
+            })
+        );
+        assert_eq!(registry.lifecycle(), RegistryLifecycle::Degraded);
+        assert_eq!(
+            registry.shutdown().unwrap().receipts,
+            vec![ShutdownReceipt {
+                peer: HostedPeerId::Vellum,
+                disposition: ShutdownDisposition::Clean,
+            }]
         );
     }
 }

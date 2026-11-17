@@ -608,9 +608,9 @@ fn validate_required_capabilities(values: &[String]) -> Result<(), &'static str>
     for (index, value) in values.iter().enumerate() {
         if value.is_empty()
             || value.len() > MAX_CAPABILITY_BYTES
-            || !value
-                .bytes()
-                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.')
+            || !value.bytes().all(|byte| {
+                byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.' || byte == b'-'
+            })
         {
             return Err("required capability identifier is invalid");
         }
@@ -1010,6 +1010,23 @@ mod tests {
           "chronos":null,"vellum":null
         }"#;
         assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn profile_accepts_published_hyphenated_capability_identifiers() {
+        let profile = WorkspaceProfile::parse(
+            br#"{
+              "version":1,"name":"Hyphenated capability","surfaces":["workspace"],
+              "agora":null,"chronos":null,
+              "vellum":{"socket":"vellum.sock","credential":null,"requires":["workspace.durable-save.execute.v1"]}
+            }"#,
+            Path::new("/profiles"),
+        )
+        .unwrap();
+        assert_eq!(
+            profile.vellum.unwrap().requires,
+            ["workspace.durable-save.execute.v1"]
+        );
     }
 
     #[test]

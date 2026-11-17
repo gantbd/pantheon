@@ -16,38 +16,50 @@ use vellum_sdk_client::{
     workspace::WorkspaceClientV1,
 };
 
+use crate::capabilities::{self, Mode};
+use crate::management::PeerRuntime;
 use crate::profile::{AgoraProfile, AgoraTransportProfile};
 
 pub struct HeadlessRequest {
+    pub operation_id: String,
     pub workspace: String,
     pub agora: Option<AgoraProfile>,
+    pub agora_hosted: bool,
     pub moira_socket: Option<PathBuf>,
     pub moira_requires: Vec<String>,
+    pub moira_hosted: bool,
     pub daimon_socket: Option<PathBuf>,
     pub daimon_agent_socket: Option<PathBuf>,
     pub daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     pub daimon_requires: Vec<String>,
+    pub daimon_hosted: bool,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
     pub hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
     pub hermes_requires: Vec<String>,
+    pub hermes_hosted: bool,
     pub aegis_socket: Option<PathBuf>,
     pub aegis_requires: Vec<String>,
+    pub aegis_hosted: bool,
     pub grounding_endpoint: Option<SocketAddr>,
     pub grounding_token: Option<PathBuf>,
     pub grounding_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
     pub chronos_requires: Vec<String>,
+    pub chronos_hosted: bool,
     pub vellum_socket: Option<PathBuf>,
     pub vellum_credential: Option<PathBuf>,
     pub vellum_requires: Vec<String>,
+    pub vellum_hosted: bool,
 }
 
 #[derive(Debug)]
 pub struct HeadlessObservation {
+    pub operation_id: String,
     pub workspace: String,
     pub complete: bool,
     pub peers: Vec<serde_json::Value>,
+    pub management: Vec<PeerRuntime>,
 }
 
 /// Observes every configured peer through its ordinary public client without
@@ -55,55 +67,93 @@ pub struct HeadlessObservation {
 /// another peer refuses or has an uncertain transport outcome.
 pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> {
     if let Some(profile) = &request.agora {
-        negotiate("agora", &profile.requires, agora_tui::CAPABILITIES.headless)?;
+        capabilities::negotiate(
+            "agora",
+            Mode::Headless,
+            &profile.requires,
+            &capabilities::agora(Mode::Headless, request.agora_hosted),
+        )?;
     }
-    negotiate(
+    capabilities::negotiate(
         "moira",
+        Mode::Headless,
         &request.moira_requires,
-        moira_tui::CAPABILITIES.headless,
+        &capabilities::moira(Mode::Headless, request.moira_hosted),
     )?;
-    negotiate(
+    capabilities::negotiate(
         "daimon",
+        Mode::Headless,
         &request.daimon_requires,
-        daimon_tui::CAPABILITIES.headless,
+        &capabilities::daimon(
+            Mode::Headless,
+            request.daimon_hosted,
+            request.daimon_socket.is_some(),
+            request.daimon_agent_socket.is_some() && request.daimon_agent_session.is_some(),
+        ),
     )?;
-    negotiate(
+    capabilities::negotiate(
         "hermes",
+        Mode::Headless,
         &request.hermes_requires,
-        hermes_tui::CAPABILITIES.headless,
+        &capabilities::hermes(
+            Mode::Headless,
+            request.hermes_hosted,
+            request.hermes_consumer.is_some(),
+        ),
     )?;
-    negotiate(
+    capabilities::negotiate(
         "aegis",
+        Mode::Headless,
         &request.aegis_requires,
-        aegis_tui::CAPABILITIES.headless,
+        &capabilities::aegis(request.aegis_hosted),
     )?;
-    negotiate(
+    capabilities::negotiate(
         "grounding",
+        Mode::Headless,
         &request.grounding_requires,
-        tellus::CAPABILITIES.headless,
+        &capabilities::grounding(),
     )?;
-    negotiate(
+    capabilities::negotiate(
         "chronos",
+        Mode::Headless,
         &request.chronos_requires,
-        chronos_tui::CAPABILITIES.headless,
+        &capabilities::chronos(
+            Mode::Headless,
+            request.chronos_hosted,
+            capabilities::ChronosFeatures::default(),
+        ),
     )?;
-    negotiate(
+    capabilities::negotiate(
         "vellum",
+        Mode::Headless,
         &request.vellum_requires,
-        vellum_tui::CAPABILITIES.headless,
+        &capabilities::vellum(Mode::Headless, request.vellum_hosted),
     )?;
     let mut peers = Vec::new();
+    let mut management = Vec::new();
     let mut complete = true;
 
     if let Some(profile) = request.agora {
         let (observation, current) = observe_agora(profile);
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.agora_hosted,
+        );
     }
     if let Some(socket) = request.moira_socket {
         let (observation, current) = observe_moira(socket);
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.moira_hosted,
+        );
     }
     if request.daimon_socket.is_some() || request.daimon_agent_socket.is_some() {
         let (observation, current) = observe_daimon(
@@ -111,43 +161,94 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             request.daimon_agent_socket,
             request.daimon_agent_session,
         );
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.daimon_hosted,
+        );
     }
     if let Some(socket) = request.hermes_socket {
         let (observation, current) =
             observe_hermes(socket, request.hermes_stream, request.hermes_consumer);
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.hermes_hosted,
+        );
     }
     if let Some(socket) = request.aegis_socket {
         let (observation, current) = observe_aegis(socket);
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.aegis_hosted,
+        );
     }
     if let Some(endpoint) = request.grounding_endpoint {
         let (observation, current) = observe_grounding(endpoint, request.grounding_token.as_ref());
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            false,
+        );
     }
     for workstream in request.chronos {
         let (observation, current) = observe_chronos(workstream);
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.chronos_hosted,
+        );
     }
     if let Some(socket) = request.vellum_socket {
         let (observation, current) = observe_vellum(socket, request.vellum_credential.as_ref());
-        peers.push(observation);
-        complete &= current;
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            request.vellum_hosted,
+        );
     }
     if peers.is_empty() {
         return Err("headless observation requires at least one configured peer".into());
     }
     Ok(HeadlessObservation {
+        operation_id: request.operation_id,
         workspace: request.workspace,
         complete,
         peers,
+        management,
     })
+}
+
+fn record_observation(
+    peers: &mut Vec<serde_json::Value>,
+    management: &mut Vec<PeerRuntime>,
+    complete: &mut bool,
+    observation: serde_json::Value,
+    current: bool,
+    hosted: bool,
+) {
+    management.push(PeerRuntime::from_observation(&observation, hosted));
+    peers.push(observation);
+    *complete &= current;
 }
 
 fn observe_grounding(
@@ -627,17 +728,6 @@ fn moira_client_failure(
     )
 }
 
-fn negotiate(peer: &str, required: &[String], supported: &[&str]) -> Result<(), String> {
-    for capability in required {
-        if !supported.contains(&capability.as_str()) {
-            return Err(format!(
-                "{peer} does not support required headless capability {capability}"
-            ));
-        }
-    }
-    Ok(())
-}
-
 fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
     use agora_client::v2::ClientErrorV2;
     use agora_protocol::v2::{CommandV2, OutcomeV2, ReplyV2};
@@ -908,6 +998,7 @@ mod tests {
     #[test]
     fn requirements_are_refused_before_any_peer_connection() {
         let failure = observe(HeadlessRequest {
+            operation_id: "test-gate".into(),
             workspace: "gate".into(),
             agora: Some(AgoraProfile {
                 deployment: crate::profile::DeploymentMode::Attach,
@@ -917,31 +1008,38 @@ mod tests {
                 host: None,
                 requires: vec!["messages.read.v2".into()],
             }),
+            agora_hosted: false,
             moira_socket: None,
             moira_requires: Vec::new(),
+            moira_hosted: false,
             daimon_socket: None,
             daimon_agent_socket: None,
             daimon_agent_session: None,
             daimon_requires: Vec::new(),
+            daimon_hosted: false,
             hermes_socket: None,
             hermes_stream: None,
             hermes_consumer: None,
             hermes_requires: Vec::new(),
+            hermes_hosted: false,
             aegis_socket: None,
             aegis_requires: Vec::new(),
+            aegis_hosted: false,
             grounding_endpoint: None,
             grounding_token: None,
             grounding_requires: Vec::new(),
             chronos: Vec::new(),
             chronos_requires: Vec::new(),
+            chronos_hosted: false,
             vellum_socket: None,
             vellum_credential: None,
             vellum_requires: Vec::new(),
+            vellum_hosted: false,
         })
         .unwrap_err();
         assert_eq!(
             failure,
-            "agora does not support required headless capability messages.read.v2"
+            "agora does not deliver required headless route capability messages.read.v2"
         );
     }
 }

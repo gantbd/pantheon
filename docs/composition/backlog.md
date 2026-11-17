@@ -277,6 +277,20 @@ read-only input until that repository settles.
   a later product decision with concrete deployment, credential, signing and
   support profiles.
 
+## P5 — single-machine management
+
+- [x] Classify exact route capabilities by plane and keep guarded controls
+  discoverable without admitting them to aggregate observation routes.
+- [x] Expose bounded local runtime status, live observation, certainty/fencing,
+  revisions where available, and exact reverse-drain receipts over stdio.
+- [x] Correlate observations, drains, and restarts with a bounded local operation
+  identifier that is never reused as peer identity, authority, or idempotency.
+- [x] Preflight a whole replacement profile before draining, fence on any
+  non-clean shutdown, and retain the stdio supervisor channel across exact
+  Pantheon process replacement.
+- [x] Defer service-manager, authenticated IPC, fleet, remote, and GUI
+  management profiles until a concrete deployment and credential model exists.
+
 ## Exit evidence for every claimed cell
 
 For each claimed cell record the exact source state, public client, capability
