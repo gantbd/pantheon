@@ -25,7 +25,7 @@
     },
     "daimon": {
       "repository": "https://github.com/gantbd/daimon",
-      "revision": "33575c65f55fc8703c044d30515b2ab1fd0dd13e",
+      "revision": "65dc2cd3ea596a3839d01ac08c16f3dff03209bd",
       "workingTreeClean": true
     },
     "daimonTui": {
