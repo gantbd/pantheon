@@ -2169,8 +2169,12 @@ fn moira_participation_gate_proves_restart_and_honest_failure_projections() {
         "connect_refused",
         "read-refused",
         "Current governed revision 2",
+        "accountable_owner",
+        "principal_type",
+        "missing_facts",
         "persona: Researcher",
         "grounding depth: Activated",
+        "not published: role/work mode · scope · delegation · budgets",
     ] {
         assert!(
             gate.contains(required),

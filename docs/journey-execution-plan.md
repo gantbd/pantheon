@@ -81,9 +81,13 @@ for governed agent participation. Pantheon is a client and projection host.
   sovereign human/freeform participation record proves the shared fields.
 - [ ] Project current and prior owner revision consistently without copying the
   semantic record into Pantheon.
-- [ ] Show principal type, role/work mode, scope, delegation and authority
+- [x] Show principal type, role/work mode, scope, delegation and authority
   references, budgets, grounding, accountable owner, policy epoch and expiry
   where the selected owner actually publishes them; keep missing facts visible.
+  Pantheon headless and Moira's reusable TUI now expose every published binding,
+  method and grounding reference while explicitly identifying role/work mode,
+  scope, delegation, budgets, authority reference, policy epoch, expiry and an
+  accountable human as not published by this owner.
 - [ ] Prove that a role label grants no authority and a stale client cannot
   overwrite a newer transition.
 

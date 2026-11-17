@@ -91,6 +91,17 @@ fn restarted_owner_preserves_current_not_found_refusal_and_transport_truth() {
     assert_eq!(peer["status"], "current");
     assert_eq!(peer["revision"], 2);
     assert_eq!(peer["phase"], "Ready");
+    assert_eq!(peer["accountable_owner"], "moira");
+    assert_eq!(peer["principal_type"], "agent");
+    assert_eq!(
+        peer["binding"]["workflow"],
+        "03030303030303030303030303030303"
+    );
+    assert_eq!(peer["binding"]["persona"], "Researcher");
+    assert_eq!(peer["binding"]["grounding"]["depth"], "Activated");
+    assert_eq!(peer["missing_facts"][0], "role_or_work_mode");
+    assert_eq!(peer["missing_facts"][2], "delegation");
+    assert_eq!(peer["missing_facts"][8], "accountable_human");
 
     let missing = observe(request(
         &fixture.socket,
@@ -164,6 +175,9 @@ fn restarted_owner_preserves_current_not_found_refusal_and_transport_truth() {
     };
     assert!(rendered.contains("persona: Researcher"));
     assert!(rendered.contains("grounding depth: Activated"));
+    assert!(rendered.contains("principal type: agent"));
+    assert!(rendered.contains("accountable owner: Moira"));
+    assert!(rendered.contains("not published: role/work mode · scope · delegation · budgets"));
     restarted.join().unwrap();
 
     let refused = serve(&fixture, false, 1);
