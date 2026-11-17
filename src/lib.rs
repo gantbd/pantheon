@@ -2,15 +2,22 @@
 #![forbid(unsafe_code)]
 
 mod shell;
+mod workbench;
 
 pub use shell::{Shell, ShellInput, Surface, shell_input};
+pub use workbench::{
+    ActionMetric, ActivityEntry, ActivityLevel, ActivityLog, CommandKind, CommandPalette,
+    CommandSpec, Instrumentation, OperationTrace, PaletteOutcome, TraceStage, draw_activity,
+    draw_command_palette, draw_help, draw_inspector,
+};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Wrap},
 };
 use vellum_tui::EditorFrame;
 
@@ -118,13 +125,28 @@ pub fn draw_shell(
         PeerViews {
             chronos,
             vellum,
+            vellum_atomic_replace: None,
+            vellum_durable_save: None,
             agora,
+            agora_create: None,
+            agora_message: None,
             moira: None,
+            moira_reconciliation: None,
             daimon: None,
             daimon_agent: None,
+            daimon_permission: None,
+            daimon_prompt: None,
+            daimon_control: None,
             hermes: None,
+            hermes_compaction: None,
+            hermes_disclosure: None,
+            hermes_acknowledge: None,
             aegis: None,
+            aegis_managed: None,
+            aegis_revoke: None,
             grounding: None,
+            operations: None,
+            health: None,
         },
         focus,
         notice,
@@ -134,13 +156,68 @@ pub fn draw_shell(
 pub struct PeerViews<'a> {
     pub chronos: Option<&'a chronos_tui::Hub>,
     pub vellum: Option<&'a EditorFrame>,
+    pub vellum_atomic_replace: Option<&'a vellum_tui::AtomicReplaceComponent>,
+    pub vellum_durable_save: Option<&'a vellum_tui::DurableSaveBatchComponent>,
     pub agora: Option<&'a agora_tui::Component>,
+    pub agora_create: Option<&'a agora_tui::CreateRoomComponent>,
+    pub agora_message: Option<&'a agora_tui::ComposeMessageComponent>,
     pub moira: Option<&'a moira_tui::Component>,
+    pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
-    pub daimon_agent: Option<&'a daimon_tui::AgentComponent>,
+    pub daimon_agent: Option<&'a daimon_tui::AgentSetComponent>,
+    pub daimon_permission: Option<&'a daimon_tui::AgentPermissionComposer>,
+    pub daimon_prompt: Option<&'a daimon_tui::AgentPromptComposer>,
+    pub daimon_control: Option<&'a daimon_tui::AgentControlBatchComponent>,
     pub hermes: Option<&'a hermes_tui::Component>,
+    pub hermes_compaction: Option<&'a hermes_tui::CompactionComponent>,
+    pub hermes_disclosure: Option<&'a hermes_tui::DisclosureComponent>,
+    pub hermes_acknowledge: Option<&'a hermes_tui::AcknowledgeComponent>,
     pub aegis: Option<&'a aegis_tui::Component>,
+    pub aegis_managed: Option<&'a aegis_tui::ManagedAuthorityComponent>,
+    pub aegis_revoke: Option<&'a aegis_tui::RevokeEpochComponent>,
     pub grounding: Option<&'a tellus::Component>,
+    pub operations: Option<&'a OperationsView>,
+    pub health: Option<&'a SuiteHealthView>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PeerHealthState {
+    Unobserved,
+    Observing,
+    Current,
+    Degraded,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PeerHealthView {
+    pub peer: &'static str,
+    pub channel: &'static str,
+    pub state: PeerHealthState,
+    pub age_millis: Option<u64>,
+    pub busy: bool,
+    pub uncertain: bool,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct SuiteHealthView {
+    pub peers: Vec<PeerHealthView>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OperationsReceiptView {
+    pub peer: String,
+    pub disposition: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OperationsView {
+    pub lifecycle: String,
+    pub reconfiguration_allowed: bool,
+    pub hosted_peers: Vec<String>,
+    pub drain_pending: bool,
+    pub drain_armed: bool,
+    pub receipts: Vec<OperationsReceiptView>,
+    pub notice: String,
 }
 
 /// Draws the shell with an independently hosted Moira workflow peer.
@@ -155,28 +232,73 @@ pub fn draw_shell_with_moira(
     let PeerViews {
         chronos,
         vellum,
+        vellum_atomic_replace,
+        vellum_durable_save,
         agora,
+        agora_create,
+        agora_message,
         moira,
+        moira_reconciliation,
         daimon,
         daimon_agent,
+        daimon_permission,
+        daimon_prompt,
+        daimon_control,
         hermes,
+        hermes_compaction,
+        hermes_disclosure,
+        hermes_acknowledge,
         aegis,
+        aegis_managed,
+        aegis_revoke,
         grounding,
+        operations,
+        health,
     } = peers;
-    let [tabs, header, body] = Layout::vertical([
+    let [brand, tabs, body, status] = Layout::vertical([
         Constraint::Length(1),
         Constraint::Length(1),
         Constraint::Min(0),
+        Constraint::Length(1),
     ])
     .areas(frame.area());
+    frame.render_widget(
+        Paragraph::new(Line::from(vec![
+            Span::styled(
+                " PANTHEON ",
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("  {}", shell.active().label()),
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                "  •  local operations workbench",
+                Style::default().fg(Color::DarkGray),
+            ),
+        ])),
+        brand,
+    );
     let tab_line = shell
         .surfaces()
         .iter()
         .map(|surface| {
             if *surface == shell.active() {
-                Span::raw(format!("[{}] ", surface.label()))
+                Span::styled(
+                    format!(" {} ", surface.label()),
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                )
             } else {
-                Span::raw(format!(" {}  ", surface.label()))
+                Span::styled(
+                    format!(" {} ", surface.label()),
+                    Style::default().fg(Color::DarkGray),
+                )
             }
         })
         .collect::<Vec<_>>();
@@ -184,10 +306,19 @@ pub fn draw_shell_with_moira(
     let [chronos_area, vellum_area] =
         Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(body);
     frame.render_widget(
-        Paragraph::new(format!(
-            "Pantheon | [/] surfaces | focus={focus:?} | Tab switches | Ctrl-Q exits | {notice}"
-        )),
-        header,
+        Paragraph::new(Line::from(vec![
+            Span::styled(
+                format!(" {notice}"),
+                Style::default().fg(Color::LightCyan),
+            ),
+            Span::styled(
+                format!(
+                    "  │  focus={focus:?}  │  Ctrl-P actions  F1 help  Ctrl-G activity  [/] surfaces  Ctrl-Q exit"
+                ),
+                Style::default().fg(Color::DarkGray),
+            ),
+        ])),
+        status,
     );
     match shell.active() {
         Surface::Workspace => {
@@ -200,7 +331,11 @@ pub fn draw_shell_with_moira(
                     chronos_area,
                 );
             }
-            if let Some(vellum) = vellum {
+            if let Some(control) = vellum_atomic_replace {
+                control.draw_in(frame, vellum_area, true);
+            } else if let Some(control) = vellum_durable_save {
+                control.draw_in(frame, vellum_area, true);
+            } else if let Some(vellum) = vellum {
                 vellum_tui::draw_in(frame, vellum_area, vellum, None);
             } else {
                 vellum_tui::draw_empty_in(
@@ -224,12 +359,43 @@ pub fn draw_shell_with_moira(
                 aegis: aegis.is_some(),
                 grounding: grounding.is_some(),
             },
+            health,
         ),
+        Surface::Agora if agora_message.is_some() => {
+            agora_message
+                .expect("checked above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Agora if agora_create.is_some() => {
+            agora_create
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
         Surface::Agora if agora.is_some() => {
             agora.expect("matched above").draw_in(frame, body, true);
         }
+        Surface::Moira if moira_reconciliation.is_some() => {
+            moira_reconciliation
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
         Surface::Moira if moira.is_some() => {
             moira.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Daimon if daimon_permission.is_some() => {
+            daimon_permission
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Daimon if daimon_prompt.is_some() => {
+            daimon_prompt
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Daimon if daimon_control.is_some() => {
+            daimon_control
+                .expect("matched above")
+                .draw_in(frame, body, true);
         }
         Surface::Daimon if daimon.is_some() && daimon_agent.is_some() => {
             let [presence, agent] =
@@ -250,14 +416,42 @@ pub fn draw_shell_with_moira(
         Surface::Daimon if daimon.is_some() => {
             daimon.expect("matched above").draw_in(frame, body, true);
         }
+        Surface::Hermes if hermes_compaction.is_some() => {
+            hermes_compaction
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Hermes if hermes_disclosure.is_some() => {
+            hermes_disclosure
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Hermes if hermes_acknowledge.is_some() => {
+            hermes_acknowledge
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
         Surface::Hermes if hermes.is_some() => {
             hermes.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Aegis if aegis_managed.is_some() => {
+            aegis_managed
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Aegis if aegis_revoke.is_some() => {
+            aegis_revoke
+                .expect("matched above")
+                .draw_in(frame, body, true);
         }
         Surface::Aegis if aegis.is_some() => {
             aegis.expect("matched above").draw_in(frame, body, true);
         }
         Surface::Grounding if grounding.is_some() => {
             grounding.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Operations if operations.is_some() => {
+            draw_operations(frame, body, operations.expect("matched above"));
         }
         surface => {
             frame.render_widget(
@@ -270,6 +464,103 @@ pub fn draw_shell_with_moira(
             );
         }
     }
+}
+
+fn draw_operations(frame: &mut Frame<'_>, area: ratatui::layout::Rect, view: &OperationsView) {
+    let [summary, peers, receipts, footer] = Layout::vertical([
+        Constraint::Length(5),
+        Constraint::Length(5),
+        Constraint::Min(3),
+        Constraint::Length(2),
+    ])
+    .areas(area);
+    let lifecycle_color = if view.lifecycle.contains("ready") {
+        Color::Green
+    } else if view.lifecycle.contains("stopped") {
+        Color::DarkGray
+    } else {
+        Color::Yellow
+    };
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from(vec![
+                Span::raw("topology: "),
+                Span::styled(
+                    view.lifecycle.as_str(),
+                    Style::default()
+                        .fg(lifecycle_color)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ]),
+            Line::from(format!(
+                "reconfiguration: {}",
+                if view.reconfiguration_allowed {
+                    "allowed"
+                } else {
+                    "fenced"
+                }
+            )),
+            Line::from(format!(
+                "drain: {}",
+                if view.drain_pending {
+                    "pending"
+                } else if view.drain_armed {
+                    "ARMED"
+                } else {
+                    "idle"
+                }
+            )),
+        ])
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Local topology "),
+        ),
+        summary,
+    );
+    let peer_lines = if view.hosted_peers.is_empty() {
+        vec![Line::from(
+            "No Pantheon-hosted peers; configured peers are externally owned",
+        )]
+    } else {
+        view.hosted_peers
+            .iter()
+            .map(|peer| Line::from(format!("• {peer}")))
+            .collect()
+    };
+    frame.render_widget(
+        Paragraph::new(peer_lines).block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" Hosted peers "),
+        ),
+        peers,
+    );
+    let receipt_lines = if view.receipts.is_empty() {
+        vec![Line::from("No retained lifecycle receipts")]
+    } else {
+        view.receipts
+            .iter()
+            .map(|receipt| Line::from(format!("{}  {}", receipt.peer, receipt.disposition)))
+            .collect()
+    };
+    frame.render_widget(
+        Paragraph::new(receipt_lines)
+            .wrap(Wrap { trim: false })
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(" Drain receipts "),
+            ),
+        receipts,
+    );
+    frame.render_widget(
+        Paragraph::new(format!(
+            "{} • c arm drain • Enter confirm • Ctrl-P actions",
+            view.notice
+        )),
+        footer,
+    );
 }
 
 struct PeerAvailability {
@@ -288,6 +579,7 @@ fn draw_overview(
     area: ratatui::layout::Rect,
     shell: &Shell,
     peers: PeerAvailability,
+    health: Option<&SuiteHealthView>,
 ) {
     // Profile-selected gaps are actionable composition evidence. Keep them
     // ahead of the complete peer inventory so a short terminal cannot hide a
@@ -301,78 +593,130 @@ fn draw_overview(
             Surface::Hermes => peers.hermes,
             Surface::Aegis => peers.aegis,
             Surface::Grounding => peers.grounding,
-            Surface::Overview | Surface::Workspace => true,
+            Surface::Overview | Surface::Workspace | Surface::Operations => true,
         };
         if !attached && let Some(gap) = surface.gap() {
             lines.push(Line::from(format!("{}: gap — {gap}", surface.label())));
         }
     }
-    lines.extend([
-        Line::from(format!(
-            "Chronos: {}",
-            if peers.chronos {
-                "attached"
+    if let Some(health) = health {
+        let current = health
+            .peers
+            .iter()
+            .filter(|peer| peer.state == PeerHealthState::Current)
+            .count();
+        let observing = health
+            .peers
+            .iter()
+            .filter(|peer| peer.state == PeerHealthState::Observing)
+            .count();
+        let degraded = health
+            .peers
+            .iter()
+            .filter(|peer| peer.state == PeerHealthState::Degraded)
+            .count();
+        let unobserved = health.peers.len() - current - observing - degraded;
+        lines.push(Line::from(format!(
+            "health: {current} current · {observing} observing · {degraded} degraded · {unobserved} unobserved"
+        )));
+        lines.push(Line::from(""));
+        for peer in &health.peers {
+            let symbol = match peer.state {
+                PeerHealthState::Unobserved => "○",
+                PeerHealthState::Observing => "…",
+                PeerHealthState::Current => "✓",
+                PeerHealthState::Degraded => "!",
+            };
+            let state = match peer.state {
+                PeerHealthState::Unobserved => "configured; no settled observation",
+                PeerHealthState::Observing => "observing",
+                PeerHealthState::Current => "current",
+                PeerHealthState::Degraded => "degraded; current projection unavailable",
+            };
+            let age = peer
+                .age_millis
+                .map_or(String::new(), |age| format!(" · evidence {age}ms ago"));
+            let busy = if peer.busy { " · busy" } else { "" };
+            let uncertain = if peer.uncertain {
+                " · OUTCOME UNCERTAIN"
             } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Vellum: {}",
-            if peers.vellum {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Agora: {}",
-            if peers.agora {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Moira: {}",
-            if peers.moira {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Daimon: {}",
-            if peers.daimon {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Hermes: {}",
-            if peers.hermes {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Aegis: {}",
-            if peers.aegis {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-        Line::from(format!(
-            "Grounding: {}",
-            if peers.grounding {
-                "attached"
-            } else {
-                "not configured"
-            }
-        )),
-    ]);
+                ""
+            };
+            lines.push(Line::from(format!(
+                "{symbol} {} / {}: {state}{age}{busy}{uncertain}",
+                peer.peer, peer.channel
+            )));
+        }
+        lines.push(Line::from(""));
+    }
+    if health.is_none() {
+        lines.extend([
+            Line::from(format!(
+                "Chronos: {}",
+                if peers.chronos {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Vellum: {}",
+                if peers.vellum {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Agora: {}",
+                if peers.agora {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Moira: {}",
+                if peers.moira {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Daimon: {}",
+                if peers.daimon {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Hermes: {}",
+                if peers.hermes {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Aegis: {}",
+                if peers.aegis {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+            Line::from(format!(
+                "Grounding: {}",
+                if peers.grounding {
+                    "attached"
+                } else {
+                    "not configured"
+                }
+            )),
+        ]);
+    }
     frame.render_widget(
         Paragraph::new(lines).block(
             Block::default()
@@ -561,6 +905,74 @@ mod tests {
     }
 
     #[test]
+    fn overview_distinguishes_evidence_health_busy_and_uncertain_state() {
+        let shell = Shell::new(vec![Surface::Overview]).unwrap();
+        let health = SuiteHealthView {
+            peers: vec![
+                PeerHealthView {
+                    peer: "chronos",
+                    channel: "tasks",
+                    state: PeerHealthState::Current,
+                    age_millis: Some(12),
+                    busy: false,
+                    uncertain: false,
+                },
+                PeerHealthView {
+                    peer: "daimon",
+                    channel: "sessions/events",
+                    state: PeerHealthState::Observing,
+                    age_millis: Some(40),
+                    busy: true,
+                    uncertain: true,
+                },
+                PeerHealthView {
+                    peer: "hermes",
+                    channel: "ledger/cursors",
+                    state: PeerHealthState::Degraded,
+                    age_millis: Some(90),
+                    busy: false,
+                    uncertain: false,
+                },
+            ],
+        };
+        let mut terminal = Terminal::new(TestBackend::new(120, 16)).unwrap();
+        terminal
+            .draw(|frame| {
+                draw_overview(
+                    frame,
+                    frame.area(),
+                    &shell,
+                    PeerAvailability {
+                        chronos: true,
+                        vellum: false,
+                        agora: false,
+                        moira: false,
+                        daimon: true,
+                        hermes: true,
+                        aegis: false,
+                        grounding: false,
+                    },
+                    Some(&health),
+                );
+            })
+            .unwrap();
+        let rendered: String = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect();
+        assert!(rendered.contains("health: 1 current · 1 observing · 1 degraded"));
+        assert!(rendered.contains("chronos / tasks: current · evidence 12ms ago"));
+        assert!(rendered.contains(
+            "daimon / sessions/events: observing · evidence 40ms ago · busy · OUTCOME UNCERTAIN"
+        ));
+        assert!(rendered.contains("hermes / ledger/cursors: degraded"));
+        assert!(!rendered.contains("Chronos: attached"));
+    }
+
+    #[test]
     fn shell_renders_host_supplied_agora_peer_instead_of_gap() {
         let shell = Shell::new(vec![Surface::Agora]).unwrap();
         let mut agora = agora_tui::Component::new(ClientV2::new(ClientIdV2(1), AgoraPort));
@@ -611,13 +1023,28 @@ mod tests {
                         PeerViews {
                             chronos: None,
                             vellum: None,
+                            vellum_atomic_replace: None,
+                            vellum_durable_save: None,
                             agora: None,
+                            agora_create: None,
+                            agora_message: None,
                             moira: Some(&moira),
+                            moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,
+                            daimon_permission: None,
+                            daimon_prompt: None,
+                            daimon_control: None,
                             hermes: None,
+                            hermes_compaction: None,
+                            hermes_disclosure: None,
+                            hermes_acknowledge: None,
                             aegis: None,
+                            aegis_managed: None,
+                            aegis_revoke: None,
                             grounding: None,
+                            operations: None,
+                            health: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -655,13 +1082,28 @@ mod tests {
                         PeerViews {
                             chronos: None,
                             vellum: None,
+                            vellum_atomic_replace: None,
+                            vellum_durable_save: None,
                             agora: None,
+                            agora_create: None,
+                            agora_message: None,
                             moira: None,
+                            moira_reconciliation: None,
                             daimon: Some(&daimon),
                             daimon_agent: None,
+                            daimon_permission: None,
+                            daimon_prompt: None,
+                            daimon_control: None,
                             hermes: None,
+                            hermes_compaction: None,
+                            hermes_disclosure: None,
+                            hermes_acknowledge: None,
                             aegis: None,
+                            aegis_managed: None,
+                            aegis_revoke: None,
                             grounding: None,
+                            operations: None,
+                            health: None,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -699,13 +1141,28 @@ mod tests {
                         PeerViews {
                             chronos: None,
                             vellum: None,
+                            vellum_atomic_replace: None,
+                            vellum_durable_save: None,
                             agora: None,
+                            agora_create: None,
+                            agora_message: None,
                             moira: None,
+                            moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,
+                            daimon_permission: None,
+                            daimon_prompt: None,
+                            daimon_control: None,
                             hermes: None,
+                            hermes_compaction: None,
+                            hermes_disclosure: None,
+                            hermes_acknowledge: None,
                             aegis: Some(&aegis),
+                            aegis_managed: None,
+                            aegis_revoke: None,
                             grounding: None,
+                            operations: None,
+                            health: None,
                         },
                         Focus::Chronos,
                         "host supplied",

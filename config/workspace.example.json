@@ -9,7 +9,8 @@
     "daimon",
     "grounding",
     "aegis",
-    "hermes"
+    "hermes",
+    "operations"
   ],
   "agora": {
     "socket": "../run/agora.sock",
@@ -24,7 +25,27 @@
     "socket": "../run/daimon.sock",
     "agent_socket": "../run/daimon-agent.sock",
     "agent_session": "00000000000000000000000000000000",
-    "requires": ["agents.presence.v1", "agents.session.inspect.v1"]
+    "execution": {
+      "principal": "10101010101010101010101010101010",
+      "profile": "11111111111111111111111111111111",
+      "context": [],
+      "tools": [],
+      "budget": {
+        "max_elapsed_millis": 60000,
+        "max_input_tokens": 4096,
+        "max_output_tokens": 8192,
+        "max_tool_calls": 32,
+        "max_context_bytes": 1048576,
+        "max_output_bytes": 1048576
+      }
+    },
+    "requires": [
+      "agents.presence.v1",
+      "agents.session.inspect.v1",
+      "agents.session-set.prompt.v1",
+      "agents.session-set.permission.v1",
+      "agents.session-set.reattach.v1"
+    ]
   },
   "hermes": {
     "socket": "../run/hermes.sock",

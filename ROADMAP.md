@@ -218,6 +218,14 @@ Chronos's selected guarded-write profile is also qualified through the hosted
 Pantheon path using the peer-owned public Hub: task creation, receipted
 cancellation, scheduling enablement, global/task pause, capacity, and
 not-before controls survive clean drain and exact independent service reopen.
+Cancellation now operates on a bounded marked set, reobserves the owner revision
+between children, retains independent V3 dispositions, and stops before later
+children if one outcome cannot be proven. The live journey durably cancels
+three tasks and verifies all three through an independent owner reopen.
+Marked-set pause and not-before now use the same bounded workset. Each V5 child
+is freshly observed, independently settled, and instrumented under
+`chronos.schedule.eligibility-batch`; the real journey verifies all three exact
+eligibility projections after reopen.
 This does not claim mutations beyond that profile.
 
 Agora's selected `rooms.create.v2` profile is qualified through one
@@ -226,8 +234,12 @@ binds room identifier, name, admission and expected revision to an exact
 confirmation before connection; the authenticated service supplies the actor
 and publishes the durable revision receipt. Real-daemon evidence covers stale
 revision refusal and an intentionally discarded reply recovered only through
-the exact retained request identity. This does not claim a generic conversation
-mutation bus or Agora commands beyond room creation.
+the exact retained request identity. Pantheon's conversation-shaped workbench
+also composes Agora's `messages.speak.v2` owner client: bounded multiline body,
+canonical 0–64 recipient set, observed room revision, deterministic logical
+time, owner revision/sequence receipt, content-free trace, and exact retained
+replay after uncertain delivery. This does not claim a generic conversation
+mutation bus or Agora commands beyond those selected profiles.
 
 Vellum's ordinary `workspace.edit.v1` and `workspace.save.v1` profile is also
 qualified through the shared `ServiceEditor` in standalone and hosted
@@ -241,6 +253,22 @@ reference to the current service-owned document identity and exact revision;
 the authenticated daemon and its action ceiling/filesystem adapter remain the
 only effect authority. Save As submission, retirement and other durable intents
 remain outside this claim.
+Pantheon's integrated Workspace now composes this guard over a sparse bounded
+1–16 document workset. It retains per-document cursor and persistence truth,
+re-observes every exact revision, gives each sequential child its own receipt,
+stops on uncertainty, and requires exact lookup plus explicit re-arm before
+sending later children. `tests/live/vellum_batch.sh` proves three independent
+durable receipts and exact bytes through the real hosted owner. Durable control
+is advertised only when an authenticated Vellum identity is configured.
+The selected serious-work edit profile is also composed: a marked 1–16
+document literal query/replace form previews exact match
+counts and revisions, then publishes one owner-atomic `WorkspaceEdit`
+generation. Outcome uncertainty retains and replays only that exact request;
+the returned documents remain dirty until separately saved. The real
+`tests/live/vellum_atomic_replace.sh` journey proves three documents, four
+matches, the correlated owner receipt and subsequent independent durable
+persistence. Regex/query-per-match refinement and other edit transforms remain
+future breadth, not requirements hidden behind a one-record action.
 
 The selected terminal product also has a bounded local release profile. An
 immutable archive closure builds one unsigned `aarch64-apple-darwin` artifact,
@@ -263,6 +291,12 @@ headless path preserves the content-free census. Operator reconciliation now
 reuses one Moira-owned guard in standalone and Pantheon commands: the server
 prepares the exact revision-bound challenge, confirmation is submitted once,
 and an uncertain delivery is resolved only from the exact durable receipt.
+Pantheon's bounded sparse workset composes keep-uncertain, fail-terminal,
+cancel, compensate, effect-bound failed/successful evidence admission, and retry
+through that same guard. Time-bearing proposals require one explicit Moira
+logical-time value and never infer wall time. The real journey retains
+independent receipts per saga, instruments every class under budget, and proves
+terminal, compensation, evidence, and retry phases through a clean owner reopen.
 The selected ordinary saga profile now has a sovereign `moira-saga-local`
 application. Pantheon supervises its exact process from an opaque owner config,
 attaches with Moira's peer-owned public Unix client, and qualifies durable
@@ -277,15 +311,19 @@ clean drain.
 Daimon now likewise has an independent reusable TUI, standalone CLI,
 `agents.presence.v1` headless observation, and Pantheon attach composition. Its
 default surface remains deliberately redacted to age and stale/current
-classification. An explicit opaque profile selector now reuses
+classification. An explicit opaque profile selector reuses
 `agents.session.inspect.v1` in standalone and Pantheon modes for stable phase,
 provider-profile digest, capability and bounded event evidence without exposing
-a session catalogue. Separate operator commands now reuse Daimon-owned guards
-for exact active-turn advance and cancellation, ready-session close,
-detached-session reattach, digest-bound prompt dispatch,
-and cursor-bound permission decisions in standalone and Pantheon. The reusable component still cannot dispatch, prompt, decide
-permission, advance, cancel, close, resume or reattach a provider session.
-Native hosting remains a later slice.
+a session catalogue. Pantheon also accepts an explicit unique 1–16 session
+workset, observes it over one released connection per refresh, supports sparse
+selection, and executes advance/cancel/close as independently settled
+owner-guarded children with returned session projections and stop-on-unknown.
+Separate operator commands reuse Daimon-owned guards for exact active-turn
+advance and cancellation, ready-session close, detached-session reattach,
+digest-bound prompt dispatch, and cursor-bound permission decisions. The
+reusable observation components still cannot mutate a provider session; the
+separate control component owns only guarded public-client invocation. Native
+hosting is qualified through the sovereign owner lifecycle.
 
 Hermes now has an independent reusable ledger TUI, standalone CLI,
 `ledger.observe.v1` status/usage/signals observation, and Pantheon attachment.
@@ -355,6 +393,15 @@ separate Pantheon command processes against the selected owner daemon qualify
 disconnect abandonment, an empty fresh name set, and deliberate rebuild under
 a new operation ID. Durable grant replay and lost-reply reconciliation are
 nonclaims.
+
+Pantheon's Ratatui surface additionally composes Aegis's typed managed session
+directly for serious interactive work: 1–16 exact scopes per issue or
+attenuation, bounded retained ancestry, redacted authorization decisions,
+owner-generated confirmations, explicit arm/confirm, one-attempt dispatch,
+uncertainty fencing, exit protection and correlated performance instrumentation.
+The hosted live gate proves a parent/child authority chain and authorization on
+the real durable daemon before destroying the private session and reopening the
+owner cleanly.
 
 Aegis now also supplies a standalone shutdown-aware owner daemon. Its explicit
 deployment inputs select create/open recovery, authority namespace, exact kernel

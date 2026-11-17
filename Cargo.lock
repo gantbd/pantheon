@@ -45,6 +45,7 @@ version = "0.1.0"
 name = "aegis-tui"
 version = "0.1.0"
 dependencies = [
+ "aegis-admin-command",
  "aegis-client",
  "aegis-protocol",
  "crossterm",
@@ -387,6 +388,7 @@ name = "daimon-tui"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "daimon-agent-command",
  "daimon-client",
  "daimon-protocol",
  "ratatui",
@@ -608,6 +610,9 @@ version = "0.1.0"
 dependencies = [
  "crossterm",
  "hermes-client",
+ "hermes-consumer-command",
+ "hermes-disclosure-command",
+ "hermes-operator-command",
  "hermes-protocol",
  "ratatui",
 ]
@@ -976,6 +981,7 @@ dependencies = [
  "ratatui",
  "serde",
  "serde_json",
+ "sha2",
  "tellus",
  "tellus-local-client",
  "vellum-adapter-local-authentication",

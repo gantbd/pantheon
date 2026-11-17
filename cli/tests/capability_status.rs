@@ -76,7 +76,12 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
                     },
                 ),
             );
-            assert_route(&status, "vellum", mode, capabilities::vellum(mode, hosted));
+            assert_route(
+                &status,
+                "vellum",
+                mode,
+                capabilities::vellum(mode, hosted, true),
+            );
         }
     }
     for mode in [Mode::Interactive, Mode::Headless] {
@@ -85,7 +90,7 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
 }
 
 #[test]
-fn every_guarded_control_is_classified_separately_from_aggregate_routes() {
+fn every_guarded_control_is_classified_and_only_composed_deliberately() {
     let status = status();
     for (peer, capabilities) in GUARDED_CONTROL_CAPABILITIES {
         let peer_status = &status["peers"][peer];
@@ -99,12 +104,18 @@ fn every_guarded_control_is_classified_separately_from_aggregate_routes() {
                 "unclassified {peer} control {capability}"
             );
             for mode in ["interactive", "headless"] {
+                let integrated_vellum = *peer == "vellum" && mode == "interactive";
+                let deliberately_composed = mode == "interactive"
+                    && peer_status["interactiveControlComposition"][capability]["state"]
+                        == "composed";
                 assert!(
-                    !peer_status["pantheonRoutes"][mode]
-                        .as_array()
-                        .expect("aggregate route")
-                        .iter()
-                        .any(|entry| entry["id"].as_str() == Some(capability)),
+                    integrated_vellum
+                        || deliberately_composed
+                        || !peer_status["pantheonRoutes"][mode]
+                            .as_array()
+                            .expect("aggregate route")
+                            .iter()
+                            .any(|entry| entry["id"].as_str() == Some(capability)),
                     "separate guarded control leaked into {peer} {mode} aggregate negotiation: {capability}"
                 );
             }

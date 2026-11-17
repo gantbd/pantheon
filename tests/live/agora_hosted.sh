@@ -240,10 +240,47 @@ def tmux(*args, check=True):
 
 try:
     tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "agora", command)
+    def expect(*markers, timeout=10):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            screen = tmux("capture-pane", "-p", "-t", "agora").stdout
+            if all(marker in screen for marker in markers):
+                return screen
+            time.sleep(0.025)
+        history = tmux("capture-pane", "-p", "-S", "-100", "-t", "agora").stdout
+        panes = tmux(
+            "list-panes",
+            "-t",
+            "agora",
+            "-F",
+            "#{pane_dead} #{pane_current_command} #{pane_dead_status}",
+        ).stdout
+        raise AssertionError(f"Hosted Agora markers {markers!r} not ready ({panes.strip()}):\n{history}")
+
+    expect("Agora", "Scheduled Room")
+    tmux("send-keys", "-t", "agora", "Enter")
+    expect("Conversation · scheduled-room")
+    tmux("send-keys", "-t", "agora", "C-p")
+    tmux("send-keys", "-t", "agora", "-l", "Compose an Agora message")
+    expect("Compose an Agora message")
+    tmux("send-keys", "-t", "agora", "Enter")
+    expect("Compose Agora message", "revision")
+    tmux("send-keys", "-t", "agora", "-l", "Pantheon delivered serious Agora work")
+    tmux("send-keys", "-t", "agora", "Tab", "Tab", "c", "Enter")
+    expect("Agora accepted message #", timeout=15)
+    tmux("send-keys", "-t", "agora", "Escape")
+    expect("Pantheon delivered serious Agora work", timeout=10)
+    tmux("send-keys", "-t", "agora", "C-p")
+    tmux("send-keys", "-t", "agora", "-l", "Inspect TUI instrumentation")
+    expect("Inspect TUI instrumentation")
+    tmux("send-keys", "-t", "agora", "Enter")
+    expect("agora.message.send")
+    tmux("send-keys", "-t", "agora", "Escape")
+
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "agora").stdout
-        if "Agora" in screen and "Scheduled Room" in screen:
+        if "Pantheon delivered serious Agora work" in screen:
             break
         time.sleep(0.025)
     else:
@@ -255,7 +292,7 @@ try:
             "-F",
             "#{pane_dead} #{pane_current_command} #{pane_dead_status}",
         ).stdout
-        raise AssertionError(f"Hosted Agora pane not ready ({panes.strip()}):\n{history}")
+        raise AssertionError(f"Hosted Agora durable projection not ready ({panes.strip()}):\n{history}")
 
     tmux("send-keys", "-t", "agora", "C-q")
     deadline = time.monotonic() + 5
@@ -279,6 +316,7 @@ report = json.load(sys.stdin)
 assert report["complete"]
 peers = {peer["peer"]: peer for peer in report["peers"]}
 assert peers["agora"]["rooms"] == 1
+assert peers["agora"]["revision"] == 3
 assert peers["aegis"]["epoch"] == 3
 assert report["hosted_shutdown"]["status"] == "clean"
 '

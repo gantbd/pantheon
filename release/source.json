@@ -5,32 +5,32 @@
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
-      "revision": "45b11bcd1e9b7b21e79faf8f1794f8379622f635",
+      "revision": "9ab9e0f2c467c3b6501e08c44f10f679b8ed6cd8",
       "workingTreeClean": true
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
-      "revision": "63689c5397e6a0b84879692b05436693390838cb",
+      "revision": "2c56a1431cde62aecd358b572c0b01d28c4cb8a6",
       "workingTreeClean": true
     },
     "chronos": {
       "repository": "https://github.com/gantbd/chronos",
-      "revision": "26366ec9172b48280d9bba3688572edf1c0d2719",
+      "revision": "43fdf6f33fa526899639f03cc32e398bcea86010",
       "workingTreeClean": true
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
-      "revision": "7cbe44618afcefae52d326a3a83027c46fb2c3ac",
+      "revision": "52b7a664ed1caf89eea0c94a7a3a480aa721455d",
       "workingTreeClean": true
     },
     "daimon": {
       "repository": "https://github.com/gantbd/daimon",
-      "revision": "ad70f838cf5533e1a28dcfff384fbfa432bd91da",
+      "revision": "8d4238ce6433b250c2f081f7c9508905778994c0",
       "workingTreeClean": true
     },
     "daimonTui": {
       "repository": "https://github.com/gantbd/daimon-tui",
-      "revision": "b63705bddd4f4778de13a2c2824717ca8d76edd1",
+      "revision": "667c6db58e6382262acb75127932ebd9a5e82f89",
       "workingTreeClean": true
     },
     "moira": {
@@ -45,7 +45,7 @@
     },
     "hermesTui": {
       "repository": "https://github.com/gantbd/hermes-tui",
-      "revision": "27f857df701edf6261f09cf38d74f1a48ba0cb7e",
+      "revision": "431f6b565b34398c76894f68a443c01b5ae7f9d1",
       "workingTreeClean": true
     },
     "aegis": {
@@ -55,7 +55,7 @@
     },
     "aegisTui": {
       "repository": "https://github.com/gantbd/aegis-tui",
-      "revision": "258065605c86ebccf375aea47521a858f8f723b1",
+      "revision": "3433dd2f306a1c9b8af4276b88d89c546eab2d30",
       "workingTreeClean": true
     },
     "dendrite": {
@@ -65,7 +65,7 @@
     },
     "groundingTui": {
       "repository": "https://github.com/gantbd/tellus",
-      "revision": "03a920e9b1457ae33428acb9672c5fd320c69e72",
+      "revision": "209b15077680ee19f9f20a3620f4b92343ca5e60",
       "workingTreeClean": true
     },
     "keystone": {
@@ -80,17 +80,17 @@
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "0360287449e4d7499e8040a55c996dcdea035991",
+      "revision": "2b43c913a93960ee02b4b70dcdb7d6d4c495513f",
       "workingTreeClean": true
     },
     "vellum": {
       "repository": "https://github.com/gantbd/vellum",
-      "revision": "898affc1860869ab7fd4d4de369ca3556bc12aaf",
+      "revision": "81881c01517af77e3bdc25d7998e74bb4087e882",
       "workingTreeClean": true
     },
     "vellumTui": {
       "repository": "https://github.com/gantbd/vellum-tui",
-      "revision": "1bd09e171cd679eae479715f6203ef5d0b8a5d50",
+      "revision": "3b4b2bb5eea86b0bf1a0a95b98d59ab77a51398c",
       "workingTreeClean": true
     }
   },

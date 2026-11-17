@@ -1,13 +1,679 @@
-use chronos_tui::{Hub, Lifecycle};
-use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
-use std::time::{Duration, Instant};
-use vellum_sdk_client::protocol::ServicePort;
-use vellum_tui::{ServiceAction, ServiceEditor, ServiceInput, translate_service_input};
+use chronos_tui::{Hub, Lifecycle, WorkbenchIntent};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use daimon_agent_command::{
+    AdvanceRequest, CancelRequest, CloseRequest, PermissionRequest, PromptRequest, ReattachRequest,
+};
+use daimon_protocol::{
+    AgentTurnIdV1, ContextReferenceIdV1, ExecuteRequestV1, ExecutionBudgetV1, ExecutionIdV1,
+    HarnessProfileIdV1, IdempotencyKeyV1, PrincipalIdV1, TaskAttemptRefV1, ToolCapabilityIdV1,
+    agent::{AgentEventV1, AgentSessionPhaseV1},
+};
+use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
+use std::fs::File;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc::{Receiver, TryRecvError, sync_channel};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use vellum_sdk_client::{
+    protocol::{DurableOperationRefV1, ServicePort},
+    transport::{
+        AuthenticatedUnixConnector, FrameExchange, RemoteTransport, TransportError,
+        TransportLimits, UnixConnector,
+    },
+};
+use vellum_tui::{
+    AtomicReplaceComponent, AtomicReplaceDisposition, AtomicReplaceInput, AtomicReplaceLifecycle,
+    DurableSaveBatchComponent, DurableSaveBatchDisposition, DurableSaveBatchInput,
+    DurableSaveTargetV1, ServiceAction, ServiceEditor, ServiceInput, translate_service_input,
+};
 
+use crate::capabilities::GUARDED_CONTROL_ROUTES;
+use crate::native_host::NativeHost;
+use crate::profile::{AgoraTransportProfile, DaimonExecutionPolicyProfile, WorkspaceProfile};
+use crate::reconfiguration::{self, ReconfigurationPlan};
+use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
 use pantheon::{
-    ExitDecision, Focus, PeerViews, RoutedInput, Shell, ShellInput, Surface, decide_exit,
+    ActivityLevel, ActivityLog, CommandKind, CommandPalette, CommandSpec, ExitDecision, Focus,
+    Instrumentation, OperationsReceiptView, OperationsView, PaletteOutcome, PeerHealthState,
+    PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView, Surface,
+    decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
     draw_shell_with_moira, route_key, shell_input,
 };
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum WorkbenchOverlay {
+    None,
+    Commands,
+    Help,
+    Activity,
+    Configuration,
+    Reconfiguration,
+    Instrumentation,
+}
+
+const MAX_RECONFIGURATION_PATH_BYTES: usize = 4096;
+
+struct ReconfigurationWorkflow {
+    current: WorkspaceProfile,
+    path: String,
+    next_path: Option<PathBuf>,
+    next_digest: Option<String>,
+    plan: Option<ReconfigurationPlan>,
+    armed: bool,
+    notice: String,
+}
+
+impl ReconfigurationWorkflow {
+    fn new(current: WorkspaceProfile) -> Self {
+        Self {
+            current,
+            path: String::new(),
+            next_path: None,
+            next_digest: None,
+            plan: None,
+            armed: false,
+            notice: "Enter a local workspace-profile path, then press Enter to preflight".into(),
+        }
+    }
+
+    fn insert(&mut self, text: &str) {
+        if self.plan.is_some() {
+            return;
+        }
+        for character in text.chars().filter(|character| !character.is_control()) {
+            if self.path.len() + character.len_utf8() > MAX_RECONFIGURATION_PATH_BYTES {
+                self.notice = "Profile path reached the 4096-byte bound".into();
+                break;
+            }
+            self.path.push(character);
+        }
+    }
+
+    fn backspace(&mut self) {
+        if self.plan.is_none() {
+            self.path.pop();
+        }
+    }
+
+    fn edit(&mut self) {
+        self.next_path = None;
+        self.next_digest = None;
+        self.plan = None;
+        self.armed = false;
+        self.notice = "Edit the profile path, then press Enter to preflight again".into();
+    }
+
+    fn preflight(&mut self) {
+        if self.path.is_empty() {
+            self.notice = "A workspace-profile path is required".into();
+            return;
+        }
+        let path = PathBuf::from(&self.path);
+        match WorkspaceProfile::load_with_digest(&path) {
+            Ok((next, digest)) => {
+                let operation_id = format!(
+                    "tui-reconfigure-{}",
+                    SystemTime::now()
+                        .duration_since(UNIX_EPOCH)
+                        .unwrap_or_default()
+                        .as_millis()
+                );
+                let plan = reconfiguration::plan(operation_id, &self.current, &next);
+                self.notice = match plan.minimum_action {
+                    "none" => "Preflight settled: profiles are equivalent; no restart needed",
+                    "shell_restart" => "Preflight settled: shell restart required; press c to arm",
+                    _ => "Preflight settled: full local topology restart required; press c to arm",
+                }
+                .into();
+                self.next_path = Some(path);
+                self.next_digest = Some(digest);
+                self.plan = Some(plan);
+                self.armed = false;
+            }
+            Err(error) => {
+                self.next_path = None;
+                self.next_digest = None;
+                self.plan = None;
+                self.armed = false;
+                self.notice = format!("Profile preflight refused: {error}");
+            }
+        }
+    }
+
+    fn arm(&mut self) {
+        if self
+            .plan
+            .as_ref()
+            .is_some_and(|plan| plan.minimum_action != "none")
+        {
+            self.armed = true;
+            self.notice = "ARMED: Enter drains owned topology and restarts this process with the preflighted profile".into();
+        } else {
+            self.notice = "A changed, valid profile must be preflighted before restart".into();
+        }
+    }
+
+    fn confirmed_profile(&self) -> Option<(PathBuf, String)> {
+        if !self.armed {
+            return None;
+        }
+        self.next_path.clone().zip(self.next_digest.clone())
+    }
+
+    fn lines(&self) -> Vec<String> {
+        let mut lines = vec![
+            "scope               single user · local machine".into(),
+            format!("next profile        {}", self.path),
+            format!(
+                "preflight           {}",
+                if self.plan.is_some() {
+                    "settled"
+                } else {
+                    "not run"
+                }
+            ),
+        ];
+        if let Some(plan) = &self.plan {
+            lines.push(format!("operation            {}", plan.operation_id));
+            lines.push(format!("minimum action       {}", plan.minimum_action));
+            lines.push("live apply           unsupported; process restart is explicit".into());
+            lines.push(String::new());
+            if plan.changes.is_empty() {
+                lines.push("No configuration changes.".into());
+            } else {
+                lines.push(format!("changes              {}", plan.changes.len()));
+                lines.extend(plan.changes.iter().map(|change| {
+                    format!(
+                        "{} · {} · {}",
+                        change.target, change.change, change.required_action
+                    )
+                }));
+            }
+        }
+        lines.push(String::new());
+        lines.push(self.notice.clone());
+        lines.push(if self.plan.is_some() {
+            "e edit path · c arm · Enter confirm armed restart · Esc close".into()
+        } else {
+            "type/paste path · Enter preflight · Esc close".into()
+        });
+        lines
+    }
+}
+
+enum ChronosOperation {
+    Task(u64),
+    Scheduling(u64),
+}
+
+#[derive(Default)]
+struct RefreshOperations {
+    chronos: Option<u64>,
+    agora: Option<u64>,
+    moira: Option<u64>,
+    daimon: Option<u64>,
+    hermes: Option<u64>,
+    aegis: Option<u64>,
+    grounding: Option<u64>,
+}
+
+struct HealthChannel {
+    peer: &'static str,
+    channel: &'static str,
+    state: PeerHealthState,
+    settled_at: Option<Instant>,
+}
+
+struct SuiteHealthLedger {
+    channels: Vec<HealthChannel>,
+}
+
+impl SuiteHealthLedger {
+    fn new(channels: impl IntoIterator<Item = (&'static str, &'static str)>) -> Self {
+        Self {
+            channels: channels
+                .into_iter()
+                .map(|(peer, channel)| HealthChannel {
+                    peer,
+                    channel,
+                    state: PeerHealthState::Unobserved,
+                    settled_at: None,
+                })
+                .collect(),
+        }
+    }
+
+    fn observing(&mut self, peer: &str, channel: &str, pending: bool) {
+        if pending
+            && let Some(entry) = self
+                .channels
+                .iter_mut()
+                .find(|entry| entry.peer == peer && entry.channel == channel)
+        {
+            entry.state = PeerHealthState::Observing;
+        }
+    }
+
+    fn settle(&mut self, peer: &str, channel: &str, settlement: Option<Result<(), ()>>) {
+        let Some(settlement) = settlement else {
+            return;
+        };
+        if let Some(entry) = self
+            .channels
+            .iter_mut()
+            .find(|entry| entry.peer == peer && entry.channel == channel)
+        {
+            entry.state = if settlement.is_ok() {
+                PeerHealthState::Current
+            } else {
+                PeerHealthState::Degraded
+            };
+            entry.settled_at = Some(Instant::now());
+        }
+    }
+
+    fn current(&mut self, peer: &str, channel: &str) {
+        self.settle(peer, channel, Some(Ok(())));
+    }
+
+    fn view(
+        &self,
+        busy: impl Fn(&str) -> bool,
+        uncertain: impl Fn(&str) -> bool,
+    ) -> SuiteHealthView {
+        SuiteHealthView {
+            peers: self
+                .channels
+                .iter()
+                .map(|entry| PeerHealthView {
+                    peer: entry.peer,
+                    channel: entry.channel,
+                    state: entry.state,
+                    age_millis: entry.settled_at.map(|settled| {
+                        u64::try_from(settled.elapsed().as_millis()).unwrap_or(u64::MAX)
+                    }),
+                    busy: busy(entry.peer),
+                    uncertain: uncertain(entry.peer),
+                })
+                .collect(),
+        }
+    }
+}
+
+struct DrainWorkerReply {
+    host: NativeHost,
+    result: Result<TopologyShutdown, String>,
+}
+
+struct OperationsRuntime {
+    host: Option<NativeHost>,
+    reply: Option<Receiver<DrainWorkerReply>>,
+    retained: Option<TopologyShutdown>,
+    drain_unknown: bool,
+    armed: bool,
+    notice: String,
+}
+
+impl OperationsRuntime {
+    fn new(host: Option<NativeHost>) -> Self {
+        let notice = if host.is_some() {
+            "Live local host attached"
+        } else {
+            "No Pantheon-owned topology; peer lifecycles are external"
+        };
+        Self {
+            host,
+            reply: None,
+            retained: None,
+            drain_unknown: false,
+            armed: false,
+            notice: notice.into(),
+        }
+    }
+
+    fn arm(&mut self) {
+        if self.reply.is_some() {
+            self.notice = "Topology drain is already pending".into();
+        } else if self.host.is_none() {
+            self.notice = "No Pantheon-owned topology is available to drain".into();
+        } else if self.retained.is_some() {
+            self.notice = "Topology is already drained; receipts are retained below".into();
+        } else {
+            self.armed = true;
+            self.notice = "ARMED: Enter drains every hosted peer in reverse start order".into();
+        }
+    }
+
+    fn disarm(&mut self) {
+        self.armed = false;
+        self.notice = "Topology drain disarmed".into();
+    }
+
+    fn confirm(&mut self) -> bool {
+        if !self.armed || self.reply.is_some() || self.retained.is_some() {
+            return false;
+        }
+        let Some(mut host) = self.host.take() else {
+            self.armed = false;
+            self.notice = "No Pantheon-owned topology is available to drain".into();
+            return false;
+        };
+        let (tx, rx) = sync_channel(1);
+        std::thread::spawn(move || {
+            let result = host
+                .shutdown()
+                .map_err(|error| format!("host drain refused: {error:?}"));
+            let _ = tx.send(DrainWorkerReply { host, result });
+        });
+        self.reply = Some(rx);
+        self.drain_unknown = false;
+        self.armed = false;
+        self.notice = "Topology drain pending on lifecycle worker".into();
+        true
+    }
+
+    fn poll(&mut self) -> Option<(ActivityLevel, Option<TopologyShutdown>)> {
+        let Some(reply) = &self.reply else {
+            return None;
+        };
+        match reply.try_recv() {
+            Ok(reply) => {
+                self.reply = None;
+                self.host = Some(reply.host);
+                match reply.result {
+                    Ok(receipt) => {
+                        let clean = receipt.clean();
+                        self.notice = if clean {
+                            "Hosted topology drained cleanly; receipts retained"
+                        } else {
+                            "Topology drain incomplete; refused or uncertain receipts retained"
+                        }
+                        .into();
+                        self.retained = Some(receipt.clone());
+                        Some((
+                            if clean {
+                                ActivityLevel::Success
+                            } else {
+                                ActivityLevel::Uncertain
+                            },
+                            Some(receipt),
+                        ))
+                    }
+                    Err(error) => {
+                        self.notice = error;
+                        Some((ActivityLevel::Warning, None))
+                    }
+                }
+            }
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => {
+                self.reply = None;
+                self.drain_unknown = true;
+                self.notice = "Lifecycle worker disconnected; drain outcome unknown".into();
+                Some((ActivityLevel::Uncertain, None))
+            }
+        }
+    }
+
+    fn hosted_peer_ids(&self) -> Vec<HostedPeerId> {
+        self.host
+            .as_ref()
+            .map(NativeHost::status)
+            .map(|status| status.hosted_peers)
+            .unwrap_or_default()
+    }
+
+    fn view(&self) -> OperationsView {
+        let status = self.host.as_ref().map(NativeHost::status);
+        let lifecycle = if self.drain_unknown {
+            "local_host_shutdown_unknown".to_owned()
+        } else if self.reply.is_some() {
+            "local_host_draining".to_owned()
+        } else {
+            status.as_ref().map_or_else(
+                || "external".to_owned(),
+                |status| registry_lifecycle_label(status.lifecycle).to_owned(),
+            )
+        };
+        let hosted_peers = status
+            .as_ref()
+            .map(|status| status.hosted_peers.iter().map(hosted_peer_label).collect())
+            .unwrap_or_default();
+        let receipts = self
+            .retained
+            .as_ref()
+            .map(|shutdown| {
+                shutdown
+                    .receipts
+                    .iter()
+                    .map(|receipt| OperationsReceiptView {
+                        peer: hosted_peer_label(&receipt.peer),
+                        disposition: shutdown_disposition_label(receipt.disposition).into(),
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        OperationsView {
+            lifecycle,
+            reconfiguration_allowed: status
+                .as_ref()
+                .is_some_and(|status| status.reconfiguration_allowed),
+            hosted_peers,
+            drain_pending: self.reply.is_some(),
+            drain_armed: self.armed,
+            receipts,
+            notice: self.notice.clone(),
+        }
+    }
+
+    fn finish(mut self) -> Result<Option<TopologyShutdown>, String> {
+        if self.reply.is_some() {
+            return Err("cannot leave while topology drain is pending".into());
+        }
+        if self.drain_unknown {
+            return Err("cannot prove hosted topology shutdown after lifecycle worker loss".into());
+        }
+        if let Some(receipt) = self.retained.take() {
+            return Ok(Some(receipt));
+        }
+        self.host
+            .as_mut()
+            .map(NativeHost::shutdown)
+            .transpose()
+            .map_err(|error| format!("host shutdown refused: {error:?}"))
+    }
+}
+
+const fn registry_lifecycle_label(lifecycle: RegistryLifecycle) -> &'static str {
+    match lifecycle {
+        RegistryLifecycle::Assembling => "local_host_assembling",
+        RegistryLifecycle::Ready => "local_host_ready",
+        RegistryLifecycle::Degraded => "local_host_degraded",
+        RegistryLifecycle::Draining => "local_host_draining",
+        RegistryLifecycle::Stopped => "local_host_stopped",
+    }
+}
+
+fn hosted_peer_label(peer: &HostedPeerId) -> String {
+    match peer {
+        HostedPeerId::Agora => "agora".into(),
+        HostedPeerId::Moira => "moira".into(),
+        HostedPeerId::Daimon => "daimon".into(),
+        HostedPeerId::Hermes => "hermes".into(),
+        HostedPeerId::Aegis => "aegis".into(),
+        HostedPeerId::Grounding => "grounding".into(),
+        HostedPeerId::Chronos(instance) => format!("chronos/{instance}"),
+        HostedPeerId::Vellum => "vellum".into(),
+    }
+}
+
+const fn hosted_peer_metric_label(peer: &HostedPeerId) -> &'static str {
+    match peer {
+        HostedPeerId::Agora => "agora",
+        HostedPeerId::Moira => "moira",
+        HostedPeerId::Daimon => "daimon",
+        HostedPeerId::Hermes => "hermes",
+        HostedPeerId::Aegis => "aegis",
+        HostedPeerId::Grounding => "grounding",
+        HostedPeerId::Chronos(_) => "chronos",
+        HostedPeerId::Vellum => "vellum",
+    }
+}
+
+const fn shutdown_level(disposition: ShutdownDisposition) -> ActivityLevel {
+    match disposition {
+        ShutdownDisposition::Clean => ActivityLevel::Success,
+        ShutdownDisposition::Refused => ActivityLevel::Warning,
+        ShutdownDisposition::OutcomeUnknown => ActivityLevel::Uncertain,
+    }
+}
+
+fn begin_drain_operations(
+    peers: Vec<HostedPeerId>,
+    instrumentation: &mut Instrumentation,
+    started: Instant,
+) -> Vec<(HostedPeerId, u64)> {
+    let correlation = instrumentation.new_correlation();
+    peers
+        .into_iter()
+        .filter_map(|peer| {
+            instrumentation
+                .begin_correlated_peer_operation_at(
+                    "operations.drain",
+                    hosted_peer_metric_label(&peer),
+                    started,
+                    correlation,
+                )
+                .map(|operation| (peer, operation))
+        })
+        .collect()
+}
+
+fn settle_drain_operations(
+    operations: &mut Vec<(HostedPeerId, u64)>,
+    shutdown: Option<&TopologyShutdown>,
+    fallback: ActivityLevel,
+    instrumentation: &mut Instrumentation,
+) {
+    for (peer, operation) in operations.drain(..) {
+        let disposition = shutdown.and_then(|shutdown| {
+            shutdown
+                .receipts
+                .iter()
+                .find(|receipt| receipt.peer == peer)
+                .map(|receipt| receipt.disposition)
+        });
+        let peer_level = disposition.map_or(fallback, shutdown_level);
+        instrumentation.mark_peer_stage(
+            operation,
+            if disposition.is_some() {
+                "peer_shutdown_receipt"
+            } else {
+                "peer_shutdown_unresolved"
+            },
+            peer_level,
+        );
+        instrumentation.settle_peer_operation(operation, peer_level);
+    }
+}
+
+const fn shutdown_disposition_label(disposition: ShutdownDisposition) -> &'static str {
+    match disposition {
+        ShutdownDisposition::Clean => "clean",
+        ShutdownDisposition::Refused => "refused",
+        ShutdownDisposition::OutcomeUnknown => "outcome_unknown",
+    }
+}
+
+fn settle_refresh(
+    operation: &mut Option<u64>,
+    settlement: Option<Result<(), ()>>,
+    peer: &'static str,
+    instrumentation: &mut Instrumentation,
+    activity: &mut ActivityLog,
+) {
+    let Some(settlement) = settlement else {
+        return;
+    };
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let (level, message) = if settlement.is_ok() {
+        (
+            ActivityLevel::Success,
+            "Refresh settled to a current projection",
+        )
+    } else {
+        (
+            ActivityLevel::Warning,
+            "Refresh settled without a current projection",
+        )
+    };
+    instrumentation.settle_peer_operation(operation, level);
+    activity.push(level, peer, message);
+}
+
+fn begin_refresh(
+    newly_pending: bool,
+    action: &'static str,
+    peer: &'static str,
+    operation: &mut Option<u64>,
+    instrumentation: &mut Instrumentation,
+    started: Instant,
+) -> bool {
+    begin_refresh_correlated(
+        newly_pending,
+        action,
+        peer,
+        operation,
+        instrumentation,
+        started,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn begin_refresh_correlated(
+    newly_pending: bool,
+    action: &'static str,
+    peer: &'static str,
+    operation: &mut Option<u64>,
+    instrumentation: &mut Instrumentation,
+    started: Instant,
+    correlation_id: Option<u64>,
+) -> bool {
+    if newly_pending && operation.is_none() {
+        *operation = match correlation_id {
+            Some(correlation_id) => instrumentation.begin_correlated_peer_operation_at(
+                action,
+                peer,
+                started,
+                correlation_id,
+            ),
+            None => instrumentation.begin_peer_operation_at(action, peer, started),
+        };
+        return operation.is_some();
+    }
+    false
+}
+
+fn vellum_action_id(action: &ServiceAction) -> &'static str {
+    match action {
+        ServiceAction::Insert(_) => "vellum.edit.insert",
+        ServiceAction::Backspace => "vellum.edit.backspace",
+        ServiceAction::Delete => "vellum.edit.delete",
+        ServiceAction::Left
+        | ServiceAction::Right
+        | ServiceAction::Up
+        | ServiceAction::Down
+        | ServiceAction::Home
+        | ServiceAction::End => "vellum.cursor.move",
+        ServiceAction::NextDocument => "vellum.document.next",
+        ServiceAction::ToggleDocumentSelection => "vellum.document.toggle-selection",
+        ServiceAction::Save => "vellum.save",
+        ServiceAction::Refresh => "view.refresh",
+    }
+}
 
 /// Runs the composite terminal for host-supplied sessions. A Vellum-owned
 /// integration host can bind handoff on the Hub before entering this loop.
@@ -64,82 +730,3344 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
         vellum,
         OperationalPeers {
             agora,
+            agora_control: None,
             moira,
+            moira_control_socket: None,
             daimon,
             daimon_agent: None,
+            daimon_agent_control_socket: None,
+            daimon_execution_policy: None,
             hermes: None,
+            hermes_operator_socket: None,
+            hermes_disclosure_socket: None,
+            hermes_control_socket: None,
             aegis: None,
+            aegis_control_socket: None,
             grounding: None,
+            vellum_control: None,
         },
     )
 }
 
 pub struct OperationalPeers {
     pub agora: Option<agora_tui::Component>,
+    pub agora_control: Option<AgoraControlConfig>,
     pub moira: Option<moira_tui::Component>,
+    pub moira_control_socket: Option<PathBuf>,
     pub daimon: Option<daimon_tui::Component>,
-    pub daimon_agent: Option<daimon_tui::AgentComponent>,
+    pub daimon_agent: Option<daimon_tui::AgentSetComponent>,
+    pub daimon_agent_control_socket: Option<PathBuf>,
+    pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
     pub hermes: Option<hermes_tui::Component>,
+    pub hermes_operator_socket: Option<PathBuf>,
+    pub hermes_disclosure_socket: Option<PathBuf>,
+    pub hermes_control_socket: Option<PathBuf>,
     pub aegis: Option<aegis_tui::Component>,
+    pub aegis_control_socket: Option<PathBuf>,
     pub grounding: Option<tellus::Component>,
+    pub vellum_control: Option<VellumControlConfig>,
+}
+
+#[derive(Clone, Debug)]
+pub struct VellumControlConfig {
+    pub socket: PathBuf,
+    pub credential: Option<PathBuf>,
+}
+
+enum VellumBatchConnector {
+    Plain(UnixConnector),
+    Authenticated(AuthenticatedUnixConnector),
+}
+
+impl FrameExchange for VellumBatchConnector {
+    fn exchange(
+        &mut self,
+        request: &[u8],
+        max_reply_bytes: usize,
+    ) -> Result<Vec<u8>, TransportError> {
+        match self {
+            Self::Plain(connector) => connector.exchange(request, max_reply_bytes),
+            Self::Authenticated(connector) => connector.exchange(request, max_reply_bytes),
+        }
+    }
+}
+
+fn vellum_batch_transport(
+    config: &VellumControlConfig,
+) -> Result<RemoteTransport<VellumBatchConnector>, String> {
+    let connector = if let Some(path) = &config.credential {
+        let mut store = vellum_adapter_local_authentication::LocalCredentialStoreV1::default();
+        let record = store
+            .load(path)
+            .map_err(|error| format!("Vellum credential refused: {error:?}"))?;
+        let provider =
+            vellum_adapter_local_authentication::LocalCredentialClaimProviderV1::new(record);
+        VellumBatchConnector::Authenticated(AuthenticatedUnixConnector::with_provider(
+            config.socket.clone(),
+            provider,
+        ))
+    } else {
+        VellumBatchConnector::Plain(UnixConnector::new(config.socket.clone()))
+    };
+    RemoteTransport::new(connector, TransportLimits::reference())
+        .map_err(|error| format!("Vellum durable transport refused: {error:?}"))
+}
+
+#[derive(Clone, Debug)]
+pub struct AgoraControlConfig {
+    pub socket: PathBuf,
+    pub participant: String,
+    pub transport: AgoraTransportProfile,
+}
+
+fn is_key(key: crossterm::event::KeyEvent, code: KeyCode, modifiers: KeyModifiers) -> bool {
+    key.kind == KeyEventKind::Press && key.code == code && key.modifiers == modifiers
+}
+
+fn bounded_text_character(key: crossterm::event::KeyEvent) -> Option<char> {
+    (key.kind == KeyEventKind::Press
+        && (key.modifiers == KeyModifiers::NONE || key.modifiers == KeyModifiers::SHIFT))
+        .then_some(key.code)
+        .and_then(|code| match code {
+            KeyCode::Char(character) if !character.is_control() => Some(character),
+            _ => None,
+        })
+}
+
+fn reconciliation_input(
+    key: crossterm::event::KeyEvent,
+    editing_logical_time: bool,
+) -> Option<moira_tui::ReconciliationBatchInput> {
+    if key.kind != KeyEventKind::Press || key.modifiers != KeyModifiers::NONE {
+        return None;
+    }
+    match key.code {
+        KeyCode::Char(value) if editing_logical_time && value.is_ascii_digit() => {
+            Some(moira_tui::ReconciliationBatchInput::Digit(value))
+        }
+        KeyCode::Backspace if editing_logical_time => {
+            Some(moira_tui::ReconciliationBatchInput::Backspace)
+        }
+        KeyCode::Enter if editing_logical_time => {
+            Some(moira_tui::ReconciliationBatchInput::Prepare)
+        }
+        KeyCode::Char('r') => Some(moira_tui::ReconciliationBatchInput::Refresh),
+        KeyCode::Char('c') => Some(moira_tui::ReconciliationBatchInput::Arm),
+        KeyCode::Enter => Some(moira_tui::ReconciliationBatchInput::Confirm),
+        _ => None,
+    }
+}
+
+fn daimon_control_input(key: crossterm::event::KeyEvent) -> Option<daimon_tui::AgentControlInput> {
+    if key.kind != KeyEventKind::Press || key.modifiers != KeyModifiers::NONE {
+        return None;
+    }
+    match key.code {
+        KeyCode::Char('c') => Some(daimon_tui::AgentControlInput::Arm),
+        KeyCode::Enter => Some(daimon_tui::AgentControlInput::Confirm),
+        _ => None,
+    }
+}
+
+fn daimon_prompt_input(
+    key: crossterm::event::KeyEvent,
+    reviewing: bool,
+) -> Option<daimon_tui::AgentPromptInput> {
+    if key.kind != KeyEventKind::Press || key.modifiers != KeyModifiers::NONE {
+        return None;
+    }
+    match key.code {
+        KeyCode::Tab => Some(daimon_tui::AgentPromptInput::NextField),
+        KeyCode::Backspace => Some(daimon_tui::AgentPromptInput::Backspace),
+        KeyCode::Enter if reviewing => Some(daimon_tui::AgentPromptInput::Confirm),
+        KeyCode::Enter => Some(daimon_tui::AgentPromptInput::Newline),
+        KeyCode::Char('c') if reviewing => Some(daimon_tui::AgentPromptInput::Arm),
+        KeyCode::Char(character) => Some(daimon_tui::AgentPromptInput::Character(character)),
+        _ => None,
+    }
+}
+
+fn daimon_permission_input(
+    key: crossterm::event::KeyEvent,
+) -> Option<daimon_tui::AgentPermissionInput> {
+    if key.kind != KeyEventKind::Press || key.modifiers != KeyModifiers::NONE {
+        return None;
+    }
+    match key.code {
+        KeyCode::Up | KeyCode::Char('k') => Some(daimon_tui::AgentPermissionInput::PreviousSession),
+        KeyCode::Down | KeyCode::Char('j') => Some(daimon_tui::AgentPermissionInput::NextSession),
+        KeyCode::Left | KeyCode::Char('h') => {
+            Some(daimon_tui::AgentPermissionInput::PreviousOption)
+        }
+        KeyCode::Right | KeyCode::Char('l') => Some(daimon_tui::AgentPermissionInput::NextOption),
+        KeyCode::Char('c') => Some(daimon_tui::AgentPermissionInput::Arm),
+        KeyCode::Enter => Some(daimon_tui::AgentPermissionInput::Confirm),
+        _ => None,
+    }
+}
+
+fn daimon_agent_set_input(key: crossterm::event::KeyEvent) -> Option<daimon_tui::AgentSetInput> {
+    if key.kind != KeyEventKind::Press || key.modifiers != KeyModifiers::NONE {
+        return None;
+    }
+    match key.code {
+        KeyCode::Left | KeyCode::Char('h') => Some(daimon_tui::AgentSetInput::PreviousSession),
+        KeyCode::Right | KeyCode::Char('l') => Some(daimon_tui::AgentSetInput::NextSession),
+        KeyCode::Char(' ') => Some(daimon_tui::AgentSetInput::ToggleSelection),
+        KeyCode::Up | KeyCode::Char('k') => Some(daimon_tui::AgentSetInput::EventUp),
+        KeyCode::Down | KeyCode::Char('j') => Some(daimon_tui::AgentSetInput::EventDown),
+        KeyCode::Char('f') => Some(daimon_tui::AgentSetInput::CycleEventFilter),
+        KeyCode::Char('r') => Some(daimon_tui::AgentSetInput::RefreshSelected),
+        KeyCode::Char('R') => Some(daimon_tui::AgentSetInput::RefreshAll),
+        KeyCode::Char('q') => Some(daimon_tui::AgentSetInput::Close),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+fn reconciliation_level(notice: &str) -> ActivityLevel {
+    let notice = notice.to_ascii_lowercase();
+    if notice.contains("outcome unknown") {
+        ActivityLevel::Uncertain
+    } else if notice.contains("refused")
+        || notice.contains("unavailable")
+        || notice.contains("invalid")
+    {
+        ActivityLevel::Warning
+    } else if notice.contains("durably accepted")
+        || notice.contains("recovered from durable")
+        || notice.contains("replayed")
+    {
+        ActivityLevel::Success
+    } else {
+        ActivityLevel::Info
+    }
+}
+
+fn reconciliation_batch_level(
+    disposition: moira_tui::ReconciliationBatchDisposition,
+) -> ActivityLevel {
+    match disposition {
+        moira_tui::ReconciliationBatchDisposition::Applied => ActivityLevel::Success,
+        moira_tui::ReconciliationBatchDisposition::Partial
+        | moira_tui::ReconciliationBatchDisposition::ReceiptPending => ActivityLevel::Warning,
+        moira_tui::ReconciliationBatchDisposition::OutcomeUnknown => ActivityLevel::Uncertain,
+        moira_tui::ReconciliationBatchDisposition::Inspecting
+        | moira_tui::ReconciliationBatchDisposition::Ready
+        | moira_tui::ReconciliationBatchDisposition::Armed
+        | moira_tui::ReconciliationBatchDisposition::Pending => ActivityLevel::Info,
+    }
+}
+
+fn fresh_operation_facts() -> Result<(IdempotencyKeyV1, u64), String> {
+    let bytes = fresh_identity()?;
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "system clock precedes the Unix epoch".to_owned())?
+        .as_secs();
+    Ok((IdempotencyKeyV1::new(bytes), now))
+}
+
+fn fresh_identity() -> Result<[u8; 16], String> {
+    let mut bytes = [0_u8; 16];
+    File::open("/dev/urandom")
+        .and_then(|mut source| source.read_exact(&mut bytes))
+        .map_err(|error| format!("local operation identity unavailable: {error}"))?;
+    Ok(bytes)
+}
+
+fn parse_hex_identity(value: &str) -> Result<[u8; 16], String> {
+    if value.len() != 32 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("validated Daimon prompt identity became invalid".into());
+    }
+    let mut bytes = [0_u8; 16];
+    for (index, slot) in bytes.iter_mut().enumerate() {
+        let offset = index * 2;
+        *slot = u8::from_str_radix(&value[offset..offset + 2], 16)
+            .map_err(|_| "validated Daimon prompt identity became invalid")?;
+    }
+    Ok(bytes)
+}
+
+fn daimon_workset_error(
+    observations: &[&daimon_tui::AgentObservation],
+    requirement: &str,
+    eligible: impl Fn(&daimon_protocol::agent::AgentSessionViewV1) -> bool,
+) -> Option<String> {
+    let blocked = observations
+        .iter()
+        .enumerate()
+        .filter(|(_, observation)| !eligible(&observation.view))
+        .map(|(index, observation)| {
+            format!(
+                "#{} {:?} r{}{}",
+                index + 1,
+                observation.view.phase,
+                observation.view.revision,
+                if observation.view.active_turn.is_some() {
+                    " active-turn"
+                } else {
+                    " no-active-turn"
+                }
+            )
+        })
+        .collect::<Vec<_>>();
+    (!blocked.is_empty()).then(|| {
+        format!(
+            "Daimon workset blocked by {} of {} selected session(s): {}. Required: {requirement}",
+            blocked.len(),
+            observations.len(),
+            blocked.join(", ")
+        )
+    })
+}
+
+fn daimon_prompt_requests(
+    observations: &[&daimon_tui::AgentObservation],
+    policy: &DaimonExecutionPolicyProfile,
+    prompt: Vec<u8>,
+) -> Result<Vec<daimon_tui::AgentControlRequest>, String> {
+    if let Some(error) = daimon_workset_error(observations, "Ready with no active turn", |view| {
+        view.phase == AgentSessionPhaseV1::Ready && view.active_turn.is_none()
+    }) {
+        return Err(error);
+    }
+    let now = current_unix_time()?;
+    observations
+        .iter()
+        .map(|observation| {
+            Ok(daimon_tui::AgentControlRequest::Prompt(PromptRequest {
+                session: observation.view.session,
+                turn: AgentTurnIdV1::new(fresh_identity()?),
+                expected_revision: observation.view.revision,
+                execution: daimon_execution_request(policy)?,
+                prompt: prompt.clone(),
+                now,
+            }))
+        })
+        .collect()
+}
+
+fn daimon_reattach_requests(
+    observations: &[&daimon_tui::AgentObservation],
+    policy: &DaimonExecutionPolicyProfile,
+) -> Result<Vec<daimon_tui::AgentControlRequest>, String> {
+    if let Some(error) = daimon_workset_error(
+        observations,
+        "ReattachRequired with no active turn and resume support",
+        |view| {
+            view.phase == AgentSessionPhaseV1::ReattachRequired
+                && view.active_turn.is_none()
+                && view.capabilities.resume_session
+        },
+    ) {
+        return Err(error);
+    }
+    let now = current_unix_time()?;
+    observations
+        .iter()
+        .map(|observation| {
+            Ok(daimon_tui::AgentControlRequest::Reattach(ReattachRequest {
+                session: observation.view.session,
+                expected_revision: observation.view.revision,
+                execution: daimon_execution_request(policy)?,
+                now,
+            }))
+        })
+        .collect()
+}
+
+fn daimon_execution_request(
+    policy: &DaimonExecutionPolicyProfile,
+) -> Result<ExecuteRequestV1, String> {
+    let principal = PrincipalIdV1::new(parse_hex_identity(&policy.principal)?);
+    let profile = HarnessProfileIdV1::new(parse_hex_identity(&policy.profile)?);
+    let context = policy
+        .context
+        .iter()
+        .map(|value| parse_hex_identity(value).map(ContextReferenceIdV1::new))
+        .collect::<Result<Vec<_>, _>>()?;
+    let tools = policy
+        .tools
+        .iter()
+        .map(|value| parse_hex_identity(value).map(ToolCapabilityIdV1::new))
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(ExecuteRequestV1 {
+        execution_id: ExecutionIdV1::new(fresh_identity()?),
+        task_attempt: TaskAttemptRefV1 {
+            task_key: fresh_identity()?,
+            task_incarnation: 1,
+            attempt_number: 1,
+        },
+        principal,
+        profile,
+        idempotency_key: IdempotencyKeyV1::new(fresh_identity()?),
+        context,
+        tools,
+        budget: ExecutionBudgetV1 {
+            max_elapsed_millis: policy.budget.max_elapsed_millis,
+            max_input_tokens: policy.budget.max_input_tokens,
+            max_output_tokens: policy.budget.max_output_tokens,
+            max_tool_calls: policy.budget.max_tool_calls,
+            max_context_bytes: policy.budget.max_context_bytes,
+            max_output_bytes: policy.budget.max_output_bytes,
+        },
+    })
+}
+
+fn current_unix_time() -> Result<u64, String> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "system clock precedes the Unix epoch".to_owned())
+        .map(|duration| duration.as_secs())
+}
+
+fn daimon_permission_challenges(
+    observations: &[&daimon_tui::AgentObservation],
+) -> Result<Vec<daimon_tui::AgentPermissionChallenge>, String> {
+    observations
+        .iter()
+        .enumerate()
+        .map(|(index, observation)| {
+            let failure = |reason: &str| {
+                format!(
+                    "Daimon permission workset blocked at selected #{} {:?} r{}: {reason}",
+                    index + 1,
+                    observation.view.phase,
+                    observation.view.revision
+                )
+            };
+            let Some(turn) = observation.view.active_turn else {
+                return Err(failure("no active permission turn"));
+            };
+            if observation.view.phase != AgentSessionPhaseV1::AwaitingPermission {
+                return Err(failure("session is not AwaitingPermission"));
+            }
+            let Some(last_cursor) = observation.view.last_event_cursor else {
+                return Err(failure("session has no challenge cursor"));
+            };
+            let Some(record) = observation
+                .events
+                .entries
+                .iter()
+                .find(|record| record.cursor == last_cursor)
+            else {
+                return Err(failure(
+                    "current challenge is outside the bounded event page",
+                ));
+            };
+            let AgentEventV1::Permission(challenge) = &record.event else {
+                return Err(failure("latest event is not a permission challenge"));
+            };
+            if challenge.turn != turn || challenge.options.is_empty() {
+                return Err(failure(
+                    "challenge does not match the active turn or has no options",
+                ));
+            }
+            Ok(daimon_tui::AgentPermissionChallenge {
+                session: observation.view.session,
+                expected_revision: observation.view.revision,
+                event_cursor: record.cursor,
+                challenge: challenge.clone(),
+            })
+        })
+        .collect()
+}
+
+fn daimon_permission_requests(
+    selections: Vec<daimon_tui::AgentPermissionSelection>,
+    policy: &DaimonExecutionPolicyProfile,
+) -> Result<Vec<daimon_tui::AgentControlRequest>, String> {
+    let now = current_unix_time()?;
+    selections
+        .into_iter()
+        .map(|selection| {
+            let challenge = selection.challenge;
+            Ok(daimon_tui::AgentControlRequest::Permission(
+                daimon_tui::AgentPermissionControlRequest {
+                    request: PermissionRequest {
+                        session: challenge.session,
+                        expected_revision: challenge.expected_revision,
+                        event_cursor: challenge.event_cursor,
+                        permission_request: challenge.challenge.request,
+                        option: selection.option,
+                        execution: daimon_execution_request(policy)?,
+                        now,
+                    },
+                    challenge: challenge.challenge,
+                },
+            ))
+        })
+        .collect()
+}
+
+fn fresh_durable_operation() -> Result<DurableOperationRefV1, String> {
+    let mut bytes = [0_u8; 16];
+    File::open("/dev/urandom")
+        .and_then(|mut source| source.read_exact(&mut bytes))
+        .map_err(|error| format!("local durable operation identity unavailable: {error}"))?;
+    DurableOperationRefV1::new(bytes)
+        .ok_or_else(|| "local durable operation identity was invalid".to_owned())
+}
+
+fn daimon_control_request(
+    action: &str,
+    view: &daimon_protocol::agent::AgentSessionViewV1,
+    idempotency_key: IdempotencyKeyV1,
+    now: u64,
+) -> Result<daimon_tui::AgentControlRequest, &'static str> {
+    match action {
+        "daimon.session.advance" => {
+            let Some(turn) = view.active_turn else {
+                return Err("Selected Daimon session has no active turn to advance");
+            };
+            if view.phase != AgentSessionPhaseV1::TurnActive {
+                return Err("Selected Daimon session is not in TurnActive phase");
+            }
+            Ok(daimon_tui::AgentControlRequest::Advance(AdvanceRequest {
+                session: view.session,
+                turn,
+                expected_revision: view.revision,
+                idempotency_key,
+                now,
+            }))
+        }
+        "daimon.session.cancel" => {
+            let Some(turn) = view.active_turn else {
+                return Err("Selected Daimon session has no active turn to cancel");
+            };
+            if !matches!(
+                view.phase,
+                AgentSessionPhaseV1::TurnActive | AgentSessionPhaseV1::AwaitingPermission
+            ) {
+                return Err("Selected Daimon session is not cancellable in its current phase");
+            }
+            Ok(daimon_tui::AgentControlRequest::Cancel(CancelRequest {
+                session: view.session,
+                turn,
+                expected_revision: view.revision,
+                idempotency_key,
+                now,
+            }))
+        }
+        "daimon.session.close" => {
+            if view.phase != AgentSessionPhaseV1::Ready || view.active_turn.is_some() {
+                return Err("Selected Daimon session must be Ready with no active turn to close");
+            }
+            Ok(daimon_tui::AgentControlRequest::Close(CloseRequest {
+                session: view.session,
+                expected_revision: view.revision,
+                idempotency_key,
+                now,
+            }))
+        }
+        _ => Err("Unknown Daimon control action"),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn workbench_commands(
+    shell: &Shell,
+    chronos: bool,
+    chronos_writes: bool,
+    chronos_scheduling: bool,
+    vellum: bool,
+    vellum_durable: bool,
+    agora: bool,
+    agora_control: bool,
+    moira: bool,
+    moira_control: bool,
+    daimon: bool,
+    daimon_control: bool,
+    daimon_execution: bool,
+    hermes: bool,
+    hermes_operator: bool,
+    hermes_disclosure: bool,
+    hermes_control: bool,
+    aegis: bool,
+    aegis_control: bool,
+    grounding: bool,
+    operations_hosted: bool,
+    profile_configured: bool,
+) -> Vec<CommandSpec> {
+    let mut commands = shell
+        .surfaces()
+        .iter()
+        .map(|surface| match surface {
+            Surface::Overview => CommandSpec::available(
+                "navigate.overview",
+                "Go to overview",
+                "See availability and status across the complete configured suite.",
+                "Pantheon",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Workspace => CommandSpec::available(
+                "navigate.workspace",
+                "Go to workspace",
+                "Work with Chronos and Vellum side by side.",
+                "Pantheon",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Agora => CommandSpec::available(
+                "navigate.agora",
+                "Go to Agora",
+                "Inspect rooms and selected message history.",
+                "Agora",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Moira => CommandSpec::available(
+                "navigate.moira",
+                "Go to Moira",
+                "Inspect sagas, evidence, reconciliation, and receipts.",
+                "Moira",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Daimon => CommandSpec::available(
+                "navigate.daimon",
+                "Go to Daimon",
+                "Inspect agent presence, sessions, and event evidence.",
+                "Daimon",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Grounding => CommandSpec::available(
+                "navigate.grounding",
+                "Go to Grounding",
+                "Inspect provenance and freshness of grounding loads.",
+                "Grounding",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Aegis => CommandSpec::available(
+                "navigate.aegis",
+                "Go to Aegis",
+                "Inspect authority, grants, and bounded decision evidence.",
+                "Aegis",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Hermes => CommandSpec::available(
+                "navigate.hermes",
+                "Go to Hermes",
+                "Inspect ledger, stream, cursor, and retention state.",
+                "Hermes",
+                None,
+                CommandKind::Navigate,
+            ),
+            Surface::Operations => CommandSpec::available(
+                "navigate.operations",
+                "Go to operations",
+                "Inspect local topology lifecycle, hosted peers, and retained receipts.",
+                "Operations",
+                None,
+                CommandKind::Navigate,
+            ),
+        })
+        .collect::<Vec<_>>();
+    let any_peer = chronos || vellum || agora || moira || daimon || hermes || aegis || grounding;
+    let refresh = CommandSpec::available(
+        "view.refresh",
+        "Refresh current view",
+        "Request a fresh peer-owned observation for the current surface.",
+        "Current view",
+        Some("r"),
+        CommandKind::Observe,
+    );
+    commands.push(if any_peer {
+        refresh
+    } else {
+        refresh.unavailable("No peer is configured")
+    });
+    let refresh_all = CommandSpec::available(
+        "suite.refresh",
+        "Refresh the complete suite",
+        "Queue a fresh peer-owned observation for every configured service.",
+        "Operations",
+        None,
+        CommandKind::Observe,
+    );
+    commands.push(if any_peer {
+        refresh_all
+    } else {
+        refresh_all.unavailable("No peer is configured")
+    });
+    let focus = CommandSpec::available(
+        "workspace.focus.toggle",
+        "Switch workspace focus",
+        "Move input between the Chronos and Vellum panes.",
+        "Workspace",
+        Some("Tab"),
+        CommandKind::Navigate,
+    );
+    commands.push(if chronos && vellum {
+        focus
+    } else {
+        focus.unavailable("Both Chronos and Vellum are required")
+    });
+    let save = CommandSpec::available(
+        "vellum.save",
+        "Save current Vellum document",
+        "Submit the selected document through Vellum's guarded service save path.",
+        "Vellum",
+        Some("Ctrl-S"),
+        CommandKind::Guarded,
+    );
+    commands.push(if vellum {
+        save
+    } else {
+        save.unavailable("Vellum is not configured")
+    });
+    let durable_save = CommandSpec::available(
+        "vellum.save-selected",
+        "Durably save selected Vellum documents",
+        "Prepare exact revisions for the selected 1–16 document workset, then save sequentially with independent restart-stable receipts.",
+        "Vellum",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if vellum_durable {
+        durable_save
+    } else {
+        durable_save.unavailable(if vellum {
+            "A stable authenticated Vellum identity is required for durable receipts"
+        } else {
+            "Vellum is not configured"
+        })
+    });
+    let atomic_replace = CommandSpec::available(
+        "vellum.atomic-replace-selected",
+        "Replace text atomically across selected Vellum documents",
+        "Preview literal matches and publish one revision-bound in-memory transaction across the selected 1–16 document workset; persistence remains separate.",
+        "Vellum",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if vellum {
+        atomic_replace
+    } else {
+        atomic_replace.unavailable("Vellum is not configured")
+    });
+    let select_document = CommandSpec::available(
+        "vellum.document.toggle-selection",
+        "Toggle current Vellum document selection",
+        "Add or remove the current document from the bounded multi-document workset; an empty workset falls back to the current document.",
+        "Vellum",
+        None,
+        CommandKind::Work,
+    );
+    commands.push(if vellum {
+        select_document
+    } else {
+        select_document.unavailable("Vellum is not configured")
+    });
+    let new_task = CommandSpec::available(
+        "chronos.task.new",
+        "Create a Chronos task",
+        "Open Chronos's bounded new-task form on the active workstream.",
+        "Chronos",
+        Some("n"),
+        CommandKind::Work,
+    );
+    commands.push(if chronos_writes {
+        new_task
+    } else {
+        new_task.unavailable(if chronos {
+            "Chronos writes are disabled for this session"
+        } else {
+            "Chronos is not configured"
+        })
+    });
+    let cancel_task = CommandSpec::available(
+        "chronos.task.cancel",
+        "Cancel marked Chronos tasks",
+        "Cancel the marked task set (or current task) through independently receipted, revision-bound owner mutations; the run stops on uncertainty.",
+        "Chronos",
+        Some("c"),
+        CommandKind::Guarded,
+    );
+    commands.push(if chronos_writes {
+        cancel_task
+    } else {
+        cancel_task.unavailable(if chronos {
+            "Chronos writes are disabled for this session"
+        } else {
+            "Chronos is not configured"
+        })
+    });
+    let schedule = CommandSpec::available(
+        "chronos.schedule.open",
+        "Open Chronos scheduling",
+        "Inspect eligibility, capacity, pause, and not-before controls.",
+        "Chronos",
+        Some("4"),
+        CommandKind::Observe,
+    );
+    commands.push(if chronos_scheduling {
+        schedule
+    } else {
+        schedule.unavailable(if chronos {
+            "Chronos scheduling was not selected for this session"
+        } else {
+            "Chronos is not configured"
+        })
+    });
+    let prompt = CommandSpec::available(
+        "daimon.session.prompt",
+        "Prompt selected Daimon sessions",
+        "Compose one multiline prompt for the selected 1–16 ready sessions; every child receives a fresh exact execution envelope and independent receipt.",
+        "Daimon",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if daimon_execution {
+        prompt
+    } else {
+        prompt.unavailable(if daimon_control {
+            "Daimon prompting requires a credential-free execution policy in the workspace profile"
+        } else if daimon {
+            "Daimon agent control connection was not selected for this session"
+        } else {
+            "A selected Daimon agent session is not configured"
+        })
+    });
+    let permission = CommandSpec::available(
+        "daimon.session.permission",
+        "Decide selected Daimon permissions",
+        "Review each selected waiting session's exact owner-published challenge and choose one independent option per session.",
+        "Daimon",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if daimon_execution {
+        permission
+    } else {
+        permission.unavailable(if daimon_control {
+            "Daimon permission decisions require the credential-free execution policy"
+        } else if daimon {
+            "Daimon agent control connection was not selected for this session"
+        } else {
+            "A selected Daimon agent session is not configured"
+        })
+    });
+    let reattach = CommandSpec::available(
+        "daimon.session.reattach",
+        "Reattach selected Daimon sessions",
+        "Resume the selected 1–16 detached sessions with fresh independent execution envelopes, exact revision guards, and child receipts.",
+        "Daimon",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if daimon_execution {
+        reattach
+    } else {
+        reattach.unavailable(if daimon_control {
+            "Daimon reattachment requires the credential-free execution policy"
+        } else if daimon {
+            "Daimon agent control connection was not selected for this session"
+        } else {
+            "A selected Daimon agent session is not configured"
+        })
+    });
+    for command in [
+        CommandSpec::available(
+            "chronos.schedule.task-pause",
+            "Set marked Chronos task pause",
+            "Set pause consistently across the marked task workset (or current task), preserving each task's not-before value and stopping on uncertainty.",
+            "Chronos",
+            Some("t"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "chronos.schedule.task-not-before",
+            "Set marked Chronos not-before",
+            "Open a bounded timestamp form for the marked task workset (or current task); each child preserves its pause state and settles independently.",
+            "Chronos",
+            Some("d"),
+            CommandKind::Guarded,
+        ),
+    ] {
+        commands.push(if chronos_writes && chronos_scheduling {
+            command
+        } else {
+            command.unavailable(if chronos {
+                "Chronos scheduling writes require both write and scheduling selections"
+            } else {
+                "Chronos is not configured"
+            })
+        });
+    }
+    let create_room = CommandSpec::available(
+        "agora.room.create",
+        "Create an Agora room",
+        "Open a bounded conversation-native form bound to the current room revision.",
+        "Agora",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if agora_control {
+        create_room
+    } else {
+        create_room.unavailable(if agora {
+            "Agora room control connection was not selected for this session"
+        } else {
+            "Agora is not configured"
+        })
+    });
+    let send_message = CommandSpec::available(
+        "agora.message.compose",
+        "Compose an Agora message",
+        "Compose a multiline message with an optional canonical recipient set, bound to the observed conversation revision.",
+        "Agora",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if agora_control {
+        send_message
+    } else {
+        send_message.unavailable(if agora {
+            "Agora message control connection was not selected for this session"
+        } else {
+            "Agora is not configured"
+        })
+    });
+    for (command, configured) in [
+        (
+            CommandSpec::available(
+                "moira.saga.open",
+                "Inspect selected Moira saga",
+                "Open the selected saga's reconciliation state, evidence, and receipts.",
+                "Moira",
+                Some("Enter"),
+                CommandKind::Observe,
+            ),
+            moira,
+        ),
+        (
+            CommandSpec::available(
+                "moira.saga.back",
+                "Return to Moira saga list",
+                "Leave saga detail and return to the bounded saga census.",
+                "Moira",
+                Some("Esc"),
+                CommandKind::Navigate,
+            ),
+            moira,
+        ),
+        (
+            CommandSpec::available(
+                "agora.room.open",
+                "Open selected Agora room",
+                "Inspect the selected room's bounded message history.",
+                "Agora",
+                Some("Enter"),
+                CommandKind::Observe,
+            ),
+            agora,
+        ),
+        (
+            CommandSpec::available(
+                "agora.room.back",
+                "Return to Agora rooms",
+                "Leave message history and return to the bounded room list.",
+                "Agora",
+                Some("Esc"),
+                CommandKind::Navigate,
+            ),
+            agora,
+        ),
+        (
+            CommandSpec::available(
+                "aegis.page.next",
+                "Show next Aegis authority page",
+                "Request the next bounded page of authority observations.",
+                "Aegis",
+                Some("n"),
+                CommandKind::Observe,
+            ),
+            aegis,
+        ),
+        (
+            CommandSpec::available(
+                "aegis.page.previous",
+                "Show previous Aegis authority page",
+                "Return to the preceding bounded authority page.",
+                "Aegis",
+                Some("p"),
+                CommandKind::Observe,
+            ),
+            aegis,
+        ),
+    ] {
+        commands.push(if configured {
+            command
+        } else {
+            command.unavailable("Peer is not configured")
+        });
+    }
+    for reconcile in [
+        CommandSpec::available(
+            "moira.reconciliation.keep-uncertain",
+            "Keep selected Moira sagas uncertain",
+            "Reconcile the selected 1–16 Moira sagas through independent server challenges and durable receipts; c arms and Enter confirms.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "moira.reconciliation.fail-terminal",
+            "Fail selected Moira sagas terminally",
+            "Terminally fail the selected 1–16 uncertain sagas through independent server challenges and durable receipts; c arms and Enter confirms.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "moira.reconciliation.cancel",
+            "Cancel selected Moira sagas",
+            "Cancel the selected 1–16 sagas at one visible wall-clock witness through independent server challenges and durable receipts.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "moira.reconciliation.compensate",
+            "Compensate selected Moira sagas",
+            "Begin compensation for the selected 1–16 sagas at one visible wall-clock witness through independent server challenges and durable receipts.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "moira.reconciliation.admit-failed",
+            "Admit failed evidence for selected Moira sagas",
+            "Admit failed evidence for each selected saga's exact current effect at one visible observation time.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "moira.reconciliation.admit-succeeded",
+            "Admit successful evidence for selected Moira sagas",
+            "Admit successful evidence for each selected saga's exact current effect at one visible observation time.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "moira.reconciliation.retry",
+            "Retry failed effects for selected Moira sagas",
+            "Retry each selected saga's exact current failed effect at one visible wall-clock witness.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        ),
+    ] {
+        commands.push(if moira_control {
+            reconcile
+        } else {
+            reconcile.unavailable(if moira {
+                "Moira control connection was not selected for this session"
+            } else {
+                "Moira is not configured"
+            })
+        });
+    }
+    for command in [
+        CommandSpec::available(
+            "daimon.session.advance",
+            "Advance selected Daimon turns",
+            "Open a bounded run of exact revision-bound one-slice proposals for the selected sessions.",
+            "Daimon",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "daimon.session.cancel",
+            "Cancel selected Daimon turns",
+            "Open a bounded run of exact revision- and turn-bound cancellation proposals.",
+            "Daimon",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "daimon.session.close",
+            "Close selected Daimon sessions",
+            "Open a bounded run of exact proposals for ready sessions with no active turn.",
+            "Daimon",
+            None,
+            CommandKind::Guarded,
+        ),
+    ] {
+        commands.push(if daimon_control {
+            command
+        } else {
+            command.unavailable(if daimon {
+                "Daimon agent control connection was not selected for this session"
+            } else {
+                "A selected Daimon agent session is not configured"
+            })
+        });
+    }
+    let revoke_epoch = CommandSpec::available(
+        "aegis.epoch.revoke",
+        "Revoke current Aegis epoch",
+        "Open Aegis's exact current-epoch global revocation sheet; c arms and Enter confirms once.",
+        "Aegis",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if aegis_control {
+        revoke_epoch
+    } else {
+        revoke_epoch.unavailable(if aegis {
+            "Aegis administrative connection was not selected for this session"
+        } else {
+            "Aegis is not configured"
+        })
+    });
+    let manage_authority = CommandSpec::available(
+        "aegis.authority.manage",
+        "Manage retained Aegis authority",
+        "Open one bounded private session for 1–16-scope issuance, attenuation, authorization, redacted review, and explicit close.",
+        "Aegis",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if aegis_control {
+        manage_authority
+    } else {
+        manage_authority.unavailable(if aegis {
+            "Aegis administrative connection was not selected for this session"
+        } else {
+            "Aegis is not configured"
+        })
+    });
+    let acknowledge = CommandSpec::available(
+        "ledger.acknowledge.v1",
+        "Acknowledge a Hermes cursor range",
+        "Select an exact range through the published edge; c arms and Enter confirms once.",
+        "Hermes",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if hermes_control {
+        acknowledge
+    } else {
+        acknowledge.unavailable(if hermes {
+            "Hermes consumer control was not selected for this session"
+        } else {
+            "Hermes is not configured"
+        })
+    });
+    let disclose = CommandSpec::available(
+        "ledger.events.disclose.v1",
+        "Disclose a Hermes event batch",
+        "Select 1–16 events with bounded previews; c arms and Enter confirms one read.",
+        "Hermes",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if hermes_disclosure {
+        disclose
+    } else {
+        disclose.unavailable(if hermes {
+            "Hermes stream disclosure was not selected for this session"
+        } else {
+            "Hermes is not configured"
+        })
+    });
+    let compact = CommandSpec::available(
+        "ledger.compact.v1",
+        "Compact a Hermes stream",
+        "Select an exact destructive retention boundary, then arm and confirm one attempt.",
+        "Hermes",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if hermes_operator {
+        compact
+    } else {
+        compact.unavailable(if hermes {
+            "Hermes stream operator control was not selected for this session"
+        } else {
+            "Hermes is not configured"
+        })
+    });
+    let drain = CommandSpec::available(
+        "operations.drain",
+        "Drain hosted topology",
+        "Open Operations and arm a reverse-order drain of every Pantheon-hosted peer.",
+        "Operations",
+        None,
+        CommandKind::Lifecycle,
+    );
+    commands.push(if operations_hosted {
+        drain
+    } else {
+        drain.unavailable("No Pantheon-owned topology is attached to this terminal session")
+    });
+    commands.extend([
+        CommandSpec::available(
+            "workbench.activity",
+            "Show activity and receipts",
+            "Review recent actions, refusals, and uncertain outcomes.",
+            "Pantheon",
+            Some("Ctrl-G"),
+            CommandKind::Observe,
+        ),
+        CommandSpec::available(
+            "workbench.help",
+            "Show contextual help",
+            "Review global keys and every currently available action.",
+            "Pantheon",
+            Some("F1"),
+            CommandKind::Observe,
+        ),
+        CommandSpec::available(
+            "workbench.configuration",
+            "Inspect session configuration",
+            "Review selected surfaces, configured peers, and launch-time authority without exposing credentials.",
+            "Configuration",
+            None,
+            CommandKind::Observe,
+        ),
+        if profile_configured {
+            CommandSpec::available(
+                "workbench.reconfigure",
+                "Preflight and restart workspace profile",
+                "Validate and diff a local profile, review the exact restart boundary, then explicitly arm a clean process replacement.",
+                "Configuration",
+                None,
+                CommandKind::Lifecycle,
+            )
+        } else {
+            CommandSpec::available(
+                "workbench.reconfigure",
+                "Preflight and restart workspace profile",
+                "Validate and diff a local profile, review the exact restart boundary, then explicitly arm a clean process replacement.",
+                "Configuration",
+                None,
+                CommandKind::Lifecycle,
+            )
+            .unavailable("This session was not launched from a workspace profile")
+        },
+        CommandSpec::available(
+            "workbench.instrumentation",
+            "Inspect TUI instrumentation",
+            "Review bounded per-action dispatch, outcome, and latency metrics.",
+            "Observability",
+            None,
+            CommandKind::Observe,
+        ),
+    ]);
+    commands.extend(
+        GUARDED_CONTROL_ROUTES
+            .iter()
+            .filter(|route| {
+                !matches!(
+                    route.capability,
+                    "messages.speak.v2"
+                        | "agents.session.prompt.v1"
+                        | "agents.session.permission.v1"
+                        | "agents.session.reattach.v1"
+                        | "ledger.acknowledge.v1"
+                        | "ledger.events.disclose.v1"
+                        | "ledger.compact.v1"
+                )
+            })
+            .map(|route| {
+                CommandSpec::available(
+                    route.capability,
+                    route.capability,
+                    route.command,
+                    route.peer,
+                    None,
+                    CommandKind::Guarded,
+                )
+                .unavailable("Qualified guard exists; interactive workflow is not composed yet")
+            }),
+    );
+    commands
+}
+
+#[allow(clippy::too_many_arguments)]
+fn execute_workbench_action<T: ServicePort>(
+    action: &str,
+    shell: &mut Shell,
+    focus: &mut Focus,
+    chronos: &mut Option<Hub>,
+    vellum: &mut Option<ServiceEditor<T>>,
+    vellum_control_config: Option<&VellumControlConfig>,
+    vellum_durable_save: &mut Option<DurableSaveBatchComponent>,
+    vellum_atomic_replace: &mut Option<AtomicReplaceComponent>,
+    agora: &mut Option<agora_tui::Component>,
+    agora_control_config: Option<&AgoraControlConfig>,
+    agora_create: &mut Option<agora_tui::CreateRoomComponent>,
+    agora_message: &mut Option<agora_tui::ComposeMessageComponent>,
+    moira: &mut Option<moira_tui::Component>,
+    moira_control_socket: Option<&Path>,
+    moira_reconciliation: &mut Option<moira_tui::ReconciliationBatchComponent>,
+    daimon: &mut Option<daimon_tui::Component>,
+    daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
+    daimon_control_socket: Option<&Path>,
+    daimon_execution_policy: Option<&DaimonExecutionPolicyProfile>,
+    daimon_prompt_composer: &mut Option<daimon_tui::AgentPromptComposer>,
+    daimon_permission_composer: &mut Option<daimon_tui::AgentPermissionComposer>,
+    daimon_control: &mut Option<daimon_tui::AgentControlBatchComponent>,
+    hermes: &mut Option<hermes_tui::Component>,
+    hermes_operator_socket: Option<&Path>,
+    hermes_compaction: &mut Option<hermes_tui::CompactionComponent>,
+    hermes_disclosure_socket: Option<&Path>,
+    hermes_disclosure: &mut Option<hermes_tui::DisclosureComponent>,
+    hermes_control_socket: Option<&Path>,
+    hermes_acknowledge: &mut Option<hermes_tui::AcknowledgeComponent>,
+    aegis: &mut Option<aegis_tui::Component>,
+    aegis_control_socket: Option<&Path>,
+    aegis_revoke: &mut Option<aegis_tui::RevokeEpochComponent>,
+    aegis_managed: &mut Option<aegis_tui::ManagedAuthorityComponent>,
+    grounding: &mut Option<tellus::Component>,
+    operations: &mut OperationsRuntime,
+) -> (ActivityLevel, &'static str, String) {
+    let destination = match action {
+        "navigate.overview" => Some(Surface::Overview),
+        "navigate.workspace" => Some(Surface::Workspace),
+        "navigate.agora" => Some(Surface::Agora),
+        "navigate.moira" => Some(Surface::Moira),
+        "navigate.daimon" => Some(Surface::Daimon),
+        "navigate.grounding" => Some(Surface::Grounding),
+        "navigate.aegis" => Some(Surface::Aegis),
+        "navigate.hermes" => Some(Surface::Hermes),
+        "navigate.operations" => Some(Surface::Operations),
+        _ => None,
+    };
+    if let Some(destination) = destination {
+        let _ = shell.activate(destination);
+        return (
+            ActivityLevel::Info,
+            "pantheon",
+            format!("Opened {}", destination.label()),
+        );
+    }
+    match action {
+        "workspace.focus.toggle" => {
+            let _ = shell.activate(Surface::Workspace);
+            *focus = focus.other();
+            (
+                ActivityLevel::Info,
+                "workspace",
+                format!("Focus moved to {focus:?}"),
+            )
+        }
+        "vellum.save" => {
+            let _ = shell.activate(Surface::Workspace);
+            *focus = Focus::Vellum;
+            match vellum
+                .as_mut()
+                .expect("palette enables save only with Vellum")
+                .apply(ServiceAction::Save)
+            {
+                Ok(()) => (
+                    ActivityLevel::Info,
+                    "vellum",
+                    "Save submitted through Vellum's guarded service path; awaiting peer state"
+                        .into(),
+                ),
+                Err(error) => (ActivityLevel::Warning, "vellum", error.to_string()),
+            }
+        }
+        "vellum.document.toggle-selection" => {
+            let _ = shell.activate(Surface::Workspace);
+            *focus = Focus::Vellum;
+            let editor = vellum
+                .as_mut()
+                .expect("palette enables selection only with Vellum");
+            match editor.apply(ServiceAction::ToggleDocumentSelection) {
+                Ok(()) => (
+                    ActivityLevel::Info,
+                    "vellum",
+                    format!(
+                        "{} Vellum document(s) selected for bounded work",
+                        editor.selected_document_count()
+                    ),
+                ),
+                Err(error) => (ActivityLevel::Warning, "vellum", error.to_string()),
+            }
+        }
+        "vellum.save-selected" => {
+            let _ = shell.activate(Surface::Workspace);
+            *focus = Focus::Vellum;
+            if vellum_atomic_replace.is_some() {
+                return (
+                    ActivityLevel::Warning,
+                    "vellum",
+                    "Close the atomic-replace composer before opening durable save".into(),
+                );
+            }
+            let Some(config) = vellum_control_config.cloned() else {
+                return (
+                    ActivityLevel::Warning,
+                    "vellum",
+                    "Vellum durable-save connection was not configured".into(),
+                );
+            };
+            let editor = vellum
+                .as_mut()
+                .expect("palette enables durable save only with Vellum");
+            let exact = match editor.prepare_selected_save_targets() {
+                Ok(exact) => exact,
+                Err(error) => return (ActivityLevel::Warning, "vellum", error.to_string()),
+            };
+            let mut targets = Vec::with_capacity(exact.len());
+            for (document_ordinal, expected_revision) in exact {
+                let operation = match fresh_durable_operation() {
+                    Ok(operation) => operation,
+                    Err(error) => return (ActivityLevel::Warning, "vellum", error),
+                };
+                targets.push(DurableSaveTargetV1 {
+                    operation,
+                    document_ordinal,
+                    expected_revision,
+                });
+            }
+            *vellum_durable_save = match DurableSaveBatchComponent::new_with_connector(
+                move || vellum_batch_transport(&config),
+                targets,
+            ) {
+                Ok(component) => Some(component),
+                Err(error) => return (ActivityLevel::Warning, "vellum", error.into()),
+            };
+            (
+                ActivityLevel::Info,
+                "vellum",
+                "Exact Vellum durable-save workset opened; c arms, Enter starts once".into(),
+            )
+        }
+        "vellum.atomic-replace-selected" => {
+            let _ = shell.activate(Surface::Workspace);
+            *focus = Focus::Vellum;
+            if vellum_durable_save
+                .as_ref()
+                .is_some_and(|control| control.request_pending() || control.recovery_required())
+            {
+                return (
+                    ActivityLevel::Warning,
+                    "vellum",
+                    "Settle the durable-save workset before opening atomic replace".into(),
+                );
+            }
+            *vellum_atomic_replace = Some(AtomicReplaceComponent::new());
+            (
+                ActivityLevel::Info,
+                "vellum",
+                "Atomic replace opened for the marked 1–16 document workset".into(),
+            )
+        }
+        "chronos.task.new" => {
+            invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::NewTask)
+        }
+        "chronos.task.cancel" => {
+            invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::CancelSelectedTask)
+        }
+        "chronos.schedule.open" => {
+            invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::OpenSchedule)
+        }
+        "chronos.schedule.task-pause" => {
+            invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::SetTaskPause)
+        }
+        "chronos.schedule.task-not-before" => {
+            invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::SetTaskNotBefore)
+        }
+        "agora.room.create" => {
+            let _ = shell.activate(Surface::Agora);
+            if agora_message.is_some() {
+                return (
+                    ActivityLevel::Warning,
+                    "agora",
+                    "Close the message composer before creating a room".into(),
+                );
+            }
+            let Some(revision) = agora.as_ref().and_then(agora_tui::Component::room_revision)
+            else {
+                return (
+                    ActivityLevel::Warning,
+                    "agora",
+                    "No stable Agora room revision; refresh the room list first".into(),
+                );
+            };
+            let _ = agora_control_config
+                .expect("palette enables room creation only with Agora control configuration");
+            let handle = agora
+                .as_ref()
+                .expect("stable revision came from Agora")
+                .control_handle();
+            *agora_create = Some(agora_tui::CreateRoomComponent::new_with_handle(
+                handle, revision,
+            ));
+            (
+                ActivityLevel::Info,
+                "agora",
+                "Agora room form opened at the current room revision".into(),
+            )
+        }
+        "agora.message.compose" => {
+            let _ = shell.activate(Surface::Agora);
+            if agora_create.is_some() {
+                return (
+                    ActivityLevel::Warning,
+                    "agora",
+                    "Close the room form before composing a message".into(),
+                );
+            }
+            let Some(target) = agora
+                .as_ref()
+                .and_then(agora_tui::Component::message_target)
+            else {
+                return (
+                    ActivityLevel::Warning,
+                    "agora",
+                    "Open and refresh an Agora room before composing a message".into(),
+                );
+            };
+            let _ = agora_control_config.expect(
+                "palette enables message composition only with Agora control configuration",
+            );
+            let handle = agora
+                .as_ref()
+                .expect("stable target came from Agora")
+                .control_handle();
+            *agora_message = Some(agora_tui::ComposeMessageComponent::new_with_handle(
+                handle, target,
+            ));
+            (
+                ActivityLevel::Info,
+                "agora",
+                "Agora message composer opened at the observed conversation revision".into(),
+            )
+        }
+        "moira.saga.open" => {
+            let _ = shell.activate(Surface::Moira);
+            moira
+                .as_mut()
+                .expect("palette enables Moira action only with a component")
+                .update(moira_tui::Input::Open, true);
+            (
+                ActivityLevel::Info,
+                "moira",
+                "Selected saga inspection queued".into(),
+            )
+        }
+        "moira.saga.back" => {
+            *moira_reconciliation = None;
+            let _ = shell.activate(Surface::Moira);
+            moira
+                .as_mut()
+                .expect("palette enables Moira action only with a component")
+                .update(moira_tui::Input::Back, true);
+            (
+                ActivityLevel::Info,
+                "moira",
+                "Returned to the saga list".into(),
+            )
+        }
+        action @ ("moira.reconciliation.keep-uncertain"
+        | "moira.reconciliation.fail-terminal"
+        | "moira.reconciliation.cancel"
+        | "moira.reconciliation.compensate"
+        | "moira.reconciliation.admit-failed"
+        | "moira.reconciliation.admit-succeeded"
+        | "moira.reconciliation.retry") => {
+            let _ = shell.activate(Surface::Moira);
+            let sagas = moira
+                .as_ref()
+                .map(moira_tui::Component::selected_saga_views)
+                .unwrap_or_default();
+            if sagas.is_empty() {
+                return (
+                    ActivityLevel::Warning,
+                    "moira",
+                    "No current saga is selected; refresh the Moira view first".into(),
+                );
+            }
+            let socket = moira_control_socket
+                .expect("palette enables reconciliation only with a control socket")
+                .to_owned();
+            let count = sagas.len();
+            let disposition_label = match action {
+                "moira.reconciliation.fail-terminal" => "fail-terminal",
+                "moira.reconciliation.cancel" => "cancel",
+                "moira.reconciliation.compensate" => "compensate",
+                "moira.reconciliation.admit-failed" => "admit-failed-evidence",
+                "moira.reconciliation.admit-succeeded" => "admit-succeeded-evidence",
+                "moira.reconciliation.retry" => "retry-failed-effect",
+                _ => "keep-uncertain",
+            };
+            let timed_kind = match action {
+                "moira.reconciliation.cancel" => Some(moira_tui::TimedReconciliationKind::Cancel),
+                "moira.reconciliation.compensate" => {
+                    Some(moira_tui::TimedReconciliationKind::Compensate)
+                }
+                "moira.reconciliation.admit-failed" => {
+                    Some(moira_tui::TimedReconciliationKind::AdmitFailed)
+                }
+                "moira.reconciliation.admit-succeeded" => {
+                    Some(moira_tui::TimedReconciliationKind::AdmitSucceeded)
+                }
+                "moira.reconciliation.retry" => Some(moira_tui::TimedReconciliationKind::Retry),
+                _ => None,
+            };
+            let component = if let Some(kind) = timed_kind {
+                moira_tui::ReconciliationBatchComponent::new_timed_with_connector(
+                    move || {
+                        moira_client::unix::SagaUnixPort::connect(
+                            &socket,
+                            moira_client::unix::SagaClientLimitsV1::default(),
+                        )
+                    },
+                    sagas,
+                    kind,
+                )
+            } else {
+                moira_tui::ReconciliationBatchComponent::new_with_connector(
+                    move || {
+                        moira_client::unix::SagaUnixPort::connect(
+                            &socket,
+                            moira_client::unix::SagaClientLimitsV1::default(),
+                        )
+                    },
+                    sagas
+                        .into_iter()
+                        .map(|saga| ReconciliationProposalV1 {
+                            saga: saga.saga,
+                            disposition: if action == "moira.reconciliation.fail-terminal" {
+                                OperatorDispositionV1::FailTerminal
+                            } else {
+                                OperatorDispositionV1::KeepUncertain
+                            },
+                        })
+                        .collect(),
+                )
+            };
+            *moira_reconciliation = match component {
+                Ok(component) => Some(component),
+                Err(error) => {
+                    return (ActivityLevel::Warning, "moira", error.into());
+                }
+            };
+            (
+                ActivityLevel::Info,
+                "moira",
+                format!(
+                    "{count} independently receipted {disposition_label} reconciliation(s) queued; c arms, Enter confirms"
+                ),
+            )
+        }
+        "agora.room.open" => {
+            let _ = shell.activate(Surface::Agora);
+            agora
+                .as_mut()
+                .expect("palette enables Agora action only with a component")
+                .update(agora_tui::Input::Open, true);
+            (
+                ActivityLevel::Info,
+                "agora",
+                "Selected room history queued".into(),
+            )
+        }
+        "agora.room.back" => {
+            let _ = shell.activate(Surface::Agora);
+            agora
+                .as_mut()
+                .expect("palette enables Agora action only with a component")
+                .update(agora_tui::Input::Back, true);
+            (
+                ActivityLevel::Info,
+                "agora",
+                "Returned to the room list".into(),
+            )
+        }
+        "aegis.page.next" | "aegis.page.previous" => {
+            let _ = shell.activate(Surface::Aegis);
+            let input = if action == "aegis.page.next" {
+                aegis_tui::Input::NextPage
+            } else {
+                aegis_tui::Input::PreviousPage
+            };
+            aegis
+                .as_mut()
+                .expect("palette enables Aegis action only with a component")
+                .update(input, true);
+            (
+                ActivityLevel::Info,
+                "aegis",
+                "Authority page request queued".into(),
+            )
+        }
+        "aegis.epoch.revoke" => {
+            let _ = shell.activate(Surface::Aegis);
+            if aegis_managed.is_some() {
+                return (
+                    ActivityLevel::Warning,
+                    "aegis",
+                    "Close the managed authority session before opening global revocation".into(),
+                );
+            }
+            let Some(epoch) = aegis
+                .as_ref()
+                .and_then(aegis_tui::Component::authority_epoch)
+            else {
+                return (
+                    ActivityLevel::Warning,
+                    "aegis",
+                    "No current Aegis epoch; refresh authority state first".into(),
+                );
+            };
+            let socket = aegis_control_socket
+                .expect("palette enables Aegis revocation only with a control socket")
+                .to_owned();
+            *aegis_revoke = Some(aegis_tui::RevokeEpochComponent::new_with_connector(
+                move || {
+                    aegis_local_client::connect(
+                        &socket,
+                        aegis_wire::LimitsV1::default(),
+                        Duration::from_secs(5),
+                    )
+                },
+                epoch,
+            ));
+            (
+                ActivityLevel::Info,
+                "aegis",
+                "Exact current-epoch revocation opened; c arms, Enter submits once".into(),
+            )
+        }
+        "aegis.authority.manage" => {
+            let _ = shell.activate(Surface::Aegis);
+            if aegis_revoke.is_some() {
+                return (
+                    ActivityLevel::Warning,
+                    "aegis",
+                    "Close or settle global revocation before opening managed authority".into(),
+                );
+            }
+            let socket = aegis_control_socket
+                .expect("palette enables Aegis management only with a control socket")
+                .to_owned();
+            *aegis_managed = Some(aegis_tui::ManagedAuthorityComponent::new_with_connector(
+                move || {
+                    aegis_local_client::connect(
+                        socket,
+                        aegis_wire::LimitsV1::default(),
+                        Duration::from_secs(5),
+                    )
+                },
+            ));
+            (
+                ActivityLevel::Info,
+                "aegis",
+                "Aegis managed administration session opening; grant handles remain private".into(),
+            )
+        }
+        "ledger.acknowledge.v1" => {
+            let _ = shell.activate(Surface::Hermes);
+            let Some(selection) = hermes
+                .as_ref()
+                .and_then(hermes_tui::Component::next_acknowledgement)
+            else {
+                return (
+                    ActivityLevel::Warning,
+                    "hermes",
+                    "No acknowledgeable next event; refresh the selected Hermes cursor first"
+                        .into(),
+                );
+            };
+            let socket = hermes_control_socket
+                .expect("palette enables acknowledgement only with a control socket")
+                .to_owned();
+            *hermes_acknowledge = Some(hermes_tui::AcknowledgeComponent::new_with_connector(
+                move || {
+                    hermes_local_client::LocalPort::connect(
+                        &socket,
+                        hermes_local_client::ClientLimits::default(),
+                    )
+                    .map(|port| (hermes_local_client::CONNECTION_SESSION, port))
+                },
+                selection,
+            ));
+            *hermes_compaction = None;
+            *hermes_disclosure = None;
+            (
+                ActivityLevel::Info,
+                "hermes",
+                "Exact Hermes acknowledgement range opened; select N, then c arms and Enter submits once"
+                    .into(),
+            )
+        }
+        "ledger.events.disclose.v1" => {
+            let _ = shell.activate(Surface::Hermes);
+            let Some(selection) = hermes
+                .as_ref()
+                .and_then(hermes_tui::Component::next_disclosure)
+            else {
+                return (
+                    ActivityLevel::Warning,
+                    "hermes",
+                    "No event is available at the selected Hermes position; refresh first".into(),
+                );
+            };
+            let socket = hermes_disclosure_socket
+                .expect("palette enables disclosure only with a selected stream")
+                .to_owned();
+            *hermes_disclosure = Some(hermes_tui::DisclosureComponent::new_with_connector(
+                move || {
+                    hermes_local_client::LocalPort::connect(
+                        &socket,
+                        hermes_local_client::ClientLimits::default(),
+                    )
+                    .map(|port| (hermes_local_client::CONNECTION_SESSION, port))
+                },
+                selection,
+            ));
+            *hermes_compaction = None;
+            *hermes_acknowledge = None;
+            (
+                ActivityLevel::Info,
+                "hermes",
+                "Bounded Hermes event disclosure opened; sensitive content remains hidden until confirmed"
+                    .into(),
+            )
+        }
+        "ledger.compact.v1" => {
+            let _ = shell.activate(Surface::Hermes);
+            let Some(selection) = hermes
+                .as_ref()
+                .and_then(hermes_tui::Component::next_compaction)
+            else {
+                return (
+                    ActivityLevel::Warning,
+                    "hermes",
+                    "No compactable retained range; refresh the selected Hermes stream first"
+                        .into(),
+                );
+            };
+            let socket = hermes_operator_socket
+                .expect("palette enables compaction only with an operator socket")
+                .to_owned();
+            *hermes_compaction = Some(hermes_tui::CompactionComponent::new_with_connector(
+                move || {
+                    hermes_local_client::LocalPort::connect(
+                        &socket,
+                        hermes_local_client::ClientLimits::default(),
+                    )
+                    .map(|port| (hermes_local_client::CONNECTION_SESSION, port))
+                },
+                selection,
+            ));
+            *hermes_disclosure = None;
+            *hermes_acknowledge = None;
+            (
+                ActivityLevel::Info,
+                "hermes",
+                "Hermes compaction boundary sheet opened; deletion remains unarmed".into(),
+            )
+        }
+        "operations.drain" => {
+            let _ = shell.activate(Surface::Operations);
+            operations.arm();
+            (
+                if operations.armed {
+                    ActivityLevel::Warning
+                } else {
+                    ActivityLevel::Info
+                },
+                "operations",
+                operations.notice.clone(),
+            )
+        }
+        "daimon.session.permission" => {
+            let _ = shell.activate(Surface::Daimon);
+            let Some(agent) = daimon_agent.as_ref() else {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "No current Daimon agent observation; refresh the selected session first"
+                        .into(),
+                );
+            };
+            let observations = agent.selected_observations();
+            if observations.is_empty() {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "Selected Daimon sessions do not yet have current observations; refresh first"
+                        .into(),
+                );
+            }
+            let challenges = match daimon_permission_challenges(&observations) {
+                Ok(challenges) => challenges,
+                Err(error) => return (ActivityLevel::Warning, "daimon", error),
+            };
+            let _ = daimon_execution_policy
+                .expect("palette enables permissions only with an execution policy");
+            *daimon_permission_composer = match daimon_tui::AgentPermissionComposer::new(challenges)
+            {
+                Ok(composer) => Some(composer),
+                Err(error) => return (ActivityLevel::Warning, "daimon", error.into()),
+            };
+            *daimon_prompt_composer = None;
+            *daimon_control = None;
+            (
+                ActivityLevel::Info,
+                "daimon",
+                format!(
+                    "Daimon permission review opened for {} selected session(s)",
+                    observations.len()
+                ),
+            )
+        }
+        "daimon.session.prompt" => {
+            let _ = shell.activate(Surface::Daimon);
+            let Some(agent) = daimon_agent.as_ref() else {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "No current Daimon agent observation; refresh the selected session first"
+                        .into(),
+                );
+            };
+            let observations = agent.selected_observations();
+            if observations.is_empty() {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "Selected Daimon sessions do not yet have current observations; refresh first"
+                        .into(),
+                );
+            }
+            if let Some(error) =
+                daimon_workset_error(&observations, "Ready with no active turn", |view| {
+                    view.phase == AgentSessionPhaseV1::Ready && view.active_turn.is_none()
+                })
+            {
+                return (ActivityLevel::Warning, "daimon", error);
+            }
+            let _ = daimon_execution_policy
+                .expect("palette enables prompting only with an execution policy");
+            *daimon_prompt_composer = match daimon_tui::AgentPromptComposer::new(observations.len())
+            {
+                Ok(composer) => Some(composer),
+                Err(error) => return (ActivityLevel::Warning, "daimon", error.into()),
+            };
+            *daimon_permission_composer = None;
+            *daimon_control = None;
+            (
+                ActivityLevel::Info,
+                "daimon",
+                format!(
+                    "Daimon prompt composer opened for {} selected session(s)",
+                    observations.len()
+                ),
+            )
+        }
+        "daimon.session.reattach" => {
+            let _ = shell.activate(Surface::Daimon);
+            let Some(agent) = daimon_agent.as_ref() else {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "No current Daimon agent observation; refresh the selected session first"
+                        .into(),
+                );
+            };
+            let observations = agent.selected_observations();
+            if observations.is_empty() {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "Selected Daimon sessions do not yet have current observations; refresh first"
+                        .into(),
+                );
+            }
+            let Some(policy) = daimon_execution_policy else {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "Daimon execution policy became unavailable".into(),
+                );
+            };
+            let requests = match daimon_reattach_requests(&observations, policy) {
+                Ok(requests) => requests,
+                Err(error) => return (ActivityLevel::Warning, "daimon", error),
+            };
+            let socket = daimon_control_socket
+                .expect("palette enables Daimon reattachment only with an agent socket")
+                .to_owned();
+            *daimon_control = match daimon_tui::AgentControlBatchComponent::new_with_connector(
+                move || {
+                    daimon_client::unix::connect_agent(
+                        &socket,
+                        daimon_wire::LimitsV1::default(),
+                        daimon_wire::agent::AgentWireLimitsV1::default(),
+                        Duration::from_secs(5),
+                    )
+                },
+                requests,
+            ) {
+                Ok(control) => Some(control),
+                Err(error) => return (ActivityLevel::Warning, "daimon", error.into()),
+            };
+            *daimon_prompt_composer = None;
+            *daimon_permission_composer = None;
+            (
+                ActivityLevel::Info,
+                "daimon",
+                "Exact Daimon reattach-set proposal opened; c arms, Enter starts the bounded run"
+                    .into(),
+            )
+        }
+        "daimon.session.advance" | "daimon.session.cancel" | "daimon.session.close" => {
+            let _ = shell.activate(Surface::Daimon);
+            let Some(agent) = daimon_agent.as_ref() else {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "No current Daimon agent observation; refresh the selected session first"
+                        .into(),
+                );
+            };
+            let observations = agent.selected_observations();
+            if observations.is_empty() {
+                return (
+                    ActivityLevel::Warning,
+                    "daimon",
+                    "Selected Daimon sessions do not yet have current observations; refresh first"
+                        .into(),
+                );
+            }
+            let requirement = match action {
+                "daimon.session.advance" => "TurnActive with an active turn",
+                "daimon.session.cancel" => "TurnActive or AwaitingPermission with an active turn",
+                "daimon.session.close" => "Ready with no active turn",
+                _ => unreachable!("closed Daimon control action"),
+            };
+            if let Some(error) =
+                daimon_workset_error(&observations, requirement, |view| match action {
+                    "daimon.session.advance" => {
+                        view.phase == AgentSessionPhaseV1::TurnActive && view.active_turn.is_some()
+                    }
+                    "daimon.session.cancel" => {
+                        matches!(
+                            view.phase,
+                            AgentSessionPhaseV1::TurnActive
+                                | AgentSessionPhaseV1::AwaitingPermission
+                        ) && view.active_turn.is_some()
+                    }
+                    "daimon.session.close" => {
+                        view.phase == AgentSessionPhaseV1::Ready && view.active_turn.is_none()
+                    }
+                    _ => false,
+                })
+            {
+                return (ActivityLevel::Warning, "daimon", error);
+            }
+            let mut requests = Vec::with_capacity(observations.len());
+            for observation in observations {
+                let (key, now) = match fresh_operation_facts() {
+                    Ok(facts) => facts,
+                    Err(error) => return (ActivityLevel::Warning, "daimon", error),
+                };
+                match daimon_control_request(action, &observation.view, key, now) {
+                    Ok(request) => requests.push(request),
+                    Err(reason) => return (ActivityLevel::Warning, "daimon", reason.into()),
+                }
+            }
+            let socket = daimon_control_socket
+                .expect("palette enables Daimon control only with an agent socket")
+                .to_owned();
+            *daimon_control = match daimon_tui::AgentControlBatchComponent::new_with_connector(
+                move || {
+                    daimon_client::unix::connect_agent(
+                        &socket,
+                        daimon_wire::LimitsV1::default(),
+                        daimon_wire::agent::AgentWireLimitsV1::default(),
+                        Duration::from_secs(5),
+                    )
+                },
+                requests,
+            ) {
+                Ok(control) => Some(control),
+                Err(error) => return (ActivityLevel::Warning, "daimon", error.into()),
+            };
+            (
+                ActivityLevel::Info,
+                "daimon",
+                "Exact Daimon session-set proposal opened; c arms, Enter starts the bounded run"
+                    .into(),
+            )
+        }
+        "suite.refresh" => refresh_current(
+            Surface::Overview,
+            *focus,
+            chronos,
+            vellum,
+            agora,
+            moira,
+            daimon,
+            daimon_agent,
+            hermes,
+            aegis,
+            grounding,
+        ),
+        "view.refresh" => refresh_current(
+            shell.active(),
+            *focus,
+            chronos,
+            vellum,
+            agora,
+            moira,
+            daimon,
+            daimon_agent,
+            hermes,
+            aegis,
+            grounding,
+        ),
+        _ => (
+            ActivityLevel::Warning,
+            "pantheon",
+            format!("Unknown workbench action: {action}"),
+        ),
+    }
+}
+
+fn invoke_chronos_workbench(
+    shell: &mut Shell,
+    focus: &mut Focus,
+    chronos: &mut Option<Hub>,
+    intent: WorkbenchIntent,
+) -> (ActivityLevel, &'static str, String) {
+    let _ = shell.activate(Surface::Workspace);
+    *focus = Focus::Chronos;
+    match chronos
+        .as_mut()
+        .expect("palette enables Chronos action only with a hub")
+        .invoke_workbench(intent)
+    {
+        Ok(message) => (ActivityLevel::Info, "chronos", message.into()),
+        Err(message) => (ActivityLevel::Warning, "chronos", message.into()),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn refresh_current<T: ServicePort>(
+    surface: Surface,
+    focus: Focus,
+    chronos: &mut Option<Hub>,
+    vellum: &mut Option<ServiceEditor<T>>,
+    agora: &mut Option<agora_tui::Component>,
+    moira: &mut Option<moira_tui::Component>,
+    daimon: &mut Option<daimon_tui::Component>,
+    daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
+    hermes: &mut Option<hermes_tui::Component>,
+    aegis: &mut Option<aegis_tui::Component>,
+    grounding: &mut Option<tellus::Component>,
+) -> (ActivityLevel, &'static str, String) {
+    let refresh_key = crossterm::event::KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE);
+    match surface {
+        Surface::Overview => {
+            if let Some(component) = chronos {
+                component.update(refresh_key);
+            }
+            if let Some(component) = vellum
+                && let Err(error) = component.apply(ServiceAction::Refresh)
+            {
+                return (ActivityLevel::Warning, "vellum", error.to_string());
+            }
+            if let Some(component) = agora {
+                component.update(agora_tui::Input::Refresh, true);
+            }
+            if let Some(component) = moira {
+                component.update(moira_tui::Input::Refresh, true);
+            }
+            if let Some(component) = daimon {
+                component.update(daimon_tui::Input::Refresh, true);
+            }
+            if let Some(component) = daimon_agent {
+                component.update(daimon_tui::AgentSetInput::RefreshAll, true);
+            }
+            if let Some(component) = hermes {
+                component.update(hermes_tui::Input::Refresh, true);
+            }
+            if let Some(component) = aegis {
+                component.update(aegis_tui::Input::Refresh, true);
+            }
+            if let Some(component) = grounding {
+                component.update(tellus::Input::Refresh, true);
+            }
+            (
+                ActivityLevel::Info,
+                "pantheon",
+                "Fresh observations queued across configured peers".into(),
+            )
+        }
+        Surface::Workspace if focus == Focus::Chronos => {
+            if let Some(component) = chronos {
+                component.update(refresh_key);
+                (ActivityLevel::Info, "chronos", "Refresh queued".into())
+            } else {
+                (ActivityLevel::Warning, "chronos", "Not configured".into())
+            }
+        }
+        Surface::Workspace => match vellum {
+            Some(component) => match component.apply(ServiceAction::Refresh) {
+                Ok(()) => (ActivityLevel::Info, "vellum", "Refresh queued".into()),
+                Err(error) => (ActivityLevel::Warning, "vellum", error.to_string()),
+            },
+            None => (ActivityLevel::Warning, "vellum", "Not configured".into()),
+        },
+        Surface::Agora => refresh_peer(agora.as_mut(), agora_tui::Input::Refresh, "agora"),
+        Surface::Moira => refresh_peer(moira.as_mut(), moira_tui::Input::Refresh, "moira"),
+        Surface::Daimon => {
+            if let Some(component) = daimon_agent {
+                component.update(daimon_tui::AgentSetInput::RefreshAll, true);
+                (
+                    ActivityLevel::Info,
+                    "daimon",
+                    "Session-set refresh queued".into(),
+                )
+            } else {
+                refresh_peer(daimon.as_mut(), daimon_tui::Input::Refresh, "daimon")
+            }
+        }
+        Surface::Hermes => refresh_peer(hermes.as_mut(), hermes_tui::Input::Refresh, "hermes"),
+        Surface::Aegis => refresh_peer(aegis.as_mut(), aegis_tui::Input::Refresh, "aegis"),
+        Surface::Grounding => refresh_peer(grounding.as_mut(), tellus::Input::Refresh, "grounding"),
+        Surface::Operations => (
+            ActivityLevel::Info,
+            "operations",
+            "Lifecycle status is maintained from the live local host".into(),
+        ),
+    }
+}
+
+trait Refreshable<I> {
+    fn refresh(&mut self, input: I);
+}
+
+impl Refreshable<agora_tui::Input> for agora_tui::Component {
+    fn refresh(&mut self, input: agora_tui::Input) {
+        self.update(input, true);
+    }
+}
+
+impl Refreshable<moira_tui::Input> for moira_tui::Component {
+    fn refresh(&mut self, input: moira_tui::Input) {
+        self.update(input, true);
+    }
+}
+
+impl Refreshable<daimon_tui::Input> for daimon_tui::Component {
+    fn refresh(&mut self, input: daimon_tui::Input) {
+        self.update(input, true);
+    }
+}
+
+impl Refreshable<hermes_tui::Input> for hermes_tui::Component {
+    fn refresh(&mut self, input: hermes_tui::Input) {
+        self.update(input, true);
+    }
+}
+
+impl Refreshable<aegis_tui::Input> for aegis_tui::Component {
+    fn refresh(&mut self, input: aegis_tui::Input) {
+        self.update(input, true);
+    }
+}
+
+impl Refreshable<tellus::Input> for tellus::Component {
+    fn refresh(&mut self, input: tellus::Input) {
+        self.update(input, true);
+    }
+}
+
+fn refresh_peer<C, I>(
+    component: Option<&mut C>,
+    input: I,
+    peer: &'static str,
+) -> (ActivityLevel, &'static str, String)
+where
+    C: Refreshable<I>,
+{
+    if let Some(component) = component {
+        component.refresh(input);
+        (ActivityLevel::Info, peer, "Refresh queued".into())
+    } else {
+        (ActivityLevel::Warning, peer, "Not configured".into())
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn session_configuration(
+    shell: &Shell,
+    chronos: Option<&Hub>,
+    vellum: bool,
+    agora: bool,
+    agora_control: bool,
+    moira: bool,
+    moira_control: bool,
+    daimon: bool,
+    daimon_agent: bool,
+    daimon_control: bool,
+    daimon_execution: bool,
+    hermes: bool,
+    hermes_operator: bool,
+    hermes_disclosure: bool,
+    hermes_control: bool,
+    aegis: bool,
+    aegis_control: bool,
+    grounding: bool,
+) -> Vec<String> {
+    let surfaces = shell
+        .surfaces()
+        .iter()
+        .map(|surface| surface.label())
+        .collect::<Vec<_>>()
+        .join(" · ");
+    let disposition = |configured| {
+        if configured {
+            "configured"
+        } else {
+            "not configured"
+        }
+    };
+    vec![
+        "scope               single user · local machine".into(),
+        format!("surfaces            {surfaces}"),
+        format!(
+            "Chronos            {} · writes {} · scheduling {}",
+            disposition(chronos.is_some()),
+            if chronos.is_some_and(Hub::writes_enabled) {
+                "enabled"
+            } else {
+                "disabled"
+            },
+            if chronos.is_some_and(Hub::scheduling_enabled) {
+                "enabled"
+            } else {
+                "disabled"
+            }
+        ),
+        format!("Vellum             {}", disposition(vellum)),
+        format!(
+            "Agora              {} · room creation {}",
+            disposition(agora),
+            if agora_control { "selected" } else { "absent" }
+        ),
+        format!(
+            "Moira              {} · reconciliation control {}",
+            disposition(moira),
+            if moira_control { "selected" } else { "absent" }
+        ),
+        format!(
+            "Daimon             {} · selected agent {} · control {} · execution policy {}",
+            disposition(daimon || daimon_agent),
+            if daimon_agent { "configured" } else { "absent" },
+            if daimon_control { "selected" } else { "absent" },
+            if daimon_execution {
+                "selected"
+            } else {
+                "absent"
+            }
+        ),
+        format!(
+            "Hermes             {} · disclosure {} · compaction {} · acknowledgement control {}",
+            disposition(hermes),
+            if hermes_disclosure {
+                "selected"
+            } else {
+                "absent"
+            },
+            if hermes_operator {
+                "selected"
+            } else {
+                "absent"
+            },
+            if hermes_control { "selected" } else { "absent" }
+        ),
+        format!(
+            "Aegis              {} · epoch administration {}",
+            disposition(aegis),
+            if aegis_control { "selected" } else { "absent" }
+        ),
+        format!("Grounding          {}", disposition(grounding)),
+        String::new(),
+        "Credentials, grant handles, and provider locators are intentionally omitted.".into(),
+    ]
 }
 
 pub fn run_terminal_with_all_peers<T: ServicePort>(
+    shell: Shell,
+    chronos: Option<Hub>,
+    vellum: Option<ServiceEditor<T>>,
+    peers: OperationalPeers,
+) -> Result<(), Box<dyn std::error::Error>> {
+    run_terminal_with_all_peers_managed(shell, chronos, vellum, peers, None).map(|_| ())
+}
+
+pub fn run_terminal_with_all_peers_managed<T: ServicePort>(
+    shell: Shell,
+    chronos: Option<Hub>,
+    vellum: Option<ServiceEditor<T>>,
+    peers: OperationalPeers,
+    native_host: Option<NativeHost>,
+) -> Result<Option<TopologyShutdown>, Box<dyn std::error::Error>> {
+    run_terminal_with_all_peers_managed_configuration(
+        shell,
+        chronos,
+        vellum,
+        peers,
+        native_host,
+        None,
+    )
+    .map(|outcome| outcome.shutdown)
+}
+
+pub struct ManagedTerminalOutcome {
+    pub shutdown: Option<TopologyShutdown>,
+    pub restart_profile: Option<RestartProfileRequest>,
+}
+
+pub struct RestartProfileRequest {
+    pub path: PathBuf,
+    pub sha256: String,
+}
+
+pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     mut shell: Shell,
     mut chronos: Option<Hub>,
     mut vellum: Option<ServiceEditor<T>>,
     peers: OperationalPeers,
-) -> Result<(), Box<dyn std::error::Error>> {
+    native_host: Option<NativeHost>,
+    current_profile: Option<WorkspaceProfile>,
+) -> Result<ManagedTerminalOutcome, Box<dyn std::error::Error>> {
+    let operations_hosted = native_host.is_some();
+    let profile_configured = current_profile.is_some();
     let OperationalPeers {
         mut agora,
+        agora_control,
         mut moira,
+        moira_control_socket,
         mut daimon,
         mut daimon_agent,
+        daimon_agent_control_socket,
+        daimon_execution_policy,
         mut hermes,
+        hermes_operator_socket,
+        hermes_disclosure_socket,
+        hermes_control_socket,
         mut aegis,
+        aegis_control_socket,
         mut grounding,
+        vellum_control,
     } = peers;
+    let mut agora_create: Option<agora_tui::CreateRoomComponent> = None;
+    let mut agora_message: Option<agora_tui::ComposeMessageComponent> = None;
+    let mut chronos_operation = None;
+    let mut last_agora_create_notice = String::new();
+    let mut last_agora_message_notice = String::new();
+    let mut agora_operation = None;
+    let mut agora_message_operation = None;
+    let mut moira_reconciliation: Option<moira_tui::ReconciliationBatchComponent> = None;
+    let mut last_moira_reconciliation_notice = String::new();
+    let mut active_moira_action: Option<&'static str> = None;
+    let mut moira_operation = None;
+    let mut daimon_control: Option<daimon_tui::AgentControlBatchComponent> = None;
+    let mut daimon_prompt_composer: Option<daimon_tui::AgentPromptComposer> = None;
+    let mut daimon_permission_composer: Option<daimon_tui::AgentPermissionComposer> = None;
+    let mut last_daimon_control_notice = String::new();
+    let mut active_daimon_action: Option<&'static str> = None;
+    let mut daimon_operation = None;
+    let mut daimon_post_receipt_refresh = false;
+    let mut daimon_recovery_refresh = false;
+    let mut daimon_unknown_evidence = false;
+    let mut hermes_acknowledge: Option<hermes_tui::AcknowledgeComponent> = None;
+    let mut hermes_compaction: Option<hermes_tui::CompactionComponent> = None;
+    let mut last_hermes_compaction_notice = String::new();
+    let mut hermes_compaction_operation = None;
+    let mut hermes_compaction_post_receipt_refresh = false;
+    let mut hermes_disclosure: Option<hermes_tui::DisclosureComponent> = None;
+    let mut last_hermes_disclosure_notice = String::new();
+    let mut hermes_disclosure_operation = None;
+    let mut last_hermes_acknowledge_notice = String::new();
+    let mut hermes_operation = None;
+    let mut hermes_post_receipt_refresh = false;
+    let mut aegis_revoke: Option<aegis_tui::RevokeEpochComponent> = None;
+    let mut aegis_managed: Option<aegis_tui::ManagedAuthorityComponent> = None;
+    let mut last_aegis_revoke_notice = String::new();
+    let mut last_aegis_managed_notice = String::new();
+    let mut aegis_operation = None;
     let mut focus = Focus::Chronos;
     let mut notice = String::from("workspace profile loaded");
     let mut confirming_discard = false;
     let mut last_vellum_poll = Instant::now();
+    let mut vellum_durable_save: Option<DurableSaveBatchComponent> = None;
+    let mut last_vellum_durable_notice = String::new();
+    let mut vellum_durable_operation = None;
+    let mut vellum_atomic_replace: Option<AtomicReplaceComponent> = None;
+    let mut vellum_atomic_operation = None;
+    let commands = workbench_commands(
+        &shell,
+        chronos.is_some(),
+        chronos.as_ref().is_some_and(Hub::writes_enabled),
+        chronos.as_ref().is_some_and(Hub::scheduling_enabled),
+        vellum.is_some(),
+        vellum_control.is_some(),
+        agora.is_some(),
+        agora_control.is_some(),
+        moira.is_some(),
+        moira_control_socket.is_some(),
+        daimon.is_some() || daimon_agent.is_some(),
+        daimon_agent.is_some() && daimon_agent_control_socket.is_some(),
+        daimon_agent.is_some()
+            && daimon_agent_control_socket.is_some()
+            && daimon_execution_policy.is_some(),
+        hermes.is_some(),
+        hermes_operator_socket.is_some(),
+        hermes_disclosure_socket.is_some(),
+        hermes_control_socket.is_some(),
+        aegis.is_some(),
+        aegis_control_socket.is_some(),
+        grounding.is_some(),
+        operations_hosted,
+        profile_configured,
+    );
+    let mut palette = CommandPalette::new(commands);
+    let mut overlay = WorkbenchOverlay::None;
+    let mut activity = ActivityLog::default();
+    let mut instrumentation = Instrumentation::default();
+    let mut refresh_operations = RefreshOperations::default();
+    let mut operations = OperationsRuntime::new(native_host);
+    let mut reconfiguration = current_profile.map(ReconfigurationWorkflow::new);
+    let mut restart_profile = None;
+    let mut drain_operations: Vec<(HostedPeerId, u64)> = Vec::new();
+    activity.push(
+        ActivityLevel::Success,
+        "pantheon",
+        "Workspace profile loaded; peer refreshes queued",
+    );
+    let configuration = session_configuration(
+        &shell,
+        chronos.as_ref(),
+        vellum.is_some(),
+        agora.is_some(),
+        agora_control.is_some(),
+        moira.is_some(),
+        moira_control_socket.is_some(),
+        daimon.is_some(),
+        daimon_agent.is_some(),
+        daimon_agent_control_socket.is_some(),
+        daimon_execution_policy.is_some(),
+        hermes.is_some(),
+        hermes_operator_socket.is_some(),
+        hermes_disclosure_socket.is_some(),
+        hermes_control_socket.is_some(),
+        aegis.is_some(),
+        aegis_control_socket.is_some(),
+        grounding.is_some(),
+    );
+    let health_channels = [
+        ("chronos", "tasks", chronos.is_some()),
+        ("vellum", "workspace", vellum.is_some()),
+        ("agora", "rooms/messages", agora.is_some()),
+        ("moira", "sagas", moira.is_some()),
+        ("daimon", "presence", daimon.is_some()),
+        ("daimon", "sessions/events", daimon_agent.is_some()),
+        ("hermes", "ledger/cursors", hermes.is_some()),
+        ("aegis", "authority", aegis.is_some()),
+        ("grounding", "provenance", grounding.is_some()),
+    ]
+    .into_iter()
+    .filter_map(|(peer, channel, configured)| configured.then_some((peer, channel)));
+    let mut health = SuiteHealthLedger::new(health_channels);
+    if chronos.is_some() {
+        health.observing("chronos", "tasks", true);
+    }
+    if vellum.is_some() {
+        health.observing("vellum", "workspace", true);
+    }
 
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         loop {
-            if let Some(chronos) = &mut chronos {
-                chronos.poll();
+            if let Some((level, shutdown)) = operations.poll() {
+                settle_drain_operations(
+                    &mut drain_operations,
+                    shutdown.as_ref(),
+                    level,
+                    &mut instrumentation,
+                );
+                notice = operations.notice.clone();
+                activity.push(level, "operations", notice.clone());
+            }
+            if let Some(chronos) = &mut chronos
+                && chronos.poll()
+            {
+                health.current("chronos", "tasks");
+                if let Some(operation) = chronos_operation.take() {
+                    let (operation, level, message) = match operation {
+                        ChronosOperation::Task(operation) => {
+                            let (level, message) = match chronos.task_mutation_disposition() {
+                                chronos_tui::TaskMutationDisposition::Applied => (
+                                    ActivityLevel::Success,
+                                    "Chronos task mutation settled with owner receipts and a current projection",
+                                ),
+                                chronos_tui::TaskMutationDisposition::Refused => (
+                                    ActivityLevel::Warning,
+                                    "Chronos task mutation was refused; no optimistic child success recorded",
+                                ),
+                                chronos_tui::TaskMutationDisposition::OutcomeUnknown => (
+                                    ActivityLevel::Uncertain,
+                                    "Chronos task mutation outcome unknown; explicit inspection required",
+                                ),
+                            };
+                            (operation, level, message)
+                        }
+                        ChronosOperation::Scheduling(operation) => {
+                            let (level, message) = match chronos.scheduling_mutation_disposition() {
+                                chronos_tui::SchedulingMutationDisposition::Applied => (
+                                    ActivityLevel::Success,
+                                    "Chronos scheduling mutation settled with independent child dispositions",
+                                ),
+                                chronos_tui::SchedulingMutationDisposition::Refused => (
+                                    ActivityLevel::Warning,
+                                    "Chronos scheduling mutation was refused or stopped before dispatch",
+                                ),
+                                chronos_tui::SchedulingMutationDisposition::OutcomeUnknown => (
+                                    ActivityLevel::Uncertain,
+                                    "Chronos scheduling mutation outcome unknown; later children were not sent",
+                                ),
+                            };
+                            (operation, level, message)
+                        }
+                    };
+                    instrumentation.mark_peer_stage(operation, "peer_receipt", level);
+                    instrumentation.settle_peer_operation(operation, level);
+                    activity.push(level, "chronos", message);
+                } else if let Some(operation) = refresh_operations.chronos.take() {
+                    instrumentation.settle_peer_operation(operation, ActivityLevel::Success);
+                    activity.push(
+                        ActivityLevel::Success,
+                        "chronos",
+                        "Refresh settled to a current projection",
+                    );
+                }
             }
             if let Some(agora) = &mut agora {
-                agora.poll();
+                let settlement = agora.poll_settlement();
+                health.settle("agora", "rooms/messages", settlement);
+                settle_refresh(
+                    &mut refresh_operations.agora,
+                    settlement,
+                    "agora",
+                    &mut instrumentation,
+                    &mut activity,
+                );
+            }
+            if let Some(control) = &mut agora_create {
+                control.poll();
+                let current = control.notice();
+                if current != last_agora_create_notice {
+                    let level = match control.disposition() {
+                        agora_tui::CreateRoomDisposition::Applied => ActivityLevel::Success,
+                        agora_tui::CreateRoomDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        agora_tui::CreateRoomDisposition::Refused
+                        | agora_tui::CreateRoomDisposition::Failed => ActivityLevel::Warning,
+                        agora_tui::CreateRoomDisposition::Editing
+                        | agora_tui::CreateRoomDisposition::Armed
+                        | agora_tui::CreateRoomDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "agora", current);
+                    if level != ActivityLevel::Info
+                        && let Some(operation) = agora_operation.take()
+                    {
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    if control.disposition() == agora_tui::CreateRoomDisposition::Applied
+                        && let Some(component) = &mut agora
+                    {
+                        component.update(agora_tui::Input::Refresh, true);
+                    }
+                    last_agora_create_notice = current.into();
+                }
+            }
+            if let Some(control) = &mut agora_message {
+                control.poll();
+                let current = control.notice();
+                if current != last_agora_message_notice {
+                    let level = match control.disposition() {
+                        agora_tui::ComposeMessageDisposition::Applied => ActivityLevel::Success,
+                        agora_tui::ComposeMessageDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        agora_tui::ComposeMessageDisposition::Refused
+                        | agora_tui::ComposeMessageDisposition::Failed => ActivityLevel::Warning,
+                        agora_tui::ComposeMessageDisposition::Editing
+                        | agora_tui::ComposeMessageDisposition::Armed
+                        | agora_tui::ComposeMessageDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "agora", current);
+                    if level != ActivityLevel::Info
+                        && let Some(operation) = agora_message_operation.take()
+                    {
+                        instrumentation.mark_peer_stage(operation, "peer_receipt", level);
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    if control.disposition() == agora_tui::ComposeMessageDisposition::Applied
+                        && let Some(component) = &mut agora
+                    {
+                        component.update(agora_tui::Input::Refresh, true);
+                    }
+                    last_agora_message_notice = current.into();
+                }
             }
             if let Some(moira) = &mut moira {
-                moira.poll();
+                let settlement = moira.poll_settlement();
+                health.settle("moira", "sagas", settlement);
+                settle_refresh(
+                    &mut refresh_operations.moira,
+                    settlement,
+                    "moira",
+                    &mut instrumentation,
+                    &mut activity,
+                );
             }
-            if let Some(daimon) = &mut daimon {
-                daimon.poll();
+            if let Some(reconciliation) = &mut moira_reconciliation {
+                reconciliation.poll();
+                let current = reconciliation.notice();
+                if current != last_moira_reconciliation_notice {
+                    let level = reconciliation_batch_level(reconciliation.disposition());
+                    notice = current.into();
+                    activity.push(level, "moira", current);
+                    if !reconciliation.request_pending()
+                        && let Some(operation) = moira_operation.take()
+                    {
+                        instrumentation.mark_peer_stage(
+                            operation,
+                            "child_receipts",
+                            if level == ActivityLevel::Info {
+                                ActivityLevel::Success
+                            } else {
+                                level
+                            },
+                        );
+                        instrumentation.settle_peer_operation(
+                            operation,
+                            if level == ActivityLevel::Info {
+                                ActivityLevel::Success
+                            } else {
+                                level
+                            },
+                        );
+                    }
+                    last_moira_reconciliation_notice = current.into();
+                }
             }
-            if let Some(daimon) = &mut daimon_agent {
-                daimon.poll();
+            let daimon_settlement = daimon
+                .as_mut()
+                .and_then(daimon_tui::Component::poll_settlement);
+            let daimon_agent_settlement = daimon_agent
+                .as_mut()
+                .and_then(daimon_tui::AgentSetComponent::poll_settlement);
+            health.settle("daimon", "presence", daimon_settlement);
+            health.settle("daimon", "sessions/events", daimon_agent_settlement);
+            if daimon_recovery_refresh && let Some(settlement) = daimon_agent_settlement {
+                let available = settlement.is_ok();
+                if let Some(control) = &mut daimon_control {
+                    control.complete_recovery_inspection(available);
+                }
+                let level = if available {
+                    ActivityLevel::Uncertain
+                } else {
+                    ActivityLevel::Warning
+                };
+                if let Some(operation) = daimon_operation.take() {
+                    instrumentation.mark_peer_stage(operation, "recovery_inspection", level);
+                    instrumentation.settle_peer_operation(operation, level);
+                }
+                daimon_recovery_refresh = false;
+                daimon_unknown_evidence = true;
+                notice = if available {
+                    "Daimon recovery inspection completed; no mutation was retried and the original outcome remains unknown"
+                } else {
+                    "Daimon recovery inspection was unavailable; retained evidence may now be closed without retrying"
+                }
+                .into();
+                activity.push(level, "daimon", notice.clone());
+            }
+            if daimon_post_receipt_refresh && let Some(settlement) = daimon_agent_settlement {
+                let level = if settlement.is_ok() {
+                    ActivityLevel::Success
+                } else {
+                    ActivityLevel::Warning
+                };
+                if let Some(operation) = daimon_operation.take() {
+                    instrumentation.mark_peer_stage(operation, "refreshed_projection", level);
+                    instrumentation.settle_peer_operation(operation, level);
+                }
+                daimon_post_receipt_refresh = false;
+                notice = if settlement.is_ok() {
+                    "Daimon child receipts reconciled with refreshed session projections"
+                } else {
+                    "Daimon child receipts retained; refreshed session projection unavailable"
+                }
+                .into();
+                activity.push(level, "daimon", notice.clone());
+            }
+            settle_refresh(
+                &mut refresh_operations.daimon,
+                if daimon_agent.is_some() {
+                    daimon_agent_settlement
+                } else {
+                    daimon_settlement
+                },
+                "daimon",
+                &mut instrumentation,
+                &mut activity,
+            );
+            if let Some(control) = &mut daimon_control {
+                control.poll();
+                let current = control.notice();
+                if current != last_daimon_control_notice {
+                    let level = match control.disposition() {
+                        daimon_tui::AgentControlDisposition::Applied => ActivityLevel::Success,
+                        daimon_tui::AgentControlDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        daimon_tui::AgentControlDisposition::Refused
+                        | daimon_tui::AgentControlDisposition::Failed => ActivityLevel::Warning,
+                        daimon_tui::AgentControlDisposition::Proposed
+                        | daimon_tui::AgentControlDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "daimon", current);
+                    if level != ActivityLevel::Info {
+                        if control.has_unknown() && !daimon_unknown_evidence {
+                            if let Some(operation) = daimon_operation {
+                                instrumentation.mark_peer_stage(
+                                    operation,
+                                    "child_receipts",
+                                    ActivityLevel::Uncertain,
+                                );
+                            }
+                            daimon_unknown_evidence = true;
+                        }
+                        if control.applied_count() != 0
+                            && !control.has_unknown()
+                            && !daimon_post_receipt_refresh
+                            && let Some(agent) = &mut daimon_agent
+                        {
+                            if let Some(operation) = daimon_operation {
+                                instrumentation.mark_peer_stage(operation, "child_receipts", level);
+                            }
+                            agent.update(daimon_tui::AgentSetInput::RefreshAll, true);
+                            daimon_post_receipt_refresh = agent.request_pending();
+                            if !daimon_post_receipt_refresh
+                                && let Some(operation) = daimon_operation.take()
+                            {
+                                instrumentation.mark_peer_stage(
+                                    operation,
+                                    "refreshed_projection",
+                                    ActivityLevel::Warning,
+                                );
+                                instrumentation
+                                    .settle_peer_operation(operation, ActivityLevel::Warning);
+                                activity.push(
+                                    ActivityLevel::Warning,
+                                    "daimon",
+                                    "Daimon child receipts retained; projection refresh could not be queued",
+                                );
+                            }
+                        }
+                        if !control.has_unknown()
+                            && !daimon_post_receipt_refresh
+                            && let Some(operation) = daimon_operation.take()
+                        {
+                            instrumentation.mark_peer_stage(operation, "child_receipts", level);
+                            instrumentation.settle_peer_operation(operation, level);
+                        }
+                    }
+                    last_daimon_control_notice = current.into();
+                }
             }
             if let Some(hermes) = &mut hermes {
-                hermes.poll();
+                let settlement = hermes.poll_settlement();
+                health.settle("hermes", "ledger/cursors", settlement);
+                settle_refresh(
+                    &mut refresh_operations.hermes,
+                    settlement,
+                    "hermes",
+                    &mut instrumentation,
+                    &mut activity,
+                );
+            }
+            if let Some(control) = &mut hermes_compaction {
+                control.poll();
+                let current = control.notice();
+                if current != last_hermes_compaction_notice {
+                    let level = match control.disposition() {
+                        hermes_tui::CompactionDisposition::Applied { .. } => ActivityLevel::Success,
+                        hermes_tui::CompactionDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        hermes_tui::CompactionDisposition::Refused
+                        | hermes_tui::CompactionDisposition::Failed => ActivityLevel::Warning,
+                        hermes_tui::CompactionDisposition::Proposed
+                        | hermes_tui::CompactionDisposition::Armed
+                        | hermes_tui::CompactionDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "hermes", current);
+                    let applied = matches!(
+                        control.disposition(),
+                        hermes_tui::CompactionDisposition::Applied { .. }
+                    );
+                    if level != ActivityLevel::Info
+                        && !applied
+                        && let Some(operation) = hermes_compaction_operation.take()
+                    {
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    if applied && hermes.is_some() {
+                        if let Some(operation) = hermes_compaction_operation {
+                            instrumentation.mark_peer_stage(
+                                operation,
+                                "peer_receipt",
+                                ActivityLevel::Success,
+                            );
+                        }
+                        hermes_compaction_post_receipt_refresh = true;
+                    }
+                    last_hermes_compaction_notice = current.into();
+                }
+            }
+            if let Some(control) = &mut hermes_disclosure {
+                control.poll();
+                let current = control.notice();
+                if current != last_hermes_disclosure_notice {
+                    let level = match control.disposition() {
+                        hermes_tui::DisclosureDisposition::Disclosed => ActivityLevel::Success,
+                        hermes_tui::DisclosureDisposition::Refused
+                        | hermes_tui::DisclosureDisposition::Failed => ActivityLevel::Warning,
+                        hermes_tui::DisclosureDisposition::Proposed
+                        | hermes_tui::DisclosureDisposition::Armed
+                        | hermes_tui::DisclosureDisposition::Pending => ActivityLevel::Info,
+                    };
+                    // Only stable disposition text enters telemetry/activity; disclosed
+                    // event metadata and payload preview remain inside the owner sheet.
+                    notice = current.into();
+                    activity.push(level, "hermes", current);
+                    if level != ActivityLevel::Info
+                        && let Some(operation) = hermes_disclosure_operation.take()
+                    {
+                        instrumentation.mark_peer_stage(operation, "peer_read_receipt", level);
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    last_hermes_disclosure_notice = current.into();
+                }
+            }
+            if let Some(control) = &mut hermes_acknowledge {
+                control.poll();
+                let current = control.notice();
+                if current != last_hermes_acknowledge_notice {
+                    let level = match control.disposition() {
+                        hermes_tui::AcknowledgeDisposition::Applied { .. } => {
+                            ActivityLevel::Success
+                        }
+                        hermes_tui::AcknowledgeDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        hermes_tui::AcknowledgeDisposition::Refused
+                        | hermes_tui::AcknowledgeDisposition::Failed => ActivityLevel::Warning,
+                        hermes_tui::AcknowledgeDisposition::Proposed
+                        | hermes_tui::AcknowledgeDisposition::Armed
+                        | hermes_tui::AcknowledgeDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "hermes", current);
+                    let applied = matches!(
+                        control.disposition(),
+                        hermes_tui::AcknowledgeDisposition::Applied { .. }
+                    );
+                    if level != ActivityLevel::Info
+                        && !applied
+                        && let Some(operation) = hermes_operation.take()
+                    {
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    if applied && hermes.is_some() {
+                        if let Some(operation) = hermes_operation {
+                            instrumentation.mark_peer_stage(
+                                operation,
+                                "peer_receipt",
+                                ActivityLevel::Success,
+                            );
+                        }
+                        hermes_post_receipt_refresh = true;
+                    }
+                    last_hermes_acknowledge_notice = current.into();
+                }
+            }
+            if hermes_post_receipt_refresh
+                && let Some(component) = &mut hermes
+                && !component.request_pending()
+            {
+                component.update(hermes_tui::Input::Refresh, true);
+                if component.request_pending() {
+                    refresh_operations.hermes = hermes_operation.take();
+                    hermes_post_receipt_refresh = false;
+                } else {
+                    if let Some(operation) = hermes_operation.take() {
+                        instrumentation.settle_peer_operation(operation, ActivityLevel::Warning);
+                    }
+                    hermes_post_receipt_refresh = false;
+                    notice = "Hermes acknowledgement applied, but post-receipt cursor refresh could not be queued"
+                        .into();
+                    activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                }
+            }
+            if hermes_compaction_post_receipt_refresh
+                && let Some(component) = &mut hermes
+                && !component.request_pending()
+            {
+                component.update(hermes_tui::Input::Refresh, true);
+                if component.request_pending() {
+                    refresh_operations.hermes = hermes_compaction_operation.take();
+                    hermes_compaction_post_receipt_refresh = false;
+                } else {
+                    if let Some(operation) = hermes_compaction_operation.take() {
+                        instrumentation.settle_peer_operation(operation, ActivityLevel::Warning);
+                    }
+                    hermes_compaction_post_receipt_refresh = false;
+                    notice = "Hermes compaction applied, but post-receipt stream refresh could not be queued"
+                        .into();
+                    activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                }
             }
             if let Some(aegis) = &mut aegis {
-                aegis.poll();
+                let settlement = aegis.poll_settlement();
+                health.settle("aegis", "authority", settlement);
+                settle_refresh(
+                    &mut refresh_operations.aegis,
+                    settlement,
+                    "aegis",
+                    &mut instrumentation,
+                    &mut activity,
+                );
+            }
+            if let Some(control) = &mut aegis_revoke {
+                control.poll();
+                let current = control.notice();
+                if current != last_aegis_revoke_notice {
+                    let level = match control.disposition() {
+                        aegis_tui::RevokeEpochDisposition::Applied { .. } => ActivityLevel::Success,
+                        aegis_tui::RevokeEpochDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        aegis_tui::RevokeEpochDisposition::Refused
+                        | aegis_tui::RevokeEpochDisposition::Failed => ActivityLevel::Warning,
+                        aegis_tui::RevokeEpochDisposition::Proposed
+                        | aegis_tui::RevokeEpochDisposition::Armed
+                        | aegis_tui::RevokeEpochDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "aegis", current);
+                    let applied = matches!(
+                        control.disposition(),
+                        aegis_tui::RevokeEpochDisposition::Applied { .. }
+                    );
+                    if level != ActivityLevel::Info
+                        && !applied
+                        && let Some(operation) = aegis_operation.take()
+                    {
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    if applied && let Some(component) = &mut aegis {
+                        if let Some(operation) = aegis_operation {
+                            instrumentation.mark_peer_stage(
+                                operation,
+                                "peer_receipt",
+                                ActivityLevel::Success,
+                            );
+                        }
+                        refresh_operations.aegis = aegis_operation.take();
+                        component.update(aegis_tui::Input::Refresh, true);
+                    }
+                    last_aegis_revoke_notice = current.into();
+                }
+            }
+            if let Some(control) = &mut aegis_managed {
+                control.poll();
+                let current = control.notice();
+                if current != last_aegis_managed_notice {
+                    let level = match control.disposition() {
+                        aegis_tui::ManagedAuthorityDisposition::Applied => ActivityLevel::Success,
+                        aegis_tui::ManagedAuthorityDisposition::Fenced => ActivityLevel::Uncertain,
+                        aegis_tui::ManagedAuthorityDisposition::Refused
+                        | aegis_tui::ManagedAuthorityDisposition::Failed => ActivityLevel::Warning,
+                        aegis_tui::ManagedAuthorityDisposition::Connecting
+                        | aegis_tui::ManagedAuthorityDisposition::Editing
+                        | aegis_tui::ManagedAuthorityDisposition::Proposed
+                        | aegis_tui::ManagedAuthorityDisposition::Armed
+                        | aegis_tui::ManagedAuthorityDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "aegis", current);
+                    if level != ActivityLevel::Info
+                        && let Some(operation) = aegis_operation.take()
+                    {
+                        instrumentation.mark_peer_stage(operation, "peer_receipt", level);
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    last_aegis_managed_notice = current.into();
+                }
             }
             if let Some(grounding) = &mut grounding {
-                grounding.poll();
+                let settlement = grounding.poll_settlement();
+                health.settle("grounding", "provenance", settlement);
+                settle_refresh(
+                    &mut refresh_operations.grounding,
+                    settlement,
+                    "grounding",
+                    &mut instrumentation,
+                    &mut activity,
+                );
             }
             if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
-                if let Some(vellum) = &mut vellum
-                    && let Err(error) = vellum.poll()
-                {
-                    notice = error.to_string();
+                if let Some(vellum) = &mut vellum {
+                    let started = Instant::now();
+                    let result = vellum.poll();
+                    health.settle(
+                        "vellum",
+                        "workspace",
+                        Some(if result.is_ok() { Ok(()) } else { Err(()) }),
+                    );
+                    instrumentation.record(
+                        "vellum.projection.poll",
+                        "vellum",
+                        if result.is_ok() {
+                            ActivityLevel::Success
+                        } else {
+                            ActivityLevel::Warning
+                        },
+                        started.elapsed(),
+                    );
+                    if let Err(error) = result {
+                        notice = error.to_string();
+                    }
                 }
                 last_vellum_poll = Instant::now();
             }
-            let height = terminal.size()?.height.saturating_sub(2);
+            if let Some(control) = &mut vellum_durable_save {
+                control.poll();
+                if let Some(editor) = &mut vellum {
+                    editor.admit_durable_saves(&control.durable_document_ordinals());
+                }
+                let current = control.notice();
+                if current != last_vellum_durable_notice {
+                    let level = match control.disposition() {
+                        DurableSaveBatchDisposition::Durable => ActivityLevel::Success,
+                        DurableSaveBatchDisposition::OutcomeUnknown => ActivityLevel::Uncertain,
+                        DurableSaveBatchDisposition::Partial => ActivityLevel::Warning,
+                        DurableSaveBatchDisposition::Proposed
+                        | DurableSaveBatchDisposition::Armed
+                        | DurableSaveBatchDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "vellum", current);
+                    if !control.request_pending()
+                        && !matches!(
+                            control.disposition(),
+                            DurableSaveBatchDisposition::Proposed
+                                | DurableSaveBatchDisposition::Armed
+                        )
+                        && let Some(operation) = vellum_durable_operation.take()
+                    {
+                        instrumentation.mark_peer_stage(operation, "child_receipts", level);
+                        instrumentation.settle_peer_operation(operation, level);
+                    }
+                    last_vellum_durable_notice = current.into();
+                }
+            }
+            health.observing(
+                "agora",
+                "rooms/messages",
+                agora
+                    .as_ref()
+                    .is_some_and(agora_tui::Component::request_pending),
+            );
+            health.observing(
+                "moira",
+                "sagas",
+                moira
+                    .as_ref()
+                    .is_some_and(moira_tui::Component::request_pending),
+            );
+            health.observing(
+                "daimon",
+                "presence",
+                daimon
+                    .as_ref()
+                    .is_some_and(daimon_tui::Component::request_pending),
+            );
+            health.observing(
+                "daimon",
+                "sessions/events",
+                daimon_agent
+                    .as_ref()
+                    .is_some_and(daimon_tui::AgentSetComponent::request_pending),
+            );
+            health.observing(
+                "hermes",
+                "ledger/cursors",
+                hermes
+                    .as_ref()
+                    .is_some_and(hermes_tui::Component::request_pending),
+            );
+            health.observing(
+                "aegis",
+                "authority",
+                aegis
+                    .as_ref()
+                    .is_some_and(aegis_tui::Component::request_pending),
+            );
+            health.observing(
+                "grounding",
+                "provenance",
+                grounding
+                    .as_ref()
+                    .is_some_and(tellus::Component::request_pending),
+            );
+            let peer_busy = |peer: &str| match peer {
+                "chronos" => chronos_operation.is_some() || refresh_operations.chronos.is_some(),
+                "vellum" => {
+                    vellum_durable_save
+                        .as_ref()
+                        .is_some_and(DurableSaveBatchComponent::request_pending)
+                        || vellum_atomic_operation.is_some()
+                }
+                "agora" => {
+                    agora
+                        .as_ref()
+                        .is_some_and(agora_tui::Component::request_pending)
+                        || agora_create
+                            .as_ref()
+                            .is_some_and(agora_tui::CreateRoomComponent::request_pending)
+                        || agora_message
+                            .as_ref()
+                            .is_some_and(agora_tui::ComposeMessageComponent::request_pending)
+                }
+                "moira" => {
+                    moira
+                        .as_ref()
+                        .is_some_and(moira_tui::Component::request_pending)
+                        || moira_reconciliation
+                            .as_ref()
+                            .is_some_and(|control| control.request_pending())
+                }
+                "daimon" => {
+                    daimon
+                        .as_ref()
+                        .is_some_and(daimon_tui::Component::request_pending)
+                        || daimon_agent
+                            .as_ref()
+                            .is_some_and(daimon_tui::AgentSetComponent::request_pending)
+                        || daimon_control
+                            .as_ref()
+                            .is_some_and(|control| control.request_pending())
+                }
+                "hermes" => {
+                    hermes
+                        .as_ref()
+                        .is_some_and(hermes_tui::Component::request_pending)
+                        || hermes_disclosure.as_ref().is_some_and(|control| {
+                            control.disposition() == hermes_tui::DisclosureDisposition::Pending
+                        })
+                        || hermes_compaction.as_ref().is_some_and(|control| {
+                            control.disposition() == hermes_tui::CompactionDisposition::Pending
+                        })
+                        || hermes_acknowledge.as_ref().is_some_and(|control| {
+                            control.disposition() == hermes_tui::AcknowledgeDisposition::Pending
+                        })
+                }
+                "aegis" => {
+                    aegis
+                        .as_ref()
+                        .is_some_and(aegis_tui::Component::request_pending)
+                        || aegis_revoke.as_ref().is_some_and(|control| {
+                            control.disposition() == aegis_tui::RevokeEpochDisposition::Pending
+                        })
+                        || aegis_managed.as_ref().is_some_and(|control| {
+                            control.disposition() == aegis_tui::ManagedAuthorityDisposition::Pending
+                        })
+                }
+                "grounding" => grounding
+                    .as_ref()
+                    .is_some_and(tellus::Component::request_pending),
+                _ => false,
+            };
+            let peer_uncertain = |peer: &str| match peer {
+                "chronos" => chronos
+                    .as_ref()
+                    .is_some_and(Hub::mutation_recovery_required),
+                "vellum" => {
+                    vellum_durable_save
+                        .as_ref()
+                        .is_some_and(DurableSaveBatchComponent::recovery_required)
+                        || vellum_atomic_replace.as_ref().is_some_and(|control| {
+                            control.disposition() == AtomicReplaceDisposition::OutcomeUnknown
+                        })
+                }
+                "agora" => {
+                    agora_create
+                        .as_ref()
+                        .is_some_and(agora_tui::CreateRoomComponent::recovery_required)
+                        || agora_message
+                            .as_ref()
+                            .is_some_and(agora_tui::ComposeMessageComponent::recovery_required)
+                }
+                "moira" => moira_reconciliation
+                    .as_ref()
+                    .is_some_and(moira_tui::ReconciliationBatchComponent::recovery_required),
+                "daimon" => daimon_control.as_ref().is_some_and(|control| {
+                    control.disposition() == daimon_tui::AgentControlDisposition::OutcomeUnknown
+                }),
+                "hermes" => {
+                    hermes_compaction.as_ref().is_some_and(|control| {
+                        control.disposition() == hermes_tui::CompactionDisposition::OutcomeUnknown
+                    }) || hermes_acknowledge.as_ref().is_some_and(|control| {
+                        control.disposition() == hermes_tui::AcknowledgeDisposition::OutcomeUnknown
+                    })
+                }
+                "aegis" => {
+                    aegis_revoke.as_ref().is_some_and(|control| {
+                        control.disposition() == aegis_tui::RevokeEpochDisposition::OutcomeUnknown
+                    }) || aegis_managed.as_ref().is_some_and(|control| {
+                        control.disposition() == aegis_tui::ManagedAuthorityDisposition::Fenced
+                    })
+                }
+                "grounding" => false,
+                _ => false,
+            };
+            let health_view = health.view(peer_busy, peer_uncertain);
+            let height = terminal.size()?.height.saturating_sub(4);
             let vellum_frame = vellum.as_ref().and_then(|editor| editor.frame(height));
+            let operations_view = operations.view();
+            let render_started = Instant::now();
             terminal.draw(|frame| {
                 draw_shell_with_moira(
                     frame,
@@ -147,31 +4075,652 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                     PeerViews {
                         chronos: chronos.as_ref(),
                         vellum: vellum_frame.as_ref(),
+                        vellum_atomic_replace: vellum_atomic_replace.as_ref(),
+                        vellum_durable_save: vellum_durable_save.as_ref(),
                         agora: agora.as_ref(),
+                        agora_create: agora_create.as_ref(),
+                        agora_message: agora_message.as_ref(),
                         moira: moira.as_ref(),
+                        moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),
                         daimon_agent: daimon_agent.as_ref(),
+                        daimon_permission: daimon_permission_composer.as_ref(),
+                        daimon_prompt: daimon_prompt_composer.as_ref(),
+                        daimon_control: daimon_control.as_ref(),
                         hermes: hermes.as_ref(),
+                        hermes_compaction: hermes_compaction.as_ref(),
+                        hermes_disclosure: hermes_disclosure.as_ref(),
+                        hermes_acknowledge: hermes_acknowledge.as_ref(),
                         aegis: aegis.as_ref(),
+                        aegis_managed: aegis_managed.as_ref(),
+                        aegis_revoke: aegis_revoke.as_ref(),
                         grounding: grounding.as_ref(),
+                        operations: Some(&operations_view),
+                        health: Some(&health_view),
                     },
                     focus,
                     &notice,
-                )
+                );
+                match overlay {
+                    WorkbenchOverlay::None => {}
+                    WorkbenchOverlay::Commands => draw_command_palette(frame, &palette),
+                    WorkbenchOverlay::Help => draw_help(frame, palette.commands()),
+                    WorkbenchOverlay::Activity => draw_activity(frame, &activity),
+                    WorkbenchOverlay::Configuration => {
+                        draw_inspector(frame, "Session configuration", &configuration);
+                    }
+                    WorkbenchOverlay::Reconfiguration => {
+                        if let Some(workflow) = &reconfiguration {
+                            draw_inspector(frame, "Workspace profile restart", &workflow.lines());
+                        }
+                    }
+                    WorkbenchOverlay::Instrumentation => {
+                        draw_inspector(frame, "TUI instrumentation", &instrumentation.lines());
+                    }
+                }
             })?;
+            instrumentation.record(
+                "workbench.render",
+                "pantheon",
+                ActivityLevel::Success,
+                render_started.elapsed(),
+            );
             if !event::poll(Duration::from_millis(25))? {
                 continue;
             }
             match event::read()? {
+                Event::Paste(text) if overlay == WorkbenchOverlay::Commands => {
+                    palette.insert(&text);
+                }
+                Event::Key(key) if overlay == WorkbenchOverlay::Commands => {
+                    match palette.key(key) {
+                        PaletteOutcome::None => {}
+                        PaletteOutcome::Dismiss => overlay = WorkbenchOverlay::None,
+                        PaletteOutcome::Unavailable(reason) => {
+                            notice = reason.into();
+                            activity.push(ActivityLevel::Warning, "palette", reason);
+                        }
+                        PaletteOutcome::Execute(action) => {
+                            if action == "workbench.help" {
+                                overlay = WorkbenchOverlay::Help;
+                                continue;
+                            }
+                            if action == "workbench.activity" {
+                                overlay = WorkbenchOverlay::Activity;
+                                continue;
+                            }
+                            if action == "workbench.configuration" {
+                                overlay = WorkbenchOverlay::Configuration;
+                                continue;
+                            }
+                            if action == "workbench.reconfigure" {
+                                if reconfiguration.is_some() {
+                                    overlay = WorkbenchOverlay::Reconfiguration;
+                                }
+                                continue;
+                            }
+                            if action == "workbench.instrumentation" {
+                                instrumentation.record(
+                                    action,
+                                    "pantheon",
+                                    ActivityLevel::Info,
+                                    Duration::ZERO,
+                                );
+                                overlay = WorkbenchOverlay::Instrumentation;
+                                continue;
+                            }
+                            if matches!(
+                                action,
+                                "ledger.compact.v1"
+                                    | "ledger.events.disclose.v1"
+                                    | "ledger.acknowledge.v1"
+                            ) && (hermes_compaction.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    hermes_tui::CompactionDisposition::Pending
+                                        | hermes_tui::CompactionDisposition::OutcomeUnknown
+                                )
+                            }) || hermes_compaction_post_receipt_refresh
+                                || hermes_compaction_operation.is_some()
+                                || hermes_disclosure.as_ref().is_some_and(|control| {
+                                    control.disposition()
+                                        == hermes_tui::DisclosureDisposition::Pending
+                                })
+                                || hermes_disclosure_operation.is_some()
+                                || hermes_acknowledge.as_ref().is_some_and(|control| {
+                                    matches!(
+                                        control.disposition(),
+                                        hermes_tui::AcknowledgeDisposition::Pending
+                                            | hermes_tui::AcknowledgeDisposition::OutcomeUnknown
+                                    )
+                                })
+                                || hermes_post_receipt_refresh
+                                || hermes_operation.is_some())
+                            {
+                                overlay = WorkbenchOverlay::None;
+                                notice = "A Hermes control is still pending, reconciling, or outcome-unknown; settle it before opening another"
+                                    .into();
+                                activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                                continue;
+                            }
+                            overlay = WorkbenchOverlay::None;
+                            let refresh_surface = shell.active();
+                            let refresh_focus = focus;
+                            let refresh_pending_before = (
+                                agora.as_ref().is_some_and(|value| value.request_pending()),
+                                moira.as_ref().is_some_and(|value| value.request_pending()),
+                                if let Some(value) = daimon_agent.as_ref() {
+                                    value.request_pending()
+                                } else {
+                                    daimon.as_ref().is_some_and(|value| value.request_pending())
+                                },
+                                hermes.as_ref().is_some_and(|value| value.request_pending()),
+                                aegis.as_ref().is_some_and(|value| value.request_pending()),
+                                grounding
+                                    .as_ref()
+                                    .is_some_and(|value| value.request_pending()),
+                            );
+                            let started = Instant::now();
+                            let (level, source, message) = execute_workbench_action(
+                                action,
+                                &mut shell,
+                                &mut focus,
+                                &mut chronos,
+                                &mut vellum,
+                                vellum_control.as_ref(),
+                                &mut vellum_durable_save,
+                                &mut vellum_atomic_replace,
+                                &mut agora,
+                                agora_control.as_ref(),
+                                &mut agora_create,
+                                &mut agora_message,
+                                &mut moira,
+                                moira_control_socket.as_deref(),
+                                &mut moira_reconciliation,
+                                &mut daimon,
+                                &mut daimon_agent,
+                                daimon_agent_control_socket.as_deref(),
+                                daimon_execution_policy.as_ref(),
+                                &mut daimon_prompt_composer,
+                                &mut daimon_permission_composer,
+                                &mut daimon_control,
+                                &mut hermes,
+                                hermes_operator_socket.as_deref(),
+                                &mut hermes_compaction,
+                                hermes_disclosure_socket.as_deref(),
+                                &mut hermes_disclosure,
+                                hermes_control_socket.as_deref(),
+                                &mut hermes_acknowledge,
+                                &mut aegis,
+                                aegis_control_socket.as_deref(),
+                                &mut aegis_revoke,
+                                &mut aegis_managed,
+                                &mut grounding,
+                                &mut operations,
+                            );
+                            let peer_workflow_opened = level == ActivityLevel::Info
+                                && matches!(
+                                    action,
+                                    "agora.room.create"
+                                        | "agora.message.compose"
+                                        | "moira.reconciliation.keep-uncertain"
+                                        | "moira.reconciliation.fail-terminal"
+                                        | "moira.reconciliation.cancel"
+                                        | "moira.reconciliation.compensate"
+                                        | "moira.reconciliation.admit-failed"
+                                        | "moira.reconciliation.admit-succeeded"
+                                        | "moira.reconciliation.retry"
+                                        | "daimon.session.prompt"
+                                        | "daimon.session.permission"
+                                        | "daimon.session.reattach"
+                                        | "daimon.session.advance"
+                                        | "daimon.session.cancel"
+                                        | "daimon.session.close"
+                                        | "ledger.compact.v1"
+                                        | "ledger.events.disclose.v1"
+                                        | "ledger.acknowledge.v1"
+                                        | "aegis.epoch.revoke"
+                                        | "aegis.authority.manage"
+                                        | "vellum.save-selected"
+                                        | "vellum.atomic-replace-selected"
+                                );
+                            let mut correlated_refresh = false;
+                            if matches!(action, "suite.refresh" | "view.refresh") {
+                                let refresh_correlation = instrumentation.new_correlation();
+                                let suite = action == "suite.refresh";
+                                let current = |surface| suite || refresh_surface == surface;
+                                let chronos_selected = suite
+                                    || (refresh_surface == Surface::Workspace
+                                        && refresh_focus == Focus::Chronos);
+                                correlated_refresh |= begin_refresh_correlated(
+                                    chronos_selected && chronos.is_some(),
+                                    action,
+                                    "chronos",
+                                    &mut refresh_operations.chronos,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                                correlated_refresh |= begin_refresh_correlated(
+                                    current(Surface::Agora)
+                                        && !refresh_pending_before.0
+                                        && agora
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "agora",
+                                    &mut refresh_operations.agora,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                                correlated_refresh |= begin_refresh_correlated(
+                                    current(Surface::Moira)
+                                        && !refresh_pending_before.1
+                                        && moira
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "moira",
+                                    &mut refresh_operations.moira,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                                let daimon_pending = if let Some(value) = daimon_agent.as_ref() {
+                                    value.request_pending()
+                                } else {
+                                    daimon.as_ref().is_some_and(|value| value.request_pending())
+                                };
+                                correlated_refresh |= begin_refresh_correlated(
+                                    current(Surface::Daimon)
+                                        && !refresh_pending_before.2
+                                        && daimon_pending,
+                                    action,
+                                    "daimon",
+                                    &mut refresh_operations.daimon,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                                correlated_refresh |= begin_refresh_correlated(
+                                    current(Surface::Hermes)
+                                        && !refresh_pending_before.3
+                                        && hermes
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "hermes",
+                                    &mut refresh_operations.hermes,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                                correlated_refresh |= begin_refresh_correlated(
+                                    current(Surface::Aegis)
+                                        && !refresh_pending_before.4
+                                        && aegis
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "aegis",
+                                    &mut refresh_operations.aegis,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                                correlated_refresh |= begin_refresh_correlated(
+                                    current(Surface::Grounding)
+                                        && !refresh_pending_before.5
+                                        && grounding
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "grounding",
+                                    &mut refresh_operations.grounding,
+                                    &mut instrumentation,
+                                    started,
+                                    Some(refresh_correlation),
+                                );
+                            }
+                            if matches!(action, "agora.room.open" | "agora.room.back") {
+                                correlated_refresh |= begin_refresh(
+                                    !refresh_pending_before.0
+                                        && agora
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "agora",
+                                    &mut refresh_operations.agora,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                            }
+                            if matches!(action, "moira.saga.open" | "moira.saga.back") {
+                                correlated_refresh |= begin_refresh(
+                                    !refresh_pending_before.1
+                                        && moira
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "moira",
+                                    &mut refresh_operations.moira,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                            }
+                            if matches!(action, "aegis.page.next" | "aegis.page.previous") {
+                                correlated_refresh |= begin_refresh(
+                                    !refresh_pending_before.4
+                                        && aegis
+                                            .as_ref()
+                                            .is_some_and(|value| value.request_pending()),
+                                    action,
+                                    "aegis",
+                                    &mut refresh_operations.aegis,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                            }
+                            if !peer_workflow_opened && !correlated_refresh {
+                                instrumentation.record(action, source, level, started.elapsed());
+                            }
+                            if matches!(
+                                action,
+                                "moira.reconciliation.keep-uncertain"
+                                    | "moira.reconciliation.fail-terminal"
+                                    | "moira.reconciliation.cancel"
+                                    | "moira.reconciliation.compensate"
+                                    | "moira.reconciliation.admit-failed"
+                                    | "moira.reconciliation.admit-succeeded"
+                                    | "moira.reconciliation.retry"
+                            ) && level == ActivityLevel::Info
+                                && moira_reconciliation.is_some()
+                            {
+                                active_moira_action = Some(action);
+                                if moira_operation.is_none()
+                                    && moira_reconciliation
+                                        .as_ref()
+                                        .is_some_and(|control| control.request_pending())
+                                {
+                                    moira_operation =
+                                        instrumentation.begin_peer_operation(action, "moira");
+                                }
+                            }
+                            if action.starts_with("daimon.session.")
+                                && daimon_control.is_some()
+                                && level == ActivityLevel::Info
+                            {
+                                active_daimon_action = Some(action);
+                            }
+                            notice.clone_from(&message);
+                            activity.push(level, source, message);
+                        }
+                    }
+                }
+                Event::Paste(text) if overlay == WorkbenchOverlay::Reconfiguration => {
+                    if let Some(workflow) = &mut reconfiguration {
+                        workflow.insert(&text);
+                    }
+                }
+                Event::Key(key) if overlay == WorkbenchOverlay::Reconfiguration => {
+                    if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                        overlay = WorkbenchOverlay::None;
+                        continue;
+                    }
+                    let Some(workflow) = &mut reconfiguration else {
+                        overlay = WorkbenchOverlay::None;
+                        continue;
+                    };
+                    if is_key(key, KeyCode::Backspace, KeyModifiers::NONE) {
+                        workflow.backspace();
+                    } else if is_key(key, KeyCode::Char('e'), KeyModifiers::NONE)
+                        && workflow.plan.is_some()
+                    {
+                        workflow.edit();
+                    } else if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE)
+                        && workflow.plan.is_some()
+                    {
+                        workflow.arm();
+                    } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE)
+                        && workflow.plan.is_none()
+                    {
+                        let started = Instant::now();
+                        workflow.preflight();
+                        let level = if workflow.plan.is_some() {
+                            ActivityLevel::Success
+                        } else {
+                            ActivityLevel::Warning
+                        };
+                        instrumentation.record(
+                            "workbench.reconfigure.preflight",
+                            "pantheon",
+                            level,
+                            started.elapsed(),
+                        );
+                        activity.push(level, "configuration", workflow.notice.clone());
+                    } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+                        let Some((path, digest)) = workflow.confirmed_profile() else {
+                            workflow.notice =
+                                "Press c to arm the preflighted restart before Enter".into();
+                            continue;
+                        };
+                        match WorkspaceProfile::load_with_digest(&path) {
+                            Ok((_, current_digest)) if current_digest == digest => {}
+                            Ok(_) => {
+                                workflow.armed = false;
+                                workflow.notice = "Restart refused: profile bytes changed after preflight; review the new diff"
+                                    .into();
+                                activity.push(
+                                    ActivityLevel::Warning,
+                                    "configuration",
+                                    workflow.notice.clone(),
+                                );
+                                continue;
+                            }
+                            Err(error) => {
+                                workflow.armed = false;
+                                workflow.notice = format!(
+                                    "Restart refused: profile revalidation failed: {error}"
+                                );
+                                activity.push(
+                                    ActivityLevel::Warning,
+                                    "configuration",
+                                    workflow.notice.clone(),
+                                );
+                                continue;
+                            }
+                        }
+                        let agora_unresolved = agora_create.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) || agora_message.as_ref().is_some_and(
+                            |control| control.request_pending() || control.recovery_required(),
+                        );
+                        let moira_unresolved =
+                            moira_reconciliation.as_ref().is_some_and(|control| {
+                                control.request_pending() || control.recovery_required()
+                            });
+                        let daimon_unresolved = daimon_control.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) || daimon_post_receipt_refresh
+                            || daimon_recovery_refresh
+                            || daimon_operation.is_some();
+                        let aegis_unresolved =
+                            aegis_revoke.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    aegis_tui::RevokeEpochDisposition::Pending
+                                        | aegis_tui::RevokeEpochDisposition::OutcomeUnknown
+                                )
+                            }) || aegis_managed.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    aegis_tui::ManagedAuthorityDisposition::Pending
+                                        | aegis_tui::ManagedAuthorityDisposition::Fenced
+                                )
+                            });
+                        let hermes_unresolved =
+                            hermes_acknowledge.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    hermes_tui::AcknowledgeDisposition::Pending
+                                        | hermes_tui::AcknowledgeDisposition::OutcomeUnknown
+                                )
+                            }) || hermes_post_receipt_refresh
+                                || hermes_operation.is_some()
+                                || hermes_disclosure.as_ref().is_some_and(|control| {
+                                    control.disposition()
+                                        == hermes_tui::DisclosureDisposition::Pending
+                                })
+                                || hermes_disclosure_operation.is_some()
+                                || hermes_compaction.as_ref().is_some_and(|control| {
+                                    matches!(
+                                        control.disposition(),
+                                        hermes_tui::CompactionDisposition::Pending
+                                            | hermes_tui::CompactionDisposition::OutcomeUnknown
+                                    )
+                                })
+                                || hermes_compaction_post_receipt_refresh
+                                || hermes_compaction_operation.is_some();
+                        let chronos_unresolved = chronos_operation.is_some()
+                            || chronos
+                                .as_ref()
+                                .is_some_and(Hub::mutation_recovery_required);
+                        let vellum_unresolved =
+                            vellum_durable_save.as_ref().is_some_and(|control| {
+                                control.request_pending() || control.recovery_required()
+                            }) || vellum_atomic_replace.as_ref().is_some_and(|control| {
+                                control.disposition() == AtomicReplaceDisposition::OutcomeUnknown
+                            }) || vellum_atomic_operation.is_some();
+                        if chronos_unresolved
+                            || vellum_unresolved
+                            || agora_unresolved
+                            || moira_unresolved
+                            || daimon_unresolved
+                            || hermes_unresolved
+                            || aegis_unresolved
+                            || operations.reply.is_some()
+                        {
+                            workflow.notice = "Restart refused: guarded work or topology drain is pending or outcome-unknown"
+                                .into();
+                            activity.push(
+                                ActivityLevel::Warning,
+                                "configuration",
+                                workflow.notice.clone(),
+                            );
+                            continue;
+                        }
+                        match decide_exit(
+                            vellum
+                                .as_ref()
+                                .map(ServiceEditor::aggregate_persistence)
+                                .unwrap_or(
+                                    vellum_sdk_client::workspace::PersistenceProjectionV1::Clean,
+                                ),
+                            false,
+                        ) {
+                            ExitDecision::Exit => {
+                                restart_profile = Some(RestartProfileRequest {
+                                    path,
+                                    sha256: digest,
+                                });
+                                activity.push(
+                                    ActivityLevel::Info,
+                                    "configuration",
+                                    "Preflighted process restart requested; draining owned topology",
+                                );
+                                break;
+                            }
+                            ExitDecision::ConfirmDiscard => {
+                                workflow.notice = "Restart refused: save the dirty Vellum workset or explicitly exit and discard it first"
+                                    .into();
+                            }
+                            ExitDecision::RefuseIndeterminate => {
+                                workflow.notice = "Restart refused: Vellum persistence is indeterminate; recover the exact effect first"
+                                    .into();
+                            }
+                        }
+                    } else if let Some(character) = bounded_text_character(key) {
+                        workflow.insert(&character.to_string());
+                    }
+                }
+                Event::Key(key)
+                    if overlay != WorkbenchOverlay::None
+                        && (is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                            || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                            || is_key(key, KeyCode::Char('g'), KeyModifiers::CONTROL)) =>
+                {
+                    overlay = WorkbenchOverlay::None;
+                }
+                Event::Key(_) if overlay != WorkbenchOverlay::None => {}
+                Event::Key(key) if is_key(key, KeyCode::Char('p'), KeyModifiers::CONTROL) => {
+                    palette.reset();
+                    overlay = WorkbenchOverlay::Commands;
+                }
+                Event::Key(key) if is_key(key, KeyCode::F(1), KeyModifiers::NONE) => {
+                    overlay = WorkbenchOverlay::Help;
+                }
+                Event::Key(key) if is_key(key, KeyCode::Char('g'), KeyModifiers::CONTROL) => {
+                    overlay = WorkbenchOverlay::Activity;
+                }
                 Event::Resize(..) => continue,
+                Event::Paste(text)
+                    if shell.active() == Surface::Daimon && daimon_prompt_composer.is_some() =>
+                {
+                    if let Some(composer) = &mut daimon_prompt_composer {
+                        composer.insert_text(&text);
+                        notice = "Pasted bounded text into the Daimon prompt editor".into();
+                    }
+                }
+                Event::Paste(text)
+                    if shell.active() == Surface::Agora && agora_message.is_some() =>
+                {
+                    if let Some(control) = &mut agora_message {
+                        control.insert_text(&text);
+                        notice = "Pasted bounded text into the active Agora message field".into();
+                    }
+                }
+                Event::Paste(text)
+                    if shell.active() == Surface::Agora && agora_create.is_some() =>
+                {
+                    if let Some(control) = &mut agora_create {
+                        for character in text.chars() {
+                            control.update(agora_tui::CreateRoomInput::Character(character), true);
+                        }
+                        notice = "Pasted bounded text into the active Agora room field".into();
+                    }
+                }
+                Event::Paste(text)
+                    if shell.active() == Surface::Aegis && aegis_managed.is_some() =>
+                {
+                    if let Some(control) = &mut aegis_managed {
+                        for character in text.chars().filter(|value| !value.is_control()) {
+                            control
+                                .update(aegis_tui::ManagedAuthorityInput::Insert(character), true);
+                        }
+                    }
+                }
                 Event::Paste(text)
                     if shell.active() == Surface::Workspace && focus == Focus::Vellum =>
                 {
                     if let Some(vellum) = &mut vellum {
-                        notice = match vellum.apply(ServiceAction::Insert(text)) {
-                            Ok(()) => "Vellum edit accepted".into(),
-                            Err(error) => error.to_string(),
+                        let started = Instant::now();
+                        let result = vellum.apply(ServiceAction::Insert(text));
+                        let level = if result.is_ok() {
+                            ActivityLevel::Success
+                        } else {
+                            ActivityLevel::Warning
                         };
+                        instrumentation.record(
+                            "vellum.edit.insert",
+                            "vellum",
+                            level,
+                            started.elapsed(),
+                        );
+                        notice = result.map_or_else(
+                            |error| error.to_string(),
+                            |()| "Vellum edit accepted".into(),
+                        );
                         confirming_discard = false;
                     } else {
                         notice = "Vellum service is not configured".into();
@@ -194,11 +4743,85 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
-                    if let Some(agora) = &mut agora {
-                        if let Some(input) = agora_tui::translate_key(key)
-                            && agora.update(input, true) == agora_tui::Lifecycle::CloseRequested
+                    if agora_message.is_some() && is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                        if agora_message.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) {
+                            notice = "Agora message is pending or outcome-unknown; wait, or press r to replay the exact retained request"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "agora", notice.clone());
+                        } else {
+                            agora_message = None;
+                            last_agora_message_notice.clear();
+                            notice =
+                                "Closed Agora message composer without another submission".into();
+                            activity.push(ActivityLevel::Info, "agora", notice.clone());
+                        }
+                    } else if let Some(control) = &mut agora_message {
+                        let input = if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+                            && control.recovery_required()
                         {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            Some(agora_tui::ComposeMessageInput::RetryExact)
+                        } else {
+                            agora_tui::translate_compose_message_key(key)
+                        };
+                        if let Some(input) = input {
+                            let pending_before = control.request_pending();
+                            control.update(input, true);
+                            if !pending_before
+                                && control.request_pending()
+                                && agora_message_operation.is_none()
+                            {
+                                agora_message_operation = instrumentation
+                                    .begin_peer_operation("agora.message.send", "agora");
+                            }
+                        }
+                    } else if agora_create.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        if agora_create.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) {
+                            notice = "Agora room creation is pending or outcome-unknown; wait, or press r to replay the exact retained request"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "agora", notice.clone());
+                        } else {
+                            agora_create = None;
+                            last_agora_create_notice.clear();
+                            notice = "Closed Agora room form without another submission".into();
+                            activity.push(ActivityLevel::Info, "agora", notice.clone());
+                        }
+                    } else if let Some(control) = &mut agora_create {
+                        if let Some(input) = agora_tui::translate_create_room_key(key) {
+                            control.update(input, true);
+                            if control.request_pending() && agora_operation.is_none() {
+                                agora_operation = instrumentation
+                                    .begin_peer_operation("agora.room.create", "agora");
+                            }
+                        }
+                    } else if let Some(agora) = &mut agora {
+                        if let Some(input) = agora_tui::translate_key(key) {
+                            let started = Instant::now();
+                            let pending_before = agora.request_pending();
+                            let action = match input {
+                                agora_tui::Input::Refresh => Some("view.refresh"),
+                                agora_tui::Input::Open => Some("agora.room.open"),
+                                agora_tui::Input::Back => Some("agora.room.back"),
+                                _ => None,
+                            };
+                            if agora.update(input, true) == agora_tui::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            if let Some(action) = action {
+                                begin_refresh(
+                                    !pending_before && agora.request_pending(),
+                                    action,
+                                    "agora",
+                                    &mut refresh_operations.agora,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                            }
                         }
                     } else {
                         notice = Surface::Agora
@@ -213,11 +4836,88 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
-                    if let Some(moira) = &mut moira {
-                        if let Some(input) = moira_tui::translate_key(key)
-                            && moira.update(input, true) == moira_tui::Lifecycle::CloseRequested
+                    if moira_reconciliation.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        if moira_reconciliation.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) {
+                            notice = "Moira reconciliation is pending or fenced; wait, or press r to recover the exact receipt before closing"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "moira", notice.clone());
+                        } else {
+                            moira_reconciliation = None;
+                            last_moira_reconciliation_notice.clear();
+                            active_moira_action = None;
+                            notice =
+                                "Closed reconciliation sheet without submitting another effect"
+                                    .into();
+                            activity.push(ActivityLevel::Info, "moira", notice.clone());
+                        }
+                    } else if let Some(reconciliation) = &mut moira_reconciliation {
+                        if is_key(key, KeyCode::Up, KeyModifiers::NONE) {
+                            reconciliation.move_selection(false);
+                        } else if is_key(key, KeyCode::Down, KeyModifiers::NONE) {
+                            reconciliation.move_selection(true);
+                        } else if let Some(input) =
+                            reconciliation_input(key, reconciliation.editing_logical_time())
                         {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            reconciliation.update(input, true);
+                            if reconciliation.request_pending() && moira_operation.is_none() {
+                                moira_operation = instrumentation.begin_peer_operation(
+                                    active_moira_action
+                                        .unwrap_or("moira.reconciliation.keep-uncertain"),
+                                    "moira",
+                                );
+                            }
+                            notice = match input {
+                                moira_tui::ReconciliationBatchInput::Refresh => {
+                                    "Moira reconciliation recovery refresh queued"
+                                }
+                                moira_tui::ReconciliationBatchInput::Arm => {
+                                    "Moira reconciliation arm requested"
+                                }
+                                moira_tui::ReconciliationBatchInput::Confirm => {
+                                    "Moira reconciliation child sequence submitted once"
+                                }
+                                moira_tui::ReconciliationBatchInput::Digit(_)
+                                | moira_tui::ReconciliationBatchInput::Backspace => {
+                                    "Moira logical time edited"
+                                }
+                                moira_tui::ReconciliationBatchInput::Prepare => {
+                                    "Moira time-bearing proposals prepared for owner inspection"
+                                }
+                                moira_tui::ReconciliationBatchInput::Back
+                                | moira_tui::ReconciliationBatchInput::Close => {
+                                    unreachable!("host maps only explicit control inputs")
+                                }
+                            }
+                            .into();
+                            activity.push(ActivityLevel::Info, "moira", notice.clone());
+                        }
+                    } else if let Some(moira) = &mut moira {
+                        if let Some(input) = moira_tui::translate_key(key) {
+                            let started = Instant::now();
+                            let pending_before = moira.request_pending();
+                            let action = match input {
+                                moira_tui::Input::Refresh => Some("view.refresh"),
+                                moira_tui::Input::Open => Some("moira.saga.open"),
+                                moira_tui::Input::Back => Some("moira.saga.back"),
+                                _ => None,
+                            };
+                            if moira.update(input, true) == moira_tui::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            if let Some(action) = action {
+                                begin_refresh(
+                                    !pending_before && moira.request_pending(),
+                                    action,
+                                    "moira",
+                                    &mut refresh_operations.moira,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                            }
                         }
                     } else {
                         notice = Surface::Moira
@@ -232,17 +4932,285 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
-                    if let Some(daimon) = &mut daimon_agent {
-                        if let Some(input) = daimon_tui::translate_key(key)
-                            && daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested
-                        {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                    if daimon_permission_composer.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        let outcome = daimon_permission_composer
+                            .as_mut()
+                            .expect("checked above")
+                            .update(daimon_tui::AgentPermissionInput::Close, true);
+                        if outcome == daimon_tui::AgentPermissionOutcome::CloseRequested {
+                            daimon_permission_composer = None;
+                            notice =
+                                "Closed Daimon permission review; no decision was created".into();
+                            activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                        }
+                    } else if let Some(composer) = &mut daimon_permission_composer {
+                        if let Some(input) = daimon_permission_input(key) {
+                            match composer.update(input, true) {
+                                daimon_tui::AgentPermissionOutcome::None => {
+                                    notice = composer.notice().into();
+                                }
+                                daimon_tui::AgentPermissionOutcome::CloseRequested => {
+                                    unreachable!("close is handled explicitly")
+                                }
+                                daimon_tui::AgentPermissionOutcome::Submit(selections) => {
+                                    let Some(policy) = daimon_execution_policy.as_ref() else {
+                                        notice =
+                                            "Daimon execution policy became unavailable".into();
+                                        activity.push(
+                                            ActivityLevel::Warning,
+                                            "daimon",
+                                            notice.clone(),
+                                        );
+                                        continue;
+                                    };
+                                    let requests =
+                                        match daimon_permission_requests(selections, policy) {
+                                            Ok(requests) => requests,
+                                            Err(error) => {
+                                                notice = error;
+                                                activity.push(
+                                                    ActivityLevel::Warning,
+                                                    "daimon",
+                                                    notice.clone(),
+                                                );
+                                                continue;
+                                            }
+                                        };
+                                    let socket = daimon_agent_control_socket
+                                        .as_ref()
+                                        .expect("permissions require the agent socket")
+                                        .clone();
+                                    daimon_control = match daimon_tui::AgentControlBatchComponent::new_with_connector(
+                                        move || {
+                                            daimon_client::unix::connect_agent(
+                                                &socket,
+                                                daimon_wire::LimitsV1::default(),
+                                                daimon_wire::agent::AgentWireLimitsV1::default(),
+                                                Duration::from_secs(5),
+                                            )
+                                        },
+                                        requests,
+                                    ) {
+                                        Ok(control) => Some(control),
+                                        Err(error) => {
+                                            notice = error.into();
+                                            activity.push(
+                                                ActivityLevel::Warning,
+                                                "daimon",
+                                                notice.clone(),
+                                            );
+                                            continue;
+                                        }
+                                    };
+                                    daimon_permission_composer = None;
+                                    active_daimon_action = Some("daimon.session.permission");
+                                    notice = "Exact Daimon permission-set proposal opened; c arms, Enter starts the bounded run".into();
+                                    activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                                }
+                            }
+                        }
+                    } else if daimon_prompt_composer.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        let outcome = daimon_prompt_composer
+                            .as_mut()
+                            .expect("checked above")
+                            .update(daimon_tui::AgentPromptInput::Close, true);
+                        if outcome == daimon_tui::AgentPromptOutcome::CloseRequested {
+                            daimon_prompt_composer = None;
+                            notice = "Closed Daimon prompt composer; no request was created".into();
+                            activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                        }
+                    } else if let Some(composer) = &mut daimon_prompt_composer {
+                        let reviewing = composer.reviewing();
+                        if let Some(input) = daimon_prompt_input(key, reviewing) {
+                            match composer.update(input, true) {
+                                daimon_tui::AgentPromptOutcome::None => {
+                                    notice = composer.notice().into();
+                                }
+                                daimon_tui::AgentPromptOutcome::CloseRequested => {
+                                    unreachable!("close is handled explicitly")
+                                }
+                                daimon_tui::AgentPromptOutcome::Submit(prompt) => {
+                                    let Some(agent) = daimon_agent.as_ref() else {
+                                        notice = "Daimon session set became unavailable before prompt review"
+                                            .into();
+                                        activity.push(
+                                            ActivityLevel::Warning,
+                                            "daimon",
+                                            notice.clone(),
+                                        );
+                                        continue;
+                                    };
+                                    let observations = agent.selected_observations();
+                                    let Some(policy) = daimon_execution_policy.as_ref() else {
+                                        notice =
+                                            "Daimon prompt execution policy became unavailable"
+                                                .into();
+                                        activity.push(
+                                            ActivityLevel::Warning,
+                                            "daimon",
+                                            notice.clone(),
+                                        );
+                                        continue;
+                                    };
+                                    let requests =
+                                        match daimon_prompt_requests(&observations, policy, prompt)
+                                        {
+                                            Ok(requests) => requests,
+                                            Err(error) => {
+                                                notice = error;
+                                                activity.push(
+                                                    ActivityLevel::Warning,
+                                                    "daimon",
+                                                    notice.clone(),
+                                                );
+                                                continue;
+                                            }
+                                        };
+                                    let socket = daimon_agent_control_socket
+                                        .as_ref()
+                                        .expect("prompting requires the agent socket")
+                                        .clone();
+                                    daimon_control = match daimon_tui::AgentControlBatchComponent::new_with_connector(
+                                        move || {
+                                            daimon_client::unix::connect_agent(
+                                                &socket,
+                                                daimon_wire::LimitsV1::default(),
+                                                daimon_wire::agent::AgentWireLimitsV1::default(),
+                                                Duration::from_secs(5),
+                                            )
+                                        },
+                                        requests,
+                                    ) {
+                                        Ok(control) => Some(control),
+                                        Err(error) => {
+                                            notice = error.into();
+                                            activity.push(
+                                                ActivityLevel::Warning,
+                                                "daimon",
+                                                notice.clone(),
+                                            );
+                                            continue;
+                                        }
+                                    };
+                                    daimon_prompt_composer = None;
+                                    active_daimon_action = Some("daimon.session.prompt");
+                                    notice = "Exact Daimon prompt-set proposal opened; c arms, Enter starts the bounded run".into();
+                                    activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                                }
+                            }
+                        }
+                    } else if daimon_control.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        if daimon_control.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) {
+                            notice = "Daimon request is pending or outcome-unknown; wait, or press r to inspect the exact session before closing"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "daimon", notice.clone());
+                        } else {
+                            daimon_control = None;
+                            last_daimon_control_notice.clear();
+                            active_daimon_action = None;
+                            daimon_recovery_refresh = false;
+                            daimon_unknown_evidence = false;
+                            notice = "Closed Daimon control sheet; no additional request submitted"
+                                .into();
+                            activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                        }
+                    } else if daimon_control
+                        .as_ref()
+                        .is_some_and(daimon_tui::AgentControlBatchComponent::recovery_required)
+                        && is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+                    {
+                        let sessions = daimon_control
+                            .as_ref()
+                            .expect("checked above")
+                            .recovery_sessions();
+                        let queued = daimon_agent
+                            .as_mut()
+                            .is_some_and(|agent| agent.refresh_sessions(&sessions));
+                        if queued {
+                            daimon_control
+                                .as_mut()
+                                .expect("checked above")
+                                .recovery_inspection_started();
+                            daimon_recovery_refresh = true;
+                            notice = format!(
+                                "Daimon exact recovery inspection queued for {} outcome-unknown session(s); no mutation will be retried",
+                                sessions.len()
+                            );
+                            activity.push(ActivityLevel::Uncertain, "daimon", notice.clone());
+                        } else {
+                            notice = "Daimon recovery inspection could not be queued while another session refresh is pending"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "daimon", notice.clone());
+                        }
+                    } else if let Some(control) = &mut daimon_control {
+                        if let Some(input) = daimon_control_input(key) {
+                            control.update(input, true);
+                            if control.request_pending()
+                                && daimon_operation.is_none()
+                                && let Some(action) = active_daimon_action
+                            {
+                                daimon_operation =
+                                    instrumentation.begin_peer_operation(action, "daimon");
+                            }
+                            notice = match input {
+                                daimon_tui::AgentControlInput::Arm => "Daimon exact control armed",
+                                daimon_tui::AgentControlInput::Confirm => {
+                                    "Daimon exact control submitted once"
+                                }
+                                daimon_tui::AgentControlInput::Back
+                                | daimon_tui::AgentControlInput::Close => {
+                                    unreachable!("host maps only explicit control inputs")
+                                }
+                            }
+                            .into();
+                            activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                        }
+                    } else if let Some(daimon) = &mut daimon_agent {
+                        if let Some(input) = daimon_agent_set_input(key) {
+                            let started = Instant::now();
+                            let pending_before = daimon.request_pending();
+                            if daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            begin_refresh(
+                                matches!(
+                                    input,
+                                    daimon_tui::AgentSetInput::RefreshSelected
+                                        | daimon_tui::AgentSetInput::RefreshAll
+                                ) && !pending_before
+                                    && daimon.request_pending(),
+                                "view.refresh",
+                                "daimon",
+                                &mut refresh_operations.daimon,
+                                &mut instrumentation,
+                                started,
+                            );
                         }
                     } else if let Some(daimon) = &mut daimon {
-                        if let Some(input) = daimon_tui::translate_key(key)
-                            && daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested
-                        {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        if let Some(input) = daimon_tui::translate_key(key) {
+                            let started = Instant::now();
+                            let pending_before = daimon.request_pending();
+                            if daimon.update(input, true) == daimon_tui::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            begin_refresh(
+                                input == daimon_tui::Input::Refresh
+                                    && !pending_before
+                                    && daimon.request_pending(),
+                                "view.refresh",
+                                "daimon",
+                                &mut refresh_operations.daimon,
+                                &mut instrumentation,
+                                started,
+                            );
                         }
                     } else {
                         notice = Surface::Daimon
@@ -257,11 +5225,174 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
-                    if let Some(hermes) = &mut hermes {
-                        if let Some(input) = hermes_tui::translate_key(key)
-                            && hermes.update(input, true) == hermes_tui::Lifecycle::CloseRequested
+                    if hermes_compaction.is_some() && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        if hermes_compaction.as_ref().is_some_and(|control| {
+                            matches!(
+                                control.disposition(),
+                                hermes_tui::CompactionDisposition::Applied { .. }
+                            )
+                        }) && (hermes_compaction_post_receipt_refresh
+                            || hermes_compaction_operation.is_some())
                         {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            notice = "Hermes compaction receipt is still settling to refreshed stream state; wait before closing"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                            continue;
+                        }
+                        let lifecycle = hermes_compaction
+                            .as_mut()
+                            .expect("checked above")
+                            .update(hermes_tui::CompactionInput::Close, true);
+                        if lifecycle == hermes_tui::Lifecycle::CloseRequested {
+                            hermes_compaction = None;
+                            last_hermes_compaction_notice.clear();
+                            notice =
+                                "Closed Hermes compaction sheet without another submission".into();
+                        } else {
+                            notice = "Hermes compaction is pending or outcome-unknown; wait, or press r to inspect exact stream state"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                        }
+                    } else if hermes_compaction.as_ref().is_some_and(|control| {
+                        control.disposition() == hermes_tui::CompactionDisposition::OutcomeUnknown
+                    }) && is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+                    {
+                        if let Some(hermes) = &mut hermes {
+                            let started = Instant::now();
+                            let pending_before = hermes.request_pending();
+                            hermes.update(hermes_tui::Input::Refresh, true);
+                            begin_refresh(
+                                !pending_before && hermes.request_pending(),
+                                "ledger.compact.inspect",
+                                "hermes",
+                                &mut refresh_operations.hermes,
+                                &mut instrumentation,
+                                started,
+                            );
+                        }
+                        hermes_compaction = None;
+                        last_hermes_compaction_notice.clear();
+                        notice = "Hermes compaction outcome remains unknown; exact stream inspection queued without retry"
+                            .into();
+                        activity.push(ActivityLevel::Uncertain, "hermes", notice.clone());
+                    } else if let Some(control) = &mut hermes_compaction {
+                        if let Some(input) = hermes_tui::translate_compaction_key(key) {
+                            control.update(input, true);
+                            if control.disposition() == hermes_tui::CompactionDisposition::Pending
+                                && hermes_compaction_operation.is_none()
+                            {
+                                hermes_compaction_operation = instrumentation
+                                    .begin_peer_operation("ledger.compact.v1", "hermes");
+                            }
+                        }
+                    } else if hermes_disclosure.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        let lifecycle = hermes_disclosure
+                            .as_mut()
+                            .expect("checked above")
+                            .update(hermes_tui::DisclosureInput::Close, true);
+                        if lifecycle == hermes_tui::Lifecycle::CloseRequested {
+                            hermes_disclosure = None;
+                            last_hermes_disclosure_notice.clear();
+                            notice =
+                                "Closed Hermes event disclosure; disclosed content was discarded"
+                                    .into();
+                        } else {
+                            notice =
+                                "Hermes disclosure read is pending; wait before closing".into();
+                            activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                        }
+                    } else if let Some(control) = &mut hermes_disclosure {
+                        if let Some(input) = hermes_tui::translate_disclosure_key(key) {
+                            control.update(input, true);
+                            if control.disposition() == hermes_tui::DisclosureDisposition::Pending
+                                && hermes_disclosure_operation.is_none()
+                            {
+                                hermes_disclosure_operation = instrumentation
+                                    .begin_peer_operation("ledger.events.disclose.v1", "hermes");
+                            }
+                        }
+                    } else if hermes_acknowledge.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        if hermes_acknowledge.as_ref().is_some_and(|control| {
+                            matches!(
+                                control.disposition(),
+                                hermes_tui::AcknowledgeDisposition::Applied { .. }
+                            )
+                        }) && (hermes_post_receipt_refresh || hermes_operation.is_some())
+                        {
+                            notice = "Hermes acknowledgement receipt is still settling to a refreshed cursor; wait before closing"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                            continue;
+                        }
+                        let lifecycle = hermes_acknowledge
+                            .as_mut()
+                            .expect("checked above")
+                            .update(hermes_tui::AcknowledgeInput::Close, true);
+                        if lifecycle == hermes_tui::Lifecycle::CloseRequested {
+                            hermes_acknowledge = None;
+                            last_hermes_acknowledge_notice.clear();
+                            notice =
+                                "Closed Hermes acknowledgement sheet without another submission"
+                                    .into();
+                        } else {
+                            notice = "Hermes acknowledgement is pending or outcome-unknown; wait, or press r to inspect the exact cursor"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                        }
+                    } else if hermes_acknowledge.as_ref().is_some_and(|control| {
+                        control.disposition() == hermes_tui::AcknowledgeDisposition::OutcomeUnknown
+                    }) && is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+                    {
+                        if let Some(hermes) = &mut hermes {
+                            let started = Instant::now();
+                            let pending_before = hermes.request_pending();
+                            hermes.update(hermes_tui::Input::Refresh, true);
+                            begin_refresh(
+                                !pending_before && hermes.request_pending(),
+                                "ledger.acknowledge.inspect",
+                                "hermes",
+                                &mut refresh_operations.hermes,
+                                &mut instrumentation,
+                                started,
+                            );
+                        }
+                        hermes_acknowledge = None;
+                        last_hermes_acknowledge_notice.clear();
+                        notice = "Hermes acknowledgement outcome remains unknown; exact cursor inspection queued without retry"
+                            .into();
+                        activity.push(ActivityLevel::Uncertain, "hermes", notice.clone());
+                    } else if let Some(control) = &mut hermes_acknowledge {
+                        if let Some(input) = hermes_tui::translate_acknowledge_key(key) {
+                            control.update(input, true);
+                            if control.disposition() == hermes_tui::AcknowledgeDisposition::Pending
+                                && hermes_operation.is_none()
+                            {
+                                hermes_operation = instrumentation
+                                    .begin_peer_operation("ledger.acknowledge.v1", "hermes");
+                            }
+                        }
+                    } else if let Some(hermes) = &mut hermes {
+                        if let Some(input) = hermes_tui::translate_key(key) {
+                            let started = Instant::now();
+                            let pending_before = hermes.request_pending();
+                            if hermes.update(input, true) == hermes_tui::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            begin_refresh(
+                                input == hermes_tui::Input::Refresh
+                                    && !pending_before
+                                    && hermes.request_pending(),
+                                "view.refresh",
+                                "hermes",
+                                &mut refresh_operations.hermes,
+                                &mut instrumentation,
+                                started,
+                            );
                         }
                     } else {
                         notice = Surface::Hermes
@@ -276,11 +5407,126 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
-                    if let Some(aegis) = &mut aegis {
-                        if let Some(input) = aegis_tui::translate_key(key)
-                            && aegis.update(input, true) == aegis_tui::Lifecycle::CloseRequested
+                    if let Some(control) = &mut aegis_managed {
+                        let before = control.disposition();
+                        let input = if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                            Some(aegis_tui::ManagedAuthorityInput::Close)
+                        } else if is_key(key, KeyCode::Backspace, KeyModifiers::NONE) {
+                            Some(aegis_tui::ManagedAuthorityInput::Backspace)
+                        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+                            Some(
+                                if before == aegis_tui::ManagedAuthorityDisposition::Editing {
+                                    aegis_tui::ManagedAuthorityInput::Prepare
+                                } else {
+                                    aegis_tui::ManagedAuthorityInput::Confirm
+                                },
+                            )
+                        } else if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE)
+                            && before == aegis_tui::ManagedAuthorityDisposition::Proposed
                         {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            Some(aegis_tui::ManagedAuthorityInput::Arm)
+                        } else if is_key(key, KeyCode::Char('e'), KeyModifiers::NONE)
+                            && before != aegis_tui::ManagedAuthorityDisposition::Editing
+                        {
+                            Some(aegis_tui::ManagedAuthorityInput::Edit)
+                        } else if key.kind == KeyEventKind::Press
+                            && key.modifiers.intersection(KeyModifiers::CONTROL).is_empty()
+                            && let KeyCode::Char(character) = key.code
+                        {
+                            Some(aegis_tui::ManagedAuthorityInput::Insert(character))
+                        } else {
+                            None
+                        };
+                        if let Some(input) = input {
+                            let lifecycle = control.update(input, true);
+                            if control.disposition()
+                                == aegis_tui::ManagedAuthorityDisposition::Pending
+                                && before != aegis_tui::ManagedAuthorityDisposition::Pending
+                                && aegis_operation.is_none()
+                            {
+                                aegis_operation = instrumentation
+                                    .begin_peer_operation("aegis.authority.manage", "aegis");
+                            }
+                            if lifecycle == aegis_tui::Lifecycle::CloseRequested {
+                                aegis_managed = None;
+                                last_aegis_managed_notice.clear();
+                                notice =
+                                    "Closed Aegis managed session; private grants destroyed".into();
+                                activity.push(ActivityLevel::Info, "aegis", notice.clone());
+                            }
+                        }
+                    } else if aegis_revoke.is_some()
+                        && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    {
+                        let lifecycle = aegis_revoke
+                            .as_mut()
+                            .expect("checked above")
+                            .update(aegis_tui::RevokeEpochInput::Close, true);
+                        if lifecycle == aegis_tui::Lifecycle::CloseRequested {
+                            aegis_revoke = None;
+                            last_aegis_revoke_notice.clear();
+                            notice =
+                                "Closed Aegis revocation sheet without another submission".into();
+                        } else {
+                            notice = "Aegis revocation is pending or outcome-unknown; wait, or press r to inspect current authority state"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "aegis", notice.clone());
+                        }
+                    } else if aegis_revoke.as_ref().is_some_and(|control| {
+                        control.disposition() == aegis_tui::RevokeEpochDisposition::OutcomeUnknown
+                    }) && is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+                    {
+                        if let Some(aegis) = &mut aegis {
+                            let started = Instant::now();
+                            let pending_before = aegis.request_pending();
+                            aegis.update(aegis_tui::Input::Refresh, true);
+                            begin_refresh(
+                                !pending_before && aegis.request_pending(),
+                                "aegis.epoch.revoke.inspect",
+                                "aegis",
+                                &mut refresh_operations.aegis,
+                                &mut instrumentation,
+                                started,
+                            );
+                        }
+                        aegis_revoke = None;
+                        last_aegis_revoke_notice.clear();
+                        notice = "Aegis revocation outcome remains unknown; current authority inspection queued without retry"
+                            .into();
+                        activity.push(ActivityLevel::Uncertain, "aegis", notice.clone());
+                    } else if let Some(control) = &mut aegis_revoke {
+                        if let Some(input) = aegis_tui::translate_revoke_epoch_key(key) {
+                            control.update(input, true);
+                            if control.disposition() == aegis_tui::RevokeEpochDisposition::Pending
+                                && aegis_operation.is_none()
+                            {
+                                aegis_operation = instrumentation
+                                    .begin_peer_operation("aegis.epoch.revoke", "aegis");
+                            }
+                        }
+                    } else if let Some(aegis) = &mut aegis {
+                        if let Some(input) = aegis_tui::translate_key(key) {
+                            let started = Instant::now();
+                            let pending_before = aegis.request_pending();
+                            let action = match input {
+                                aegis_tui::Input::Refresh => Some("view.refresh"),
+                                aegis_tui::Input::NextPage => Some("aegis.page.next"),
+                                aegis_tui::Input::PreviousPage => Some("aegis.page.previous"),
+                                aegis_tui::Input::Close => None,
+                            };
+                            if aegis.update(input, true) == aegis_tui::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            if let Some(action) = action {
+                                begin_refresh(
+                                    !pending_before && aegis.request_pending(),
+                                    action,
+                                    "aegis",
+                                    &mut refresh_operations.aegis,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                            }
                         }
                     } else {
                         notice = Surface::Aegis
@@ -290,16 +5536,69 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                     }
                 }
                 Event::Key(key)
+                    if shell.active() == Surface::Operations
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    if key.kind != KeyEventKind::Press {
+                        continue;
+                    }
+                    match (key.code, key.modifiers) {
+                        (KeyCode::Char('c'), KeyModifiers::NONE) => {
+                            operations.arm();
+                            notice = operations.notice.clone();
+                            activity.push(ActivityLevel::Warning, "operations", notice.clone());
+                        }
+                        (KeyCode::Enter, KeyModifiers::NONE) => {
+                            let started = Instant::now();
+                            let hosted_peers = operations.hosted_peer_ids();
+                            if operations.confirm() {
+                                drain_operations = begin_drain_operations(
+                                    hosted_peers,
+                                    &mut instrumentation,
+                                    started,
+                                );
+                                notice = operations.notice.clone();
+                                activity.push(ActivityLevel::Info, "operations", notice.clone());
+                            } else {
+                                notice = operations.notice.clone();
+                            }
+                        }
+                        (KeyCode::Esc, KeyModifiers::NONE) => {
+                            operations.disarm();
+                            notice = operations.notice.clone();
+                        }
+                        _ => {
+                            notice =
+                                "Operations uses c to arm, Enter to confirm, and Esc to disarm"
+                                    .into();
+                        }
+                    }
+                }
+                Event::Key(key)
                     if shell.active() == Surface::Grounding
                         && !(key.kind == KeyEventKind::Press
                             && key.modifiers == KeyModifiers::CONTROL
                             && key.code == KeyCode::Char('q')) =>
                 {
                     if let Some(grounding) = &mut grounding {
-                        if let Some(input) = tellus::translate_key(key)
-                            && grounding.update(input, true) == tellus::Lifecycle::CloseRequested
-                        {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        if let Some(input) = tellus::translate_key(key) {
+                            let started = Instant::now();
+                            let pending_before = grounding.request_pending();
+                            if grounding.update(input, true) == tellus::Lifecycle::CloseRequested {
+                                notice = "Use Ctrl-Q to exit the complete workbench".into();
+                            }
+                            begin_refresh(
+                                input == tellus::Input::Refresh
+                                    && !pending_before
+                                    && grounding.request_pending(),
+                                "view.refresh",
+                                "grounding",
+                                &mut refresh_operations.grounding,
+                                &mut instrumentation,
+                                started,
+                            );
                         }
                     } else {
                         notice = Surface::Grounding
@@ -308,32 +5607,280 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             .into();
                     }
                 }
-                Event::Key(key) => match route_key(key, focus) {
-                    RoutedInput::Exit => match decide_exit(
-                        vellum
-                            .as_ref()
-                            .map(|editor| editor.workspace().projection().persistence())
-                            .unwrap_or(
-                                vellum_sdk_client::workspace::PersistenceProjectionV1::Clean,
-                            ),
-                        confirming_discard,
-                    ) {
-                        ExitDecision::Exit => break,
-                        ExitDecision::ConfirmDiscard => {
-                            confirming_discard = true;
-                            notice =
-                                "Unsaved Vellum edit; Ctrl-Q again discards, Esc cancels".into();
+                Event::Key(key)
+                    if shell.active() == Surface::Workspace
+                        && focus == Focus::Vellum
+                        && vellum_atomic_replace.is_some()
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    let control = vellum_atomic_replace.as_mut().expect("matched above");
+                    let disposition_before = control.disposition();
+                    let input = if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                        if matches!(
+                            disposition_before,
+                            AtomicReplaceDisposition::Editing
+                                | AtomicReplaceDisposition::OutcomeUnknown
+                        ) {
+                            Some(AtomicReplaceInput::Close)
+                        } else {
+                            Some(AtomicReplaceInput::Back)
                         }
-                        ExitDecision::RefuseIndeterminate => {
-                            notice = "Vellum effect is indeterminate; repeat the exact action before exit"
+                    } else if is_key(key, KeyCode::Tab, KeyModifiers::NONE) {
+                        Some(AtomicReplaceInput::NextField)
+                    } else if is_key(key, KeyCode::Backspace, KeyModifiers::NONE) {
+                        Some(AtomicReplaceInput::Backspace)
+                    } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+                        Some(if disposition_before == AtomicReplaceDisposition::Editing {
+                            AtomicReplaceInput::Preview
+                        } else {
+                            AtomicReplaceInput::Confirm
+                        })
+                    } else if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE)
+                        && disposition_before != AtomicReplaceDisposition::Editing
+                    {
+                        Some(AtomicReplaceInput::Arm)
+                    } else if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+                        && disposition_before == AtomicReplaceDisposition::OutcomeUnknown
+                    {
+                        Some(AtomicReplaceInput::Recover)
+                    } else if is_key(key, KeyCode::Char('q'), KeyModifiers::NONE)
+                        && matches!(
+                            disposition_before,
+                            AtomicReplaceDisposition::Applied | AtomicReplaceDisposition::Refused
+                        )
+                    {
+                        Some(AtomicReplaceInput::Close)
+                    } else if key.kind == KeyEventKind::Press
+                        && key.modifiers == KeyModifiers::NONE
+                        && let KeyCode::Char(character) = key.code
+                    {
+                        Some(AtomicReplaceInput::Character(character))
+                    } else {
+                        None
+                    };
+                    if let Some(input) = input {
+                        let started = Instant::now();
+                        let submitting = matches!(
+                            input,
+                            AtomicReplaceInput::Confirm | AtomicReplaceInput::Recover
+                        ) && matches!(
+                            disposition_before,
+                            AtomicReplaceDisposition::Armed
+                                | AtomicReplaceDisposition::OutcomeUnknown
+                        );
+                        if submitting && vellum_atomic_operation.is_none() {
+                            vellum_atomic_operation = instrumentation.begin_peer_operation_at(
+                                "vellum.atomic-replace-selected",
+                                "vellum",
+                                started,
+                            );
+                        }
+                        let lifecycle = control.update(
+                            input,
+                            vellum.as_mut().expect("atomic replace requires Vellum"),
+                            true,
+                        );
+                        let disposition = control.disposition();
+                        let level = match disposition {
+                            AtomicReplaceDisposition::Applied => ActivityLevel::Success,
+                            AtomicReplaceDisposition::OutcomeUnknown => ActivityLevel::Uncertain,
+                            AtomicReplaceDisposition::Refused => ActivityLevel::Warning,
+                            AtomicReplaceDisposition::Editing
+                            | AtomicReplaceDisposition::Preview
+                            | AtomicReplaceDisposition::Armed => ActivityLevel::Info,
+                        };
+                        if submitting {
+                            instrumentation.record(
+                                "vellum.atomic-replace.commit",
+                                "vellum",
+                                level,
+                                started.elapsed(),
+                            );
+                            if let Some(operation) = vellum_atomic_operation {
+                                instrumentation.mark_peer_stage(
+                                    operation,
+                                    "owner_atomic_receipt",
+                                    level,
+                                );
+                                if disposition != AtomicReplaceDisposition::OutcomeUnknown {
+                                    instrumentation.settle_peer_operation(operation, level);
+                                    vellum_atomic_operation = None;
+                                }
+                            }
+                        }
+                        notice = control.notice().into();
+                        activity.push(level, "vellum", notice.clone());
+                        if lifecycle == AtomicReplaceLifecycle::CloseRequested {
+                            vellum_atomic_replace = None;
+                            vellum_atomic_operation = None;
+                            notice = "Closed Vellum atomic-replace composer".into();
+                        }
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Workspace
+                        && focus == Focus::Vellum
+                        && vellum_durable_save.is_some()
+                        && !(key.kind == KeyEventKind::Press
+                            && key.modifiers == KeyModifiers::CONTROL
+                            && key.code == KeyCode::Char('q')) =>
+                {
+                    let control = vellum_durable_save.as_mut().expect("matched above");
+                    if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                        if control.disposition() == DurableSaveBatchDisposition::Armed {
+                            control.update(DurableSaveBatchInput::Back, true);
+                            notice = "Vellum durable-save workset disarmed".into();
+                        } else if control.request_pending() || control.recovery_required() {
+                            notice = "Vellum durable save is pending or unresolved; use r for exact receipt lookup"
                                 .into();
+                            activity.push(ActivityLevel::Warning, "vellum", notice.clone());
+                        } else {
+                            vellum_durable_save = None;
+                            last_vellum_durable_notice.clear();
+                            notice = "Closed Vellum durable-save workset".into();
                         }
-                    },
+                    } else {
+                        let input = if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) {
+                            Some(DurableSaveBatchInput::Arm)
+                        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+                            Some(DurableSaveBatchInput::Confirm)
+                        } else if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) {
+                            Some(DurableSaveBatchInput::Recover)
+                        } else {
+                            None
+                        };
+                        if let Some(input) = input {
+                            let pending_before = control.request_pending();
+                            control.update(input, true);
+                            if !pending_before
+                                && control.request_pending()
+                                && vellum_durable_operation.is_none()
+                            {
+                                let action = if input == DurableSaveBatchInput::Recover {
+                                    "vellum.save-selected.recover"
+                                } else {
+                                    "vellum.save-selected"
+                                };
+                                vellum_durable_operation =
+                                    instrumentation.begin_peer_operation(action, "vellum");
+                            }
+                            notice = control.notice().into();
+                        }
+                    }
+                }
+                Event::Key(key) => match route_key(key, focus) {
+                    RoutedInput::Exit => {
+                        let agora_unresolved = agora_create.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) || agora_message.as_ref().is_some_and(
+                            |control| control.request_pending() || control.recovery_required(),
+                        );
+                        let moira_unresolved =
+                            moira_reconciliation.as_ref().is_some_and(|control| {
+                                control.request_pending() || control.recovery_required()
+                            });
+                        let daimon_unresolved = daimon_control.as_ref().is_some_and(|control| {
+                            control.request_pending() || control.recovery_required()
+                        }) || daimon_post_receipt_refresh
+                            || daimon_recovery_refresh
+                            || daimon_operation.is_some();
+                        let aegis_unresolved =
+                            aegis_revoke.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    aegis_tui::RevokeEpochDisposition::Pending
+                                        | aegis_tui::RevokeEpochDisposition::OutcomeUnknown
+                                )
+                            }) || aegis_managed.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    aegis_tui::ManagedAuthorityDisposition::Pending
+                                        | aegis_tui::ManagedAuthorityDisposition::Fenced
+                                )
+                            });
+                        let hermes_unresolved =
+                            hermes_acknowledge.as_ref().is_some_and(|control| {
+                                matches!(
+                                    control.disposition(),
+                                    hermes_tui::AcknowledgeDisposition::Pending
+                                        | hermes_tui::AcknowledgeDisposition::OutcomeUnknown
+                                )
+                            }) || hermes_post_receipt_refresh
+                                || hermes_operation.is_some()
+                                || hermes_disclosure.as_ref().is_some_and(|control| {
+                                    control.disposition()
+                                        == hermes_tui::DisclosureDisposition::Pending
+                                })
+                                || hermes_disclosure_operation.is_some()
+                                || hermes_compaction.as_ref().is_some_and(|control| {
+                                    matches!(
+                                        control.disposition(),
+                                        hermes_tui::CompactionDisposition::Pending
+                                            | hermes_tui::CompactionDisposition::OutcomeUnknown
+                                    )
+                                })
+                                || hermes_compaction_post_receipt_refresh
+                                || hermes_compaction_operation.is_some();
+                        let chronos_unresolved = chronos_operation.is_some()
+                            || chronos
+                                .as_ref()
+                                .is_some_and(Hub::mutation_recovery_required);
+                        let vellum_unresolved =
+                            vellum_durable_save.as_ref().is_some_and(|control| {
+                                control.request_pending() || control.recovery_required()
+                            }) || vellum_atomic_replace.as_ref().is_some_and(|control| {
+                                control.disposition() == AtomicReplaceDisposition::OutcomeUnknown
+                            }) || vellum_atomic_operation.is_some();
+                        if chronos_unresolved
+                            || vellum_unresolved
+                            || agora_unresolved
+                            || moira_unresolved
+                            || daimon_unresolved
+                            || hermes_unresolved
+                            || aegis_unresolved
+                            || operations.reply.is_some()
+                        {
+                            notice = "A guarded control or topology drain is pending or outcome-unknown; settle or explicitly recover it before exit"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "pantheon", notice.clone());
+                            continue;
+                        }
+                        match decide_exit(
+                            vellum
+                                .as_ref()
+                                .map(ServiceEditor::aggregate_persistence)
+                                .unwrap_or(
+                                    vellum_sdk_client::workspace::PersistenceProjectionV1::Clean,
+                                ),
+                            confirming_discard,
+                        ) {
+                            ExitDecision::Exit => break,
+                            ExitDecision::ConfirmDiscard => {
+                                confirming_discard = true;
+                                notice = "Unsaved Vellum edit; Ctrl-Q again discards, Esc cancels"
+                                    .into();
+                            }
+                            ExitDecision::RefuseIndeterminate => {
+                                notice = "Vellum effect is indeterminate; repeat the exact action before exit"
+                                    .into();
+                            }
+                        }
+                    }
                     RoutedInput::SwitchFocus => {
                         if shell.active() == Surface::Workspace {
-                            focus = focus.other();
-                            confirming_discard = false;
-                            notice = format!("focus moved to {focus:?}");
+                            if focus == Focus::Chronos
+                                && let Some(peer) = &mut chronos
+                                && peer.composing_task_batch()
+                            {
+                                peer.update(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+                                notice = "Added a row to the atomic Chronos task batch".into();
+                            } else {
+                                focus = focus.other();
+                                confirming_discard = false;
+                                notice = format!("focus moved to {focus:?}");
+                            }
                         } else {
                             notice = "Tab is local to the Workspace surface".into();
                         }
@@ -342,9 +5889,56 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                         if shell.active() != Surface::Workspace {
                             notice = format!("{} has no input peer", shell.active().label());
                         } else if let Some(chronos) = &mut chronos {
+                            let started = Instant::now();
+                            let refresh = is_key(input, KeyCode::Char('r'), KeyModifiers::NONE);
+                            let submitting_task_batch = chronos.composing_task_batch()
+                                && is_key(input, KeyCode::Enter, KeyModifiers::NONE);
+                            let confirming_cancel_batch = chronos.confirming_cancel_batch()
+                                && is_key(input, KeyCode::Char('y'), KeyModifiers::NONE);
+                            let confirming_scheduling = chronos.confirming_scheduling()
+                                && is_key(input, KeyCode::Char('y'), KeyModifiers::NONE);
+                            let confirming_eligibility_batch =
+                                chronos.confirming_eligibility_batch();
                             if chronos.update(input) == Lifecycle::CloseRequested {
                                 notice = "Use Ctrl-Q to exit the complete workbench".into();
                             }
+                            if submitting_task_batch && !chronos.composing_task_batch() {
+                                chronos_operation = instrumentation
+                                    .begin_peer_operation_at(
+                                        "chronos.task.submit-batch",
+                                        "chronos",
+                                        started,
+                                    )
+                                    .map(ChronosOperation::Task);
+                            } else if confirming_cancel_batch {
+                                chronos_operation = instrumentation
+                                    .begin_peer_operation_at(
+                                        "chronos.task.cancel-batch",
+                                        "chronos",
+                                        started,
+                                    )
+                                    .map(ChronosOperation::Task);
+                            } else if confirming_scheduling {
+                                chronos_operation = instrumentation
+                                    .begin_peer_operation_at(
+                                        if confirming_eligibility_batch {
+                                            "chronos.schedule.eligibility-batch"
+                                        } else {
+                                            "chronos.schedule.control"
+                                        },
+                                        "chronos",
+                                        started,
+                                    )
+                                    .map(ChronosOperation::Scheduling);
+                            }
+                            begin_refresh(
+                                refresh,
+                                "view.refresh",
+                                "chronos",
+                                &mut refresh_operations.chronos,
+                                &mut instrumentation,
+                                started,
+                            );
                         } else {
                             notice = "Chronos service is not configured".into();
                         }
@@ -362,10 +5956,19 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
                             notice = "discard cancelled".into();
                         }
                         ServiceInput::Apply(action) => {
-                            notice = match vellum.as_mut().expect("checked above").apply(action) {
-                                Ok(()) => "Vellum action accepted".into(),
-                                Err(error) => error.to_string(),
+                            let action_id = vellum_action_id(&action);
+                            let started = Instant::now();
+                            let result = vellum.as_mut().expect("checked above").apply(action);
+                            let level = if result.is_ok() {
+                                ActivityLevel::Success
+                            } else {
+                                ActivityLevel::Warning
                             };
+                            instrumentation.record(action_id, "vellum", level, started.elapsed());
+                            notice = result.map_or_else(
+                                |error| error.to_string(),
+                                |()| "Vellum action accepted".into(),
+                            );
                             confirming_discard = false;
                         }
                         ServiceInput::Open => {
@@ -389,7 +5992,749 @@ pub fn run_terminal_with_all_peers<T: ServicePort>(
             .map(|_| ())
             .map_err(|failure| format!("Vellum disconnect refused: {failure:?}"))
     });
-    result?;
+    let shutdown = operations.finish();
+    if let Err(error) = result {
+        return match shutdown {
+            Ok(_) => Err(error),
+            Err(shutdown) => Err(format!("{error}; {shutdown}").into()),
+        };
+    }
     disconnect?;
-    Ok(())
+    shutdown
+        .map(|shutdown| ManagedTerminalOutcome {
+            shutdown,
+            restart_profile,
+        })
+        .map_err(Into::into)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn local_profile(name: &str, surfaces: Vec<Surface>) -> WorkspaceProfile {
+        WorkspaceProfile {
+            version: 1,
+            name: name.into(),
+            surfaces,
+            agora: None,
+            moira: None,
+            daimon: None,
+            hermes: None,
+            aegis: None,
+            grounding: None,
+            chronos: None,
+            vellum: None,
+        }
+    }
+
+    #[test]
+    fn reconfiguration_workflow_preflights_exact_changes_before_arming() {
+        let current = local_profile("current", vec![Surface::Overview]);
+        let path = std::env::temp_dir().join(format!(
+            "pantheon-reconfiguration-{}-{}.json",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        std::fs::write(
+            &path,
+            r#"{
+                "version": 1,
+                "name": "next",
+                "surfaces": ["overview", "operations"],
+                "agora": null,
+                "moira": null,
+                "daimon": null,
+                "hermes": null,
+                "aegis": null,
+                "grounding": null,
+                "chronos": null,
+                "vellum": null
+            }"#,
+        )
+        .unwrap();
+        let mut workflow = ReconfigurationWorkflow::new(current);
+        workflow.insert(path.to_str().unwrap());
+        workflow.preflight();
+        let plan = workflow.plan.as_ref().expect("valid preflight");
+        assert_eq!(plan.minimum_action, "shell_restart");
+        assert_eq!(plan.changes.len(), 2);
+        assert!(!workflow.armed);
+        workflow.arm();
+        assert_eq!(
+            workflow
+                .confirmed_profile()
+                .as_ref()
+                .map(|value| value.0.as_path()),
+            Some(path.as_path())
+        );
+        std::fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn reconfiguration_path_accepts_shifted_text_but_not_control_input() {
+        assert_eq!(
+            bounded_text_character(KeyEvent::new(KeyCode::Char('T'), KeyModifiers::SHIFT)),
+            Some('T')
+        );
+        assert_eq!(
+            bounded_text_character(KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL)),
+            None
+        );
+    }
+
+    #[test]
+    fn daimon_filter_key_exposes_protocol_derived_event_views() {
+        let key = KeyEvent::new(KeyCode::Char('f'), KeyModifiers::NONE);
+        assert_eq!(
+            daimon_agent_set_input(key),
+            Some(daimon_tui::AgentSetInput::CycleEventFilter)
+        );
+    }
+
+    #[test]
+    fn suite_health_requires_settlement_evidence_and_preserves_degradation() {
+        let mut health =
+            SuiteHealthLedger::new([("agora", "rooms/messages"), ("hermes", "ledger/cursors")]);
+        health.observing("agora", "rooms/messages", true);
+        health.settle("agora", "rooms/messages", Some(Ok(())));
+        health.settle("hermes", "ledger/cursors", Some(Err(())));
+        let view = health.view(|peer| peer == "agora", |peer| peer == "hermes");
+        assert_eq!(view.peers[0].state, PeerHealthState::Current);
+        assert!(view.peers[0].age_millis.is_some());
+        assert!(view.peers[0].busy);
+        assert_eq!(view.peers[1].state, PeerHealthState::Degraded);
+        assert!(view.peers[1].uncertain);
+    }
+
+    #[test]
+    fn command_catalog_combines_contextual_work_with_all_qualified_guards() {
+        let shell = Shell::new(vec![Surface::Overview, Surface::Workspace, Surface::Moira])
+            .expect("valid shell");
+        let commands = workbench_commands(
+            &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, false, true, true,
+        );
+        for expected in [
+            "navigate.overview",
+            "navigate.workspace",
+            "navigate.moira",
+            "view.refresh",
+            "vellum.atomic-replace-selected",
+            "suite.refresh",
+            "workspace.focus.toggle",
+            "vellum.save",
+            "chronos.task.new",
+            "chronos.task.cancel",
+            "chronos.schedule.open",
+            "chronos.schedule.task-pause",
+            "chronos.schedule.task-not-before",
+            "agora.room.create",
+            "agora.message.compose",
+            "aegis.epoch.revoke",
+            "aegis.authority.manage",
+            "ledger.compact.v1",
+            "ledger.events.disclose.v1",
+            "ledger.acknowledge.v1",
+            "operations.drain",
+            "moira.saga.open",
+            "moira.saga.back",
+            "moira.reconciliation.keep-uncertain",
+            "moira.reconciliation.fail-terminal",
+            "moira.reconciliation.cancel",
+            "moira.reconciliation.compensate",
+            "moira.reconciliation.admit-failed",
+            "moira.reconciliation.admit-succeeded",
+            "moira.reconciliation.retry",
+            "daimon.session.prompt",
+            "daimon.session.permission",
+            "daimon.session.reattach",
+            "daimon.session.advance",
+            "daimon.session.cancel",
+            "daimon.session.close",
+            "workbench.activity",
+            "workbench.help",
+            "workbench.configuration",
+            "workbench.reconfigure",
+            "workbench.instrumentation",
+        ] {
+            assert!(
+                commands
+                    .iter()
+                    .any(|command| command.id == expected && command.enabled),
+                "missing enabled workbench action {expected}"
+            );
+        }
+        for route in GUARDED_CONTROL_ROUTES {
+            if matches!(
+                route.capability,
+                "messages.speak.v2"
+                    | "agents.session.prompt.v1"
+                    | "agents.session.permission.v1"
+                    | "agents.session.reattach.v1"
+                    | "ledger.acknowledge.v1"
+                    | "ledger.events.disclose.v1"
+                    | "ledger.compact.v1"
+            ) {
+                let composed_id = match route.capability {
+                    "messages.speak.v2" => "agora.message.compose",
+                    "agents.session.prompt.v1" => "daimon.session.prompt",
+                    "agents.session.permission.v1" => "daimon.session.permission",
+                    "agents.session.reattach.v1" => "daimon.session.reattach",
+                    _ => route.capability,
+                };
+                assert!(commands.iter().any(|command| {
+                    command.id == composed_id
+                        && command.kind == CommandKind::Guarded
+                        && command.enabled
+                }));
+                continue;
+            }
+            assert!(
+                commands.iter().any(|command| {
+                    command.id == route.capability
+                        && command.kind == CommandKind::Guarded
+                        && !command.enabled
+                }),
+                "missing honest interactive disposition for {}",
+                route.capability
+            );
+        }
+    }
+
+    #[test]
+    fn unavailable_workspace_actions_explain_their_requirements() {
+        let shell = Shell::new(vec![Surface::Overview]).expect("valid shell");
+        let commands = workbench_commands(
+            &shell, false, false, false, false, false, false, false, false, false, false, false,
+            false, false, false, false, false, false, false, false, false, false,
+        );
+        let save = commands
+            .iter()
+            .find(|command| command.id == "vellum.save")
+            .unwrap();
+        assert!(!save.enabled);
+        assert_eq!(save.unavailable, Some("Vellum is not configured"));
+    }
+
+    #[test]
+    fn operations_without_owned_topology_refuses_to_arm() {
+        let mut operations = OperationsRuntime::new(None);
+        operations.arm();
+        let view = operations.view();
+        assert_eq!(view.lifecycle, "external");
+        assert!(!view.drain_armed);
+        assert!(!view.drain_pending);
+        assert!(view.notice.contains("No Pantheon-owned topology"));
+    }
+
+    #[test]
+    fn operations_drains_owned_topology_and_retains_exact_receipt() {
+        let mut host = NativeHost::new();
+        host.start_agora(|| Ok::<_, String>(((), || ShutdownDisposition::Clean)))
+            .unwrap();
+        host.seal().unwrap();
+        let mut operations = OperationsRuntime::new(Some(host));
+        operations.arm();
+        assert!(operations.confirm());
+        let (level, shutdown) = (0..1_000)
+            .find_map(|_| {
+                let level = operations.poll();
+                if level.is_none() {
+                    std::thread::yield_now();
+                }
+                level
+            })
+            .expect("drain worker settled");
+        assert_eq!(level, ActivityLevel::Success);
+        assert!(shutdown.unwrap().clean());
+        let view = operations.view();
+        assert_eq!(view.lifecycle, "local_host_stopped");
+        assert_eq!(view.receipts.len(), 1);
+        assert_eq!(view.receipts[0].peer, "agora");
+        assert_eq!(view.receipts[0].disposition, "clean");
+        assert!(operations.finish().unwrap().unwrap().clean());
+    }
+
+    #[test]
+    fn topology_drain_traces_each_peer_under_one_correlation() {
+        let mut instrumentation = Instrumentation::default();
+        let mut operations = begin_drain_operations(
+            vec![HostedPeerId::Agora, HostedPeerId::Moira],
+            &mut instrumentation,
+            Instant::now(),
+        );
+        assert_eq!(operations.len(), 2);
+        assert_eq!(instrumentation.traces().len(), 2);
+        assert_eq!(
+            instrumentation.traces()[0].correlation_id,
+            instrumentation.traces()[1].correlation_id
+        );
+        let shutdown = TopologyShutdown {
+            receipts: vec![
+                crate::registry::ShutdownReceipt {
+                    peer: HostedPeerId::Moira,
+                    disposition: ShutdownDisposition::Clean,
+                },
+                crate::registry::ShutdownReceipt {
+                    peer: HostedPeerId::Agora,
+                    disposition: ShutdownDisposition::Refused,
+                },
+            ],
+        };
+        settle_drain_operations(
+            &mut operations,
+            Some(&shutdown),
+            ActivityLevel::Uncertain,
+            &mut instrumentation,
+        );
+        assert!(operations.is_empty());
+        let agora = instrumentation
+            .traces()
+            .iter()
+            .find(|trace| trace.peer == "agora")
+            .unwrap();
+        let moira = instrumentation
+            .traces()
+            .iter()
+            .find(|trace| trace.peer == "moira")
+            .unwrap();
+        assert_eq!(agora.stages[2].level, Some(ActivityLevel::Warning));
+        assert_eq!(moira.stages[2].level, Some(ActivityLevel::Success));
+        assert!(agora.complete && moira.complete);
+    }
+
+    #[test]
+    fn session_configuration_is_bounded_to_non_secret_launch_facts() {
+        let shell = Shell::new(vec![Surface::Overview, Surface::Moira]).expect("valid shell");
+        let lines = session_configuration(
+            &shell, None, false, false, false, true, false, false, false, false, false, false,
+            false, false, false, false, false, false,
+        );
+        let rendered = lines.join("\n");
+        assert!(rendered.contains("Overview · Moira"));
+        assert!(rendered.contains("Moira              configured"));
+        assert!(rendered.contains("single user · local machine"));
+        assert!(!rendered.contains("socket"));
+        assert!(!rendered.contains("credential"));
+    }
+
+    #[test]
+    fn reconciliation_activity_never_restylizes_unknown_as_success() {
+        assert_eq!(
+            reconciliation_level("Reconciliation outcome unknown; receipt inspection required"),
+            ActivityLevel::Uncertain
+        );
+        assert_eq!(
+            reconciliation_level("Reconciliation durably accepted"),
+            ActivityLevel::Success
+        );
+        assert_eq!(
+            reconciliation_level("Unknown outcome recovered from durable operator receipt"),
+            ActivityLevel::Success
+        );
+        assert_eq!(
+            reconciliation_level("Reconciliation refused"),
+            ActivityLevel::Warning
+        );
+        assert_eq!(
+            reconciliation_batch_level(moira_tui::ReconciliationBatchDisposition::OutcomeUnknown),
+            ActivityLevel::Uncertain
+        );
+        assert_eq!(
+            reconciliation_batch_level(moira_tui::ReconciliationBatchDisposition::Partial),
+            ActivityLevel::Warning
+        );
+        assert_eq!(
+            reconciliation_batch_level(moira_tui::ReconciliationBatchDisposition::Applied),
+            ActivityLevel::Success
+        );
+    }
+
+    #[test]
+    fn peer_refresh_trace_runs_from_dispatch_to_projection_settlement() {
+        let mut instrumentation = Instrumentation::default();
+        let mut activity = ActivityLog::default();
+        let started = Instant::now() - Duration::from_millis(7);
+        let mut operation = None;
+        assert!(begin_refresh(
+            true,
+            "view.refresh",
+            "hermes",
+            &mut operation,
+            &mut instrumentation,
+            started,
+        ));
+        assert_eq!(instrumentation.in_flight_count(), 1);
+        settle_refresh(
+            &mut operation,
+            Some(Ok(())),
+            "hermes",
+            &mut instrumentation,
+            &mut activity,
+        );
+        let metric = instrumentation
+            .actions()
+            .iter()
+            .find(|metric| metric.action == "view.refresh" && metric.peer == "hermes")
+            .expect("refresh metric");
+        assert_eq!(metric.dispatches, 1);
+        assert_eq!(metric.succeeded, 1);
+        assert!(metric.last_latency_micros >= 7_000);
+        assert_eq!(instrumentation.in_flight_count(), 0);
+        assert_eq!(
+            activity.entries().last().unwrap().level,
+            ActivityLevel::Success
+        );
+    }
+
+    #[test]
+    fn hermes_disclosure_trace_spans_dispatch_read_receipt_and_settlement() {
+        let mut instrumentation = Instrumentation::default();
+        let operation = instrumentation
+            .begin_peer_operation("ledger.events.disclose.v1", "hermes")
+            .expect("trace capacity");
+        assert!(instrumentation.mark_peer_stage(
+            operation,
+            "peer_read_receipt",
+            ActivityLevel::Success,
+        ));
+        instrumentation.settle_peer_operation(operation, ActivityLevel::Success);
+
+        let trace = instrumentation
+            .traces()
+            .iter()
+            .find(|trace| trace.operation_id == operation)
+            .expect("disclosure trace");
+        assert_eq!(
+            trace
+                .stages
+                .iter()
+                .map(|stage| stage.stage)
+                .collect::<Vec<_>>(),
+            vec![
+                "shell_dispatch",
+                "peer_pending",
+                "peer_read_receipt",
+                "terminal_disposition",
+            ]
+        );
+        assert!(trace.complete);
+        let rendered = instrumentation.lines().join("\n");
+        assert!(rendered.contains("ledger.events.disclose.v1"));
+        for forbidden in ["payload", "preview", "correlation:", "producer", "schema"] {
+            assert!(!rendered.contains(forbidden));
+        }
+    }
+
+    #[test]
+    fn daimon_controls_are_derived_only_from_eligible_exact_session_state() {
+        use daimon_protocol::{
+            AgentSessionIdV1, AgentTurnIdV1, ContentDigestV1,
+            agent::{AgentCapabilitiesV1, AgentSessionViewV1},
+        };
+
+        let key = IdempotencyKeyV1::new([9; 16]);
+        let mut view = AgentSessionViewV1 {
+            session: AgentSessionIdV1::new([7; 16]),
+            revision: 8,
+            phase: AgentSessionPhaseV1::TurnActive,
+            profile_document_digest: ContentDigestV1::new([3; 32]),
+            active_turn: Some(AgentTurnIdV1::new([4; 16])),
+            last_event_cursor: Some(2),
+            capabilities: AgentCapabilitiesV1 {
+                load_session: true,
+                resume_session: true,
+                permissions: true,
+                filesystem_read: true,
+                filesystem_write: false,
+                terminal: true,
+                session_modes: true,
+                session_models: true,
+            },
+        };
+        assert!(matches!(
+            daimon_control_request("daimon.session.advance", &view, key, 42),
+            Ok(daimon_tui::AgentControlRequest::Advance(_))
+        ));
+        assert!(matches!(
+            daimon_control_request("daimon.session.cancel", &view, key, 42),
+            Ok(daimon_tui::AgentControlRequest::Cancel(_))
+        ));
+        assert!(daimon_control_request("daimon.session.close", &view, key, 42).is_err());
+
+        view.phase = AgentSessionPhaseV1::Ready;
+        view.active_turn = None;
+        assert!(matches!(
+            daimon_control_request("daimon.session.close", &view, key, 42),
+            Ok(daimon_tui::AgentControlRequest::Close(_))
+        ));
+        assert!(daimon_control_request("daimon.session.cancel", &view, key, 42).is_err());
+    }
+
+    #[test]
+    fn daimon_prompt_batch_builds_fresh_exact_envelopes_for_every_session() {
+        use daimon_protocol::{
+            AgentSessionIdV1, ContentDigestV1,
+            agent::{AgentCapabilitiesV1, AgentEventPageV1, AgentSessionViewV1},
+        };
+
+        let observation = |value| daimon_tui::AgentObservation {
+            view: AgentSessionViewV1 {
+                session: AgentSessionIdV1::new([value; 16]),
+                revision: u64::from(value),
+                phase: AgentSessionPhaseV1::Ready,
+                profile_document_digest: ContentDigestV1::new([3; 32]),
+                active_turn: None,
+                last_event_cursor: None,
+                capabilities: AgentCapabilitiesV1 {
+                    load_session: true,
+                    resume_session: true,
+                    permissions: true,
+                    filesystem_read: true,
+                    filesystem_write: true,
+                    terminal: true,
+                    session_modes: true,
+                    session_models: true,
+                },
+            },
+            events: AgentEventPageV1 {
+                session: AgentSessionIdV1::new([value; 16]),
+                entries: Vec::new(),
+                next_after: None,
+            },
+        };
+        let mut observations = [observation(7), observation(8), observation(9)];
+        let references = observations.iter().collect::<Vec<_>>();
+        let policy = DaimonExecutionPolicyProfile {
+            principal: "10101010101010101010101010101010".into(),
+            profile: "11111111111111111111111111111111".into(),
+            context: vec!["12121212121212121212121212121212".into()],
+            tools: vec!["13131313131313131313131313131313".into()],
+            budget: crate::profile::DaimonExecutionBudgetProfile {
+                max_elapsed_millis: 60_000,
+                max_input_tokens: 4_096,
+                max_output_tokens: 8_192,
+                max_tool_calls: 32,
+                max_context_bytes: 1_048_576,
+                max_output_bytes: 1_048_576,
+            },
+        };
+        let requests = daimon_prompt_requests(&references, &policy, b"do serious work".to_vec())
+            .expect("valid prompt batch");
+        assert_eq!(requests.len(), 3);
+        let prompts = requests
+            .iter()
+            .map(|request| match request {
+                daimon_tui::AgentControlRequest::Prompt(request) => request,
+                _ => panic!("expected prompt request"),
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(prompts[0].expected_revision, 7);
+        assert_eq!(prompts[2].expected_revision, 9);
+        assert!(
+            prompts
+                .iter()
+                .all(|request| request.prompt == b"do serious work")
+        );
+        assert_ne!(prompts[0].turn, prompts[1].turn);
+        assert_ne!(
+            prompts[0].execution.execution_id,
+            prompts[1].execution.execution_id
+        );
+        assert_ne!(
+            prompts[0].execution.idempotency_key,
+            prompts[1].execution.idempotency_key
+        );
+        assert_eq!(prompts[0].execution.context.len(), 1);
+        assert_eq!(prompts[0].execution.tools.len(), 1);
+
+        observations[1].view.phase = AgentSessionPhaseV1::ReattachRequired;
+        observations[2].view.phase = AgentSessionPhaseV1::AwaitingPermission;
+        observations[2].view.active_turn = Some(AgentTurnIdV1::new([22; 16]));
+        let mixed = observations.iter().collect::<Vec<_>>();
+        let error = daimon_prompt_requests(&mixed, &policy, b"do serious work".to_vec())
+            .expect_err("mixed workset must be explained before identities are created");
+        assert!(error.contains("2 of 3 selected session(s)"));
+        assert!(error.contains("#2 ReattachRequired r8 no-active-turn"));
+        assert!(error.contains("#3 AwaitingPermission r9 active-turn"));
+        assert!(!error.contains("08080808"));
+    }
+
+    #[test]
+    fn daimon_reattach_batch_builds_fresh_exact_envelopes_for_detached_sessions() {
+        use daimon_protocol::{
+            AgentSessionIdV1, ContentDigestV1,
+            agent::{AgentCapabilitiesV1, AgentEventPageV1, AgentSessionViewV1},
+        };
+
+        let observation = |value| daimon_tui::AgentObservation {
+            view: AgentSessionViewV1 {
+                session: AgentSessionIdV1::new([value; 16]),
+                revision: u64::from(value),
+                phase: AgentSessionPhaseV1::ReattachRequired,
+                profile_document_digest: ContentDigestV1::new([3; 32]),
+                active_turn: None,
+                last_event_cursor: None,
+                capabilities: AgentCapabilitiesV1 {
+                    load_session: true,
+                    resume_session: true,
+                    permissions: true,
+                    filesystem_read: true,
+                    filesystem_write: true,
+                    terminal: true,
+                    session_modes: true,
+                    session_models: true,
+                },
+            },
+            events: AgentEventPageV1 {
+                session: AgentSessionIdV1::new([value; 16]),
+                entries: Vec::new(),
+                next_after: None,
+            },
+        };
+        let observations = [observation(7), observation(8), observation(9)];
+        let references = observations.iter().collect::<Vec<_>>();
+        let policy = DaimonExecutionPolicyProfile {
+            principal: "10101010101010101010101010101010".into(),
+            profile: "11111111111111111111111111111111".into(),
+            context: vec!["12121212121212121212121212121212".into()],
+            tools: vec!["13131313131313131313131313131313".into()],
+            budget: crate::profile::DaimonExecutionBudgetProfile {
+                max_elapsed_millis: 60_000,
+                max_input_tokens: 4_096,
+                max_output_tokens: 8_192,
+                max_tool_calls: 32,
+                max_context_bytes: 1_048_576,
+                max_output_bytes: 1_048_576,
+            },
+        };
+        let requests =
+            daimon_reattach_requests(&references, &policy).expect("valid reattach batch");
+        assert_eq!(requests.len(), 3);
+        let reattachments = requests
+            .iter()
+            .map(|request| match request {
+                daimon_tui::AgentControlRequest::Reattach(request) => request,
+                _ => panic!("expected reattach request"),
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(reattachments[0].expected_revision, 7);
+        assert_eq!(reattachments[2].expected_revision, 9);
+        assert_ne!(
+            reattachments[0].execution.execution_id,
+            reattachments[1].execution.execution_id
+        );
+        assert_ne!(
+            reattachments[0].execution.idempotency_key,
+            reattachments[1].execution.idempotency_key
+        );
+    }
+
+    #[test]
+    fn daimon_permission_batch_binds_latest_challenge_and_fresh_execution_per_session() {
+        use daimon_protocol::{
+            AgentPermissionOptionIdV1, AgentPermissionRequestIdV1, AgentSessionIdV1, AgentTurnIdV1,
+            ContentDigestV1,
+            agent::{
+                AgentCapabilitiesV1, AgentEventPageV1, AgentEventRecordV1,
+                AgentPermissionOptionKindV1, AgentPermissionOptionV1, AgentPermissionRequestV1,
+                AgentSessionViewV1,
+            },
+        };
+
+        let observation = |value: u8| {
+            let session = AgentSessionIdV1::new([value; 16]);
+            let turn = AgentTurnIdV1::new([value + 10; 16]);
+            let challenge = AgentPermissionRequestV1 {
+                request: AgentPermissionRequestIdV1::new([value + 20; 16]),
+                turn,
+                capability: b"terminal.execute".to_vec(),
+                description: b"run formatter".to_vec(),
+                options: vec![AgentPermissionOptionV1 {
+                    id: AgentPermissionOptionIdV1::new([value + 30; 16]),
+                    kind: AgentPermissionOptionKindV1::RejectOnce,
+                    label: b"Reject once".to_vec(),
+                }],
+            };
+            daimon_tui::AgentObservation {
+                view: AgentSessionViewV1 {
+                    session,
+                    revision: u64::from(value),
+                    phase: AgentSessionPhaseV1::AwaitingPermission,
+                    profile_document_digest: ContentDigestV1::new([3; 32]),
+                    active_turn: Some(turn),
+                    last_event_cursor: Some(5),
+                    capabilities: AgentCapabilitiesV1 {
+                        load_session: true,
+                        resume_session: true,
+                        permissions: true,
+                        filesystem_read: true,
+                        filesystem_write: true,
+                        terminal: true,
+                        session_modes: true,
+                        session_models: true,
+                    },
+                },
+                events: AgentEventPageV1 {
+                    session,
+                    entries: vec![AgentEventRecordV1 {
+                        cursor: 5,
+                        event: AgentEventV1::Permission(challenge),
+                    }],
+                    next_after: None,
+                },
+            }
+        };
+        let observations = [observation(7), observation(8)];
+        let references = observations.iter().collect::<Vec<_>>();
+        let challenges = daimon_permission_challenges(&references).unwrap();
+        let selections = challenges
+            .into_iter()
+            .map(|challenge| daimon_tui::AgentPermissionSelection {
+                option: challenge.challenge.options[0].id,
+                challenge,
+            })
+            .collect();
+        let policy = DaimonExecutionPolicyProfile {
+            principal: "10101010101010101010101010101010".into(),
+            profile: "11111111111111111111111111111111".into(),
+            context: Vec::new(),
+            tools: vec!["13131313131313131313131313131313".into()],
+            budget: crate::profile::DaimonExecutionBudgetProfile {
+                max_elapsed_millis: 60_000,
+                max_input_tokens: 4_096,
+                max_output_tokens: 8_192,
+                max_tool_calls: 32,
+                max_context_bytes: 1_048_576,
+                max_output_bytes: 1_048_576,
+            },
+        };
+        let requests = daimon_permission_requests(selections, &policy).unwrap();
+        let decisions = requests
+            .iter()
+            .map(|request| match request {
+                daimon_tui::AgentControlRequest::Permission(request) => request,
+                _ => panic!("expected permission request"),
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(decisions[0].request.event_cursor, 5);
+        assert_eq!(decisions[0].request.expected_revision, 7);
+        assert_eq!(decisions[1].request.expected_revision, 8);
+        assert_eq!(
+            decisions[0].request.permission_request,
+            decisions[0].challenge.request
+        );
+        assert_ne!(
+            decisions[0].request.execution.execution_id,
+            decisions[1].request.execution.execution_id
+        );
+        assert_ne!(
+            decisions[0].request.execution.idempotency_key,
+            decisions[1].request.execution.idempotency_key
+        );
+    }
 }

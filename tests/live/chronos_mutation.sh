@@ -63,23 +63,35 @@ def keys(*values):
 def text(value):
     tmux("send-keys", "-t", "chronos", "-l", value)
 
+def palette(query, expected):
+    keys("C-p")
+    text(query)
+    expect(expected)
+    keys("Enter")
+
 try:
     tmux("new-session", "-d", "-x", "160", "-y", "40", "-s", "chronos", command)
     expect("Observed 0 tasks", timeout=30)
 
     keys("n")
-    expect("New task ID")
+    expect("Task batch")
     text("workbench-proof")
+    keys("Tab")
+    text("workbench-secondary")
+    keys("Tab")
+    text("workbench-tertiary")
     keys("Enter")
     expect("Applied.")
 
     keys("s")
-    expect("Observed scheduling.")
+    expect("Observed scheduling and")
     keys("e")
     expect("Enable scheduling controls?")
     keys("y")
     expect("Scheduling control applied.")
 
+    keys("r")
+    expect("Observed 3 tasks")
     keys("s")
     time.sleep(0.1)
     keys("b")
@@ -90,23 +102,41 @@ try:
     keys("y")
     expect("Scheduling control applied.")
 
+    keys("r")
+    expect("Observed 3 tasks")
     keys("s")
     time.sleep(0.1)
+    text(" ")
+    expect("1 task marked")
+    keys("Down")
+    time.sleep(0.1)
+    text(" ")
+    expect("2 tasks marked")
+    keys("Down")
+    time.sleep(0.1)
+    text(" ")
+    expect("3 tasks marked")
+    keys("s")
+    expect("3 marked task eligibilities")
     keys("d")
     expect("Not-before: Unix seconds or clear")
     text("100000")
     keys("Enter")
-    expect("Set eligibility for workbench-proof")
+    expect("Set not-before to 100000.000000000 for 3 exact tasks")
     keys("y")
-    expect("Scheduling control applied.")
+    expect("Applied 3/3 independently settled task eligibility controls.")
 
+    keys("r")
+    expect("Observed 3 tasks")
     keys("s")
-    time.sleep(0.1)
+    expect("3 marked task eligibilities")
     keys("t")
-    expect("Set eligibility for workbench-proof")
+    expect("Set task pause to true for 3 exact tasks")
     keys("y")
-    expect("Scheduling control applied.")
+    expect("Applied 3/3 independently settled task eligibility controls.")
 
+    keys("r")
+    expect("Observed 3 tasks")
     keys("s")
     time.sleep(0.1)
     keys("p")
@@ -115,11 +145,17 @@ try:
     expect("Scheduling control applied.")
 
     keys("r")
-    expect("Observed 1 tasks")
+    expect("Observed 3 tasks")
     keys("c")
-    expect("Cancel workbench-proof?")
+    expect("Cancel 3 marked tasks?")
     keys("y")
-    expect("cancelled")
+    expect("Applied 3/3 independently receipted cancellations")
+    expect("applied=3 refused=0 unknown=0 not-sent=0")
+
+    palette("inspect tui instrumentation", "Inspect TUI instrumentation")
+    expect("chronos.schedule.eligibility-batch")
+    expect("chronos.task.cancel-batch")
+    keys("C-g")
 
     keys("C-q")
     deadline = time.monotonic() + 10
@@ -158,12 +194,18 @@ try:
         return reply["outcome"]
 
     task = readback(1, {"operation": "snapshot", "task": "workbench-proof"})
+    secondary = readback(1, {"operation": "snapshot", "task": "workbench-secondary"})
     scheduling = readback(5, {
         "operation": "overview",
         "now": {"before_epoch": False, "seconds": "0", "nanos": 0},
     })
     if task["value"]["snapshot"]["phase"] != "cancelled":
         raise AssertionError("reopened task was not cancelled")
+    tertiary = readback(1, {"operation": "snapshot", "task": "workbench-tertiary"})
+    if secondary["value"]["snapshot"]["phase"] != "cancelled":
+        raise AssertionError("reopened second task was not cancelled")
+    if tertiary["value"]["snapshot"]["phase"] != "cancelled":
+        raise AssertionError("reopened third task was not cancelled")
     if not scheduling["controls"]["paused"]:
         raise AssertionError("reopened scheduling was not paused")
     if scheduling["concurrency"]["capacity"] != 3:
@@ -178,6 +220,15 @@ try:
     }
     if eligibility != expected:
         raise AssertionError(f"reopened eligibility did not match: {eligibility!r}")
+    for sibling in (secondary, tertiary):
+        sibling_eligibility = readback(5, {
+            "operation": "eligibility",
+            "task": sibling["value"]["reference"],
+        })["eligibility"]
+        if sibling_eligibility != expected:
+            raise AssertionError(
+                f"reopened sibling eligibility did not match: {sibling_eligibility!r}"
+            )
 finally:
     subprocess.run([service, "--shutdown", str(state)], check=True, timeout=5)
     owner.wait(timeout=5)
@@ -186,4 +237,4 @@ if owner.returncode != 0:
     raise AssertionError(f"Chronos reopen exited with {owner.returncode}")
 PYTHON
 
-echo 'PASS: hosted Chronos -> Pantheon peer component guarded writes -> clean shutdown -> exact durable reopen'
+echo 'PASS: hosted Chronos -> Pantheon N-task eligibility and independently receipted cancellation -> clean shutdown -> exact durable reopen'

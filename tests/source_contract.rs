@@ -242,9 +242,24 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         peers["aegis"]["mutationCapabilities"]["aegis.admin-session.v1"],
         "qualified"
     );
+    assert!(
+        peers["aegis"]["pantheonRoutes"]["interactive"]
+            .as_array()
+            .expect("Aegis interactive routes")
+            .iter()
+            .any(|route| route["id"] == "aegis.admin-session.v1" && route["plane"] == "management")
+    );
     assert_eq!(
         peers["hermes"]["disclosureCapabilities"]["ledger.events.disclose.v1"],
         "qualified"
+    );
+    assert_eq!(
+        peers["hermes"]["interactiveControlComposition"]["ledger.events.disclose.v1"]["state"],
+        "composed"
+    );
+    assert_eq!(
+        peers["hermes"]["interactiveControlComposition"]["ledger.compact.v1"]["state"],
+        "composed"
     );
     assert_eq!(
         peers["hermes"]["producerIntegrations"]["moira.workflow-event.v1"]["state"],
@@ -291,6 +306,68 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
 }
 
 #[test]
+fn hermes_interactive_disclosure_reuses_owner_sheet_and_keeps_content_out_of_telemetry() {
+    let terminal = include_str!("../cli/src/terminal.rs");
+    let disclosure = include_str!("../../hermes-tui/src/disclosure_control.rs");
+    assert!(terminal.contains("hermes_tui::DisclosureComponent"));
+    assert!(terminal.contains("peer_read_receipt"));
+    assert!(terminal.contains("ledger.events.disclose.v1"));
+    assert!(!terminal.contains("hermes_disclosure_command::disclose"));
+    assert!(!terminal.contains("payload_preview_hex"));
+    assert!(disclosure.contains("PREVIEW_BYTES: usize = 256"));
+    assert!(disclosure.contains("DISCLOSURE_BATCH_LIMIT: u64 = 16"));
+    assert!(disclosure.contains("selected_event"));
+}
+
+#[test]
+fn aegis_interactive_management_keeps_handles_private_and_bounded() {
+    let terminal = include_str!("../cli/src/terminal.rs");
+    let managed = include_str!("../../aegis-tui/src/managed_control.rs");
+    assert!(terminal.contains("aegis_tui::ManagedAuthorityComponent"));
+    assert!(terminal.contains("aegis.authority.manage"));
+    for required in [
+        "ManagedSessionV1",
+        "max_grants: 8",
+        "max_scopes_per_grant: 16",
+        "ManagedAuthorityDisposition::Fenced",
+        "exact confirmation",
+    ] {
+        assert!(
+            managed.contains(required),
+            "managed Aegis sheet omits {required}"
+        );
+    }
+    for forbidden in ["GrantHandleV1", "CommandV1", "AdminClient"] {
+        assert!(
+            !managed.contains(forbidden),
+            "managed Aegis sheet exposes owner detail {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn hermes_interactive_compaction_reuses_owner_sheet_and_exact_range() {
+    let terminal = include_str!("../cli/src/terminal.rs");
+    let compaction = include_str!("../../hermes-tui/src/compaction_control.rs");
+    assert!(terminal.contains("hermes_tui::CompactionComponent"));
+    assert!(terminal.contains("ledger.compact.v1"));
+    assert!(terminal.contains("hermes_compaction_post_receipt_refresh"));
+    assert!(!terminal.contains("hermes_operator_command::compact"));
+    for required in [
+        "PreviousPage",
+        "NextPage",
+        "expected_retained_from",
+        "expected_published_edge",
+        "OutcomeUnknown",
+    ] {
+        assert!(
+            compaction.contains(required),
+            "compaction sheet omits {required}"
+        );
+    }
+}
+
+#[test]
 fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_dependency() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let source: Value = serde_json::from_str(
@@ -313,31 +390,31 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
-        "1bd09e171cd679eae479715f6203ef5d0b8a5d50"
+        "3b4b2bb5eea86b0bf1a0a95b98d59ab77a51398c"
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "7cbe44618afcefae52d326a3a83027c46fb2c3ac"
+        "52b7a664ed1caf89eea0c94a7a3a480aa721455d"
     );
     assert_eq!(
         source["inputs"]["chronos"]["revision"],
-        "26366ec9172b48280d9bba3688572edf1c0d2719"
+        "43fdf6f33fa526899639f03cc32e398bcea86010"
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "63689c5397e6a0b84879692b05436693390838cb"
+        "2c56a1431cde62aecd358b572c0b01d28c4cb8a6"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "0360287449e4d7499e8040a55c996dcdea035991"
+        "2b43c913a93960ee02b4b70dcdb7d6d4c495513f"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "b63705bddd4f4778de13a2c2824717ca8d76edd1"
+        "667c6db58e6382262acb75127932ebd9a5e82f89"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "27f857df701edf6261f09cf38d74f1a48ba0cb7e"
+        "431f6b565b34398c76894f68a443c01b5ae7f9d1"
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
@@ -345,7 +422,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "258065605c86ebccf375aea47521a858f8f723b1"
+        "3433dd2f306a1c9b8af4276b88d89c546eab2d30"
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
@@ -357,7 +434,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "ad70f838cf5533e1a28dcfff384fbfa432bd91da"
+        "8d4238ce6433b250c2f081f7c9508905778994c0"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -365,15 +442,15 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellum"]["revision"],
-        "898affc1860869ab7fd4d4de369ca3556bc12aaf"
+        "81881c01517af77e3bdc25d7998e74bb4087e882"
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
-        "45b11bcd1e9b7b21e79faf8f1794f8379622f635"
+        "9ab9e0f2c467c3b6501e08c44f10f679b8ed6cd8"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
-        "03a920e9b1457ae33428acb9672c5fd320c69e72"
+        "209b15077680ee19f9f20a3620f4b92343ca5e60"
     );
     assert_eq!(
         source["inputs"]["keystone"]["revision"],
@@ -634,11 +711,23 @@ fn chronos_mutation_gate_uses_the_peer_component_and_proves_durable_reopen() {
         "--chronos-allow-writes",
         "--chronos-scheduling",
         "--chronos-cancel-receipts",
+        "Task batch",
+        "workbench-secondary",
+        "Observed 3 tasks",
         "Set concurrency capacity to 3?",
+        "Set not-before to 100000.000000000 for 3 exact tasks",
+        "Set task pause to true for 3 exact tasks",
+        "Applied 3/3 independently settled task eligibility controls",
+        "chronos.schedule.eligibility-batch",
         "Set global pause to true?",
-        "Cancel workbench-proof?",
+        "Cancel 3 marked tasks?",
+        "Applied 3/3 independently receipted cancellations",
+        "chronos.task.cancel-batch",
         "reopened task was not cancelled",
+        "reopened second task was not cancelled",
+        "reopened third task was not cancelled",
         "reopened eligibility did not match",
+        "reopened sibling eligibility did not match",
         "--shutdown",
         "--locked",
         "--offline",
@@ -659,6 +748,48 @@ fn chronos_mutation_gate_uses_the_peer_component_and_proves_durable_reopen() {
         assert!(
             !gate.contains(forbidden),
             "Chronos mutation gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn chronos_batch_composer_reuses_one_owner_atomic_graph() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let component = fs::read_to_string(root.join("../chronos-tui/src/component.rs"))
+        .expect("Chronos component source");
+    let model = fs::read_to_string(root.join("../chronos/host/chronos-model/src/lib.rs"))
+        .expect("Chronos model source");
+    let terminal =
+        fs::read_to_string(root.join("cli/src/terminal.rs")).expect("Pantheon terminal source");
+    for required in [
+        "MAX_SUBMIT_BATCH",
+        "Input::NextItem",
+        "Action::SubmitBatch(ids)",
+    ] {
+        assert!(
+            component.contains(required),
+            "batch composer omits {required}"
+        );
+    }
+    for required in [
+        "Action::SubmitBatch(ids)",
+        "Command::SubmitGraph",
+        ".collect()",
+    ] {
+        assert!(
+            model.contains(required),
+            "atomic model route omits {required}"
+        );
+    }
+    for required in [
+        "chronos.task.submit-batch",
+        "TaskMutationDisposition::Applied",
+        "TaskMutationDisposition::OutcomeUnknown",
+        "Hub::mutation_recovery_required",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "end-to-end Chronos instrumentation omits {required}"
         );
     }
 }
@@ -697,6 +828,39 @@ fn agora_mutation_gate_reuses_the_owner_guard_in_both_shells() {
         assert!(
             !gate.contains(forbidden),
             "Agora mutation gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn agora_hosted_gate_sends_real_work_on_the_owner_client_session() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/agora_hosted.sh"))
+        .expect("hosted Agora live gate");
+    for required in [
+        "Compose an Agora message",
+        "Pantheon delivered serious Agora work",
+        "Agora accepted message #",
+        "Inspect TUI instrumentation",
+        "agora.message.send",
+        "peers[\"agora\"][\"revision\"] == 3",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted Agora gate omits {required}"
+        );
+    }
+    let terminal =
+        fs::read_to_string(root.join("cli/src/terminal.rs")).expect("Pantheon terminal source");
+    for required in [
+        "agora.message.compose",
+        "ComposeMessageComponent::new_with_handle",
+        "control_handle()",
+        "peer_receipt",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Agora workbench composition omits {required}"
         );
     }
 }
@@ -776,6 +940,100 @@ fn vellum_durable_save_gate_reuses_the_peer_guard_and_exact_historical_receipt()
         assert!(
             !gate.contains(forbidden),
             "Vellum durable-save gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn vellum_batch_gate_proves_independently_receipted_n_document_work() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/vellum_batch.sh"))
+        .expect("Vellum batch live gate");
+    for required in [
+        "three.txt",
+        "3 Vellum document(s) selected for bounded work",
+        "Vellum durable-save workset",
+        "3 exact documents",
+        "Vellum run settled: 3 durable",
+        "--provision-credential",
+        "workspace.durable-save.execute.v1",
+        "workspace.durable-save.lookup.v1",
+        "exact persisted bytes",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Vellum batch gate omits {required}"
+        );
+    }
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    for required in [
+        "DurableSaveBatchComponent",
+        "prepare_selected_save_targets",
+        "child_receipts",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Vellum batch host omits {required}"
+        );
+    }
+    for forbidden in [
+        "vellum_engine::",
+        "vellum_service::",
+        "cargo publish",
+        "git push",
+        "gh release",
+        "curl ",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Vellum batch gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn vellum_atomic_replace_gate_proves_one_real_n_document_publication_and_trace() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/vellum_atomic_replace.sh"))
+        .expect("Vellum atomic replace live gate");
+    for required in [
+        "three.txt",
+        "3 Vellum document(s) selected for bounded work",
+        "4 matches across 3 exact documents",
+        "published atomically across 3 changed documents",
+        "owner_atomic_receipt",
+        "Vellum run settled: 3 durable",
+        "omega omega one",
+        "one owner-atomic edit",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Vellum atomic replace gate omits {required}"
+        );
+    }
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    for required in [
+        "AtomicReplaceComponent",
+        "vellum.atomic-replace-selected",
+        "owner_atomic_receipt",
+        "vellum.atomic-replace.commit",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Vellum atomic replace host omits {required}"
+        );
+    }
+    for forbidden in [
+        "vellum_engine::",
+        "vellum_service::",
+        "cargo publish",
+        "git push",
+        "gh release",
+        "curl ",
+    ] {
+        assert!(
+            !gate.contains(forbidden),
+            "Vellum atomic replace gate imports or performs {forbidden}"
         );
     }
 }
@@ -910,6 +1168,28 @@ fn hermes_live_gate_carries_the_opaque_stream_selector_through_workbench() {
 }
 
 #[test]
+fn hermes_interactive_acknowledgement_reuses_the_owner_sheet() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    let shell = fs::read_to_string(root.join("src/lib.rs")).expect("shell source");
+    for required in [
+        "hermes_tui::AcknowledgeComponent",
+        "next_acknowledgement",
+        "ledger.acknowledge.v1",
+        "peer_receipt",
+        "ledger.acknowledge.inspect",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Hermes composition omits {required}"
+        );
+    }
+    assert!(shell.contains("hermes_acknowledge"));
+    assert!(!terminal.contains("hermes_consumer_command::acknowledge"));
+    assert!(!terminal.contains("ConsumerClient"));
+}
+
+#[test]
 fn hermes_hosted_gate_uses_the_owner_daemon_and_public_client() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =
@@ -961,6 +1241,10 @@ fn aegis_hosted_gate_uses_the_owner_daemon_and_public_client() {
         "run_profile open",
         "interactive",
         "epoch: 2",
+        "Manage retained Aegis authority",
+        "retained grants: 2 / 8",
+        "0 in flight · 0 budget violations",
+        "peer_receipt",
         "reopened_after_interactive",
     ] {
         assert!(
@@ -1094,6 +1378,70 @@ fn moira_reconciliation_reuses_the_owner_guard_in_both_shells() {
     assert!(cli.contains("moira_reconciliation_command::{ConfirmError, confirm}"));
     assert!(cli.contains("moira_reconciliation_command::{RecoverError, recover}"));
     assert!(!cli.contains("SagaOperatorClient"));
+    let batch_gate =
+        fs::read_to_string(root.join("tests/live/moira_batch.sh")).expect("Moira batch live gate");
+    for required in [
+        "2 saga(s) selected for batch work",
+        "Every reconciliation child durably applied",
+        "Per-child durable receipts",
+        "operator receipts: 1",
+        "Fail selected Moira sagas terminally",
+        "Cancel selected Moira sagas",
+        "Compensate selected Moira sagas",
+        "Admit failed evidence for selected Moira sagas",
+        "Admit successful evidence for selected Moira sagas",
+        "Retry failed effects for selected Moira sagas",
+        "This is Moira domain time",
+        "outcome: Failed",
+        "outcome: Succeeded",
+        "phase: Failed",
+        "phase: CompensationPending",
+        "phase: ForwardPending",
+        "phase: ForwardSucceeded",
+        "FailTerminal",
+        "moira.reconciliation.cancel",
+        "moira.reconciliation.compensate",
+        "moira.reconciliation.admit-failed",
+        "moira.reconciliation.admit-succeeded",
+        "moira.reconciliation.retry",
+        "0 in flight · 0 budget violations",
+    ] {
+        assert!(
+            batch_gate.contains(required),
+            "Moira batch live gate omits {required}"
+        );
+    }
+    let batch = fs::read_to_string(root.join("../moira-tui/src/reconciliation_batch.rs"))
+        .expect("Moira batch reconciliation component");
+    for required in [
+        "MAX_RECONCILIATION_BATCH",
+        "stable_snapshot(&mut reader, proposal, None)",
+        "Confirmation::OutcomeUnknown",
+        "ChildState::NotSent",
+        "operator_receipt(action)",
+    ] {
+        assert!(batch.contains(required), "Moira batch omits {required}");
+    }
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs"))
+        .expect("Pantheon terminal composition");
+    for required in [
+        "Component::new_with_connector",
+        "ReconciliationBatchComponent::new_with_connector",
+        "ReconciliationBatchComponent::new_timed_with_connector",
+        "OperatorDispositionV1::FailTerminal",
+        "TimedReconciliationKind::Cancel",
+        "TimedReconciliationKind::Compensate",
+        "TimedReconciliationKind::AdmitFailed",
+        "TimedReconciliationKind::AdmitSucceeded",
+        "TimedReconciliationKind::Retry",
+        "Component::selected_saga_views",
+        "child_receipts",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Pantheon Moira batch composition omits {required}"
+        );
+    }
 }
 
 #[test]
@@ -1127,6 +1475,247 @@ fn daimon_live_gate_reuses_exact_agent_session_evidence_in_both_workbench_modes(
             !gate.contains(forbidden),
             "Daimon attach gate acquires mutation authority through {forbidden}"
         );
+    }
+}
+
+#[test]
+fn daimon_batch_gate_proves_bounded_real_owner_fan_out() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/daimon_batch.sh")).expect("Daimon batch gate");
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    for required in [
+        "agent_set_fixture",
+        "agent_sessions",
+        "agents.session-set.inspect.v1",
+        "agents.session-set.control.v1",
+        "3 session(s) selected for bounded work",
+        "Daimon run settled: 3 applied",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon batch gate omits {required}"
+        );
+    }
+    for required in [
+        "selected_observations",
+        "AgentControlBatchComponent::new_with_connector",
+        "fresh_operation_facts",
+        "child_receipts",
+        "refreshed_projection",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Pantheon Daimon batch composition omits {required}"
+        );
+    }
+}
+
+#[test]
+fn daimon_interactive_prompt_gate_proves_multiline_n_session_real_work() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_prompt_batch.sh"))
+        .expect("Daimon prompt batch gate");
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    let profile = fs::read_to_string(root.join("cli/src/profile.rs")).expect("profile parser");
+    for required in [
+        "agent_set_fixture",
+        "prompt selected daimon sessions",
+        "Compose Daimon prompt",
+        "3 selected session(s)",
+        "prompt ready session",
+        "Daimon run settled: 3 applied",
+        "TurnActive r13",
+        "0 in flight · 0 budget violations",
+        "child_receipts",
+        "refreshed_projection",
+        "session 3 prompted",
+        "agents.session-set.prompt.v1",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon prompt batch gate omits {required}"
+        );
+    }
+    for required in [
+        "AgentPromptComposer",
+        "daimon_prompt_requests",
+        "PromptRequest",
+        "fresh_identity",
+        "child_receipts",
+        "refreshed_projection",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Pantheon prompt composition omits {required}"
+        );
+    }
+    for required in [
+        "DaimonExecutionPolicyProfile",
+        "max_elapsed_millis",
+        "max_output_tokens",
+        "validate_hex_identifier",
+    ] {
+        assert!(
+            profile.contains(required),
+            "Daimon prompt policy omits {required}"
+        );
+    }
+}
+
+#[test]
+fn daimon_interactive_permission_gate_proves_challenge_native_n_session_work() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_permission_batch.sh"))
+        .expect("Daimon permission batch gate");
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    for required in [
+        "permission",
+        "Decide Daimon permissions",
+        "3 exact permission challenge(s)",
+        "> RejectOnce",
+        "session 1 permission AllowOnce",
+        "session 2 permission RejectOnce",
+        "session 3 permission AllowOnce",
+        "agents.session-set.permission.v1",
+        "0 in flight · 0 budget violations",
+        "child_receipts",
+        "refreshed_projection",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon permission batch gate omits {required}"
+        );
+    }
+    for required in [
+        "AgentPermissionComposer",
+        "daimon_permission_challenges",
+        "daimon_permission_requests",
+        "AgentPermissionControlRequest",
+        "AwaitingPermission",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Pantheon permission composition omits {required}"
+        );
+    }
+}
+
+#[test]
+fn daimon_interactive_reattach_gate_proves_exact_n_session_recovery() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_reattach_batch.sh"))
+        .expect("Daimon reattach batch gate");
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    for required in [
+        "reattach",
+        "Reattach selected Daimon sessions",
+        "3 exact session controls",
+        "session 1 reattached",
+        "session 2 reattached",
+        "session 3 reattached",
+        "agents.session-set.reattach.v1",
+        "0 in flight · 0 budget violations",
+        "child_receipts",
+        "refreshed_projection",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon reattach batch gate omits {required}"
+        );
+    }
+    for required in [
+        "daimon_reattach_requests",
+        "AgentControlRequest::Reattach",
+        "ReattachRequired",
+        "resume_session",
+        "daimon_execution_request",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Pantheon reattach composition omits {required}"
+        );
+    }
+}
+
+#[test]
+fn daimon_partial_batch_recovery_inspects_exact_sent_sessions_without_retry() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_recovery_batch.sh"))
+        .expect("Daimon recovery batch gate");
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal host");
+    let component = fs::read_to_string(root.join("../daimon-tui/src/control.rs"))
+        .expect("Daimon guarded batch component");
+    for required in [
+        "close-unknown",
+        "1 applied, 0 refused, 0 failed, 1 unknown, 1 not sent",
+        "Recovery inspection complete",
+        "session 1 closed",
+        "session 2 closed",
+        "session 3 closed",
+        "child_receipts",
+        "recovery_inspection",
+        "0 in flight · 0 budget violations",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon recovery batch gate omits {required}"
+        );
+    }
+    for required in [
+        "refresh_sessions(&sessions)",
+        "recovery_inspection_started",
+        "complete_recovery_inspection",
+        "original outcome remains unknown",
+        "daimon_workset_error",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "Pantheon recovery composition omits {required}"
+        );
+    }
+    for required in [
+        "recovery_sessions",
+        "recovery_required",
+        "Applied",
+        "OutcomeUnknown",
+    ] {
+        assert!(
+            component.contains(required),
+            "Daimon recovery evidence omits {required}"
+        );
+    }
+}
+
+#[test]
+fn daimon_phase_hints_improve_discovery_without_claiming_authority() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let presentation =
+        fs::read_to_string(root.join("../daimon-tui/src/lib.rs")).expect("Daimon presentation");
+    let session_set = fs::read_to_string(root.join("../daimon-tui/src/agent_set.rs"))
+        .expect("Daimon session-set presentation");
+    for required in [
+        "owner-state candidates (authority still required)",
+        "prompt · close",
+        "advance · cancel",
+        "decide permission · cancel",
+        "reattach",
+        "inspect; never retry implicitly",
+        "none; session closed",
+    ] {
+        assert!(
+            presentation.contains(required),
+            "Daimon phase hints omit {required}"
+        );
+    }
+    assert!(session_set.contains("phase_actions"));
+    for gate in [
+        "tests/live/daimon_prompt_batch.sh",
+        "tests/live/daimon_reattach_batch.sh",
+        "tests/live/daimon_recovery_batch.sh",
+    ] {
+        let gate = fs::read_to_string(root.join(gate)).expect("Daimon phase-hint live gate");
+        assert!(gate.contains("owner-state candidates (authority still required)"));
     }
 }
 
@@ -1368,7 +1957,17 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "configured_stream",
         "configured_cursor",
         "05050505050505050505050505050505",
-        "one Pantheon headless composition",
+        "health: 6 current · 0 observing · 0 degraded · 0 unobserved",
+        "moira / sagas: current · evidence",
+        "daimon / sessions/events: current · evidence",
+        "hermes / ledger/cursors: current · evidence",
+        "aegis / authority: current · evidence",
+        "grounding / provenance: current · evidence",
+        "events: 1 visible / 2 observed · filter usage",
+        "observed windows 1/2 events visible · usage input=21 output=34",
+        "0 in flight · 0 budget violations",
+        "workbench.render",
+        "evidence-backed Ratatui Overview",
         "--locked",
         "--offline",
     ] {
@@ -1378,6 +1977,66 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         assert!(
             !gate.contains(forbidden),
             "operational gate performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn interactive_reconfiguration_reuses_typed_preflight_and_replaces_the_process() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    for required in [
+        "WorkspaceProfile::load",
+        "reconfiguration::plan",
+        "full local topology restart required",
+        "Restart refused: guarded work or topology drain is pending or outcome-unknown",
+        "Restart refused: save the dirty Vellum workset",
+    ] {
+        assert!(terminal.contains(required), "terminal omits {required}");
+    }
+    let application = fs::read_to_string(root.join("cli/src/main.rs")).expect("application");
+    assert!(application.contains("restart_current_process_with_profile"));
+    assert!(application.contains("Command::new(executable)"));
+    assert!(application.contains("PANTHEON_EXPECT_PROFILE_SHA256"));
+    let gate = fs::read_to_string(root.join("tests/live/reconfiguration_restart.sh"))
+        .expect("reconfiguration live gate");
+    for required in [
+        "preflight and restart workspace profile",
+        "workspace.name · changed · shell_restart_required",
+        "workspace.surfaces · changed · shell_restart_required",
+        "ARMED: Enter drains owned topology and restarts this process",
+        "workbench.reconfigure.preflight",
+        "0 in flight · 0 budget violations",
+        "Restart refused: profile bytes changed after preflight",
+        "surfaces            Overview · Operations",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "reconfiguration gate omits {required}"
+        );
+    }
+}
+
+#[test]
+fn interactive_reconfiguration_drains_and_replaces_a_real_hosted_topology() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/reconfiguration_hosted_restart.sh"))
+        .expect("hosted reconfiguration live gate");
+    for required in [
+        "full_local_topology_restart",
+        "chronos · changed · full_local_topology_restart_required",
+        "hosted_shutdown\"][\"status\"] == \"clean",
+        "chronos/Borealis",
+        "reconfiguration: allowed",
+        "independently reopened old topology",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted reconfiguration gate omits {required}"
         );
     }
 }

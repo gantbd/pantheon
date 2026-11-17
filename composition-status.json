@@ -47,6 +47,10 @@
       "pantheonRoutes": {
         "interactive": [
           { "id": "authority.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "authority.revoke-epoch.v1", "plane": "control", "state": "qualified", "when": "authenticated role permits administration" },
+          { "id": "aegis.admin-session.v1", "plane": "management", "state": "qualified", "when": "authenticated role permits administration" },
+          { "id": "authority.issue.v1", "plane": "control", "state": "qualified", "when": "inside private managed session" },
+          { "id": "authority.attenuate.v1", "plane": "control", "state": "qualified", "when": "inside private managed session" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],
@@ -63,6 +67,28 @@
         "aegis.admin-session.v1": "qualified",
         "authority.issue.v1": "qualified",
         "authority.attenuate.v1": "qualified"
+      },
+      "interactiveControlComposition": {
+        "authority.revoke-epoch.v1": {
+          "state": "composed",
+          "when": "current authority epoch observed and authenticated role permits administration",
+          "evidence": ["aegis-tui/src/revoke_control.rs", "pantheon/cli/src/terminal.rs", "pantheon/tests/live/aegis_attach.sh"]
+        },
+        "aegis.admin-session.v1": {
+          "state": "composed",
+          "when": "authenticated role permits administration",
+          "evidence": ["aegis-tui/src/managed_control.rs", "pantheon/cli/src/terminal.rs", "pantheon/tests/live/aegis_hosted.sh"]
+        },
+        "authority.issue.v1": {
+          "state": "composed",
+          "when": "inside the private bounded managed session",
+          "evidence": ["aegis-tui/src/managed_control.rs", "pantheon/tests/live/aegis_hosted.sh"]
+        },
+        "authority.attenuate.v1": {
+          "state": "composed",
+          "when": "parent operation is retained inside the private bounded managed session",
+          "evidence": ["aegis-tui/src/managed_control.rs", "pantheon/tests/live/aegis_hosted.sh"]
+        }
       }
     },
     "agora": {
@@ -89,7 +115,8 @@
       },
       "mutation": "qualified",
       "mutationCapabilities": {
-        "rooms.create.v2": "qualified"
+        "rooms.create.v2": "qualified",
+        "messages.speak.v2": "qualified"
       }
     },
     "chronos": {
@@ -132,12 +159,13 @@
       "owner": "daimon",
       "presentation": "daimon-tui",
       "readCapability": "agents.presence.v1",
-      "readCapabilities": ["agents.presence.v1", "agents.session.inspect.v1"],
+      "readCapabilities": ["agents.presence.v1", "agents.session.inspect.v1", "agents.session-set.inspect.v1"],
       "observationCapabilities": {
-        "agents.session.inspect.v1": "qualified"
+        "agents.session.inspect.v1": "qualified",
+        "agents.session-set.inspect.v1": "qualified"
       },
       "client": { "contract": "daimon-client", "connection": "daimon-client", "ownership": "peer" },
-      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "daimon-tui/tests/live/agent_cancel.sh", "daimon-tui/tests/live/agent_close.sh", "daimon-tui/tests/live/agent_reattach.sh", "daimon-tui/tests/live/agent_prompt.sh", "daimon-tui/tests/live/agent_permission.sh", "pantheon/tests/live/daimon_attach.sh", "pantheon/tests/live/daimon_hosted.sh", "pantheon/tests/live/daimon_advance.sh", "pantheon/tests/live/daimon_cancel.sh", "pantheon/tests/live/daimon_close.sh", "pantheon/tests/live/daimon_reattach.sh", "pantheon/tests/live/daimon_prompt.sh", "pantheon/tests/live/daimon_permission.sh"],
+      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "daimon-tui/tests/live/agent_cancel.sh", "daimon-tui/tests/live/agent_close.sh", "daimon-tui/tests/live/agent_reattach.sh", "daimon-tui/tests/live/agent_prompt.sh", "daimon-tui/tests/live/agent_permission.sh", "pantheon/tests/live/daimon_attach.sh", "pantheon/tests/live/daimon_hosted.sh", "pantheon/tests/live/daimon_batch.sh", "pantheon/tests/live/daimon_prompt_batch.sh", "pantheon/tests/live/daimon_permission_batch.sh", "pantheon/tests/live/daimon_reattach_batch.sh", "pantheon/tests/live/daimon_recovery_batch.sh", "pantheon/tests/live/daimon_advance.sh", "pantheon/tests/live/daimon_cancel.sh", "pantheon/tests/live/daimon_close.sh", "pantheon/tests/live/daimon_reattach.sh", "pantheon/tests/live/daimon_prompt.sh", "pantheon/tests/live/daimon_permission.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
@@ -145,6 +173,11 @@
         "interactive": [
           { "id": "agents.presence.v1", "plane": "observation", "state": "qualified", "when": "presence-selected" },
           { "id": "agents.session.inspect.v1", "plane": "operator", "state": "qualified", "when": "agent-selected" },
+          { "id": "agents.session-set.inspect.v1", "plane": "operator", "state": "qualified", "when": "agent-selected" },
+          { "id": "agents.session-set.control.v1", "plane": "operator", "state": "qualified", "when": "agent-selected" },
+          { "id": "agents.session-set.prompt.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
+          { "id": "agents.session-set.permission.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
+          { "id": "agents.session-set.reattach.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],
@@ -162,7 +195,11 @@
         "agents.session.close.v1": "qualified",
         "agents.session.reattach.v1": "qualified",
         "agents.session.prompt.v1": "qualified",
-        "agents.session.permission.v1": "qualified"
+        "agents.session.permission.v1": "qualified",
+        "agents.session-set.control.v1": "qualified",
+        "agents.session-set.prompt.v1": "qualified",
+        "agents.session-set.permission.v1": "qualified",
+        "agents.session-set.reattach.v1": "qualified"
       }
     },
     "grounding": {
@@ -218,6 +255,23 @@
         "ledger.acknowledge.v1": "qualified",
         "ledger.compact.v1": "qualified"
       },
+      "interactiveControlComposition": {
+        "ledger.events.disclose.v1": {
+          "state": "composed",
+          "when": "exact stream selected",
+          "evidence": ["hermes-tui/src/disclosure_control.rs", "pantheon/cli/src/terminal.rs"]
+        },
+        "ledger.acknowledge.v1": {
+          "state": "composed",
+          "when": "exact stream and consumer selected",
+          "evidence": ["hermes-tui/src/acknowledge_control.rs", "pantheon/cli/src/terminal.rs"]
+        },
+        "ledger.compact.v1": {
+          "state": "composed",
+          "when": "exact stream selected",
+          "evidence": ["hermes-tui/src/compaction_control.rs", "pantheon/cli/src/terminal.rs"]
+        }
+      },
       "producerIntegrations": {
         "moira.workflow-event.v1": {
           "owner": "moira",
@@ -239,7 +293,7 @@
       "presentation": "moira-tui",
       "readCapability": "sagas.inspect.v1",
       "client": { "contract": "moira-client", "connection": "moira-client::unix::SagaUnixPort", "ownership": "peer" },
-      "evidence": ["moira-tui/tests/live/real_daemon.sh", "pantheon/tests/live/moira_attach.sh", "pantheon/tests/live/moira_hosted.sh", "pantheon/tests/live/moira_reconciliation.sh"],
+      "evidence": ["moira-tui/tests/live/real_daemon.sh", "pantheon/tests/live/moira_attach.sh", "pantheon/tests/live/moira_hosted.sh", "pantheon/tests/live/moira_reconciliation.sh", "pantheon/tests/live/moira_batch.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
@@ -284,7 +338,7 @@
       "presentation": "vellum-tui",
       "readCapability": "workspace.inventory.v1",
       "client": { "contract": "vellum-sdk-client", "connection": "vellum-sdk-client", "ownership": "peer" },
-      "evidence": ["vellum-tui/tests/live/service_journey.sh", "pantheon/tests/live/dual_service.sh", "pantheon/tests/live/vellum_mutation.sh", "pantheon/tests/live/vellum_durable_save.sh"],
+      "evidence": ["vellum-tui/tests/live/service_journey.sh", "pantheon/tests/live/dual_service.sh", "pantheon/tests/live/vellum_mutation.sh", "pantheon/tests/live/vellum_durable_save.sh", "pantheon/tests/live/vellum_batch.sh", "pantheon/tests/live/vellum_atomic_replace.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
@@ -293,6 +347,8 @@
           { "id": "workspace.inventory.v1", "plane": "observation", "state": "qualified" },
           { "id": "workspace.edit.v1", "plane": "operator", "state": "qualified" },
           { "id": "workspace.save.v1", "plane": "control", "state": "qualified" },
+          { "id": "workspace.durable-save.execute.v1", "plane": "control", "state": "qualified", "when": "credential configured" },
+          { "id": "workspace.durable-save.lookup.v1", "plane": "control", "state": "qualified", "when": "credential configured" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],

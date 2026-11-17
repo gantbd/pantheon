@@ -97,7 +97,7 @@ try:
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "workbench").stdout
         if all(marker in screen for marker in [
-            "Daimon agent", "ReattachRequired/12", "plan inspect before resuming",
+            "Configured sessions", "ReattachRequired/12", "plan inspect before resuming",
         ]):
             break
         time.sleep(0.025)

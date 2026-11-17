@@ -8,6 +8,42 @@ the root package owns navigation, layout, focus, and global input routing. Each
 attached peer renders only inside its assigned rectangle and retains its own
 input and service authority.
 
+The active terminal-experience architecture, precedent study, capability map,
+and delivery sequence live in
+[`docs/tui-experience.md`](docs/tui-experience.md). The interactive shell now
+provides a searchable `Ctrl-P` action palette, generated `F1` help, and a
+bounded `Ctrl-G` activity/receipt timeline; unavailable guarded work remains
+discoverable with an exact reason instead of disappearing. The palette also
+exposes a redacted session-configuration sheet, whole-suite refresh, Chronos
+work forms, peer detail navigation, and Moira's selected-saga keep-uncertain,
+fail-terminal, cancel, and compensate reconciliation sheets plus Daimon's exact advance/cancel/close sheets without
+exporting peer authority into the shell. Agora also exposes a conversation-native
+room navigator, an exact revision-bound room-creation sheet, and a bounded
+multiline message composer with canonical multi-recipient addressing and exact
+delivery recovery. A content-free
+instrumentation sheet reports bounded local dispatch, frame render, peer-read,
+guarded-control, in-flight, outcome, and full settlement latency metrics with
+visible budget violations. Its bounded trace ledger groups multi-subsystem work
+under one content-free correlation and shows shell dispatch, peer pending,
+receipt, and terminal settlement stages without claiming unobservable peer
+internals. It never records prompts, documents, credentials, grant handles, or
+provider locators. An Operations surface also exposes the live local-host
+lifecycle, hosted-peer census, guarded reverse-order drain, and retained exact
+per-peer shutdown receipts.
+
+With an exact Hermes stream and consumer selected, the Hermes surface can also
+acknowledge an exact operator-selected range from the current cursor through
+the observed published edge via Hermes's owner guard. The sheet requires
+arm/confirm, makes one attempt on a fresh same-connection re-observation,
+fences uncertain delivery, and keeps the instrumented operation open until the
+refreshed cursor projection settles. With an exact stream selected, the surface
+can disclose an operator-selected 1–16 event batch through Hermes's owner guard
+after explicit sensitive-content confirmation. The worker immediately reduces
+each response to event metadata and at most 256 payload preview bytes; content
+never enters activity receipts or telemetry.
+Pantheon's trace spans confirmed dispatch, the Hermes read boundary, the peer
+receipt, and terminal settlement, including refusal and transport failure.
+
 The binary attaches a Chronos Hub and one Vellum Unix service socket. Add
 `--chronos-workstream NAME DIRECTORY` for each extra Chronos service. With
 Chronos focused, **w** switches workstreams and **/** searches observed tasks. It does not orchestrate agents, merge engine state or infer
@@ -16,8 +52,11 @@ laws and never retries an uncertain effect. Chronos writes remain disabled
 unless explicitly enabled; Vellum authority remains entirely service-owned.
 
 The versioned workspace shell also names Overview, Agora, Moira, Daimon,
-Grounding, Aegis and Hermes surfaces. Overview and the Chronos/Vellum Workspace
-are live in the standalone binary. A workspace profile may attach Agora through
+Grounding, Aegis, Hermes, and local-host Operations surfaces. Overview reports
+each configured peer channel as configured-but-unobserved, observing, current
+with evidence age, or degraded; live control state adds busy and
+outcome-uncertain markers without turning configuration into a readiness claim.
+Overview and the Chronos/Vellum Workspace are live in the standalone binary. A workspace profile may attach Agora through
 the selected private Unix client by supplying its socket and participant claim;
 the daemon authenticates the connected OS peer and remains the authority owner.
 A trusted host can instead supply an independently constructed `agora-tui`
@@ -27,6 +66,17 @@ components. Grounding uses Dendrite's typed presentation endpoint rather than
 MCP tool envelopes or text. `[` and `]` switch
 surfaces; Tab switches focus only inside Workspace. See
 [the gap ledger](WORKSPACE_GAPS.md) and [delivery roadmap](ROADMAP.md).
+
+From a workspace-profile session, `Ctrl-P` → **Preflight and restart workspace
+profile** opens a bounded local path editor. Enter validates the candidate with
+the same profile parser used at startup and renders the exact typed diff and
+minimum restart boundary. **c**, then Enter, requests one process replacement
+only after guarded work is settled, Vellum persistence is clean, peer clients
+disconnect, and Pantheon-owned topology drains cleanly. The replacement keeps
+the original interactive flags and changes only the preflighted profile path;
+there is no live-apply claim or implicit retry. The handoff binds the exact
+preflighted profile bytes with SHA-256: confirmation revalidates the file, and
+the replacement process refuses startup if the digest no longer matches.
 
 ```sh
 cargo run -p pantheon-cli --bin pantheon --locked --offline -- interactive \
@@ -72,13 +122,26 @@ authenticated peer context; it is neither a credential nor authority.
 Unknown fields, versions, duplicate surfaces, control characters, excessive
 workstreams/bindings and files larger than 64 KiB are refused.
 
-A Daimon profile may pair `agent_socket` with one exact 32-hex-digit
-`agent_session`. Pantheon then reuses Daimon's read-only client to present the
-stable session view and bounded event page in both headless and interactive
-modes. When a presence socket is also selected, the interactive Daimon surface
-renders presence beside the focused agent projection rather than silently
-hiding the polled presence component. The two agent fields are all-or-nothing; they confer no open, prompt,
-permission, reattach, cancel, or close authority.
+A Daimon profile pairs `agent_socket` with either the backward-compatible exact
+32-hex-digit `agent_session` or a bounded, unique `agent_sessions` list of up to
+16 exact sessions. The list is an explicit local workset, not owner-side
+discovery or a fleet claim. Pantheon reuses Daimon's read-only client to present
+stable session views and bounded event pages. Left/Right moves between sessions,
+Space sparsely marks sessions, `r` refreshes the focused session, and `R`
+refreshes the set; with no marks, actions target only the focused session. The
+**f** key cycles all, conversation, action, decision, and usage event evidence.
+The footer reports exact configured/current/unavailable/marked cardinality plus
+visible/observed event counts and summed input/output usage from the bounded
+owner-published windows; these are projection facts, not provider cost or
+execution-policy inference. The
+advance, cancel, and close sheets execute a sequential, non-atomic guarded run:
+each child receives a fresh owner connection and operation identity, retains
+its returned durable session projection, and remains separately Applied,
+Refused, Failed, OutcomeUnknown, or NotSent. An uncertain or failed child stops
+later sends. When a presence socket is also selected, the interactive Daimon
+surface renders presence beside the focused workset rather than hiding it.
+Profile selectors confer no open, prompt, permission, reattach, cancel, or close
+authority; every mutation remains owner-guarded.
 
 A hosted Daimon profile requires that exact agent selection plus an owner
 `host` containing only the `daimon-local-agent` executable and its opaque
@@ -106,6 +169,17 @@ Moira-TUI's newer agent, participation and deliberation capabilities are not
 silently inherited by this saga route. They are recorded as qualified peer but
 absent Pantheon capabilities in `composition-status.json` until Pantheon binds
 their independent public clients and components deliberately.
+On the Moira saga list, Space marks up to 16 sagas; with no marks, the focused
+saga remains the one-item default. The keep-uncertain, fail-terminal, cancel,
+and compensate palette actions open one parent workflow but never claim an atomic batch. Each path re-inspects every child
+immediately before submission, retains an exact durable receipt or refusal per
+child, stops on an unknown outcome, and leaves later children visibly not sent
+until exact recovery and an explicit re-arm. Time-bearing proposals require an
+explicit bounded Moira logical-time value—never inferred wall time—and show it
+beside each selected saga before owner inspection or arming. The real batch gate
+proves every disposition class, including effect-bound failed/successful
+evidence admission and retry, then independently reopens the owner to verify
+the durable phases and exact receipts.
 
 Use `--chronos-profile PATH` in place of the initial service directory to
 reopen a workspace saved by `chronos-tui --save-profile`. Relative service
@@ -123,6 +197,20 @@ handshake. In hosted mode the same private record configures both the daemon
 verifier and client claim provider without placing credential material in the
 profile or lifecycle receipt. Tab changes focus and Ctrl-Q requests
 whole-workbench exit.
+The Chronos new-task form accepts one task directly or a bounded batch of up to
+128 unique IDs by adding rows with Tab. Enter sends the exact set as one
+owner-atomic `SubmitGraph`; Pantheon does not issue one mutation per task.
+For cancellation, Space marks tasks on the current bounded owner page and `c`
+opens one confirmation for that set (or the focused task when no marks exist).
+Every child uses an independent V3 invocation receipt and a freshly observed
+owner revision. An unresolved receipt stops the run and leaves later children
+not sent; Pantheon traces the complete run as `chronos.task.cancel-batch`.
+The same marked/current workset drives task pause and not-before. Pantheon
+reuses Chronos's V5 client, reobserves exact eligibility before each child,
+preserves each task's unrelated field, exposes `sA/sR/s?/sN` dispositions, and
+traces the run as `chronos.schedule.eligibility-batch`. Both actions are
+discoverable from `Ctrl-P`; V5 uncertainty stops later sends and is never
+restyled as atomic success.
 The exact interactive Chronos route advertises `tasks.mutate.v1` only with
 `--chronos-allow-writes`, `scheduling.observe.v5` with
 `--chronos-scheduling`, `scheduling.mutate.v5` only when both selections are
@@ -237,6 +325,12 @@ The separate `agora-create-room` command reuses Agora's owner-client
 accepts the explicit conversation or composition transport, exact room facts,
 expected revision and literal confirmation; an inexact confirmation is refused
 before connection and an uncertain outcome is never retried by the shell.
+The interactive `agora.message.compose` route similarly reuses the peer-owned
+`messages.speak.v2` client. It is intentionally conversation-native rather
+than a generic mutation command: open a room, compose a multiline body, add an
+optional complete recipient set, review, arm, and confirm. Pantheon records
+only timing and the owner receipt class; message and participant content never
+enter its telemetry.
 
 Local coordinated source layout:
 
@@ -304,8 +398,10 @@ Pantheon-owned data and control endpoint.
 
 Run `sh tests/live/chronos_mutation.sh` for the selected Chronos mutation
 profile through the real Pantheon-hosted peer component. The isolated journey
-creates a task, enables scheduling, changes capacity and not-before, pauses the
-task and scheduler, performs receipted cancellation, drains Pantheon, then
+creates three tasks in one atomic graph, enables scheduling, changes capacity
+and not-before across all three marked tasks, pauses all three tasks and the
+scheduler, performs three independently receipted cancellations, drains
+Pantheon, then
 reopens the state with an independent `chronos-service` and verifies the exact
 durable result. This qualifies that profile locally; it does not invent mutation
 authority or grant wider authority. Pantheon's route catalog names the selected
@@ -327,6 +423,25 @@ standalone command executes it and the Pantheon command performs only exact
 historical lookup. Authentication, the Persist ceiling, filesystem work and
 receipt truth remain Vellum-owned. The gate does not expose Save As submission,
 receipt retirement, arbitrary destinations or other durable intents.
+
+Run `sh tests/live/vellum_batch.sh` for the integrated N-document workflow.
+Pantheon edits and sparsely selects three service-owned documents, re-observes
+their exact revisions, and invokes Vellum-TUI's independently receipted durable
+save component. The authenticated owner persists all three exact byte streams;
+Pantheon admits clean state only for children with durable receipts. The route
+is advertised and the workbench action is offered only when a stable Vellum
+credential is configured. The workflow makes no atomic-batch claim: unknown
+delivery stops later children as not sent until exact lookup and explicit
+re-arm.
+
+Run `sh tests/live/vellum_atomic_replace.sh` for the owner-atomic N-document
+edit path. The journey marks three documents, enters one bounded literal
+query/replacement, previews four matches against three exact revisions, and
+publishes one `WorkspaceEdit` generation. It then inspects the correlated
+`owner_atomic_receipt` trace before invoking the separate per-document durable
+save workflow and verifying all exact filesystem bytes. The composer fences an
+unknown reply and can recover only by replaying the retained request; it never
+restyles in-memory atomicity as cross-file durability.
 
 The selected local release profile is documented in
 [`docs/local-release.md`](docs/local-release.md). It reconstructs an immutable
@@ -382,7 +497,11 @@ Pantheon gains no ambient authority: separately invoked commands require the
 exact current epoch and literal confirmation, attempt each mutation once, and
 never retry an uncertain result. The bounded authority journey keeps its parent
 and child handles inside one authenticated connection and returns only redacted
-authorization facts. Reusable management is not exposed as one-shot commands.
+authorization facts. The interactive workbench now composes that same owner as
+a private 1–16-scope issue/attenuate/authorize session: exact generated
+confirmations, explicit arm/confirm, at most eight retained grants, no retry
+after dispatch, and only operation IDs plus redacted facts on screen or in
+instrumentation.
 The managed-session command keeps named grants inside Aegis's shared
 bounded owner, supports issue/attenuate/authorize/list/close over NDJSON, and is
 identical to the standalone shell below the socket/stdio composition edge.
@@ -397,9 +516,11 @@ Aegis's standalone daemon. The profile supplies explicit create/open mode,
 daemon path, durable directory, socket, authority namespace, OS peer identity,
 principal, session namespace and role. Pantheon waits for the owner socket,
 observes through the same public client in headless and interactive modes,
-requests signal drain, verifies clean socket removal and reopens the same
-authority. It links no Aegis engine/service/storage crate and treats none of
-those deployment facts as a grant.
+performs a real parent issue, child attenuation, and authorization inside one
+instrumented private managed session, requests signal drain, verifies clean
+socket removal and reopens the same authority. It links no Aegis
+engine/service/storage crate and treats none of those deployment facts as a
+grant.
 
 Run `sh tests/live/grounding_attach.sh` to qualify the independently packaged
 Grounding peer through Dendrite's typed authenticated observation endpoint in
@@ -459,12 +580,44 @@ Both shells reuse the owner guard that accepts only an exact Ready revision
 with no active turn, so active work must be cancelled first. Close is attempted
 once and an uncertain delivery remains an inspection/reconciliation problem.
 
+Run `sh tests/live/daimon_batch.sh` to qualify the interactive bounded workset
+against a real serial Daimon Unix owner. Pantheon observes three exact sessions
+over one short-lived refresh connection, sparsely selects all three, then opens
+one fresh connection and operation identity per guarded close. The gate proves
+three distinct owner-returned Closed projections, three mutation receipts, and
+a post-receipt refresh of the complete selected workset;
+the unit-level uncertainty gate separately proves stop-on-unknown and NotSent
+preservation. Connection instrumentation also holds a 16-session refresh to one
+simultaneous connection and verifies release before subsequent work.
+
+Run `sh tests/live/daimon_recovery_batch.sh` to qualify partial-run recovery.
+The real owner accepts the first close, durably applies the second while its
+reply becomes outcome-unknown, and proves the third child remains NotSent.
+Pantheon retains the evidence sheet, blocks dismissal until `r` queues one
+read-only refresh for every sent session, never retries the mutation, and keeps
+the final trace uncertain even when current projections become available.
+Mixed-state worksets are rejected before identity creation with bounded
+position, phase, revision, and active-turn diagnostics rather than silently
+dropping ineligible selections.
+The session list and detail pane also show phase-derived owner-state candidates
+beside every current projection while explicitly stating that authority is
+still required; these hints improve discovery but cannot enable an action.
+
 Run `sh tests/live/daimon_reattach.sh` to qualify
 `agents.session.reattach.v1`. Both shells parse the same strict credential-free
 execution document and reuse the owner guard that accepts only an exact
 resume-capable `ReattachRequired` revision with no active turn. Confirmation
 binds the complete fresh execution envelope; the single attempt neither
 replays history nor submits a prompt, and uncertain delivery is not retried.
+
+Run `sh tests/live/daimon_reattach_batch.sh` to qualify the interactive
+session-set workflow. Pantheon requires every selected session to remain at an
+exact resume-capable `ReattachRequired` revision, creates a fresh task,
+execution, and idempotency identity for each child from the credential-free
+policy, and presents the complete guarded proposal before any mutation. The
+real serial owner gate proves three independent Ready projections, retained
+child receipts, stop-on-unknown semantics, post-receipt refresh, and a complete
+content-free instrumentation trace.
 
 Run `sh tests/live/daimon_prompt.sh` to qualify
 `agents.session.prompt.v1`. Standalone Daimon and Pantheon parse the same
@@ -474,6 +627,15 @@ their digest and the canonical digest of the entire execution envelope. The
 guard fences the ready revision on the mutation connection, dispatches once,
 and leaves transport uncertainty for retained-session reconciliation.
 
+Run `sh tests/live/daimon_prompt_batch.sh` to qualify the actual interactive
+prompt workflow. A versioned workspace profile supplies only the reusable,
+credential-free principal/profile, context, tool, and budget policy. Pantheon
+composes multiline text, reviews the selected 1–16 ready sessions, creates a
+fresh turn, task, execution, and idempotency identity for every child, and then
+hands the exact requests to Daimon's guarded batch component. The real serial
+owner gate proves three independent TurnActive projections and a final
+post-receipt session-set refresh; prompt content never enters instrumentation.
+
 Run `sh tests/live/daimon_permission.sh` to qualify
 `agents.session.permission.v1`. Both shells reuse the owner parser and guard to
 select one cursor-identified challenge, exact request and option. Confirmation
@@ -481,12 +643,25 @@ binds digests of the complete provider challenge and separately authorized
 execution envelope; changed provider text, turn, options or cursor refuse before
 mutation, and uncertain decision delivery is never retried.
 
+Run `sh tests/live/daimon_permission_batch.sh` to qualify the interactive
+challenge-native workset. Pantheon requires every selected session to be at an
+exact `AwaitingPermission` revision whose latest retained event is the active
+turn's challenge. The review sheet presents each challenge's escaped capability,
+description, and owner-published options, defaults independently to
+`RejectOnce`, and permits a different explicit choice for every session. The
+real serial owner gate proves three cursor-bound decisions, independent fresh
+execution envelopes, post-receipt projection refresh, content-free telemetry,
+and no latency-budget violation.
+
 Run `sh tests/live/hermes_attach.sh` to qualify configured stream health and one
 configured consumer's content-free cursor/backlog through Hermes's read-only
 facade. Exact opaque selectors are profile inputs and are never catalogued or
 echoed. The same gate separately qualifies `ledger.events.disclose.v1` with an
 exact stream/start/limit confirmation, a 16-event ceiling, and the negotiated
-frame bound. Routine observation remains content-free; Pantheon receives no
+frame bound. Pantheon's interactive surface narrows that owner capability to
+an explicit 1–16 event batch per confirmation and retains only a 256-byte
+preview per event. Routine
+observation remains content-free; Pantheon receives no
 append or compaction authority. The gate also qualifies
 `ledger.acknowledge.v1`: standalone and Pantheon reuse one peer-owned guard
 that observes the expected cursor and attempts one exact-confirmed
@@ -515,6 +690,20 @@ ledger authority.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one
-Pantheon headless invocation. This coexistence gate exercises only the five
-peer-owned observation capabilities; it does not claim native hosting or
-mutation authority for those peers.
+Pantheon headless invocation and one Ratatui session. The live Overview must
+settle all six peer evidence channels—including Daimon's distinct presence and
+session/event channels—as current with observable evidence age. This
+coexistence gate exercises only peer-owned observation capabilities; it does
+not claim native hosting or mutation authority for those peers.
+
+Run `sh tests/live/reconfiguration_restart.sh` to qualify the interactive
+configuration journey without peer fixtures: exact shell/profile diff,
+arm/confirm, terminal-safe process replacement, and inspection of the
+replacement session's selected surfaces.
+
+Run `sh tests/live/reconfiguration_hosted_restart.sh` for the full lifecycle
+case. Pantheon hosts one real Chronos topology, preflights a different hosted
+workstream as a full local-topology restart, requires a clean old-owner drain
+before process replacement, observes the replacement owner as ready, and then
+independently reopens and cleanly drains the old topology to prove its locks and
+endpoints were released.

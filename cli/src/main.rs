@@ -5,7 +5,7 @@ use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServic
 use chronos_tui::{Hub, Workstream};
 use pantheon::Shell;
 use pantheon_cli::{
-    OperationalPeers,
+    AgoraControlConfig, OperationalPeers,
     capabilities::{self, ChronosFeatures, Mode},
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     management::LocalManagementSnapshot,
@@ -18,7 +18,7 @@ use pantheon_cli::{
         HermesAccessProfile, HermesOpenMode, WorkspaceProfile,
     },
     registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown},
-    run_terminal_with_all_peers,
+    run_terminal_with_all_peers_managed_configuration,
 };
 use std::{
     io::{BufRead, Write},
@@ -66,6 +66,8 @@ struct Options {
     daimon_socket: Option<PathBuf>,
     daimon_agent_socket: Option<PathBuf>,
     daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
+    daimon_agent_sessions: Vec<daimon_protocol::AgentSessionIdV1>,
+    daimon_execution_policy: Option<pantheon_cli::profile::DaimonExecutionPolicyProfile>,
     daimon_requires: Vec<String>,
     daimon_host: Option<DaimonProcessOptions>,
     hermes_socket: Option<PathBuf>,
@@ -173,6 +175,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut daimon_socket = None;
     let mut daimon_agent_socket = None;
     let mut daimon_agent_session = None;
+    let mut daimon_agent_sessions = Vec::new();
+    let mut daimon_execution_policy = None;
     let mut daimon_requires = Vec::new();
     let mut daimon_host = None;
     let mut hermes_socket = None;
@@ -200,7 +204,15 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut chronos_streams = if workspace_profile {
         let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
         let path = PathBuf::from(path);
-        let profile = WorkspaceProfile::load(&path)?;
+        let (profile, profile_digest) = WorkspaceProfile::load_with_digest(&path)?;
+        if let Some(expected) = std::env::var_os("PANTHEON_EXPECT_PROFILE_SHA256") {
+            let expected = expected
+                .into_string()
+                .map_err(|_| "expected workspace-profile digest must be UTF-8")?;
+            if expected != profile_digest {
+                return Err("workspace profile changed after interactive preflight".into());
+            }
+        }
         loaded_workspace_profile = Some(profile.clone());
         workspace_name = profile.name.clone();
         shell = profile.shell()?;
@@ -236,6 +248,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             moira_requires = moira.requires;
         }
         if let Some(daimon) = profile.daimon {
+            daimon_execution_policy = daimon.execution.clone();
             if daimon.deployment == DeploymentMode::Hosted {
                 let host = daimon
                     .host
@@ -252,10 +265,13 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             }
             daimon_socket = daimon.socket;
             daimon_agent_socket = daimon.agent_socket;
-            daimon_agent_session = daimon
+            daimon_agent_sessions = daimon
                 .agent_session
-                .as_deref()
-                .and_then(daimon_tui::parse_agent_session);
+                .iter()
+                .chain(daimon.agent_sessions.iter())
+                .filter_map(|value| daimon_tui::parse_agent_session(value))
+                .collect();
+            daimon_agent_session = daimon_agent_sessions.first().copied();
             daimon_requires = daimon.requires;
         }
         if let Some(hermes) = profile.hermes {
@@ -481,7 +497,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         mode,
         daimon_host.is_some(),
         daimon_socket.is_some(),
-        daimon_agent_socket.is_some() && daimon_agent_session.is_some(),
+        daimon_agent_socket.is_some() && !daimon_agent_sessions.is_empty(),
     );
     let hermes_capabilities =
         capabilities::hermes(mode, hermes_host.is_some(), hermes_consumer.is_some());
@@ -500,7 +516,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             daimon_attempts: !daimon_bindings.is_empty(),
         },
     );
-    let vellum_capabilities = capabilities::vellum(mode, host_vellum);
+    let vellum_capabilities = capabilities::vellum(mode, host_vellum, vellum_credential.is_some());
     negotiate_capabilities("agora", mode, &agora_requires, &agora_capabilities)?;
     negotiate_capabilities("moira", mode, &moira_requires, &moira_capabilities)?;
     negotiate_capabilities("daimon", mode, &daimon_requires, &daimon_capabilities)?;
@@ -552,6 +568,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_socket,
         daimon_agent_socket,
         daimon_agent_session,
+        daimon_agent_sessions,
+        daimon_execution_policy,
         daimon_requires,
         daimon_host,
         hermes_socket,
@@ -852,7 +870,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let shutdown = shutdown_native_host(&mut native_host);
         return finish_headless(observation, shutdown);
     }
-    let result = interactive(options);
+    let result = interactive(options, &mut native_host);
     let shutdown = shutdown_native_host(&mut native_host);
     finish_interactive(result, shutdown)
 }
@@ -2997,7 +3015,16 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     Ok(Some(host))
 }
 
-fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
+fn interactive(
+    options: Options,
+    native_host: &mut Option<NativeHost>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let current_profile = options.workspace_profile.clone();
+    let agora_control = options.agora.as_ref().map(|profile| AgoraControlConfig {
+        socket: profile.socket.clone(),
+        participant: profile.participant.clone(),
+        transport: profile.transport,
+    });
     let agora = if let Some(profile) = options.agora {
         let connection = match profile.transport {
             AgoraTransportProfile::Conversation => AgoraLocalServicePort::connect(
@@ -3019,13 +3046,20 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let moira_control_socket = options.moira_socket.clone();
     let moira = if let Some(socket) = options.moira_socket {
-        let port = moira_client::unix::SagaUnixPort::connect(
-            socket,
+        let preflight = moira_client::unix::SagaUnixPort::connect(
+            &socket,
             moira_client::unix::SagaClientLimitsV1::default(),
         )
         .map_err(|error| format!("Moira service refused: {error:?}"))?;
-        Some(moira_tui::Component::new(port))
+        drop(preflight);
+        Some(moira_tui::Component::new_with_connector(move || {
+            moira_client::unix::SagaUnixPort::connect(
+                &socket,
+                moira_client::unix::SagaClientLimitsV1::default(),
+            )
+        }))
     } else {
         None
     };
@@ -3040,24 +3074,37 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    let daimon_agent = if let (Some(socket), Some(agent_session)) =
-        (options.daimon_agent_socket, options.daimon_agent_session)
-    {
-        let (service_session, port) = daimon_client::unix::connect_agent(
-            socket,
-            daimon_wire::LimitsV1::default(),
-            daimon_wire::agent::AgentWireLimitsV1::default(),
-            std::time::Duration::from_secs(5),
-        )
-        .map_err(|error| format!("Daimon agent service refused: {error:?}"))?;
-        Some(daimon_tui::AgentComponent::new(
-            service_session,
-            port,
-            agent_session,
-        ))
+    let daimon_agent_control_socket = options.daimon_agent_socket.clone();
+    let daimon_agent = if let Some(socket) = options.daimon_agent_socket {
+        Some(daimon_tui::AgentSetComponent::new_with_connector(
+            move || {
+                daimon_client::unix::connect_agent(
+                    &socket,
+                    daimon_wire::LimitsV1::default(),
+                    daimon_wire::agent::AgentWireLimitsV1::default(),
+                    std::time::Duration::from_secs(5),
+                )
+            },
+            options.daimon_agent_sessions,
+        )?)
     } else {
         None
     };
+    let hermes_operator_socket = options
+        .hermes_stream
+        .is_some()
+        .then(|| options.hermes_socket.clone())
+        .flatten();
+    let hermes_disclosure_socket = options
+        .hermes_stream
+        .is_some()
+        .then(|| options.hermes_socket.clone())
+        .flatten();
+    let hermes_control_socket = options
+        .hermes_consumer
+        .is_some()
+        .then(|| options.hermes_socket.clone())
+        .flatten();
     let hermes = if let Some(socket) = options.hermes_socket {
         let port = hermes_local_client::LocalPort::connect(
             socket,
@@ -3073,6 +3120,7 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
+    let aegis_control_socket = options.aegis_socket.clone();
     let aegis = if let Some(socket) = options.aegis_socket {
         let (session, port) = aegis_local_client::connect(
             socket,
@@ -3119,6 +3167,15 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
             hub.bind_daimon(&name, socket)?;
         }
     }
+    let vellum_control = options.vellum_credential.as_ref().and_then(|credential| {
+        options
+            .vellum_socket
+            .as_ref()
+            .map(|socket| pantheon_cli::VellumControlConfig {
+                socket: socket.clone(),
+                credential: Some(credential.clone()),
+            })
+    });
     let vellum = if let Some(socket) = options.vellum_socket {
         let connector = vellum_connector(socket, options.vellum_credential.as_ref())?;
         let transport = RemoteTransport::new(connector, TransportLimits::reference())
@@ -3129,20 +3186,55 @@ fn interactive(options: Options) -> Result<(), Box<dyn std::error::Error>> {
     } else {
         None
     };
-    run_terminal_with_all_peers(
+    let outcome = run_terminal_with_all_peers_managed_configuration(
         options.shell,
         chronos,
         vellum,
         OperationalPeers {
             agora,
+            agora_control,
             moira,
+            moira_control_socket,
             daimon,
             daimon_agent,
+            daimon_agent_control_socket,
+            daimon_execution_policy: options.daimon_execution_policy,
             hermes,
+            hermes_operator_socket,
+            hermes_disclosure_socket,
+            hermes_control_socket,
             aegis,
+            aegis_control_socket,
             grounding,
+            vellum_control,
         },
-    )
+        native_host.take(),
+        current_profile,
+    )?;
+    finish_interactive(Ok(()), Ok(outcome.shutdown))?;
+    if let Some(request) = outcome.restart_profile {
+        restart_current_process_with_profile(&request.path, &request.sha256)?;
+    }
+    Ok(())
+}
+
+fn restart_current_process_with_profile(
+    path: &std::path::Path,
+    sha256: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let executable = std::env::current_exe()?;
+    let mut arguments = std::env::args_os().skip(1).collect::<Vec<_>>();
+    let profile = arguments
+        .iter()
+        .position(|argument| argument == "--workspace-profile")
+        .and_then(|index| arguments.get_mut(index + 1))
+        .ok_or("workspace-profile restart lost the original profile argument")?;
+    *profile = path.as_os_str().to_owned();
+    let error = Command::new(executable)
+        .args(arguments)
+        .env("PANTHEON_EXPECT_PROFILE_SHA256", sha256)
+        .exec();
+    Err(error.into())
 }
 
 fn headless(options: Options) -> Result<HeadlessObservation, Box<dyn std::error::Error>> {

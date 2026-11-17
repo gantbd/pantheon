@@ -15,6 +15,7 @@ pub enum Surface {
     Grounding,
     Aegis,
     Hermes,
+    Operations,
 }
 
 impl Surface {
@@ -28,12 +29,13 @@ impl Surface {
             Self::Grounding => "Grounding",
             Self::Aegis => "Aegis",
             Self::Hermes => "Hermes",
+            Self::Operations => "Operations",
         }
     }
 
     pub const fn gap(self) -> Option<&'static str> {
         match self {
-            Self::Overview | Self::Workspace => None,
+            Self::Overview | Self::Workspace | Self::Operations => None,
             Self::Agora => Some("Agora has no composable Ratatui presentation peer"),
             Self::Moira => Some("Moira workflow presentation is not configured"),
             Self::Daimon => Some("Daimon operations presentation is not configured"),
@@ -55,7 +57,7 @@ impl Shell {
         if surfaces.is_empty() {
             return Err("workspace profile must enable at least one surface");
         }
-        if surfaces.len() > 8 {
+        if surfaces.len() > 9 {
             return Err("workspace profile enables too many surfaces");
         }
         for (index, surface) in surfaces.iter().enumerate() {
@@ -79,6 +81,18 @@ impl Shell {
 
     pub fn surfaces(&self) -> &[Surface] {
         &self.surfaces
+    }
+
+    pub fn activate(&mut self, surface: Surface) -> bool {
+        let Some(index) = self
+            .surfaces
+            .iter()
+            .position(|candidate| *candidate == surface)
+        else {
+            return false;
+        };
+        self.active = index;
+        true
     }
 
     pub fn next(&mut self) {
@@ -123,6 +137,10 @@ mod tests {
         assert_eq!(shell.active(), Surface::Agora);
         shell.next();
         assert_eq!(shell.active(), Surface::Overview);
+        assert!(shell.activate(Surface::Workspace));
+        assert_eq!(shell.active(), Surface::Workspace);
+        assert!(!shell.activate(Surface::Hermes));
+        assert_eq!(shell.active(), Surface::Workspace);
         assert!(Shell::new(Vec::new()).is_err());
         assert!(Shell::new(vec![Surface::Agora, Surface::Agora]).is_err());
     }

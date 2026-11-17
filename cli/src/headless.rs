@@ -127,7 +127,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         "vellum",
         Mode::Headless,
         &request.vellum_requires,
-        &capabilities::vellum(Mode::Headless, request.vellum_hosted),
+        &capabilities::vellum(Mode::Headless, request.vellum_hosted, false),
     )?;
     let mut peers = Vec::new();
     let mut management = Vec::new();

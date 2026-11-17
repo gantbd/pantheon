@@ -26,11 +26,11 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
         .expect("run profile check");
     assert!(output.status.success());
     let report = String::from_utf8(output.stdout).unwrap();
-    assert!(report.starts_with("workspace profile valid: 8 surfaces\n"));
+    assert!(report.starts_with("workspace profile valid: 9 surfaces\n"));
     for expected in [
         "agora: observation=rooms.read.v2 operator=messages.read.v2 management=topology.attach.v1",
         "moira: observation=sagas.inspect.v1 operator=sagas.reconciliation.v1,sagas.evidence.v1,sagas.operator-receipts.v1 management=topology.attach.v1",
-        "daimon: observation=agents.presence.v1 operator=agents.session.inspect.v1 management=topology.attach.v1",
+        "daimon: observation=agents.presence.v1 operator=agents.session.inspect.v1,agents.session-set.inspect.v1,agents.session-set.control.v1,agents.session-set.prompt.v1,agents.session-set.permission.v1,agents.session-set.reattach.v1 management=topology.attach.v1",
         "chronos: observation=tasks.observe.v1 operator=attempts.moira.inspect.v1,attempts.daimon.inspect.v1 management=topology.attach.v1",
         "vellum: observation=workspace.inventory.v1 operator=workspace.edit.v1 control=workspace.save.v1 management=topology.attach.v1",
     ] {
@@ -40,6 +40,40 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
         );
     }
     assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn digest_bound_replacement_refuses_profile_bytes_changed_after_preflight() {
+    let scratch = Path::new("/private/tmp").join(format!(
+        "pantheon-profile-digest-refusal-{}",
+        std::process::id()
+    ));
+    if scratch.exists() {
+        fs::remove_dir_all(&scratch).unwrap();
+    }
+    fs::create_dir(&scratch).unwrap();
+    let profile = scratch.join("workspace.json");
+    fs::write(
+        &profile,
+        r#"{"version":1,"name":"Digest refusal","surfaces":["overview"],"agora":null,"chronos":null,"vellum":null}"#,
+    )
+    .unwrap();
+
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+        .args(["interactive", "--workspace-profile"])
+        .arg(&profile)
+        .arg("--check-profile")
+        .env("PANTHEON_EXPECT_PROFILE_SHA256", "00".repeat(32))
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    assert!(output.stdout.is_empty());
+    assert!(
+        String::from_utf8_lossy(&output.stderr)
+            .contains("workspace profile changed after interactive preflight")
+    );
+    fs::remove_dir_all(scratch).unwrap();
 }
 
 #[test]

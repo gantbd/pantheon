@@ -5,6 +5,7 @@ use std::{
 };
 
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 use pantheon::{Shell, Surface};
 
@@ -85,9 +86,39 @@ pub struct DaimonProfile {
     pub socket: Option<PathBuf>,
     pub agent_socket: Option<PathBuf>,
     pub agent_session: Option<String>,
+    /// Explicit local workset. This is not owner-side discovery and is capped
+    /// so interactive fan-out remains inspectable.
+    #[serde(default)]
+    pub agent_sessions: Vec<String>,
+    /// Credential-free execution policy used to build fresh per-session
+    /// envelopes for interactive prompt, permission, and reattach work.
+    pub execution: Option<DaimonExecutionPolicyProfile>,
     pub host: Option<DaimonHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonExecutionPolicyProfile {
+    pub principal: String,
+    pub profile: String,
+    #[serde(default)]
+    pub context: Vec<String>,
+    #[serde(default)]
+    pub tools: Vec<String>,
+    pub budget: DaimonExecutionBudgetProfile,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonExecutionBudgetProfile {
+    pub max_elapsed_millis: u64,
+    pub max_input_tokens: u64,
+    pub max_output_tokens: u64,
+    pub max_tool_calls: u32,
+    pub max_context_bytes: usize,
+    pub max_output_bytes: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -245,13 +276,21 @@ pub struct VellumProfile {
 
 impl WorkspaceProfile {
     pub fn load(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
+        Self::load_with_digest(path).map(|(profile, _)| profile)
+    }
+
+    pub fn load_with_digest(path: &Path) -> Result<(Self, String), Box<dyn std::error::Error>> {
         let metadata = fs::metadata(path)?;
         if metadata.len() > MAX_PROFILE_BYTES {
             return Err("workspace profile exceeds 64 KiB".into());
         }
         let bytes = fs::read(path)?;
         let base = path.parent().unwrap_or_else(|| Path::new("."));
-        Self::parse(&bytes, base)
+        let digest = Sha256::digest(&bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        Self::parse(&bytes, base).map(|profile| (profile, digest))
     }
 
     pub fn parse(bytes: &[u8], base: &Path) -> Result<Self, Box<dyn std::error::Error>> {
@@ -395,19 +434,68 @@ impl WorkspaceProfile {
             if let Some(socket) = &daimon.socket {
                 validate_path(socket)?;
             }
-            match (&daimon.agent_socket, &daimon.agent_session) {
-                (Some(socket), Some(session)) => {
+            if daimon.agent_session.is_some() && !daimon.agent_sessions.is_empty() {
+                return Err("Daimon accepts agent_session or agent_sessions, not both");
+            }
+            let agent_sessions = daimon
+                .agent_session
+                .iter()
+                .chain(daimon.agent_sessions.iter())
+                .collect::<Vec<_>>();
+            if agent_sessions.len() > daimon_tui::AgentSetComponent::MAX_SESSIONS {
+                return Err("Daimon agent session set exceeds the 16-session bound");
+            }
+            match (&daimon.agent_socket, agent_sessions.is_empty()) {
+                (Some(socket), false) => {
                     validate_path(socket)?;
-                    if daimon_tui::parse_agent_session(session).is_none() {
-                        return Err("Daimon agent session must be 32 hexadecimal digits");
+                    for (index, session) in agent_sessions.iter().enumerate() {
+                        if daimon_tui::parse_agent_session(session).is_none() {
+                            return Err("Daimon agent sessions must be 32 hexadecimal digits");
+                        }
+                        if agent_sessions[..index].contains(session) {
+                            return Err("Daimon agent sessions must be unique");
+                        }
                     }
                 }
-                (None, None) => {}
-                _ => return Err("Daimon agent socket and session must be configured together"),
+                (None, true) => {}
+                _ => {
+                    return Err(
+                        "Daimon agent socket and at least one session must be configured together",
+                    );
+                }
+            }
+            if let Some(execution) = &daimon.execution {
+                if daimon.agent_socket.is_none() || agent_sessions.is_empty() {
+                    return Err("Daimon execution policy requires an agent socket and session set");
+                }
+                validate_hex_identifier(&execution.principal, "Daimon execution principal")?;
+                validate_hex_identifier(&execution.profile, "Daimon execution profile")?;
+                if execution.context.len() > daimon_agent_command::MAX_CONTEXT_REFERENCES {
+                    return Err("Daimon execution context exceeds the 64-reference bound");
+                }
+                if execution.tools.len() > daimon_agent_command::MAX_TOOLS {
+                    return Err("Daimon execution tools exceed the 64-capability bound");
+                }
+                for value in &execution.context {
+                    validate_hex_identifier(value, "Daimon execution context reference")?;
+                }
+                for value in &execution.tools {
+                    validate_hex_identifier(value, "Daimon execution tool capability")?;
+                }
+                if execution.budget.max_elapsed_millis == 0
+                    || execution.budget.max_input_tokens == 0
+                    || execution.budget.max_output_tokens == 0
+                    || execution.budget.max_context_bytes == 0
+                    || execution.budget.max_output_bytes == 0
+                {
+                    return Err(
+                        "Daimon execution policy requires non-zero time, token, and byte budgets",
+                    );
+                }
             }
             match (daimon.deployment, &daimon.host) {
                 (DeploymentMode::Hosted, Some(host)) => {
-                    if daimon.agent_socket.is_none() {
+                    if daimon.agent_socket.is_none() || agent_sessions.is_empty() {
                         return Err("hosted Daimon requires an exact agent selection");
                     }
                     validate_path(&host.executable)?;
@@ -601,6 +689,22 @@ impl WorkspaceProfile {
     }
 }
 
+fn validate_hex_identifier(value: &str, label: &'static str) -> Result<(), &'static str> {
+    if value.len() != 32 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err(match label {
+            "Daimon execution principal" => {
+                "Daimon execution principal must be 32 hexadecimal digits"
+            }
+            "Daimon execution profile" => "Daimon execution profile must be 32 hexadecimal digits",
+            "Daimon execution context reference" => {
+                "Daimon execution context references must be 32 hexadecimal digits"
+            }
+            _ => "Daimon execution tool capabilities must be 32 hexadecimal digits",
+        });
+    }
+    Ok(())
+}
+
 fn validate_required_capabilities(values: &[String]) -> Result<(), &'static str> {
     if values.len() > MAX_REQUIRED_CAPABILITIES {
         return Err("required capability count exceeds the supported range");
@@ -788,6 +892,31 @@ mod tests {
             "agent_session":"not-an-opaque-id"}
         }"#;
         assert!(WorkspaceProfile::parse(invalid, Path::new(".")).is_err());
+
+        let set = br#"{
+          "version":1,"name":"Daimon set","surfaces":["daimon"],
+          "daimon":{"agent_socket":"agent.sock","agent_sessions":[
+            "07070707070707070707070707070707",
+            "08080808080808080808080808080808"]}
+        }"#;
+        let profile = WorkspaceProfile::parse(set, Path::new("/tmp/workbench")).unwrap();
+        assert_eq!(profile.daimon.unwrap().agent_sessions.len(), 2);
+
+        let duplicate = br#"{
+          "version":1,"name":"Daimon set","surfaces":["daimon"],
+          "daimon":{"agent_socket":"agent.sock","agent_sessions":[
+            "07070707070707070707070707070707",
+            "07070707070707070707070707070707"]}
+        }"#;
+        assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
+
+        let ambiguous = br#"{
+          "version":1,"name":"Daimon set","surfaces":["daimon"],
+          "daimon":{"agent_socket":"agent.sock",
+            "agent_session":"07070707070707070707070707070707",
+            "agent_sessions":["08080808080808080808080808080808"]}
+        }"#;
+        assert!(WorkspaceProfile::parse(ambiguous, Path::new(".")).is_err());
     }
 
     #[test]
@@ -819,6 +948,39 @@ mod tests {
             "host":{"executable":"daimon-local-agent","config":"agent.json"}}
         }"#;
         assert!(WorkspaceProfile::parse(attached_owner, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn daimon_execution_policy_is_credential_free_bounded_and_complete() {
+        let valid = br#"{
+          "version":1,"name":"Daimon prompt","surfaces":["daimon"],
+          "daimon":{"agent_socket":"agent.sock","agent_sessions":[
+            "07070707070707070707070707070707",
+            "08080808080808080808080808080808"],
+            "execution":{
+              "principal":"10101010101010101010101010101010",
+              "profile":"11111111111111111111111111111111",
+              "context":["12121212121212121212121212121212"],
+              "tools":["13131313131313131313131313131313"],
+              "budget":{"max_elapsed_millis":60000,"max_input_tokens":4096,
+                "max_output_tokens":8192,"max_tool_calls":32,
+                "max_context_bytes":1048576,"max_output_bytes":1048576}
+            }}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let execution = profile.daimon.unwrap().execution.unwrap();
+        assert_eq!(execution.context.len(), 1);
+        assert_eq!(execution.tools.len(), 1);
+        assert_eq!(execution.budget.max_tool_calls, 32);
+
+        let invalid_identity = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("10101010101010101010101010101010", "not-a-principal");
+        assert!(WorkspaceProfile::parse(invalid_identity.as_bytes(), Path::new(".")).is_err());
+        let zero_budget = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("\"max_output_tokens\":8192", "\"max_output_tokens\":0");
+        assert!(WorkspaceProfile::parse(zero_budget.as_bytes(), Path::new(".")).is_err());
     }
 
     #[test]

@@ -95,7 +95,14 @@ pub fn daimon(mode: Mode, hosted: bool, presence: bool, selected_agent: bool) ->
         if presence {
             capabilities.push(capability("agents.presence.v1", Plane::Observation));
         }
-        capabilities.push(capability("agents.session.inspect.v1", Plane::Operator));
+        capabilities.extend([
+            capability("agents.session.inspect.v1", Plane::Operator),
+            capability("agents.session-set.inspect.v1", Plane::Operator),
+            capability("agents.session-set.control.v1", Plane::Operator),
+            capability("agents.session-set.prompt.v1", Plane::Operator),
+            capability("agents.session-set.permission.v1", Plane::Operator),
+            capability("agents.session-set.reattach.v1", Plane::Operator),
+        ]);
     } else if presence {
         capabilities.push(capability("agents.presence.v1", Plane::Operator));
     }
@@ -176,13 +183,19 @@ pub fn chronos(mode: Mode, hosted: bool, features: ChronosFeatures) -> Vec<Capab
     capabilities
 }
 
-pub fn vellum(mode: Mode, hosted: bool) -> Vec<Capability> {
+pub fn vellum(mode: Mode, hosted: bool, durable_identity: bool) -> Vec<Capability> {
     let mut capabilities = vec![capability("workspace.inventory.v1", Plane::Observation)];
     if mode == Mode::Interactive {
         capabilities.extend([
             capability("workspace.edit.v1", Plane::Operator),
             capability("workspace.save.v1", Plane::Control),
         ]);
+        if durable_identity {
+            capabilities.extend([
+                capability("workspace.durable-save.execute.v1", Plane::Control),
+                capability("workspace.durable-save.lookup.v1", Plane::Control),
+            ]);
+        }
     }
     capabilities.push(topology(hosted));
     capabilities
@@ -205,9 +218,9 @@ pub fn negotiate(
     Ok(())
 }
 
-/// Separately guarded command capabilities. These are deliberately not
-/// accepted by aggregate workspace `requires`: invoking them uses a distinct
-/// CLI route with its own confirmation, session and authority contract.
+/// Guarded control capabilities. Most remain distinct CLI routes; capabilities
+/// composed into an interactive workbench still retain their own confirmation,
+/// connection, and authority contract.
 pub const GUARDED_CONTROL_CAPABILITIES: &[(&str, &[&str])] = &[
     (
         "aegis",
@@ -219,7 +232,7 @@ pub const GUARDED_CONTROL_CAPABILITIES: &[(&str, &[&str])] = &[
             "authority.attenuate.v1",
         ],
     ),
-    ("agora", &["rooms.create.v2"]),
+    ("agora", &["rooms.create.v2", "messages.speak.v2"]),
     (
         "daimon",
         &[
@@ -295,6 +308,11 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
         peer: "agora",
         capability: "rooms.create.v2",
         command: "agora-create-room",
+    },
+    GuardedControlRoute {
+        peer: "agora",
+        capability: "messages.speak.v2",
+        command: "workbench",
     },
     GuardedControlRoute {
         peer: "daimon",
@@ -401,8 +419,24 @@ mod tests {
     }
 
     #[test]
-    fn vellum_durable_save_is_not_an_aggregate_headless_capability() {
-        let headless = vellum(Mode::Headless, false);
+    fn vellum_durable_save_is_interactive_but_not_headless() {
+        let interactive = vellum(Mode::Interactive, false, true);
+        for required in [
+            "workspace.durable-save.execute.v1",
+            "workspace.durable-save.lookup.v1",
+        ] {
+            assert!(
+                interactive
+                    .iter()
+                    .any(|capability| capability.id == required)
+            );
+            assert!(
+                !vellum(Mode::Interactive, false, false)
+                    .iter()
+                    .any(|capability| capability.id == required)
+            );
+        }
+        let headless = vellum(Mode::Headless, false, true);
         assert_eq!(
             headless
                 .iter()

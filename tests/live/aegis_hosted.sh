@@ -91,16 +91,77 @@ def tmux(*args, check=True):
 
 try:
     tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "aegis", command)
+    def screen():
+        return tmux("capture-pane", "-p", "-t", "aegis").stdout
+
+    def expect(*markers, timeout=10):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            visible = screen()
+            if all(marker in visible for marker in markers):
+                return visible
+            time.sleep(0.025)
+        history = tmux("capture-pane", "-p", "-S", "-100", "-t", "aegis").stdout
+        raise AssertionError(f"Hosted Aegis markers {markers!r} not ready:\n{history}")
+
+    def keys(*values):
+        tmux("send-keys", "-t", "aegis", *values)
+
+    def text(value):
+        tmux("send-keys", "-t", "aegis", "-l", value)
+
+    def palette(query, marker):
+        keys("C-p")
+        text(query)
+        expect(marker)
+        keys("Enter")
+
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
-        screen = tmux("capture-pane", "-p", "-t", "aegis").stdout
-        if "Aegis" in screen and "epoch: 2" in screen:
+        visible = screen()
+        if "Aegis" in visible and "epoch: 2" in visible:
             break
         time.sleep(0.025)
     else:
-        raise AssertionError(f"Hosted Aegis pane not ready:\n{screen}")
+        raise AssertionError(f"Hosted Aegis pane not ready:\n{visible}")
 
-    tmux("send-keys", "-t", "aegis", "C-q")
+    parent = "01010101010101010101010101010101"
+    child = "02020202020202020202020202020202"
+    resource = "07070707070707070707070707070707"
+    palette("manage retained aegis authority", "Manage retained Aegis authority")
+    expect("Aegis session ready")
+    text(f"issue {parent} 2 5 30 hermes:{resource}:observe+delegate")
+    keys("Enter")
+    expect("exact confirmation: ISSUE")
+    keys("c", "Enter")
+    expect("retained grants: 1 / 8", timeout=15)
+
+    keys("e")
+    text(f"attenuate {child} {parent} 2 6 20 hermes:{resource}:observe")
+    keys("Enter")
+    expect("exact confirmation: ATTENUATE")
+    keys("c", "Enter")
+    expect("retained grants: 2 / 8", timeout=15)
+
+    keys("e")
+    text(f"authorize {child} 7 hermes {resource} observe")
+    keys("Enter")
+    expect("exact confirmation: AUTHORIZE")
+    keys("c", "Enter")
+    expect("authorized hermes observe until 20", timeout=15)
+
+    palette("inspect tui instrumentation", "Inspect TUI instrumentation")
+    expect(
+        "0 in flight · 0 budget violations",
+        "aegis.authority.manage",
+        "peer_receipt",
+    )
+    keys("Escape")
+    time.sleep(0.1)
+    keys("Escape")
+    expect("Closed Aegis managed session; private grants destroyed")
+
+    keys("C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "aegis", check=False).returncode == 0:
         if time.monotonic() >= deadline:
@@ -121,4 +182,4 @@ assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: owner Aegis daemon -> same public client -> hosted headless and interactive Pantheon -> clean reopen'
+echo 'PASS: owner Aegis daemon -> hosted Pantheon -> retained N authority work -> instrumented settlement -> clean reopen'
