@@ -22,6 +22,38 @@ does not close an item.
 7. Qualify TUI, CLI/headless, restart/recovery, and accessibility behavior before
    calling a journey complete.
 
+## Dogfood evidence and user-advocacy ledger
+
+This ledger records experience gathered while using the component ensemble to
+deliver Pantheon. It is product input, not a substitute for journey acceptance.
+
+### 2026-11-17 — local-provider delegation
+
+- Gemma 3 27B through Ollama completed the grounded chatbot journey across a
+  fresh Dendrite, Daimon, Moira, Agora, and Vellum composition.
+- Qwen3 Coder Next through LM Studio completed Daimon's bounded provider smoke
+  and, after correcting continuation capability accounting, Moira's grounded
+  native-tool agent journey. The source turn's authorized tools remain durable
+  evidence while exhausted tools are no longer offered to the next turn.
+- The exercise required endpoint/model discovery, owner configuration, service
+  startup, qualification commands, and interpretation of low-level refusal
+  states outside Pantheon. The current Configuration overlay explains those
+  steps but does not perform them; this is an operational-surface gap.
+- Provider onboarding must therefore be a first-class owner-backed UI journey:
+  select an explicitly discovered or entered local endpoint; list owner-reported
+  models/capabilities; preflight the redacted profile and restart boundary; run
+  bounded completion and tool-continuation checks; retain the exact result and
+  deviations; then select only qualified profiles for a task/session.
+- Feedback must distinguish unreachable endpoint, unknown model, incompatible
+  schema, repeated tool call after budget exhaustion, owner refusal, uncertain
+  outcome, and successful qualification. Every state names the responsible
+  owner, affected profile, safe next action, and correlation/evidence reference.
+- Smooth-path requirement: a user who already has LM Studio or Ollama running
+  should not edit JSON, copy opaque identifiers, set environment variables, or
+  invoke Make targets merely to configure and qualify a provider. Credentials
+  and provider commands remain in the sovereign owner; Pantheon edits or invokes
+  only an explicit bounded owner contract and presents its receipts.
+
 ## Milestone 0 — stabilize the product contract
 
 - [x] Establish the user-journey blueprint and acceptance catalogue.
@@ -81,6 +113,11 @@ The existing Chronos-to-selected-Daimon prompt remains a qualified presentation
 slice, not completion.
 
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
+- [ ] Configure and qualify the selected local provider through an owner-backed
+  Pantheon surface; the existing checklist-only overlay does not satisfy this.
+- [ ] Present provider/model health, conformance, effective tool/context budget,
+  known deviations, evidence time, and the next safe action without exposing
+  credentials or treating endpoint liveness as session/workflow completion.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
 - [ ] Create or bind an exact Agora task room.
 - [ ] Open a per-task Daimon session bound to the exact Chronos attempt.

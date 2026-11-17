@@ -1401,6 +1401,7 @@ following universal requirements:
 | --- | --- | --- |
 | Surface navigation, focus routing, command palette, help, timeline | Qualified | One keyboard model; component-local keys act only when focused |
 | Aggregate health/freshness and guarded control discovery | Qualified | Configured is visually distinct from observed/current |
+| Local provider onboarding and qualification | Required | Explicit endpoint/catalogue selection; owner-backed redacted configuration; completion and tool-continuation checks; retained conformance/deviation evidence; actionable failure orientation; no JSON/env/Makefile ceremony on the normal path |
 | Typed cross-peer links and journey view | Required | Deep-link without copying domain state; broken/stale links remain inspectable |
 | Persisted role activation and projection | Required, P0 | Select owner; retain versioned human/agent activation and transition history; project identical current/prior role, scope, delegation, budget, grounding, accountability, policy and expiry semantics across UI/TUI/headless without granting authority |
 | Custom work-mode registry and lifecycle | Required, P1 | Select bounded registry owner; declaratively register/version/activate/migrate/deprecate/retire/tombstone modes through J34; exact-version instances preserve sovereign semantic ownership and no executable extension or authority enters through registration |
@@ -1640,6 +1641,7 @@ following universal requirements:
 | Tool/resource manifest | Required | Stable capability IDs, risk class, input/output schema, sandbox/egress evidence, current authority |
 | Artifact/output handoff | Required via Moira | Output/proposals are evidence; only workflow-selected adapters may create peer effects |
 | Provider portability/conformance | Required | ACP/MCP/provider capability negotiation, TCK evidence, known deviations, version pin |
+| Provider setup experience | Required | Configure through the owner-backed Pantheon surface; discover only explicitly selected local endpoints; show model/capability/health evidence; preflight restart; qualify; select for a session without exposing credentials or provider commands |
 | Remote/background execution | Later | Requires identity, sandbox, network/secret, retention, audit, and incident-response profiles |
 
 #### Precedents and practices
