@@ -1193,10 +1193,10 @@ mod deployment_factory_tests {
 mod tests {
     use super::*;
     use chronos_client::observer::{Observer, ObserverLimits};
-    use std::{fs, path::PathBuf};
+    use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf};
 
     fn scratch() -> PathBuf {
-        PathBuf::from("/tmp").join(format!("wbc-{}", std::process::id()))
+        std::env::temp_dir().join(format!("wbc-{}", std::process::id()))
     }
 
     #[test]
@@ -1205,6 +1205,8 @@ mod tests {
         if directory.exists() {
             fs::remove_dir_all(&directory).unwrap();
         }
+        fs::create_dir(&directory).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
         let mut host = NativeHost::new();
         host.start_chronos("Atlas", &directory, ChronosHostOptions::default())
             .unwrap();

@@ -13,6 +13,11 @@ and delivery sequence live in
 [`docs/tui-experience.md`](docs/tui-experience.md). The broader product model,
 component use cases, and aggregate journey acceptance catalogue live in
 [`docs/use-cases-and-user-journeys.md`](docs/use-cases-and-user-journeys.md).
+The active journey delivery ledger is
+[`docs/journey-execution-plan.md`](docs/journey-execution-plan.md); architectural
+decisions live under [`docs/decisions/`](docs/decisions/), and initial
+declarative work-mode definitions live under
+[`docs/work-modes/`](docs/work-modes/).
 The interactive shell now
 provides a searchable `Ctrl-P` Emacs-style minibuffer, generated `F1` help, and a
 bounded `Ctrl-G` activity/receipt timeline. `[` and `]` move across the adaptive
@@ -195,10 +200,15 @@ The separate `moira-reconciliation-view`, `moira-reconciliation-confirm` and
 accept only an exact server-prepared challenge, submit confirmation once without
 retrying an unknown outcome, and resolve uncertainty only from the exact durable
 operator receipt. Pantheon never parses the Aegis portion of the owner config.
-Moira-TUI's newer agent, participation and deliberation capabilities are not
-silently inherited by this saga route. They are recorded as qualified peer but
-absent Pantheon capabilities in `composition-status.json` until Pantheon binds
-their independent public clients and components deliberately.
+Moira-TUI's newer agent and deliberation capabilities are not silently inherited
+by this saga route. Governed-agent participation is deliberately composable:
+pair an attached `participation_socket` with one exact 32-hex-digit
+`participation` in the Moira workspace-profile object. Pantheon then uses
+Moira's independent public client, advertises
+`agent.participation.inspect.v1`, emits the selected content-free observation in
+headless mode and presents the owner record beside sagas in the Moira tab. The
+saga host does not implicitly serve this separate protocol, and Pantheon neither
+copies the record nor derives authority from its persona or phase.
 On the Moira saga list, Space marks up to 16 sagas; with no marks, the focused
 saga remains the one-item default. The keep-uncertain, fail-terminal, cancel,
 and compensate palette actions open one parent workflow but never claim an atomic batch. Each path re-inspects every child

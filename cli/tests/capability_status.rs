@@ -44,7 +44,12 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
     for hosted in [false, true] {
         for mode in [Mode::Interactive, Mode::Headless] {
             assert_route(&status, "agora", mode, capabilities::agora(mode, hosted));
-            assert_route(&status, "moira", mode, capabilities::moira(mode, hosted));
+            assert_route(
+                &status,
+                "moira",
+                mode,
+                capabilities::moira(mode, hosted, false),
+            );
             assert_route(
                 &status,
                 "daimon",

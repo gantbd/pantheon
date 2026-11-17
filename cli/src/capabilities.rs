@@ -69,8 +69,14 @@ pub fn agora(mode: Mode, hosted: bool) -> Vec<Capability> {
     capabilities
 }
 
-pub fn moira(mode: Mode, hosted: bool) -> Vec<Capability> {
+pub fn moira(mode: Mode, hosted: bool, selected_participation: bool) -> Vec<Capability> {
     let mut capabilities = vec![capability("sagas.inspect.v1", Plane::Observation)];
+    if selected_participation {
+        capabilities.push(capability(
+            "agent.participation.inspect.v1",
+            Plane::Observation,
+        ));
+    }
     if mode == Mode::Interactive {
         capabilities.extend([
             capability("sagas.reconciliation.v1", Plane::Operator),
@@ -392,7 +398,7 @@ mod tests {
 
     #[test]
     fn moira_aggregate_does_not_claim_separate_agent_or_control_routes() {
-        let interactive = moira(Mode::Interactive, false);
+        let interactive = moira(Mode::Interactive, false, false);
         assert!(
             interactive
                 .iter()
@@ -410,11 +416,25 @@ mod tests {
             );
         }
         assert_eq!(
-            moira(Mode::Headless, true)
+            moira(Mode::Headless, true, false)
                 .iter()
                 .map(|capability| capability.id)
                 .collect::<Vec<_>>(),
             ["sagas.inspect.v1", "topology.host.v1"]
+        );
+    }
+
+    #[test]
+    fn moira_participation_is_advertised_only_when_selected() {
+        assert!(
+            moira(Mode::Interactive, false, true)
+                .iter()
+                .any(|capability| capability.id == "agent.participation.inspect.v1")
+        );
+        assert!(
+            !moira(Mode::Headless, false, false)
+                .iter()
+                .any(|capability| capability.id == "agent.participation.inspect.v1")
         );
     }
 

@@ -86,6 +86,32 @@ composition delivery is tracked in
     all of them, but each signal retains its source, population, sampling,
     retention and semantic limits. Telemetry may explain or direct attention; it
     cannot prove authorization, durable effects, workflow completion or absence.
+13. **Human-agent parity is participation parity, not authority equality.** Every
+    work mode admitted now or later—not merely the illustrative catalogue in
+    this document—must expose semantically equivalent human and agent
+    participation. An agent remains a non-human principal with explicit
+    delegation, budgets, provenance and an accountable human or institution;
+    policy may reserve approval, risk acceptance, redress and trust-root actions.
+14. **Pantheon must be able to improve Pantheon without trusting candidate code
+    to govern itself.** An agent may develop, package and propose a replacement,
+    then observe it in sandbox, shadow, canary or bounded production operation.
+    Promotion, traffic switching, telemetry, safety enforcement and rollback
+    remain independently controlled, fail closed on uncertainty, and preserve a
+    known-good recovery path outside the component being changed. This remains
+    architectural direction—not an implementable profile—until sovereign build,
+    deployment, observation and recovery owners are selected and qualified.
+15. **Material work receives productively adversarial stakeholder review.**
+    Dendrite grounds and checks the concern coverage and orthogonality of the SME
+    lenses; Moira frames and retains the bounded deliberation, independent
+    reports, evidence, dissent and resolution. The purpose is to expose blind
+    spots and improve the work, not manufacture consensus, votes or approval.
+16. **Final rollout is a human go/no-go, and credible human-advocacy concerns
+    can require human gating elsewhere.** No candidate becomes the authoritative
+    or default production version without presentation to and an explicit
+    decision from a named human principal. For any other material decision, an
+    ensemble's supported, non-frivolous human-advocate finding can require the
+    exact decision to pause for human adjudication. The advocate finding triggers
+    presentation; it is not itself approval, denial, authority or an agent veto.
 
 ## The product model
 
@@ -119,7 +145,61 @@ authority are active at each consequential action.
 
 Agent teams, scheduled automations, peer services, identity providers, webhook
 producers, and hostile or compromised actors belong in threat and journey actor
-models, but they are not human personas.
+models, but they are not human personas. Agents are nevertheless first-class,
+attributable journey participants as defined below; no agent may impersonate a
+person or inherit human accountability merely by selecting a role label.
+
+### Human-agent role and goal parity
+
+Every work mode the system can admit—including organization-defined, domain-
+specific and future modes absent from this document—must be usable by an
+authorized human, an authorized agent, or a mixed team through the same owner-
+native records, typed links, evidence vocabulary, headless contracts and
+recovery states. The parity test is: given the same declared role, scope and
+authority, do both participants have a semantically equivalent way to propose,
+inspect, execute, explain, challenge, hand off and recover the work?
+Presentation may differ; meaning may not.
+
+Role selection describes the participant's current responsibility. It never
+grants authority. An agent role activation binds agent/session identity, model
+and tool profile, objective, work mode, exact resource scope, allowed actions,
+budgets, grounding digest, time bound, accountable owner and policy epoch.
+Changing roles creates a recorded transition with rationale and re-evaluation;
+it cannot amplify the existing grant. A creative agent can later become an
+architect or operator only after the new role's constraints are resolved. The
+activation and transition history is a durable owner record with optimistic
+revision/replay semantics, never reconstructed from current UI state, room text,
+agent prose, organizational title or an authority grant.
+
+| Participation class | Human and agent capability | Accountability boundary |
+| --- | --- | --- |
+| Symmetric contribution | Ideate, analyze, query, model, draft, prototype, implement, test, review evidence, document, monitor, diagnose and recommend | Every contribution identifies its actual human or agent author, sources, transformations, uncertainty and current role |
+| Delegated coordination | Triage, decompose, schedule, facilitate, route, summarize, request review, run bounded workflows and operate within a runbook | The delegation names resources, actions, budget, duration, escalation and accountable owner; organizational seniority is not synthesized for an agent |
+| Qualified consequential action | Package, sign through a separate service, publish, deploy, alter traffic, contain, restart or roll back when the selected risk policy permits | Current Aegis and owner checks, exact-effect preview, separation of duties and durable receipts apply equally; the agent cannot approve its own requested effect |
+| Human/institution-reserved accountability | Accept residual risk, make legal or fiduciary attestations, decide affected-person redress, exercise designated break-glass authority, or change the independent trust/recovery root | Agents may assemble evidence and recommend; the named accountable person or institution makes the decision unless a deployment profile explicitly and lawfully assigns it elsewhere |
+
+Required uniformity:
+
+- Human and agent participants can enter any work mode, branch or loop, attach
+  to the same task/room/workflow/session/artifact, and hand work to one another.
+- The UI, TUI and CLI show active role, principal type, delegation, accountable
+  owner, authority/budget horizon and whether output is proposal, observation,
+  decision, approval or effect.
+- Rooms support human steering, questions, pause, interruption, correction,
+  takeover and handback throughout agent work. An agent cannot hide a live
+  consequential action behind an offline summary.
+- Agent-created agents, workflows, policies, tools or code inherit no creator
+  authority. Each is a new versioned subject/artifact admitted under its own
+  policy and provenance.
+- Evaluation applies comparable task and outcome criteria without pretending
+  humans and agents have the same cognition, privacy rights, obligations or
+  failure modes. Private chain-of-thought is not required; inspectable plans,
+  decisions, sources, tool calls, state transitions and concise rationale are.
+- A new/custom work mode declares its semantic owner, purpose, inputs, outputs,
+  lifecycle/transitions, evidence and uncertainty vocabulary, authority/effect
+  boundaries, stakeholder-review triggers, recovery, retention/disclosure and
+  interactive/headless projections. Registration extends the catalogue; it does
+  not require Pantheon to reinterpret the mode as one of the examples below.
 
 ### Organizational altitude and external participation
 
@@ -183,11 +263,14 @@ Required altitude behavior:
 
 ### Goal and work-mode coverage
 
-The product must support divergent, convergent, delivery, and learning work.
-These modes are not a mandatory waterfall: users may enter anywhere, branch,
-loop, suspend, compare alternatives, or stop after learning. A transition creates
-typed links and explicit evidence; it does not silently convert one owner's
-record into another owner's truth.
+The following catalogue demonstrates divergent, convergent, delivery and
+learning work; it is deliberately non-exhaustive. Pantheon must also admit
+custom, emergent and domain-specific modes through the same extensible work-mode
+contract and human-agent parity test above. Modes are not a mandatory waterfall:
+participants may enter anywhere, branch, loop, suspend, compare alternatives,
+compose modes, or stop after learning. A transition creates typed links and
+explicit evidence; it does not silently convert one owner's record into another
+owner's truth.
 
 | Goal / work mode | User outcome and characteristic outputs | Necessary Pantheon composition | Evidence of success |
 | --- | --- | --- | --- |
@@ -209,11 +292,11 @@ record into another owner's truth.
 | Graph inspection and querying | Explore dependencies, provenance, journeys, authority, topology, causation and domain relationships through patterns, paths and neighborhoods | Typed relationship projection plus owner-native graph adapters; query workbench; Vellum saved views; Dendrite graph/domain SMEs; Aegis scoped disclosure | Node/edge types and owners are explicit; direction, time, multiplicity, missing/redacted edges and query semantics are visible; a path is not presented as causation |
 | Insight | Convert observations and evidence into reusable explanations, predictions, opportunities, or decisions | Dendrite evidence surfaces; Vellum analysis; Moira multi-hypothesis synthesis; Daimon analysis; Chronos experiments/actions; Agora review | Claim-to-evidence links, uncertainty, competing explanations, affected population, decision relevance, validation plan and expiry/review trigger are explicit |
 
-Across every mode, users need lightweight freeform work and progressively more
-structure. Pantheon should offer templates and facilitation without requiring a
-workflow instance merely to think, discuss, or sketch. Promotion from an idea,
-prototype, or insight into committed work must be a visible user action with a
-new owner receipt.
+Across every listed or newly admitted mode, humans and agents need lightweight
+freeform work and progressively more structure. Pantheon should offer templates
+and facilitation without requiring a workflow instance merely to think, discuss,
+or sketch. Promotion from exploratory work into a commitment or consequential
+effect must be a visible action with a new owner receipt.
 
 ### Cross-mode continuity requirements
 
@@ -238,6 +321,151 @@ new owner receipt.
 - Permit reflection on agent behavior and reasoning evidence without presenting
   private chain-of-thought as a product requirement; expose decisions, sources,
   tool actions, evaluations, uncertainty, and concise rationale instead.
+- Route every material output or mode transition through the declared
+  stakeholder-review policy. Low-risk exploratory work may review asynchronously
+  or at a promotion boundary; irreversible, high-impact or externally affecting
+  work requires review before the effect and again when material assumptions,
+  scope, evidence, risk, topology or affected populations change.
+- Always present final production rollout as a named-human go/no-go. Also pause
+  any other material decision when the selected ensemble method admits a
+  supported human-advocate finding that human gating is warranted. The work
+  owner may answer the concern but cannot bypass the gate through relabeling,
+  automatic disposition, timeout or an agent-synthesized human response.
+
+### Reflexive self-development and live replacement
+
+Pantheon is itself a valid target of a Pantheon journey. An agent working on
+Pantheon code may move among any admitted goal, work mode and role—including
+future/custom modes absent from the catalogue—but recursive capability does not
+collapse the development, authority, deployment, observation and recovery
+boundaries. “Hot swap” here means a qualified, reversible replacement
+of an exact component version or route with bounded disruption. It may be an
+OTP code upgrade, a drained process replacement, a rolling instance update, or
+a feature/configuration route; it never means arbitrary unversioned mutation of
+live memory.
+
+The minimum safe architecture has five independently identifiable planes:
+
+| Plane | Owns | Must not depend exclusively on |
+| --- | --- | --- |
+| Development | Isolated worktree, source changes, design artifacts, tests and agent session | The live production checkout or mutable state of the target instance |
+| Candidate | Reproducible build, immutable digest, dependency inventory, provenance, signatures, compatibility and migration declaration | A tag, branch, mutable path or the candidate's claim about itself |
+| Deployment | Admission, placement, traffic/route switching, drain, state-transfer orchestration and promotion receipt | Authority embedded only in the candidate or the agent that authored it |
+| Observation | Baseline/candidate events, logs, metrics, traces, profiles, domain probes, user feedback and declared gaps | Instrumentation implemented only by the candidate, especially for safety gates |
+| Safety and recovery | Policy, invariant monitors, known-good artifact/configuration, rollback/rehome, kill switch and trusted operator path | Code, credentials, storage or control endpoints replaced by the same change |
+
+No candidate may be its own sole builder, verifier, approver, deployer,
+observer, safety monitor or rollback mechanism. Independence is proportional to
+risk: a documentation-only local change may use automated policy and tests; a
+change to Aegis, deployment control, audit, telemetry, state migration or the
+recovery path requires a separately trusted control plane and normally human or
+multi-party approval. This is a software adaptation of runtime-assurance
+architecture: an advanced component may operate only while an independent
+monitor can keep the system inside a defined safe envelope and return control to
+a known-good path.
+
+#### Reflexive change lifecycle
+
+1. **Admit intent.** Create a Chronos task and room with desired outcome,
+   affected components, risk class, invariants, acceptance criteria, user-impact
+   hypothesis and accountable owner.
+2. **Activate roles.** The agent declares and records role/work-mode transitions
+   as it brainstorms, analyzes, architects, threat-models, prototypes,
+   implements, tests, packages, delivers, operates and reflects. A transition
+   never widens authority implicitly.
+3. **Isolate development.** Resolve the exact source revision into a bounded
+   worktree/sandbox; pin Dendrite SME/corpus digests, tools and dependencies;
+   keep secrets and production data out unless separately admitted.
+4. **Build evidence.** Produce reviewable diffs, deterministic tests, security
+   and compatibility results, an immutable artifact, SBOM/provenance, upgrade
+   and downgrade instructions, state-schema declarations and a recovery plan.
+5. **Review and authorize.** Independent checks bind the exact artifact digest,
+   target instances/incarnations, policy epoch, exposure, traffic cohort,
+   budgets, observation window, stop conditions and approvers. The authoring
+   agent cannot attest away a failed or missing gate.
+6. **Exercise safely.** Run in an isolated sandbox, then shadow/mirror production
+   inputs without external effects where lawful. Compare semantic outputs,
+   resource posture and invariants against a pinned baseline; redact and bound
+   copied data.
+7. **Canary and replace.** Admit a bounded cohort or one non-authoritative
+   instance, establish readiness, then use the owner's selected mechanism:
+   synchronized code change, drain/restart, rolling replacement or route switch.
+   Preserve single-writer/consensus, lease, fencing and authority-home laws.
+8. **Observe in flight.** The agent and humans attach/detach through the normal
+   TUI/CLI/headless contracts to inspect domain receipts, events, logs, metrics,
+   traces, profiles, user-visible probes and safety monitors. Candidate and
+   baseline populations, gaps, sampling and versions remain explicit.
+9. **Decide.** An independent policy/owner holds, expands, promotes or rolls
+   back. Thresholds are guardrails, not proof of correctness; human pause,
+   takeover and abort remain available. Outcome-unknown fences progression.
+10. **Settle and learn.** Reconcile in-flight effects and data, record the exact
+    deployed state, notify affected users, close or continue work, run a
+    retrospective, publish validated insight and create follow-up tasks.
+
+#### State, compatibility and rollback contract
+
+- A change declares wire/API, persistent-state, event, policy, telemetry and
+  relationship-schema compatibility plus the permitted mixed-version window.
+- Stateful replacement uses quiesce/drain, checkpoint or owner-native transfer;
+  in-flight operation identities, leases, cursors, acknowledgements and
+  uncertain effects remain attributable and fenced.
+- Prefer expand/migrate/contract and backward-readable formats. Destructive data
+  migration is a separately authorized effect with backup/restore evidence;
+  reverting code does not imply that data, messages or external effects rolled
+  back.
+- Federated rollout declares instance ordering, quorum/home/shard constraints,
+  protocol negotiation, revocation freshness and behavior under partition.
+  Mixed-version operation must be tested, bounded and visible.
+- A failed compatibility, readiness, invariant, safety-monitor, telemetry-health
+  or recovery-path check refuses promotion before traffic changes. A failed
+  rollback remains an incident with explicit residue, not a successful receipt.
+
+#### Per-component reflexive constraints
+
+| Target | Qualified replacement concern |
+| --- | --- |
+| Pantheon shell/Overview/Operations/Configuration | Preserve journey references and attachments; an external supervisor owns replacement. Current `pantheon manage` supports guarded local process re-exec after validation, not arbitrary live mutation or remote control |
+| Agora | Preserve room authority, actor attribution, ordering/revision semantics, memberships and cursors; a replacement cannot infer task state from conversation |
+| Chronos | Preserve admission, attempt identity, claims, lease expiry and fencing; old and new schedulers cannot both accept as current authority |
+| Moira | Version workflow definitions and state transitions; maintain saga/effect identity, compensation and uncertain-effect fencing across mixed versions |
+| Daimon | Preserve agent/session identity, checkpoint/tool/provider contracts, budgets and event sequence; changing the runtime cannot silently restart an effect or widen tools |
+| Dendrite/Tellus | Corpus content already promoted out of band may hot reload under Dendrite's current contract; authoring/promotion and server/runtime replacement remain separate guarded changes with pinned consultation digests |
+| Vellum | Protect dirty edits, revision witnesses, persistence receipts, collaboration state and coordinate/schema migrations before editor or service replacement |
+| Hermes | Preserve producer/event identity, retention, cursor, acknowledgement and schema compatibility; replay or relay changes cannot duplicate domain effects |
+| Aegis | Highest sensitivity: candidate policy/runtime cannot authorize its own installation, mint its own trust, erase prior decisions or replace the independent recovery root |
+| Keystone | Shared-mechanism changes require downstream conformance and mixed-version evidence because one defect can violate every sovereign peer's laws |
+
+Current qualification is intentionally narrower than this target. Pantheon has
+an embedding `restart_peer` primitive and a drain/replace `restart_topology`
+path; its local management protocol validates a new profile and process-reexecs
+while retaining stdio. Dendrite notices already-promoted corpus changes on disk.
+These are useful substrates, not proof of agent-driven build, promotion,
+canarying, state migration, fleet rollout or independent recovery.
+
+**Implementability gate:** reflexive development remains architectural direction,
+not an implementable product profile, until a versioned deployment profile names
+and qualifies four concrete owners: (1) source/build/package/provenance, (2)
+deployment/traffic/state-transfer, (3) observation/baseline/probes, and (4)
+safety/recovery/supervision/known-good state. For each owner the profile must name
+its sovereign service or external system, identity and trust domain, commands
+and receipts, persistence/recovery, authority checks, failure independence,
+headless attachment, uncertain-outcome behavior and operator. One component may
+implement multiple roles only when the risk profile demonstrates sufficient
+separation; the candidate and authoring agent can never own the independent
+observation or recovery root. A diagram, placeholder adapter, local script or
+unselected “deployment owner” cannot satisfy this gate.
+
+The deployment class includes a named accountable promotion principal, a
+sovereign promotion-decision record owner and a distinct executor. The recovery
+class includes a named recovery-policy administrator, a sovereign versioned
+recovery-policy/last-known-good record owner and a distinct applier. The profile
+must also state whether its separation is trusted-development convention or an
+OS-enforced isolated boundary; same-user processes cannot support hostile-write
+resistance claims.
+
+The options, precedents, tradeoffs and local-first recommendations for these
+owners—plus the P0 Participation Registry and custom Work-Mode Registry—are in
+the [reflexive ownership decision brief](reflexive-ownership-decision-brief.md).
 
 ### Analysis, graph inspection, and query capability model
 
@@ -376,6 +604,121 @@ Analysis should itself activate relevant SMEs: data semantics and quality,
 statistics, causal inference, privacy, security, humanism, cost, graph theory,
 observability and domain-specific expertise. The analysis record retains both
 the query/method lineage and the exact SME surfaces that shaped interpretation.
+
+### Productively adversarial stakeholder-SME review
+
+Every work item carries an explicit stakeholder-review policy; every material
+work product and consequential mode transition must be challengeable by an
+ensemble selected for the affected context. “Adversarial” means independently
+seeking disconfirming evidence, hidden assumptions, conflicts, failure modes,
+harms, exclusions and better alternatives. “Productive” means steelmanning the
+intent, citing evidence, stating uncertainty and offering tests, mitigations or a
+clearer decision—not maximizing objections, performing debate, blocking by
+default or attacking people.
+
+The ensemble is dynamic rather than a fixed committee. Each review starts with
+the work's purpose, mode, lifecycle state, affected populations, stakeholders,
+assets, decisions, effect boundary, reversibility and risk. Dendrite uses those
+context tags to route exact versioned SME surfaces, expose concern coverage and
+check whether the proposed lenses are actually orthogonal. Moira owns the
+bounded review plan: question, method, admitted cohort/persona lenses, evidence
+and claim kinds, independent reports, dissent, candidates, fuel/non-convergence,
+Pareto analysis where applicable and the retained resolution. Daimon may execute
+agent reviewers; Agora and Vellum carry human discussion and annotations; none
+of them turns review agreement into authority.
+
+The default concern roster is a prompt for contextual selection, not a claim
+that every item is required or sufficient:
+
+| Stakeholder/SME lens | Productive challenge |
+| --- | --- |
+| Requester, beneficiary and end user | Does this solve the actual need, under realistic conditions, with usable acceptance and remedy paths? |
+| Affected non-user, marginalized group and public-interest representative | Who bears cost, risk, exclusion, surveillance or reduced agency without receiving the benefit or choosing the system? |
+| Product, strategy and mission owner | Is the outcome coherent with objectives, alternatives, opportunity cost, commitments and measures of value? |
+| Domain practitioner and frontline operator | Are domain semantics, exceptional cases, tacit work, handoffs and operational realities represented accurately? |
+| Architecture, integration and data | Are boundaries, contracts, state, provenance, migrations, coupling, scale and federated failure behavior coherent? |
+| Security, privacy, abuse and safety | How could a malicious, compromised, mistaken or pressured actor misuse it; what data, rights and safe envelopes are at risk? |
+| Reliability, operations, support and observability | Can it be detected, diagnosed, controlled, supported, recovered and retired under partial failure and incomplete telemetry? |
+| Engineering, testing and maintainability | Is it implementable, reviewable, testable, compatible, debuggable and sustainable without hidden manual heroics? |
+| Accessibility, human factors and organizational behavior | Can people with varied abilities and contexts understand, control and challenge it; what incentives or cognitive traps does it create? |
+| Legal, policy, compliance and audit | Which obligations, jurisdictions, records, separation of duties, explanations and redress mechanisms apply? |
+| Finance, capacity, environmental and delivery | What are the lifecycle cost, resource, energy, schedule, dependency, vendor and opportunity-risk envelopes? |
+| External partner, supplier, regulator or assessor | Are interface, assurance, disclosure, portability, accountability and exit expectations credible across boundaries? |
+| Skeptic, red team and incident investigator | What observation would falsify the leading claim, what is the strongest counterexample, and how would failure appear after the fact? |
+
+Required ensemble behavior:
+
+1. **Contextual framing.** Moira frames the exact review question and
+   instantiates the selected Rune-owned method; Dendrite routes both stakeholder
+   and technical concerns from the current context. A generic “review this”
+   prompt is insufficient for consequential work.
+2. **Coverage before count.** The plan records required, present, missing,
+   unavailable, conflicted and intentionally excluded lenses with rationale.
+   Ten reviewers sharing one concern do not substitute for one missing affected-
+   stakeholder or safety lens.
+3. **Grounded independence.** Each report identifies human/agent principal,
+   stakeholder mandate or persona lens, model/profile where applicable, exact
+   grounding, evidence, assumptions and conflicts. Dendrite orthogonality is
+   evidence about concern separation, not proof of cognitive independence;
+   common models, prompts, data and organizational incentives remain visible.
+4. **Actual stakeholders over simulation.** An agent SME can anticipate questions
+   and expose omissions but cannot claim lived experience, consent, mandate or
+   representation. Materially affected people and accountable domain owners can
+   contribute, dispute the framing and request human review under disclosure and
+   accessibility protections.
+5. **Independent first pass.** Reviewers inspect the same pinned work/evidence
+   before seeing peer conclusions when feasible, reducing anchoring and
+   sycophancy. Later rounds may cross-examine claims, synthesize or request tests
+   without erasing the first-pass record.
+6. **Bidirectional challenge.** The ensemble must attack the proposed solution
+   and the status quo, compare plausible alternatives, identify what is already
+   strong and distinguish fatal flaws, bounded risks, preferences and open
+   questions.
+7. **Actionable findings.** A finding names affected stakeholder/invariant,
+   evidence, severity/likelihood or epistemic status, confidence, reproduction
+   or falsification method, proposed response and owner. Unsupported role-play,
+   duplicate objections and rhetoric are marked rather than vote-counted.
+8. **Dissent preservation.** Moira retains independent reports, rebuttals,
+   unresolved conflicts, dominated/non-dominated candidates and bounded non-
+   convergence. Consensus is not required; disagreement cannot be averaged into
+   confidence or silently summarized away.
+9. **Response and disposition.** The work owner responds to each material
+   finding as accepted, mitigated, tested, deferred, risk-accepted, disputed or
+   out of scope with evidence and accountable rationale. Reviewers may challenge
+   the disposition; they do not acquire decision or effect authority.
+10. **Risk-proportional gates.** Exploratory work may accumulate review for its
+    next promotion boundary. High-impact, irreversible, security/authority,
+    external-publication, production or affected-person decisions require the
+    selected ensemble before action. Material change invalidates or narrows old
+    review and reactivates the affected lenses.
+11. **Human-advocate escalation.** A reviewer acting under the declared human-
+    advocate lens may request human gating with evidence, affected people,
+    consequence and rationale. When the review method admits that request as a
+    supported, non-frivolous material finding, Moira pauses the decision and
+    emits a stable gate request. A named human sees the exact decision,
+    alternatives, evidence, dissent, uncertainty, reversibility and deadline,
+    then records go, no-go, revise or defer. The finding cannot be dismissed as
+    out of scope to evade presentation, but it does not grant the advocate veto
+    or effect authority. Final production rollout requires this named-human
+    presentation and explicit go/no-go unconditionally.
+12. **Observe outcomes.** The ensemble's claims and predicted risks link to
+    tests, canary probes, user feedback, incidents and outcome measures. A
+    retrospective scores neither reviewer popularity nor objection volume; it
+    asks which concerns were useful, missed, wrong or made obsolete by evidence.
+13. **Headless parity.** Versioned TUI/CLI/machine contracts can create or attach
+    to the same review, inspect framing/coverage/reports/dissent, submit an
+    authorized report or disposition, detach and later resume by cursor. Client
+    exit never resolves, approves, cancels or destroys the deliberation.
+
+The review artifact contains the pinned work revision, question/method, context
+and fold identities, intended/actual cohort, coverage/orthogonality result,
+independence limitations, reports and evidence, dissent, owner dispositions,
+unresolved risks, human-gate requests and presentation/response receipts,
+resolution kind, authority decision references, expiry/review trigger and
+outcome-follow-up. It remains review evidence—not acceptance,
+approval, authorization, proof or a peer-effect receipt. This composes Moira's
+current methodical-deliberation boundary and Dendrite's current fold/surface/
+lattice boundary rather than inventing a new universal reviewer authority.
 
 ### Headless, CLI, and attach/detach operating model
 
@@ -890,11 +1233,24 @@ references and link types, never copied peer state or bearer authority.
 | `analysis-source` | analysis owner | data/query owner | This exact source snapshot/frontier was selected by this analysis | Source inclusion does not establish quality, representativeness or causal relevance |
 | `analysis-result` | analysis owner | Vellum/decision/work owner | This retained result/claim informed this artifact, decision or admitted work | Query output is not an accepted conclusion or operational mutation |
 | `sme-consultation` | Daimon/Moira/analysis owner | Dendrite | This activity tag/fold selected and consulted this exact SME surface digest | Retrieval is not adoption, independent agreement, authority or proof |
+| `work-review` | work/artifact owner | Moira deliberation | This exact work revision was challenged under this method, stakeholder cohort, grounding and review interval | Review existence or reviewer agreement is not quality, acceptance, approval or authority |
+| `review-grounding` | Moira deliberation | Dendrite | This ensemble plan used these fold, surface, concern and orthogonality identities | Routed roles do not prove actual stakeholder representation, cognitive independence, complete coverage or truth |
+| `review-finding` | Moira deliberation | work/decision/risk owner | This attributed finding and its retained disposition concern this exact work/decision revision | Accepted, mitigated, deferred or disputed disposition is not proof that the concern is resolved |
+| `human-gate` | Moira deliberation/decision owner | named human gate principal | This exact decision revision was presented because policy or an admitted human-advocate finding required human adjudication | Gate request is not approval or veto; only the attributable current human response settles the gate |
 | `client-attachment` | presentation/client owner | peer resource/session owner | This identified client observed or controlled this exact target under this mode and cursor interval | Attachment is not ownership, attention, approval or continued authority after detach |
 | `presentation-handoff` | client owner | client owner | This stable target/cursor reference was offered for another client to attach | The reference is not a credential, grant, assignment or provider-session transfer |
 | `signal-correlation` | telemetry owner | peer operation/resource/event | This signal was emitted/observed with a declared correlation or exemplar reference | Correlation is not identity, causation, authority, completeness or effect proof |
 | `alert-incident` | alert owner | Chronos/Moira incident owner | This alert contributed to opening or updating this incident journey | Alert firing/resolution is not incident existence, diagnosis or recovery |
 | `slo-journey` | SLO owner | service/journey owner | This selected journey population contributes to this SLI/SLO window | SLO classification is not an individual journey's semantic result |
+| `role-participation` | participant/session owner | journey resource owner | This human or agent acted in this declared role under the identified delegation and interval | A role label is not identity, authority, approval, seniority or accountability transfer |
+| `work-mode-instance` | work-mode registry owner | semantic instance owner | This instance pins this admitted mode contract/version and projection profile | Registration does not make the registry/Pantheon semantic owner or grant permission to instantiate/transition/migrate |
+| `work-mode-migration` | instance owner | old/new mode registrations | This exact instance accepted this authorized version migration and receipt | Catalogue activation, aliasing or compatibility claims cannot reinterpret old state or prove owner effects reversed |
+| `change-candidate` | VCS/build owner | package/provenance owner | This exact source revision and build activity produced this immutable candidate | Authorship or a successful build is not review, authorization or fitness for deployment |
+| `candidate-deployment` | deployment owner | target component/instance owner | This candidate digest was admitted to this target/cohort under this rollout revision | Admission or placement is not readiness, promotion, semantic success or user acceptance |
+| `deployment-observation` | observation owner | deployment/cohort | This baseline/candidate signal population and probe window observed this deployment | A healthy signal is not effect proof, complete coverage or permission to expand rollout |
+| `deployment-decision` | promotion-decision record owner | deployment owner | This accountable principal requested this exact hold/expand/promote/rollback/abort under current observation and authority evidence | Observer evaluation, Aegis allow or record acceptance alone is not execution or semantic success |
+| `recovery-policy` | recovery-policy record owner | recovery executor/known-good artifact | This authorized policy revision designates these exact trust, compatibility, retention and last-known-good facts | Promotion, a healthy window or policy storage alone does not perform recovery or reverse data/effects |
+| `deployment-rollback` | deployment/recovery owner | prior deployment revision | This rollout invoked the declared recovery transition and recorded its residue | Code rollback is not data reversal, external-effect compensation or proof of recovery |
 | `journey-trace` | Pantheon | all | Content-free correlation for navigation and latency | Trace existence is not recovery evidence |
 
 Every link needs: versioned link type, source/target owner, opaque stable
@@ -928,6 +1284,22 @@ history.
 | OAuth [Rich Authorization Requests](https://www.rfc-editor.org/rfc/rfc9396.html) represents fine-grained authorization details and narrowing | Action previews should show the exact structured resource/action/bounds rather than a generic “Allow agent?” prompt |
 | NIST [AI RMF](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10) and its [Generative AI Profile](https://nvlpubs.nist.gov/nistpubs/AI/NIST.AI.600-1.pdf) separate governance, mapping, measurement, and management | Agent profiles require named purpose, risk, evaluation, monitoring, accountable owner, incident response, and decommissioning—not just model selection |
 | [OWASP Agentic AI Top 10 (2026)](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/) treats tool misuse, identity/privilege abuse, and cascading failures as distinct hazards | Default-deny tools, content/data boundaries, per-effect approval, least privilege, sandbox evidence, egress control, and kill/recovery paths are required |
+
+### Reflexive change and runtime-assurance laws
+
+| Foundation | Consequence for Pantheon |
+| --- | --- |
+| NASA's formalization of [Simplex runtime assurance](https://ntrs.nasa.gov/citations/20230017350) separates an advanced controller from a trusted monitor/controller that can preserve safety | Candidate agent/runtime code may operate only inside a declared envelope; an independently trusted monitor and known-good path retain the power to refuse, switch, stop and recover |
+| Erlang/OTP [release handling](https://www.erlang.org/doc/system/release_handling.html) distinguishes simple module loading from synchronized suspend/state-change/resume and full runtime restart | “Hot swap” is mechanism-specific. State-format, supervision, dependency or runtime changes require explicit upgrade/downgrade instructions, compatibility evidence and sometimes a drained restart rather than clever live mutation |
+| Kubernetes [rolling updates](https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/) gradually replace instances and expose progress, pause/resume and revision rollback | Replicated Pantheon components need bounded surge/unavailability, readiness and progress deadlines, cohort identity, rollout history and stop/rollback controls; rollout mechanics do not prove semantic compatibility |
+| [The Update Framework](https://theupdateframework.github.io/specification/latest/) uses separated signing roles, thresholds, versioned metadata and rollback/freeze/mix-and-match defenses | Candidate acquisition and promotion require immutable identity, delegated/threshold trust where appropriate, freshness/version checks and an independent root; online agent credentials cannot become the ultimate installation trust root |
+| NIST [SSDF SP 800-218](https://csrc.nist.gov/pubs/sp/800/218/final) groups secure development around preparation, software protection, well-secured production and vulnerability response | Reflexive development must protect source/build/release integrity, record provenance, test security requirements, handle residual vulnerabilities and feed incident learning back into the development lifecycle |
+| SLSA [provenance](https://slsa.dev/spec/v1.2/provenance) describes verifiable information about where, when and how an artifact was produced | Every deployable candidate binds source, builder, invocation, materials and subjects to an immutable digest; provenance is evidence for policy, not self-authorization or proof of correct behavior |
+
+Derived invariant: the system under change cannot be the sole authority for the
+change, the sole observer of its consequences, or the sole means of recovery.
+Recursive improvement is permitted only while that independent control loop
+remains reachable, current and outside the candidate's failure domain.
 
 ### Epistemic and provenance laws
 
@@ -1030,6 +1402,8 @@ following universal requirements:
 | Surface navigation, focus routing, command palette, help, timeline | Qualified | One keyboard model; component-local keys act only when focused |
 | Aggregate health/freshness and guarded control discovery | Qualified | Configured is visually distinct from observed/current |
 | Typed cross-peer links and journey view | Required | Deep-link without copying domain state; broken/stale links remain inspectable |
+| Persisted role activation and projection | Required, P0 | Select owner; retain versioned human/agent activation and transition history; project identical current/prior role, scope, delegation, budget, grounding, accountability, policy and expiry semantics across UI/TUI/headless without granting authority |
+| Custom work-mode registry and lifecycle | Required, P1 | Select bounded registry owner; declaratively register/version/activate/migrate/deprecate/retire/tombstone modes through J34; exact-version instances preserve sovereign semantic ownership and no executable extension or authority enters through registration |
 | Global bounded search | Required | Search owner-provided indexes/results; show source, revision, completeness, and gaps |
 | Analysis/query/graph workbench | Required | Compose owner-native catalogues and query profiles; preview plan/authority/cost, bound execution, preserve typed results and lineage |
 | Event/log/metric inquiry | Required | Owner-native catalog/query/follow, signal pivots, dashboards/SLOs/alerts, cursors, gaps/sampling/cardinality and headless attach/detach |
@@ -1205,6 +1579,7 @@ following universal requirements:
 | Agent participation/session/event inspection | Peer-qualified, Pantheon absent | Compose as the central aggregate agent journey rather than duplicating Daimon state |
 | Agent prompt/permission/cancel/reattach confirmations | Peer-qualified, Pantheon absent | Owner-native confirmation views; command scoped and exact-revision bound |
 | Deliberation inspection | Peer-qualified, Pantheon absent | Show claims/evidence/dissent/frontier/resolution and grounding identities |
+| Stakeholder-ensemble review | Peer-qualified foundations; composition required | Frame exact question/method/cohort; admit independently attributed reports; preserve evidence, dissent, coverage, non-convergence, disposition and resolution without vote-to-truth or vote-to-authority |
 | Visual saga graph/timeline | Required | Separate step state, effect knowledge, peer receipt, and operator action |
 | Workflow templates and version migration | Required | Versioned authored definitions, compatibility/refusal, dry-run, migration evidence |
 | Timer/signal/compensation catalogue | Required | Closed types and exact idempotency/authority/recovery rules per handler |
@@ -1319,6 +1694,7 @@ following universal requirements:
 | Bounded observation/provenance health | Qualified | Observation-only in Pantheon; no mutation inference |
 | Dendrite structural/expertise query vocabulary | Peer-qualified; Pantheon composition required | `query_dependencies`, `resolve_ref`, `read_ref`, `describe`, `describe_element`, `query_orthogonality`, `query_fold`, `list_fold_rules`, `query_surface`, and `reconcile_observations` retain exact load/corpus identities and named failures |
 | Ambient/activated/reference SME surfaces | Peer-qualified; Pantheon composition required | Context-budgeted retrieval, fold provenance, stable entry identity, influence evidence and visible unavailable/unmatched routing |
+| Stakeholder concern routing and ensemble coverage | Peer-qualified foundations; composition required | Context-to-role fold, exact surface digests, concern roster, pairwise orthogonality, missing/conflicted lens evidence and material-change rerouting without claiming representativeness or independence |
 | Cross-corpus narrative search | Known Dendrite gap | Keep `search_narrative` visibly unavailable until structured citation indexing supplies real answer content; no model-fabricated substitute |
 | Source/surface/fold detail disclosure | Required | Explicit authorization, size bounds, source revision, extent, freshness, completeness |
 | Claim-to-evidence map | Required | Each material claim links to supporting/contradicting extents; unsupported remains visible |
@@ -2052,6 +2428,263 @@ Necessary aggregate UI:
    from evidence, and verifies that operators can complete representative TUI
    and headless investigations within declared time and access constraints.
 
+### J30. Let an agent improve Pantheon and observe the change in flight
+
+Status: architectural target; not implementation-ready until the four owner
+classes in the reflexive-development implementability gate are selected and
+qualified for the deployment profile.
+
+Prerequisite gate: the profile resolves the exact build, deployment,
+observation and recovery owners and verifies their current identities,
+authority, compatibility, readiness and failure independence. Missing,
+placeholder, stale or candidate-controlled ownership refuses the journey before
+source mutation.
+
+1. A human or authorized automation admits a Pantheon improvement with an
+   accountable owner, affected users/components, invariants, risk class,
+   acceptance criteria, maximum exposure and explicit rollback conditions.
+2. A Daimon agent attaches to the task room, declares an engineering role, and
+   uses an isolated source worktree. It may transition through ideation,
+   architecture, security, prototyping and testing; each transition records its
+   objective and re-evaluated delegation without widening authority implicitly.
+3. Dendrite routes a context-specific, concern-covered stakeholder-SME cohort;
+   Moira frames productively adversarial reviews at intent, design and
+   promotion boundaries. Independent reports challenge user value, affected
+   parties, architecture, security/privacy, engineering, operations,
+   observability, support, accessibility, cost and recovery as applicable.
+   Missing lenses, grounding digests, evidence, dissent and dispositions remain
+   visible; neither agreement nor review count authorizes the change.
+4. The agent produces source changes, tests, compatibility/migration analysis,
+   threat model, rollout plan and recovery plan. The qualified build owner creates
+   an immutable candidate with dependency inventory and provenance.
+5. Independent gates bind that digest to the exact target/cohort and policy
+   epoch. Material ensemble findings have explicit owner dispositions and
+   unresolved risks accompany the decision. The authoring agent may address
+   findings but cannot approve its own deployment, change Aegis to authorize it,
+   or weaken a failed test/monitor.
+6. The qualified deployment owner exercises the candidate in sandbox and effect-free
+   shadow operation, then admits a bounded canary. For a local single-instance
+   component this may require a drained process replacement; for a replicated
+   component it may be a rolling instance or route change. The qualified
+   deployment owner, not Pantheon presentation, defines the mechanism.
+7. Humans and the agent attach through Agora plus TUI/CLI/headless observation
+   to compare baseline and canary domain probes, events, logs, metrics, traces,
+   resource use and user feedback supplied through the qualified observation
+   owner. Independent safety and telemetry paths remain available if the
+   candidate crashes or lies.
+8. The qualified observer submits evidence but cannot decide. Intermediate
+   hold, abort, rollback or bounded exposure reduction may follow a separately
+   qualified policy, but final promotion to the authoritative/default production
+   population is always presented to a named human rollout principal for an
+   explicit go/no-go. Any admitted human-advocate gate request also pauses its
+   exact material decision for named-human adjudication. Aegis authorizes the
+   current human principal and transition; the qualified decision-record owner
+   persists presentation and response; and the deployment owner executes it.
+   The recovery-policy owner separately controls last-known-good designation.
+   Silence, timeout, stale response, outcome-unknown, lost authority,
+   observation gaps or failed recovery readiness cannot produce promotion.
+9. The journey settles exact code/configuration and residual state/effects,
+   records user communication, and enters retrospective/insight mode. Validated
+   lessons update tests, runbooks, SMEs or new work rather than rewriting the
+   evidence that supported the original decision.
+
+### J31. Hand one journey across human and agent roles
+
+1. A human requester frames an ambiguous opportunity in a room. An ideation
+   agent creates alternatives, an analyst agent tests available evidence, and a
+   human stakeholder challenges assumptions; all contributions retain author
+   type and role.
+2. The same agent session may propose a strategy and architecture, but role
+   transitions are visible and do not convert a proposal into a decision. A
+   human or separately authorized decision owner selects the direction.
+3. Engineering and test agents implement and evaluate the selected scope while
+   humans attach, steer, pause, edit, review or take over. Headless automation
+   sees the same owner states and receipts as interactive clients.
+4. A release agent assembles the package and requests deployment; separation of
+   duties selects a different approver/operator where policy requires it.
+5. During operations, an incident agent diagnoses within its runbook and hands
+   control to a human before an out-of-bounds action. After recovery, human and
+   agent participants conduct a shared retrospective and turn supported findings
+   into improvements.
+6. The journey view shows continuous intent/evidence across roles without
+   merging identities, inventing human approval, or treating an agent's earlier
+   authority as valid for its later role.
+
+### J32. Abort or recover a failed reflexive rollout
+
+1. A canary violates an invariant, user-visible probe, security boundary,
+   compatibility promise or resource bound. An independent monitor stops new
+   exposure and records the exact candidate, cohort, trigger and evidence.
+2. The qualified deployment owner drains or fences the candidate. A named
+   recovery-policy administrator obtains exact Aegis authorization; the
+   recovery-policy owner persists the selected current manifest/last-known-good
+   revision; and the qualified recovery executor applies it and receipts the
+   transition. Stale candidate instances, leases and controllers cannot resume
+   or publish as current.
+3. Code/configuration rollback, state restoration, message/effect
+   reconciliation and user remediation are tracked separately. Irreversible
+   external effects receive compensation or explicit residue; they are never
+   described as undone merely because old code is running.
+4. If rollback or observation is uncertain, the journey becomes an incident,
+   preserves both conflicting evidence and limits further automation. A human
+   can use the independent operator path even if Pantheon presentation or the
+   changed component is unavailable.
+5. Recovery is declared only after owner-native invariants and user-visible
+   probes pass and topology/state are reconciled. The agent can analyze the
+   failure and propose a repair, but cannot erase the failed candidate's audit
+   history or self-approve a second attempt.
+
+### J33. Review any work mode through a stakeholder-SME ensemble
+
+1. A material work product or transition requests review with its exact
+   revision, purpose, current/custom work mode, decision/effect boundary,
+   affected populations, stakeholder map, constraints, evidence, uncertainty,
+   reversibility and risk.
+2. Moira admits a bounded plan under the applicable Rune-owned review method and
+   claim/evidence/dissent schema. Dendrite folds the context into exact
+   stakeholder and technical SME surfaces, reports concern coverage and tests
+   proposed lenses for pairwise orthogonality. The owner sees missing,
+   unavailable, conflicted and excluded concerns before execution.
+3. Human stakeholders and independently admitted agent reviewers receive only
+   authorized material. Each performs a pinned first pass under an attributed
+   mandate/persona lens before cross-review where feasible. Agent-modeled
+   stakeholder perspectives and agent-produced technical expertise are labeled
+   separately; neither can claim lived experience, consent or mandate.
+4. The ensemble steelmans the goal, challenges the proposed work and status quo,
+   seeks disconfirming evidence, compares alternatives, identifies strengths and
+   failure modes, and proposes tests or mitigations. Unsupported assertions,
+   correlated agreement and duplicate objections remain visible.
+5. Moira retains each report, evidence, rebuttal, dissent, candidate and bounded
+   non-convergence. Pareto analysis may remove dominated alternatives but cannot
+   select a result; vote count and model agreement cannot establish truth,
+   stakeholder acceptance, risk acceptance or authority.
+6. The accountable work owner dispositions material findings as accepted,
+   mitigated, tested, deferred, risk-accepted, disputed or out of scope, with
+   rationale, owner and follow-up. Required policy/approval is evaluated
+   separately by Aegis and the semantic owner.
+7. A supported, non-frivolous finding from the declared human-advocate lens may
+   request human gating for the exact material decision. Moira retains the gate
+   request and pauses progression until a named human receives the decision,
+   alternatives, evidence, dissent, uncertainty and consequences and records
+   go, no-go, revise or defer under current authority. The advocate does not
+   acquire veto/effect authority, but the owner cannot evade presentation by
+   marking the request out of scope or substituting an agent response.
+8. A material change to purpose, scope, evidence, affected population, risk,
+   architecture or deployment invalidates the affected portion of review and
+   triggers a new routed cohort. Otherwise review may be reused by exact digest
+   and declared applicability rather than repeated performatively.
+9. Tests, rollout observations, user feedback and incidents link back to the
+   ensemble's predictions. Retrospection evaluates concern utility and blind
+   spots, updates work or Dendrite corpus through its governed lifecycle, and
+   never rewards objection volume or retrospective certainty.
+
+### J34. Register, evolve, deprecate and retire a custom work mode
+
+1. An authorized mode author proposes a stable namespace/name and semantic
+   owner plus a versioned declarative contract: purpose, roles, inputs, outputs,
+   lifecycle/transitions, invariants, evidence and uncertainty terms,
+   authority/effect boundaries, review triggers, recovery, retention/disclosure,
+   accessibility and interactive/headless projections. The registration payload
+   contains no executable plugin, bearer authority or hidden network route.
+2. Pantheon validates bounded encoding, identifier ownership, referential
+   integrity, closed transition/outcome shapes, schema compatibility, projection
+   completeness and resource limits. Aegis and each referenced owner evaluate
+   who may register, instantiate, transition, migrate, deprecate or retire the
+   mode; registration itself grants none of those actions.
+3. Dendrite routes registry, domain, security, human-factors, operations and
+   affected-stakeholder lenses; Moira retains the productively adversarial review
+   of semantics, missing states, unsafe transitions, evidence nonclaims and
+   lifecycle consequences. Material findings require owner disposition before
+   admission, but review agreement is not authority.
+4. The selected registry owner admits the exact digest and returns an immutable
+   registration/version receipt. Pantheon catalogues the mode and generates or
+   binds its navigation, forms, status vocabulary, action previews and versioned
+   TUI/CLI/machine projections without becoming semantic owner.
+5. Authorized humans and agents instantiate the same version under explicit
+   roles and delegations. Each instance pins the registration digest; unknown or
+   unavailable versions refuse rather than falling back to a similarly named
+   mode. Owner-native state and receipts remain authoritative.
+6. A compatible revision is proposed and reviewed with a machine-checkable
+   compatibility declaration. Existing pinned instances continue unchanged;
+   new instances use the new version only after activation. Optional migration
+   is explicit, revision-bound, dry-run where possible, separately authorized
+   and durably receipted.
+7. A breaking revision receives a new major identity and may run side by side.
+   No registry alias reinterprets old instances, transitions, evidence or links.
+   Federated sites negotiate supported versions and expose partial availability
+   instead of silently downgrading.
+8. Deprecation blocks or warns on new instantiation according to policy while
+   preserving discovery, observation, completion/recovery and export for pinned
+   instances. Owners receive a migration/retirement horizon; exceptions are
+   explicit and time-bounded.
+9. Retirement occurs only after the selected disposition for every retained
+   instance—completed, migrated, cancelled, archived, exported or explicitly
+   stranded with accountable residue. Tombstone metadata preserves identity,
+   schema, provenance, audit interpretation and broken-link explanation; it
+   carries no executable code or reusable authority.
+10. Rollback of catalogue activation may stop new use of a bad revision but
+    cannot erase its receipt, reinterpret instances already created, reverse
+    owner effects or resurrect a retired version without a new authorized
+    lifecycle decision.
+
+### J35. Run a monthly or quarterly executive business review
+
+1. An authorized owner instantiates the exact `BusinessReviewV1` definition for
+   a bounded period, scope, evidence cutoff and named Executive Sponsor. Monthly
+   cadence emphasizes operating exceptions; quarterly cadence additionally
+   reconsiders strategy, investment, scenarios and continuation.
+2. Owner-native projections supply objectives, outcomes, financial and operating
+   evidence, customer/stakeholder impact, commitments, dependencies, incidents,
+   risks and explicit gaps. The review retains source, revision, population,
+   freshness and uncertainty rather than copying a parallel status truth.
+3. Daimon may prepare analysis and narrative; Dendrite routes business, domain,
+   human-impact, financial, security, operational and public-interest lenses;
+   Moira retains independent reports, dissent and human-gate requests. Agent
+   authorship remains visible and cannot impersonate the Executive Sponsor.
+4. Pantheon presents an executive decision instrument: material changes,
+   expected-versus-observed outcomes, intervention points, unresolved dissent,
+   risks/opportunities and a bounded decision agenda. Red, unknown, no-go and
+   stop-this-work are normal outcomes, not presentation failures.
+5. Each decision packet pins alternatives, recommendation, evidence,
+   uncertainty, affected people, financial/operational consequences,
+   reversibility and deadline. The named authorized human records go, no-go,
+   revise or defer; any admitted human-advocate gate is resolved separately.
+6. Accepted next-period commitments create owner-native work and funding/effect
+   requests through explicit commands and receipts. Publishing the review does
+   not itself admit a task, move money, authorize an effect or prove an outcome.
+7. The next review links observed outcomes and changed assumptions to the prior
+   decisions without rewriting their evidence or treating sponsor confidence as
+   metric truth.
+
+### J36. Propose, sponsor and govern a project through fresh stage decisions
+
+1. A proposal owner instantiates `ProjectProposalV1` with a named Executive
+   Sponsor, problem/opportunity evidence, affected stakeholders, intended
+   outcomes, baseline, success/failure/stop criteria and decision horizon.
+2. The proposal compares status quo, minimum intervention, recommendation and
+   credible alternatives across value, lifecycle cost, capacity, risk,
+   reversibility and time. Scope, non-goals, architecture, dependencies and
+   semantic owners remain explicit.
+3. Dendrite and Moira run the selected stakeholder-SME ensemble. Human-advocate
+   findings can require named-human adjudication; dissent, missing evidence and
+   unresolved risks accompany the proposal rather than disappearing into an
+   executive summary.
+4. The Executive Sponsor makes a revision-bound funding/sponsorship decision
+   with exposure ceiling, conditions, delegated authority, evidence required at
+   the next gate and an explicit go, no-go, revise or defer response. Sponsorship
+   creates no peer effect by itself.
+5. Discovery, build and pilot proceed only through their owner-native work and
+   authority contracts. Each stage publishes actual evidence and receives a
+   fresh decision; initial sponsorship is never replayed as technical acceptance
+   or rollout approval.
+6. Final production rollout is always presented to a named human for an explicit
+   go/no-go under the exact current proposal, candidate, observation, affected
+   population and recovery posture. Silence, timeout, prior funding or automated
+   policy cannot promote.
+7. Benefits-realization review compares observed outcomes with the promised
+   baseline and costs, then explicitly continues, revises, stops or closes the
+   project. Closing work does not erase residual effects, dissent or remediation.
+
 ## Necessary cross-cutting functionality
 
 ### Discovery and navigation
@@ -2073,6 +2706,15 @@ Necessary aggregate UI:
   corresponding semantic command.
 - Task-linked rooms, addressed human/agent messages, explicit prompt admission,
   review annotations, and handoff receipts.
+- Review inboxes expose requested lens/mandate, pinned target, due/risk context,
+  missing coverage, independent first-pass state, material findings, owner
+  disposition and re-review triggers without leaking another reviewer's private
+  draft or turning acknowledgement into agreement.
+- Human-gate items are visually distinct from ordinary review: they show why
+  presentation is required, the exact decision revision and alternatives,
+  affected people, evidence/dissent, consequence, reversibility, authority and
+  deadline. Headless clients may prepare or observe them but cannot manufacture
+  the named human's response.
 
 ### Control safety
 
@@ -2085,6 +2727,9 @@ Necessary aggregate UI:
 - No generic retry button for uncertain effects; display supported recovery only.
 - Blast-radius preview for batch, revocation, compaction, cancellation,
   compensation, and restart actions.
+- Final production rollout never offers an automation-only confirm path. It
+  requires a fresh named-human presentation and explicit go/no-go; other admitted
+  human-advocate gates use the same non-bypassable presentation contract.
 
 ### Provenance and audit
 
@@ -2162,6 +2807,9 @@ Necessary aggregate UI:
 | SQL/GQL/SPARQL/Jupyter/Arrow | Standard query/data models, computational narratives and typed analytical interchange | Pantheon negotiates exact profiles and preserves source snapshots, bounds, lineage and authority; it does not invent one universal schema |
 | tmux/Jupyter sessions | Persistent server-side sessions/computation with multiple later clients and separate attach/detach/interrupt/delete actions | Pantheon generalizes the lifecycle pattern across sovereign owners with fresh authorization, revision/cursor recovery, receipts and uncertainty |
 | Dendrite/Rune SME surfaces and folding | Versioned ambient/activated/reference expertise, deterministic context-to-role routing, orthogonality and corpus provenance | Pantheon/Daimon/Moira own timely consultation and influence evidence; Dendrite advice does not become workflow, effect or decision authority |
+| Erlang/OTP releases and Kubernetes Deployments | Explicit upgrade/downgrade instructions, synchronized state change or restart; rolling replacement, readiness, progress, pause and rollback | Pantheon selects and qualifies a mechanism per component/state topology; “hot” cannot conceal incompatible state, mixed-version risk, uncertain effects or failed recovery |
+| Simplex runtime assurance | Advanced behavior is bounded by a separately trusted monitor/controller and recoverable safe path | The agent and candidate cannot replace or authorize the safety envelope observing them; autonomy expands only inside verified limits |
+| TUF and SLSA | Separated/threshold update trust, freshness and rollback defenses; immutable build provenance | Provenance and signatures inform admission but do not prove behavior; keep ultimate trust and known-good recovery outside online agent credentials |
 | SPIFFE/SPIRE | Short-lived workload identity, explicit trust domains and directional federation relationships | Authentication establishes peer identity; Aegis and each owner still decide resource/action authority and disclosure |
 | Raft/SWIM/CRDT research | Consensus ordering, scalable membership/suspicion, and formally convergent replicated data types | Select the mechanism per logical authority; membership is not leadership and eventual delivery does not make arbitrary state mergeable |
 | Zanzibar/Macaroons/OAuth RAR | Relationship/context authorization, attenuation, structured fine-grained requests | Aegis grants remain opaque and owner decisions are revalidated; UI confirmation is not authority |
@@ -2173,12 +2821,18 @@ Necessary aggregate UI:
 ### P0 — preserve truth and expose relationships
 
 1. Define the typed relationship projection and stable journey reference.
-2. Add owner/freshness/revision/uncertainty labels everywhere aggregate status is shown.
-3. Compose Moira's peer-qualified agent participation, session, event, prompt,
+2. Select the persistence owner and implement the versioned role-activation and
+   transition contract: human/agent principal type, role, work mode, objective,
+   model/tool profile, resource/action scope, delegation, budgets, grounding,
+   accountable owner, policy epoch, start/expiry, rationale and prior activation.
+   Project it consistently in UI, TUI and headless views/actions; role display
+   never grants authority and historical activations remain auditable.
+3. Add owner/freshness/revision/uncertainty labels everywhere aggregate status is shown.
+4. Compose Moira's peer-qualified agent participation, session, event, prompt,
    permission, cancellation, reattach, and deliberation surfaces.
-4. Build the unified attention view as references, not copied semantic state.
-5. Provide owner-native “next safe action” and action preview contracts.
-6. Define the lifetime taxonomy and machine contracts for attach, detach,
+5. Build the unified attention view as references, not copied semantic state.
+6. Provide owner-native “next safe action” and action preview contracts.
+7. Define the lifetime taxonomy and machine contracts for attach, detach,
    disconnect, reattach, provider/kernel reattach, cancel, close and shutdown.
 
 ### P1 — close the cornerstone journey
@@ -2192,6 +2846,9 @@ Necessary aggregate UI:
 6. Add authorized existing-resource/session catalogues, dynamic TUI/CLI attach,
    clean presentation detach, cursor continuation and CLI↔TUI handoff without
    creating, cancelling or draining owner work.
+7. Select a bounded work-mode registry owner and qualify J34's register,
+   activate, version, migrate, deprecate, retire and tombstone lifecycle with
+   human-agent and UI/TUI/headless parity before custom modes are advertised.
 
 ### P2 — operational and epistemic depth
 
@@ -2210,6 +2867,12 @@ Necessary aggregate UI:
 9. Add event/log/metric/trace catalogues, query/live-follow, signal pivots,
    dashboards, SLO/alert inspection, telemetry-pipeline health and saved
    investigation artifacts with TUI/headless parity.
+10. Compose Moira methodical deliberation with Dendrite fold/surface/lattice
+    evidence into a productively adversarial stakeholder-SME review: contextual
+    cohort planning, independent reports, coverage/orthogonality, dissent,
+    finding disposition, human-advocate gate requests, named-human presentation/
+    response, review invalidation and outcome feedback with headless parity that
+    cannot synthesize the human decision.
 
 ### P3 — product profiles
 
@@ -2220,6 +2883,12 @@ Necessary aggregate UI:
 5. Selected VCS/worktree/PR owner rather than ambient Git in Pantheon.
 6. Nominal operations and incident-observability profiles with explicit signal,
    alert, incident, recovery and retrospective boundaries.
+7. After the build, deployment, observation and recovery owners pass the
+   implementability gate, qualify a reflexive-development profile: isolated
+   worktree, role transitions, reproducible candidate/provenance, independent
+   review, sandbox/shadow/canary, guarded component replacement, attachable live
+   comparison, rollback and retrospective. Begin with low-risk local changes;
+   qualify stateful and authority/control-plane targets separately.
 
 ### P4 — federated deployment profiles
 
@@ -2238,6 +2907,9 @@ Necessary aggregate UI:
 7. Run cross-host, cross-site and cross-trust-domain fault campaigns covering
    lost replies, partitions, stale routes, split-brain attempts, clock skew,
    version skew, revocation delay, replica gaps and capacity exhaustion.
+8. Qualify reflexive rolling upgrades across federation: mixed-version windows,
+   cohort/route identity, quorum and home constraints, independent observation,
+   trust-root freshness, rollback ordering and site-loss recovery.
 
 ### P5 — broader deployment and ecosystem profiles
 
@@ -2321,6 +2993,49 @@ Every aggregate journey should include at least these scenarios:
 68. **Alert/incident distinction:** alert firing can request incident admission and resolution can update evidence, but neither automatically opens/closes the incident or proves impact/recovery.
 69. **Missing-data honesty:** absent logs, traces or series and zero values remain distinct; incomplete federated sources cannot produce a falsely complete green view.
 70. **Recovery verification:** an incident requires owner-native and user-visible verification; improved telemetry alone cannot settle uncertain effects or declare recovery.
+71. **Role parity without impersonation:** human and agent participants can perform the selected work mode through equivalent owner contracts while identity, authorship, delegation and accountable owner remain distinct.
+72. **No authority by role change:** an agent switching from analyst to engineer, operator or reviewer receives no new capability until current policy admits the new bounded delegation.
+73. **No self-approval:** an agent-authored candidate cannot satisfy its own independent review, risk acceptance, deployment authorization or exception gate.
+74. **Isolated reflexive work:** changing Pantheon occurs in a pinned worktree/sandbox; production source, state, credentials and data cannot leak in or be mutated outside admitted scope.
+75. **Reproducible candidate:** the exact source, builder, dependencies, invocation, tests and immutable output digest are retained; a mutable branch/tag/path cannot be deployed as identity.
+76. **Compatibility refusal:** absent or failed wire/state/event/policy/telemetry compatibility and downgrade evidence stops rollout before the affected traffic/state boundary.
+77. **Effect-free shadow:** mirrored inputs cannot issue real external effects or expose disallowed production data; shadow differences retain baseline/candidate versions and coverage.
+78. **Bounded canary:** exact cohort, exposure, duration, budgets, stop conditions and baseline are visible; cohort expansion is a new authorized transition, not automatic proof from quiet telemetry.
+79. **Guarded hot replacement:** selected code-upgrade, drain/restart, rolling or route-switch mechanism preserves owner invariants and reports exact old/new version, state transfer and residue.
+80. **In-flight continuity:** retained operations, sessions, leases, cursors and uncertain effects survive or reconcile under their owners; the replacement cannot silently duplicate, abandon or relabel them.
+81. **Independent observation:** safety gates include a signal/probe path outside the candidate; candidate loss, spoofing or instrumentation regression cannot produce a false healthy promotion.
+82. **Human intervention:** an authorized human can inspect, pause, abort, take over and invoke recovery through a path that does not depend on the candidate agent/component.
+83. **Rollback honesty:** restoration separately reports code/configuration, durable state, messages, external effects and user impact; partial or uncertain recovery remains an incident.
+84. **Trust-root protection:** changes to Aegis, deployment, audit, telemetry, supervisor or rollback paths cannot replace the independent authority/monitor/recovery root in the same unreviewed rollout.
+85. **Reflexive learning:** a failed or successful rollout produces attributable retrospective evidence and proposed improvements without editing prior decisions, suppressing dissent or self-authorizing the next attempt.
+86. **Open work-mode parity:** a newly registered/custom mode supplies the semantic contract and can be performed by a human or agent without being coerced into one of the illustrative modes or losing owner semantics.
+87. **Contextual ensemble routing:** the same work under changed purpose, affected population, risk or lifecycle state produces a review plan reflecting the new context and exact Dendrite fold/surface identities.
+88. **Coverage before multiplicity:** many same-concern reviewers cannot satisfy a missing required stakeholder/safety concern; missing, excluded and unavailable lenses remain explicit.
+89. **Correlated reviewers:** shared model, provider, prompt, grounding, evidence or organization is disclosed and agreement is not counted as independent corroboration.
+90. **Stakeholder non-impersonation:** an agent lens cannot claim lived experience, consent, mandate or acceptance for an affected person/group; authorized real stakeholders can challenge the framing and findings.
+91. **Independent first pass:** where policy selects it, one reviewer cannot anchor another before initial report commitment; later cross-examination preserves original and revised positions.
+92. **Productive dissent:** reviews retain strengths, counterevidence, alternatives, tests and mitigations alongside objections; non-convergence or disagreement cannot be flattened into consensus or automatic refusal.
+93. **Finding disposition:** every material finding has an attributable status, rationale, owner and follow-up; review agreement or an accepted disposition cannot substitute for approval, authority or effect evidence.
+94. **Material-change invalidation:** changes to pinned work, assumptions, evidence, affected stakeholders, risk or effect boundary invalidate the relevant review scope and refuse stale review reuse.
+95. **Outcome feedback:** observed outcomes link to prior review predictions and update utility/coverage evidence without rewriting reports, grading dissent by popularity or automatically mutating Dendrite doctrine.
+96. **Role-activation recovery:** after process/client restart, the exact current and prior human/agent role activations reopen with principal type, scope, delegation, budgets, grounding, policy epoch, rationale and expiry; no role or authority is reconstructed from display state.
+97. **Role-projection parity:** UI, TUI and headless clients show and transition the same persisted activation revision and owner outcomes; a stale client cannot overwrite a newer role transition.
+98. **Declarative mode registration:** executable content, bearer material, hidden routes, unbounded schema or an unauthorized namespace is refused before registry mutation; successful registration grants no instance/effect authority.
+99. **Exact mode resolution:** an instance pins one admitted mode version/digest; unknown, retired, ambiguous or unavailable versions refuse without nearest-name fallback or silent downgrade.
+100. **Compatible mode upgrade:** activating a compatible revision affects only declared new use; existing instances remain pinned and semantically unchanged unless an explicit authorized migration succeeds.
+101. **Breaking mode revision:** an incompatible contract uses a distinct major identity and can coexist; old transitions, evidence, projections and links are never decoded under the new meaning.
+102. **Mode migration uncertainty:** a lost migration reply recovers the owner receipt by stable identity; unknown outcome fences retry and neither registry version is presented as the instance's settled truth.
+103. **Mode deprecation:** policy can block new instances while existing pinned work remains observable and can complete, recover, migrate or export under an explicit horizon.
+104. **Mode retirement and tombstone:** retirement accounts for every retained instance and preserves non-executable identity/schema/provenance needed for audit and broken links without retaining authority or permitting new use.
+105. **Catalogue rollback honesty:** disabling a bad mode revision stops selected future use but does not erase registration, reinterpret or delete created instances, reverse owner effects or resurrect an older contract implicitly.
+106. **Reflexive owner gate:** J30 refuses before source mutation unless qualified build, deployment, observation and recovery owners are all resolved, ready, authorized and sufficiently independent of the candidate/authoring agent.
+107. **Promotion separation:** observer evidence, accountable-principal request, Aegis authorization, accepted promotion-decision record and steward execution retain separate identities/receipts; none can synthesize another or promote alone.
+108. **Recovery-policy separation:** changing the recovery manifest or last-known-good designation requires the named administrator, exact authorization and versioned policy receipt; the rescue executor cannot author policy and promotion cannot designate itself known-good.
+109. **Assurance-label honesty:** a same-user trusted-development profile describes SQLite history, unwritable paths and process separation as application/convention safeguards only; hostile-write resistance is claimed only after OS-enforced identity/filesystem/credential/process boundaries are qualified.
+110. **Build-platform eligibility:** candidate production refuses without an unexpired record of exact repository visibility, service plan, attestation availability/privacy, trusted workflow identity, runner, registry and verifier profile; an ineligible private/internal GitHub plan follows the qualified alternative rather than omitting provenance.
+111. **Final rollout human go/no-go:** promotion to the authoritative/default production population refuses without an exact presentation receipt and explicit current response from a named human principal; silence, timeout, observer pass, ensemble agreement, policy default or agent response cannot promote.
+112. **Human-advocate gate:** a supported, non-frivolous human-advocate finding pauses the exact material decision for named-human presentation; the owner cannot bypass it through `out_of_scope`, relabeling or automatic disposition, and the advocate gains no veto/effect authority.
+113. **Changed human-gated decision:** a changed candidate, scope, evidence, affected population, consequence or decision revision invalidates the prior response and requires a fresh presentation rather than replaying consent.
 
 ## Metrics that do not corrupt semantics
 
@@ -2349,6 +3064,14 @@ authorization evidence:
 - SME route/consult/reference depth, context and corpus budget, unmatched tags,
   coverage/orthogonality gaps, adopted/rejected/material-change feedback and
   stale-digest review—never raw retrieval count as proof of value;
+- ensemble intended/admitted/missing lens coverage, disclosed reviewer
+  correlation, independent-first-pass completion, evidence-supported finding and
+  duplicate-objection rates, material dissent/non-convergence, finding
+  disposition/age/re-review and predicted-versus-observed concern outcomes—never
+  agreement, objection volume or reviewer activity as a quality proxy;
+- human-gate request/admission/refusal, time-to-presentation, named-human
+  go/no-go/revise/defer outcome, stale-response invalidation and decision wait;
+  never optimize for approval rate, fast consent or fewer escalations;
 - catalogue/resolve/attach latency and refusal, attached-client/controller count,
   disconnect/detach causes, cursor lag/gaps/resnapshot, takeover/fencing,
   reattach/recovery duration and abandoned connection-local handles;
@@ -2361,6 +3084,21 @@ authorization evidence:
 - alert evaluation freshness, pending/firing/resolution/no-data, noise/duplicate/
   inhibition, acknowledgement and incident-conversion; SLI population coverage,
   error-budget burn and objective-window completeness;
+- human/agent role activation and transition, delegation refusal/expiry,
+  persistence/recovery/projection skew, stale-transition refusal, self-approval
+  refusal, takeover/handback, intervention and escalation;
+- work-mode registration/validation/refusal, version adoption and skew,
+  instantiation, migration/recovery, deprecation horizon/exception, retained-
+  instance disposition, retirement residue and tombstone/broken-link resolution;
+- candidate build/test/provenance reproducibility, compatibility-gate result,
+  sandbox/shadow/canary duration and exposure, baseline/candidate semantic delta,
+  readiness/progress stop, promote/hold/rollback and recovery verification;
+- build-platform eligibility freshness/refusal, promotion decision/authorization/
+  execution correlation, recovery-policy revision/last-known-good designation,
+  rescue execution and declared-versus-enforced assurance level;
+- mixed-version population/window, state-transfer and drain duration, in-flight
+  reconciliation, stale-instance fencing, rollback residue and independent
+  monitor/known-good-path availability;
 - accessibility task completion, focus/keyboard defects, and screen-reader
   announcements tested with representative assistive technology.
 
@@ -2370,6 +3108,11 @@ censoring, sampling, dropped observations, and population boundaries must be
 visible.
 
 ## Product-definition decisions still required
+
+The [reflexive ownership decision brief](reflexive-ownership-decision-brief.md)
+provides recommended defaults for decisions 38, 39, 43, 44 and 48. They remain
+open until accepted by an accountable decision owner and qualified with concrete
+implementations; a recommendation is not a selected owner.
 
 1. Which personas and role separations are primary in each deployment profile:
    individual developer/operator, local team, external collaboration, or
@@ -2459,6 +3202,73 @@ visible.
 36. What source-time/observed-time and clock-quality model supports federated
     correlation without claiming a false total order, and how are gaps and late
     arrivals represented?
+37. Which roles and actions are participation-symmetric for humans and agents in
+    each deployment/risk profile, and which accountability decisions remain
+    reserved for a named human, institution or independently controlled quorum?
+38. What is the versioned role-activation/transition contract—objective, work
+    mode, principal, model/tool profile, scope, budgets, grounding, accountable
+    owner, policy epoch and expiry—and which owner persists it?
+39. **Blocking J30:** Which sovereign VCS, isolated worktree, build, test,
+    package, SBOM, provenance, signature and artifact-registry owners form the
+    reflexive development path, and what qualified commands/receipts connect them?
+40. Which change risk classes may progress automatically from sandbox to shadow
+    or canary, and which require independent human/multi-party review at build,
+    deploy, cohort expansion, promotion and rollback boundaries?
+41. Which exact hot-replacement mechanism is qualified per component and change
+    class: OTP release/code change, application restart, Pantheon process reexec,
+    rolling instance replacement, blue/green routing, or configuration/feature
+    activation? What changes explicitly require downtime?
+42. What compatibility declaration and test matrix governs wire protocols,
+    persistent state, events, policies, telemetry, relationships, mixed versions,
+    upgrade order and downgrade/forward-fix behavior?
+43. **Blocking J30:** Which accountable promotion principal, promotion-decision
+    record owner, deployment executor and observation owner provide traffic
+    mirroring, effect suppression, canary cohort selection, state transfer,
+    baseline comparison, readiness, progress deadlines and semantic/user probes;
+    what exact records separate observe, decide, authorize and execute; and how
+    are privacy and production-data constraints enforced?
+44. **Blocking J30:** Which recovery-policy administrator, versioned recovery-
+    policy/last-known-good record owner, rescue executor, supervisor, authority,
+    telemetry, invariant monitor, protected artifact/configuration and operator
+    channel form the independent recovery root; which changes require separate
+    approval; and how are they kept outside the candidate's failure/credential
+    domain under the claimed assurance level?
+45. How are in-flight tasks, workflows, agent sessions, rooms, documents,
+    events, leases, cursors and uncertain effects drained, checkpointed,
+    transferred, fenced or reconciled for each replacement type?
+46. How are code rollback, data restoration, event/message reconciliation,
+    external-effect compensation and affected-user remediation authorized and
+    reported separately when recovery is partial or impossible?
+47. What stronger, out-of-band and separation-of-duties process governs
+    reflexive changes to Aegis, deployment/supervision, audit, telemetry/safety
+    monitors, artifact trust and rollback itself?
+48. Who owns the extensible work-mode registry/schema, compatibility and
+    lifecycle so custom modes gain human-agent parity without making Pantheon a
+    universal semantic owner or permitting unsafe executable extensions?
+49. Which outputs/transitions are “material” in each deployment profile, what
+    risk/context changes trigger stakeholder-ensemble review, and when may a
+    prior review be reused by exact digest and applicability?
+50. Which Moira methods, claim/evidence/dissent schemas, fuel bounds, resolution
+    kinds and disposition states define the initial stakeholder-review profiles?
+51. How does Dendrite's fold/lattice vocabulary represent stakeholder concerns,
+    affected-person and public-interest lenses, required coverage, exclusions
+    and cross-domain corpus governance without claiming representativeness?
+52. How are reviewer independence and correlation declared across model,
+    provider, prompt, grounding, evidence, organization, incentive and prior-
+    report exposure, and which reviews require blinded/independent first passes?
+53. Which contexts require participation by actual users, affected people,
+    accountable domain owners, legal representatives or external assessors
+    rather than an agent SME lens, and how are consent, accessibility, privacy,
+    compensation, mandate, conflict and safe dissent handled?
+54. Who may disposition, defer, accept risk for or close a material finding; how
+    do unresolved findings reach a decision owner without turning reviewers,
+    Moira, Dendrite or Pantheon into the effect authority?
+55. Which versioned review rule admits a human-advocate gate request as supported,
+    non-frivolous and material; who may challenge that classification; how are
+    the exact decision, alternatives, affected people, evidence, dissent,
+    uncertainty and consequences presented accessibly; and what prevents
+    timeout, relabeling, agent impersonation or disposition from bypassing the
+    named-human response?
 
 ## Source hierarchy and research notes
 

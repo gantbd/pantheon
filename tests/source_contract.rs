@@ -149,7 +149,10 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
                         .any(|plane| plane.as_str() == route["plane"].as_str()),
                     "unknown route capability plane"
                 );
-                assert_eq!(route["state"], "qualified");
+                assert!(
+                    matches!(route["state"].as_str(), Some("implemented" | "qualified")),
+                    "Pantheon route must be implemented or qualified"
+                );
             }
             assert!(
                 identifiers.contains(peer["readCapability"].as_str().expect("read capability")),

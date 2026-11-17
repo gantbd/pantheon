@@ -949,6 +949,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             agora,
             agora_control: None,
             moira,
+            moira_participation: None,
             moira_control_socket: None,
             daimon,
             daimon_agent: None,
@@ -971,6 +972,7 @@ pub struct OperationalPeers {
     pub agora: Option<agora_tui::Component>,
     pub agora_control: Option<AgoraControlConfig>,
     pub moira: Option<moira_tui::Component>,
+    pub moira_participation: Option<moira_tui::ParticipationComponent>,
     pub moira_control_socket: Option<PathBuf>,
     pub daimon: Option<daimon_tui::Component>,
     pub daimon_agent: Option<daimon_tui::AgentSetComponent>,
@@ -2360,6 +2362,7 @@ fn execute_workbench_action<T: ServicePort>(
     agora_create: &mut Option<agora_tui::CreateRoomComponent>,
     agora_message: &mut Option<agora_tui::ComposeMessageComponent>,
     moira: &mut Option<moira_tui::Component>,
+    moira_participation: &mut Option<moira_tui::ParticipationComponent>,
     moira_control_socket: Option<&Path>,
     moira_reconciliation: &mut Option<moira_tui::ReconciliationBatchComponent>,
     daimon: &mut Option<daimon_tui::Component>,
@@ -3193,6 +3196,7 @@ fn execute_workbench_action<T: ServicePort>(
             vellum,
             agora,
             moira,
+            moira_participation,
             daimon,
             daimon_agent,
             hermes,
@@ -3206,6 +3210,7 @@ fn execute_workbench_action<T: ServicePort>(
             vellum,
             agora,
             moira,
+            moira_participation,
             daimon,
             daimon_agent,
             hermes,
@@ -3332,6 +3337,7 @@ fn refresh_current<T: ServicePort>(
     vellum: &mut Option<ServiceEditor<T>>,
     agora: &mut Option<agora_tui::Component>,
     moira: &mut Option<moira_tui::Component>,
+    moira_participation: &mut Option<moira_tui::ParticipationComponent>,
     daimon: &mut Option<daimon_tui::Component>,
     daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
     hermes: &mut Option<hermes_tui::Component>,
@@ -3353,6 +3359,9 @@ fn refresh_current<T: ServicePort>(
                 component.update(agora_tui::Input::Refresh, true);
             }
             if let Some(component) = moira {
+                component.update(moira_tui::Input::Refresh, true);
+            }
+            if let Some(component) = moira_participation {
                 component.update(moira_tui::Input::Refresh, true);
             }
             if let Some(component) = daimon {
@@ -3407,7 +3416,22 @@ fn refresh_current<T: ServicePort>(
             None => (ActivityLevel::Warning, "vellum", "Not configured".into()),
         },
         Surface::Agora => refresh_peer(agora.as_mut(), agora_tui::Input::Refresh, "agora"),
-        Surface::Moira => refresh_peer(moira.as_mut(), moira_tui::Input::Refresh, "moira"),
+        Surface::Moira => {
+            if let Some(component) = moira_participation {
+                component.update(moira_tui::Input::Refresh, true);
+            }
+            if moira.is_some() {
+                refresh_peer(moira.as_mut(), moira_tui::Input::Refresh, "moira")
+            } else if moira_participation.is_some() {
+                (
+                    ActivityLevel::Info,
+                    "moira",
+                    "Participation refresh queued".into(),
+                )
+            } else {
+                (ActivityLevel::Warning, "moira", "Not configured".into())
+            }
+        }
         Surface::Daimon => {
             if let Some(component) = daimon_agent {
                 component.update(daimon_tui::AgentSetInput::RefreshAll, true);
@@ -3720,6 +3744,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         mut agora,
         agora_control,
         mut moira,
+        mut moira_participation,
         moira_control_socket,
         mut daimon,
         mut daimon_agent,
@@ -4074,6 +4099,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     &mut instrumentation,
                     &mut activity,
                 );
+            }
+            if let Some(participation) = &mut moira_participation {
+                participation.poll();
             }
             if let Some(reconciliation) = &mut moira_reconciliation {
                 reconciliation.poll();
@@ -4738,6 +4766,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         agora_create: agora_create.as_ref(),
                         agora_message: agora_message.as_ref(),
                         moira: moira.as_ref(),
+                        moira_participation: moira_participation.as_ref(),
                         moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),
                         daimon_agent: daimon_agent.as_ref(),
@@ -5056,6 +5085,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut agora_create,
                         &mut agora_message,
                         &mut moira,
+                        &mut moira_participation,
                         moira_control_socket.as_deref(),
                         &mut moira_reconciliation,
                         &mut daimon,
@@ -5779,6 +5809,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         }
                     } else if let Some(moira) = &mut moira {
                         if let Some(input) = moira_tui::translate_key(key) {
+                            if input == moira_tui::Input::Refresh
+                                && let Some(participation) = &mut moira_participation
+                            {
+                                participation.update(moira_tui::Input::Refresh, true);
+                            }
                             let started = Instant::now();
                             let pending_before = moira.request_pending();
                             let action = match input {
@@ -5800,6 +5835,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                     started,
                                 );
                             }
+                        }
+                    } else if let Some(participation) = &mut moira_participation {
+                        if let Some(input) = moira_tui::translate_key(key)
+                            && participation.update(input, true)
+                                == moira_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
                         }
                     } else {
                         notice = Surface::Moira

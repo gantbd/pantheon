@@ -6,8 +6,8 @@ use std::path::PathBuf;
 use agora_client::v2::ClientV2 as AgoraClientV2;
 use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::Workstream;
-use moira_client::SagaReadOnlyClient;
-use moira_protocol::{SagaOutcomeV1, SagaReplyV1};
+use moira_client::{AgentParticipationReadOnlyClient, SagaReadOnlyClient};
+use moira_protocol::{SagaOutcomeV1, SagaReplyV1, agent_participation as participation};
 use vellum_sdk_client::{
     transport::{
         AuthenticatedUnixConnector, FrameExchange, RemoteTransport, TransportError,
@@ -26,6 +26,8 @@ pub struct HeadlessRequest {
     pub agora: Option<AgoraProfile>,
     pub agora_hosted: bool,
     pub moira_socket: Option<PathBuf>,
+    pub moira_participation_socket: Option<PathBuf>,
+    pub moira_participation: Option<participation::ParticipationIdV1>,
     pub moira_requires: Vec<String>,
     pub moira_hosted: bool,
     pub daimon_socket: Option<PathBuf>,
@@ -78,7 +80,11 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         "moira",
         Mode::Headless,
         &request.moira_requires,
-        &capabilities::moira(Mode::Headless, request.moira_hosted),
+        &capabilities::moira(
+            Mode::Headless,
+            request.moira_hosted,
+            request.moira_participation.is_some(),
+        ),
     )?;
     capabilities::negotiate(
         "daimon",
@@ -153,6 +159,20 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             observation,
             current,
             request.moira_hosted,
+        );
+    }
+    if let (Some(socket), Some(participation)) = (
+        request.moira_participation_socket,
+        request.moira_participation,
+    ) {
+        let (observation, current) = observe_moira_participation(socket, participation);
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            false,
         );
     }
     if request.daimon_socket.is_some() || request.daimon_agent_socket.is_some() {
@@ -712,6 +732,110 @@ fn observe_moira(socket: PathBuf) -> (serde_json::Value, bool) {
     }
 }
 
+fn observe_moira_participation(
+    socket: PathBuf,
+    id: participation::ParticipationIdV1,
+) -> (serde_json::Value, bool) {
+    let capability = "agent.participation.inspect.v1";
+    let port = match moira_client::unix::AgentParticipationUnixPort::connect(
+        socket,
+        moira_client::unix::ParticipationClientLimitsV1::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return (
+                peer_failure(
+                    "moira-participation",
+                    capability,
+                    "connect_refused",
+                    format!("{error:?}"),
+                ),
+                false,
+            );
+        }
+    };
+    let mut client = AgentParticipationReadOnlyClient::new(port);
+    match client.participation(id) {
+        Ok(participation::ReplyV1::Accepted(outcome)) => match *outcome {
+            participation::OutcomeV1::Participation(Some(view)) => (
+                serde_json::json!({
+                    "peer": "moira-participation",
+                    "capability": capability,
+                    "status": "current",
+                    "revision": view.revision,
+                    "phase": format!("{:?}", view.phase),
+                    "session_revision": view.session_revision,
+                    "event_cursor": view.last_event_cursor,
+                    "attempt": view.binding.attempt.attempt,
+                    "incarnation": view.binding.attempt.incarnation,
+                    "persona": format!("{:?}", view.binding.persona),
+                    "active_turn": view.active_turn.is_some(),
+                    "pending_operation": view.pending.map(participation_operation_kind),
+                    "capabilities": {
+                        "load_session": view.capabilities.load_session,
+                        "resume_session": view.capabilities.resume_session,
+                        "permissions": view.capabilities.permissions,
+                        "filesystem_read": view.capabilities.filesystem_read,
+                        "filesystem_write": view.capabilities.filesystem_write,
+                        "terminal": view.capabilities.terminal,
+                        "session_modes": view.capabilities.session_modes,
+                        "session_models": view.capabilities.session_models,
+                    }
+                }),
+                true,
+            ),
+            participation::OutcomeV1::Participation(None) => (
+                peer_failure(
+                    "moira-participation",
+                    capability,
+                    "not_found",
+                    "participation not found",
+                ),
+                false,
+            ),
+            _ => (
+                peer_failure(
+                    "moira-participation",
+                    capability,
+                    "invalid_reply",
+                    "unexpected outcome",
+                ),
+                false,
+            ),
+        },
+        Ok(participation::ReplyV1::Refused(reason)) => (
+            peer_failure(
+                "moira-participation",
+                capability,
+                "refused",
+                format!("{reason:?}"),
+            ),
+            false,
+        ),
+        Err(error) => (
+            peer_failure(
+                "moira-participation",
+                capability,
+                "transport",
+                format!("{error:?}"),
+            ),
+            false,
+        ),
+    }
+}
+
+fn participation_operation_kind(operation: participation::OperationV1) -> &'static str {
+    match operation {
+        participation::OperationV1::Open { .. } => "open",
+        participation::OperationV1::Prompt { .. } => "prompt",
+        participation::OperationV1::Advance { .. } => "advance",
+        participation::OperationV1::DecidePermission { .. } => "decide_permission",
+        participation::OperationV1::Cancel { .. } => "cancel",
+        participation::OperationV1::Close { .. } => "close",
+        participation::OperationV1::Reattach { .. } => "reattach",
+    }
+}
+
 fn moira_client_failure(
     capability: &str,
     error: moira_client::unix::SagaClientErrorV1,
@@ -1010,6 +1134,8 @@ mod tests {
             }),
             agora_hosted: false,
             moira_socket: None,
+            moira_participation_socket: None,
+            moira_participation: None,
             moira_requires: Vec::new(),
             moira_hosted: false,
             daimon_socket: None,

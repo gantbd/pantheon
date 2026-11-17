@@ -66,6 +66,10 @@ pub struct MoiraProfile {
     #[serde(default)]
     pub deployment: DeploymentMode,
     pub socket: PathBuf,
+    /// Optional independently attached owner endpoint for one governed agent
+    /// participation. The saga host does not implicitly serve this protocol.
+    pub participation_socket: Option<PathBuf>,
+    pub participation: Option<String>,
     pub host: Option<MoiraHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
@@ -311,6 +315,9 @@ impl WorkspaceProfile {
         }
         if let Some(moira) = &mut profile.moira {
             moira.socket = resolve(base, &moira.socket);
+            if let Some(socket) = &mut moira.participation_socket {
+                *socket = resolve(base, socket);
+            }
             if let Some(host) = &mut moira.host {
                 host.executable = resolve(base, &host.executable);
                 host.config = resolve(base, &host.config);
@@ -412,6 +419,18 @@ impl WorkspaceProfile {
                 return Err("Moira configuration requires the Moira surface");
             }
             validate_path(&moira.socket)?;
+            match (&moira.participation_socket, &moira.participation) {
+                (Some(socket), Some(participation)) => {
+                    validate_path(socket)?;
+                    validate_hex_identifier(participation, "Moira participation")?;
+                }
+                (None, None) => {}
+                _ => {
+                    return Err(
+                        "Moira participation socket and participation identifier must be configured together",
+                    );
+                }
+            }
             match (moira.deployment, &moira.host) {
                 (DeploymentMode::Hosted, Some(host)) => {
                     validate_path(&host.executable)?;
@@ -1023,6 +1042,40 @@ mod tests {
             "host":{"executable":"moira-saga-local","config":"owner.json"}}
         }"#;
         assert!(WorkspaceProfile::parse(attached_host, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn moira_participation_requires_an_exact_attached_pair() {
+        let valid = br#"{
+          "version":1,"name":"Moira participation","surfaces":["moira"],
+          "moira":{"socket":"saga.sock",
+            "participation_socket":"participation.sock",
+            "participation":"0102030405060708090a0b0c0d0e0f10",
+            "requires":["agent.participation.inspect.v1"]}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let moira = profile.moira.unwrap();
+        assert_eq!(
+            moira.participation_socket.as_deref(),
+            Some(Path::new("/tmp/workbench/participation.sock"))
+        );
+        assert_eq!(
+            moira.participation.as_deref(),
+            Some("0102030405060708090a0b0c0d0e0f10")
+        );
+
+        let missing_id = br#"{
+          "version":1,"name":"Moira participation","surfaces":["moira"],
+          "moira":{"socket":"saga.sock","participation_socket":"participation.sock"}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_id, Path::new(".")).is_err());
+
+        let malformed_id = br#"{
+          "version":1,"name":"Moira participation","surfaces":["moira"],
+          "moira":{"socket":"saga.sock","participation_socket":"participation.sock",
+            "participation":"not-an-exact-id"}
+        }"#;
+        assert!(WorkspaceProfile::parse(malformed_id, Path::new(".")).is_err());
     }
 
     #[test]

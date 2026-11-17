@@ -300,6 +300,7 @@
       "pantheonRoutes": {
         "interactive": [
           { "id": "sagas.inspect.v1", "plane": "observation", "state": "qualified" },
+          { "id": "agent.participation.inspect.v1", "plane": "observation", "state": "implemented", "when": "participation-selected" },
           { "id": "sagas.reconciliation.v1", "plane": "operator", "state": "qualified" },
           { "id": "sagas.evidence.v1", "plane": "operator", "state": "qualified" },
           { "id": "sagas.operator-receipts.v1", "plane": "operator", "state": "qualified" },
@@ -308,6 +309,7 @@
         ],
         "headless": [
           { "id": "sagas.inspect.v1", "plane": "observation", "state": "qualified" },
+          { "id": "agent.participation.inspect.v1", "plane": "observation", "state": "implemented", "when": "participation-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ]
@@ -319,7 +321,6 @@
         "sagas.reconciliation.recovery.v1": "qualified"
       },
       "uncomposedPeerCapabilities": {
-        "agent.participation.inspect.v1": { "peer": "qualified", "pantheon": "absent" },
         "agent.session.observe.v1": { "peer": "qualified", "pantheon": "absent" },
         "agent.session.inspect.v1": { "peer": "qualified", "pantheon": "absent" },
         "agent.events.observe.v1": { "peer": "qualified", "pantheon": "absent" },

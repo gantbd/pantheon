@@ -61,6 +61,8 @@ struct Options {
     agora: Option<AgoraProfile>,
     agora_host: Option<AgoraProcessOptions>,
     moira_socket: Option<PathBuf>,
+    moira_participation_socket: Option<PathBuf>,
+    moira_participation: Option<moira_protocol::agent_participation::ParticipationIdV1>,
     moira_requires: Vec<String>,
     moira_host: Option<MoiraProcessOptions>,
     daimon_socket: Option<PathBuf>,
@@ -171,6 +173,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut agora = None;
     let mut agora_host = None;
     let mut moira_socket = None;
+    let mut moira_participation_socket = None;
+    let mut moira_participation = None;
     let mut moira_requires = Vec::new();
     let mut moira_host = None;
     let mut daimon_socket = None;
@@ -248,6 +252,13 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                     socket: moira.socket.clone(),
                 });
             }
+            moira_participation_socket = moira.participation_socket;
+            moira_participation = moira
+                .participation
+                .as_deref()
+                .map(parse_fixed_hex::<16>)
+                .transpose()?
+                .map(moira_protocol::agent_participation::ParticipationIdV1);
             moira_socket = Some(moira.socket);
             moira_requires = moira.requires;
         }
@@ -497,7 +508,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         Mode::Interactive
     };
     let agora_capabilities = capabilities::agora(mode, agora_host.is_some());
-    let moira_capabilities = capabilities::moira(mode, moira_host.is_some());
+    let moira_capabilities =
+        capabilities::moira(mode, moira_host.is_some(), moira_participation.is_some());
     let daimon_capabilities = capabilities::daimon(
         mode,
         daimon_host.is_some(),
@@ -568,6 +580,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         agora,
         agora_host,
         moira_socket,
+        moira_participation_socket,
+        moira_participation,
         moira_requires,
         moira_host,
         daimon_socket,
@@ -1401,6 +1415,17 @@ fn parse_moira_hex<const N: usize>(
         .ok_or_else(usage)?;
     if value.len() != N * 2 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         return Err(usage().into());
+    }
+    let mut result = [0_u8; N];
+    for (index, byte) in result.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)?;
+    }
+    Ok(result)
+}
+
+fn parse_fixed_hex<const N: usize>(value: &str) -> Result<[u8; N], Box<dyn std::error::Error>> {
+    if value.len() != N * 2 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return Err("identifier must be fixed-width hexadecimal".into());
     }
     let mut result = [0_u8; N];
     for (index, byte) in result.iter_mut().enumerate() {
@@ -3070,6 +3095,21 @@ fn interactive(
     } else {
         None
     };
+    let moira_participation = match (
+        options.moira_participation_socket,
+        options.moira_participation,
+    ) {
+        (Some(socket), Some(participation)) => {
+            let port = moira_client::unix::AgentParticipationUnixPort::connect(
+                socket,
+                moira_client::unix::ParticipationClientLimitsV1::default(),
+            )
+            .map_err(|error| format!("Moira participation service refused: {error:?}"))?;
+            Some(moira_tui::ParticipationComponent::new(port, participation))
+        }
+        (None, None) => None,
+        _ => unreachable!("workspace profile validates the participation pair"),
+    };
     let daimon = if let Some(socket) = options.daimon_socket {
         let (session, port) = daimon_client::unix::connect(
             socket,
@@ -3201,6 +3241,7 @@ fn interactive(
             agora,
             agora_control,
             moira,
+            moira_participation,
             moira_control_socket,
             daimon,
             daimon_agent,
@@ -3681,6 +3722,8 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         agora: options.agora.clone(),
         agora_hosted: options.agora_host.is_some(),
         moira_socket: options.moira_socket.clone(),
+        moira_participation_socket: options.moira_participation_socket.clone(),
+        moira_participation: options.moira_participation,
         moira_requires: options.moira_requires.clone(),
         moira_hosted: options.moira_host.is_some(),
         daimon_socket: options.daimon_socket.clone(),

@@ -126,6 +126,7 @@ pub fn draw_shell(
             agora_create: None,
             agora_message: None,
             moira: None,
+            moira_participation: None,
             moira_reconciliation: None,
             daimon: None,
             daimon_agent: None,
@@ -158,6 +159,7 @@ pub struct PeerViews<'a> {
     pub agora_create: Option<&'a agora_tui::CreateRoomComponent>,
     pub agora_message: Option<&'a agora_tui::ComposeMessageComponent>,
     pub moira: Option<&'a moira_tui::Component>,
+    pub moira_participation: Option<&'a moira_tui::ParticipationComponent>,
     pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
     pub daimon_agent: Option<&'a daimon_tui::AgentSetComponent>,
@@ -235,6 +237,7 @@ pub fn draw_shell_with_moira(
         agora_create,
         agora_message,
         moira,
+        moira_participation,
         moira_reconciliation,
         daimon,
         daimon_agent,
@@ -402,7 +405,7 @@ pub fn draw_shell_with_moira(
                 chronos: chronos.is_some(),
                 vellum: vellum.is_some(),
                 agora: agora.is_some(),
-                moira: moira.is_some(),
+                moira: moira.is_some() || moira_participation.is_some(),
                 daimon: daimon.is_some() || daimon_agent.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
@@ -425,6 +428,21 @@ pub fn draw_shell_with_moira(
         }
         Surface::Moira if moira_reconciliation.is_some() => {
             moira_reconciliation
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Moira if moira.is_some() && moira_participation.is_some() => {
+            let [sagas, participation] =
+                Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)])
+                    .spacing(1)
+                    .areas(body);
+            moira.expect("matched above").draw_in(frame, sagas, false);
+            moira_participation
+                .expect("matched above")
+                .draw_in(frame, participation, true);
+        }
+        Surface::Moira if moira_participation.is_some() => {
+            moira_participation
                 .expect("matched above")
                 .draw_in(frame, body, true);
         }
@@ -1368,14 +1386,18 @@ mod tests {
         CommandV1 as DaimonCommandV1, OutcomeV1 as DaimonOutcomeV1, ReplyV1 as DaimonReplyV1,
         SessionHandleV1 as DaimonSessionHandleV1,
     };
-    use moira_client::SagaServicePort;
-    use moira_protocol::{SagaCensusV1, SagaCommandV1, SagaOutcomeV1, SagaPageV1, SagaReplyV1};
+    use moira_client::{AgentParticipationServicePort, SagaServicePort};
+    use moira_protocol::{
+        SagaCensusV1, SagaCommandV1, SagaOutcomeV1, SagaPageV1, SagaReplyV1,
+        agent_participation as participation,
+    };
     use ratatui::{Terminal, backend::TestBackend};
     use std::{thread, time::Duration};
 
     struct AgoraPort;
 
     struct MoiraPort;
+    struct MoiraParticipationPort;
     struct DaimonPort;
     struct AegisPort;
 
@@ -1443,6 +1465,23 @@ mod tests {
                 _ => panic!("read-only Moira presentation attempted an unexpected command"),
             };
             Ok(SagaReplyV1::Accepted(outcome))
+        }
+    }
+
+    impl AgentParticipationServicePort for MoiraParticipationPort {
+        type Error = ();
+
+        fn execute_participation(
+            &mut self,
+            command: participation::CommandV1,
+        ) -> Result<participation::ReplyV1, Self::Error> {
+            assert!(matches!(
+                command,
+                participation::CommandV1::Participation { .. }
+            ));
+            Ok(participation::ReplyV1::Accepted(Box::new(
+                participation::OutcomeV1::Participation(None),
+            )))
         }
     }
 
@@ -1806,6 +1845,7 @@ mod tests {
                             agora_create: None,
                             agora_message: None,
                             moira: Some(&moira),
+                            moira_participation: None,
                             moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,
@@ -1846,6 +1886,71 @@ mod tests {
     }
 
     #[test]
+    fn shell_renders_selected_moira_participation_without_copying_owner_state() {
+        let shell = Shell::new(vec![Surface::Moira]).unwrap();
+        let mut participation = moira_tui::ParticipationComponent::new(
+            MoiraParticipationPort,
+            participation::ParticipationIdV1([1; 16]),
+        );
+        for _ in 0..100 {
+            participation.poll();
+            let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
+            terminal
+                .draw(|frame| {
+                    draw_shell_with_moira(
+                        frame,
+                        &shell,
+                        PeerViews {
+                            chronos: None,
+                            vellum: None,
+                            vellum_atomic_replace: None,
+                            vellum_durable_save: None,
+                            agora: None,
+                            agora_create: None,
+                            agora_message: None,
+                            moira: None,
+                            moira_participation: Some(&participation),
+                            moira_reconciliation: None,
+                            daimon: None,
+                            daimon_agent: None,
+                            daimon_permission: None,
+                            daimon_prompt: None,
+                            daimon_control: None,
+                            hermes: None,
+                            hermes_compaction: None,
+                            hermes_disclosure: None,
+                            hermes_acknowledge: None,
+                            aegis: None,
+                            aegis_managed: None,
+                            aegis_revoke: None,
+                            grounding: None,
+                            operations: None,
+                            health: None,
+                            configuration: None,
+                        },
+                        Focus::Chronos,
+                        "host supplied",
+                    )
+                })
+                .unwrap();
+            let rendered = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            if rendered.contains("Governed participation not found") {
+                assert!(rendered.contains("No current governed participation"));
+                assert!(!rendered.contains("workflow presentation is not configured"));
+                return;
+            }
+            thread::sleep(Duration::from_millis(1));
+        }
+        panic!("Moira participation did not render its owner observation");
+    }
+
+    #[test]
     fn shell_renders_host_supplied_daimon_peer_instead_of_gap() {
         let shell = Shell::new(vec![Surface::Daimon]).unwrap();
         let mut daimon = daimon_tui::Component::new(DaimonSessionHandleV1(1), DaimonPort);
@@ -1866,6 +1971,7 @@ mod tests {
                             agora_create: None,
                             agora_message: None,
                             moira: None,
+                            moira_participation: None,
                             moira_reconciliation: None,
                             daimon: Some(&daimon),
                             daimon_agent: None,
@@ -1926,6 +2032,7 @@ mod tests {
                             agora_create: None,
                             agora_message: None,
                             moira: None,
+                            moira_participation: None,
                             moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,
