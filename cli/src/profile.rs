@@ -270,6 +270,9 @@ pub struct VellumProfile {
     pub credential: Option<PathBuf>,
     #[serde(default)]
     pub roots: Vec<PathBuf>,
+    /// Explicit hosted action ceiling for runtime Ctrl-O file admission.
+    #[serde(default)]
+    pub allow_add_file: bool,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -609,6 +612,12 @@ impl WorkspaceProfile {
         {
             return Err("workspace surface requires Chronos or Vellum configuration");
         }
+        if self.surfaces.contains(&Surface::Chronos) && self.chronos.is_none() {
+            return Err("Chronos surface requires Chronos configuration");
+        }
+        if self.surfaces.contains(&Surface::Vellum) && self.vellum.is_none() {
+            return Err("Vellum surface requires Vellum configuration");
+        }
         if let Some(chronos) = &self.chronos {
             validate_required_capabilities(&chronos.requires)?;
             if chronos.workstreams.is_empty() || chronos.workstreams.len() > MAX_WORKSTREAMS {
@@ -683,6 +692,9 @@ impl WorkspaceProfile {
             }
             if vellum.deployment == DeploymentMode::Attach && !vellum.roots.is_empty() {
                 return Err("attached Vellum cannot declare hosted workspace roots");
+            }
+            if vellum.deployment == DeploymentMode::Attach && vellum.allow_add_file {
+                return Err("attached Vellum cannot declare hosted file-admission authority");
             }
         }
         Ok(())
@@ -1203,5 +1215,10 @@ mod tests {
           "vellum":{"deployment":"attach","socket":"v.sock","credential":null,"roots":["a"]}
         }"#;
         assert!(WorkspaceProfile::parse(attached_with_roots, Path::new(".")).is_err());
+        let attached_with_host_authority = br#"{
+          "version":1,"name":"x","surfaces":["vellum"],"agora":null,"chronos":null,
+          "vellum":{"deployment":"attach","socket":"v.sock","credential":null,"allow_add_file":true}
+        }"#;
+        assert!(WorkspaceProfile::parse(attached_with_host_authority, Path::new(".")).is_err());
     }
 }

@@ -1,5 +1,9 @@
 use chronos_tui::{Hub, Lifecycle, WorkbenchIntent};
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{
+    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind,
+    KeyModifiers, KeyboardEnhancementFlags, MouseButton, MouseEventKind,
+    PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+};
 use daimon_agent_command::{
     AdvanceRequest, CancelRequest, CloseRequest, PermissionRequest, PromptRequest, ReattachRequest,
 };
@@ -24,7 +28,8 @@ use vellum_sdk_client::{
 use vellum_tui::{
     AtomicReplaceComponent, AtomicReplaceDisposition, AtomicReplaceInput, AtomicReplaceLifecycle,
     DurableSaveBatchComponent, DurableSaveBatchDisposition, DurableSaveBatchInput,
-    DurableSaveTargetV1, ServiceAction, ServiceEditor, ServiceInput, translate_service_input,
+    DurableSaveTargetV1, PromptInput, ServiceAction, ServiceEditor, ServiceInput, TextPrompt,
+    translate_service_input,
 };
 
 use crate::capabilities::GUARDED_CONTROL_ROUTES;
@@ -37,8 +42,38 @@ use pantheon::{
     Instrumentation, OperationsReceiptView, OperationsView, PaletteOutcome, PeerHealthState,
     PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView, Surface,
     decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
-    draw_shell_with_moira, route_key, shell_input,
+    draw_shell_with_moira, route_key, shell_input, surface_tab_at,
 };
+
+struct InputCapture {
+    enhanced_keyboard: bool,
+}
+
+impl InputCapture {
+    fn enable() -> std::io::Result<Self> {
+        let enhanced_keyboard = crossterm::terminal::supports_keyboard_enhancement()?;
+        if enhanced_keyboard {
+            crossterm::execute!(
+                std::io::stdout(),
+                PushKeyboardEnhancementFlags(
+                    KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+                        | KeyboardEnhancementFlags::REPORT_ALL_KEYS_AS_ESCAPE_CODES
+                )
+            )?;
+        }
+        crossterm::execute!(std::io::stdout(), EnableMouseCapture)?;
+        Ok(Self { enhanced_keyboard })
+    }
+}
+
+impl Drop for InputCapture {
+    fn drop(&mut self) {
+        let _ = crossterm::execute!(std::io::stdout(), DisableMouseCapture);
+        if self.enhanced_keyboard {
+            let _ = crossterm::execute!(std::io::stdout(), PopKeyboardEnhancementFlags);
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum WorkbenchOverlay {
@@ -47,8 +82,133 @@ enum WorkbenchOverlay {
     Help,
     Activity,
     Configuration,
+    LocalProviders,
+    AcpSessions,
+    AgoraRooms,
     Reconfiguration,
     Instrumentation,
+}
+
+/// One host-owned behavioral decision for a key event. Peer-specific key
+/// translation happens only after this facade returns `SurfaceLocal`.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum KeyBehavior {
+    SafeExit,
+    CommandPaletteInput,
+    ReconfigurationInput,
+    DismissOverlay,
+    Suppress,
+    OpenCommands,
+    ExecuteCommand(&'static str),
+    CommandUnavailable(&'static str),
+    Navigate(ShellInput),
+    SurfaceLocal,
+}
+
+struct BehaviorFacade;
+
+impl BehaviorFacade {
+    fn key(
+        key: KeyEvent,
+        overlay: WorkbenchOverlay,
+        surface: Surface,
+        vellum_active: bool,
+    ) -> KeyBehavior {
+        if is_control_char(key, 'q') {
+            return KeyBehavior::SafeExit;
+        }
+        match overlay {
+            WorkbenchOverlay::Commands => return KeyBehavior::CommandPaletteInput,
+            WorkbenchOverlay::Reconfiguration => return KeyBehavior::ReconfigurationInput,
+            WorkbenchOverlay::Help
+            | WorkbenchOverlay::Activity
+            | WorkbenchOverlay::Configuration
+            | WorkbenchOverlay::LocalProviders
+            | WorkbenchOverlay::AcpSessions
+            | WorkbenchOverlay::AgoraRooms
+            | WorkbenchOverlay::Instrumentation => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::Suppress
+                };
+            }
+            WorkbenchOverlay::None => {}
+        }
+        if is_control_char(key, 'p') {
+            KeyBehavior::OpenCommands
+        } else if is_key(key, KeyCode::F(1), KeyModifiers::NONE) {
+            KeyBehavior::ExecuteCommand("workbench.help")
+        } else if is_control_char(key, 'g') {
+            KeyBehavior::ExecuteCommand("workbench.activity")
+        } else if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
+            && matches!(
+                surface,
+                Surface::Overview | Surface::Operations | Surface::Configuration
+            )
+        {
+            KeyBehavior::ExecuteCommand("view.refresh")
+        } else if vellum_active && is_control_char(key, 'o') {
+            KeyBehavior::ExecuteCommand("vellum.document.open")
+        } else if vellum_active && is_control_char(key, 's') {
+            KeyBehavior::ExecuteCommand("vellum.save")
+        } else if surface == Surface::Chronos
+            && is_key(key, KeyCode::Char('N'), KeyModifiers::SHIFT)
+        {
+            KeyBehavior::ExecuteCommand("workitem.agent.new")
+        } else if let Some(input) = shell_input(key) {
+            match input {
+                ShellInput::ActivateSurface(surface) => {
+                    KeyBehavior::ExecuteCommand(Self::surface_command(surface))
+                }
+                _ => KeyBehavior::Navigate(input),
+            }
+        } else {
+            KeyBehavior::SurfaceLocal
+        }
+    }
+
+    fn palette(outcome: PaletteOutcome) -> KeyBehavior {
+        match outcome {
+            PaletteOutcome::None => KeyBehavior::Suppress,
+            PaletteOutcome::Dismiss => KeyBehavior::DismissOverlay,
+            PaletteOutcome::Execute(action) => KeyBehavior::ExecuteCommand(action),
+            PaletteOutcome::Unavailable(reason) => KeyBehavior::CommandUnavailable(reason),
+        }
+    }
+
+    const fn surface_command(surface: Surface) -> &'static str {
+        match surface {
+            Surface::Overview => "navigate.overview",
+            Surface::Chronos => "navigate.chronos",
+            Surface::Vellum => "navigate.vellum",
+            Surface::Workspace => "navigate.workspace",
+            Surface::Agora => "navigate.agora",
+            Surface::Moira => "navigate.moira",
+            Surface::Daimon => "navigate.daimon",
+            Surface::Grounding => "navigate.grounding",
+            Surface::Aegis => "navigate.aegis",
+            Surface::Hermes => "navigate.hermes",
+            Surface::Operations => "navigate.operations",
+            Surface::Configuration => "navigate.configuration",
+        }
+    }
+
+    fn navigate(shell: &mut Shell, input: ShellInput) {
+        match input {
+            ShellInput::NextSurface => shell.next(),
+            ShellInput::PreviousSurface => shell.previous(),
+            ShellInput::Activate(index) => {
+                let _ = shell.activate_index(index);
+            }
+            ShellInput::ActivateSurface(surface) => {
+                let _ = shell.activate(surface);
+            }
+        }
+    }
 }
 
 const MAX_RECONFIGURATION_PATH_BYTES: usize = 4096;
@@ -204,6 +364,63 @@ impl ReconfigurationWorkflow {
 enum ChronosOperation {
     Task(u64),
     Scheduling(u64),
+}
+
+#[derive(Default)]
+enum WorkItemAgentJourney {
+    #[default]
+    Idle,
+    EditingTask {
+        draft: String,
+    },
+    AwaitingTaskReceipt {
+        draft: String,
+    },
+    ReviewingPrompt,
+    Invoking,
+    ConversationReady,
+    Failed,
+}
+
+impl WorkItemAgentJourney {
+    fn capture_task_key(&mut self, key: KeyEvent) {
+        let Self::EditingTask { draft } = self else {
+            return;
+        };
+        match key.code {
+            KeyCode::Backspace if key.modifiers == KeyModifiers::NONE => {
+                draft.pop();
+            }
+            KeyCode::Tab if key.modifiers == KeyModifiers::NONE => {
+                if draft.len() < 8_192 {
+                    draft.push('\n');
+                }
+            }
+            _ => {
+                if let Some(character) = bounded_text_character(key)
+                    && draft.len() + character.len_utf8() <= 8_192
+                {
+                    draft.push(character);
+                }
+            }
+        }
+    }
+
+    fn task_submitted(&mut self) {
+        if let Self::EditingTask { draft } = std::mem::take(self) {
+            *self = Self::AwaitingTaskReceipt { draft };
+        }
+    }
+}
+
+fn work_item_agent_prompt(draft: &str) -> String {
+    let work = draft.trim();
+    if work.is_empty() {
+        "Review the newly created Chronos work item and ask the operator for its missing details."
+            .into()
+    } else {
+        work.into()
+    }
 }
 
 #[derive(Default)]
@@ -681,7 +898,7 @@ pub fn run_terminal<T: ServicePort>(
     chronos: Hub,
     vellum: ServiceEditor<T>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    run_multi_peer_terminal(Shell::dual_peer(), Some(chronos), Some(vellum), None)
+    run_multi_peer_terminal(Shell::workbench(), Some(chronos), Some(vellum), None)
 }
 
 /// Runs a profile-selected shell. Services are independently optional; a
@@ -745,6 +962,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             aegis_control_socket: None,
             grounding: None,
             vellum_control: None,
+            vellum_allow_add_file: false,
         },
     )
 }
@@ -766,6 +984,7 @@ pub struct OperationalPeers {
     pub aegis_control_socket: Option<PathBuf>,
     pub grounding: Option<tellus::Component>,
     pub vellum_control: Option<VellumControlConfig>,
+    pub vellum_allow_add_file: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -822,6 +1041,26 @@ pub struct AgoraControlConfig {
 
 fn is_key(key: crossterm::event::KeyEvent, code: KeyCode, modifiers: KeyModifiers) -> bool {
     key.kind == KeyEventKind::Press && key.code == code && key.modifiers == modifiers
+}
+
+fn is_control_char(key: KeyEvent, expected: char) -> bool {
+    if key.kind != KeyEventKind::Press {
+        return false;
+    }
+    let forbidden =
+        KeyModifiers::ALT | KeyModifiers::SUPER | KeyModifiers::HYPER | KeyModifiers::META;
+    if key.modifiers.intersects(forbidden) {
+        return false;
+    }
+    (match key.code {
+        KeyCode::Char(actual) => {
+            let normalized = actual.to_ascii_lowercase();
+            let legacy_control = char::from_u32(u32::from(expected as u8 & 0x1f));
+            normalized == expected || legacy_control == Some(actual)
+        }
+        _ => false,
+    }) && (key.modifiers.contains(KeyModifiers::CONTROL)
+        || matches!(key.code, KeyCode::Char(actual) if actual.is_control()))
 }
 
 fn bounded_text_character(key: crossterm::event::KeyEvent) -> Option<char> {
@@ -1299,7 +1538,23 @@ fn workbench_commands(
                 "Go to overview",
                 "See availability and status across the complete configured suite.",
                 "Pantheon",
-                None,
+                Some("Ctrl-0"),
+                CommandKind::Navigate,
+            ),
+            Surface::Chronos => CommandSpec::available(
+                "navigate.chronos",
+                "Go to Chronos",
+                "Open the full Chronos planning and workstream surface.",
+                "Chronos",
+                Some("Ctrl-1"),
+                CommandKind::Navigate,
+            ),
+            Surface::Vellum => CommandSpec::available(
+                "navigate.vellum",
+                "Go to Vellum",
+                "Open the full Vellum document and editing surface.",
+                "Vellum",
+                Some("Ctrl-2"),
                 CommandKind::Navigate,
             ),
             Surface::Workspace => CommandSpec::available(
@@ -1315,7 +1570,7 @@ fn workbench_commands(
                 "Go to Agora",
                 "Inspect rooms and selected message history.",
                 "Agora",
-                None,
+                Some("Ctrl-3"),
                 CommandKind::Navigate,
             ),
             Surface::Moira => CommandSpec::available(
@@ -1323,7 +1578,7 @@ fn workbench_commands(
                 "Go to Moira",
                 "Inspect sagas, evidence, reconciliation, and receipts.",
                 "Moira",
-                None,
+                Some("Ctrl-4"),
                 CommandKind::Navigate,
             ),
             Surface::Daimon => CommandSpec::available(
@@ -1331,7 +1586,7 @@ fn workbench_commands(
                 "Go to Daimon",
                 "Inspect agent presence, sessions, and event evidence.",
                 "Daimon",
-                None,
+                Some("Ctrl-5"),
                 CommandKind::Navigate,
             ),
             Surface::Grounding => CommandSpec::available(
@@ -1339,7 +1594,7 @@ fn workbench_commands(
                 "Go to Grounding",
                 "Inspect provenance and freshness of grounding loads.",
                 "Grounding",
-                None,
+                Some("Ctrl-6"),
                 CommandKind::Navigate,
             ),
             Surface::Aegis => CommandSpec::available(
@@ -1347,7 +1602,7 @@ fn workbench_commands(
                 "Go to Aegis",
                 "Inspect authority, grants, and bounded decision evidence.",
                 "Aegis",
-                None,
+                Some("Ctrl-7"),
                 CommandKind::Navigate,
             ),
             Surface::Hermes => CommandSpec::available(
@@ -1355,7 +1610,7 @@ fn workbench_commands(
                 "Go to Hermes",
                 "Inspect ledger, stream, cursor, and retention state.",
                 "Hermes",
-                None,
+                Some("Ctrl-8"),
                 CommandKind::Navigate,
             ),
             Surface::Operations => CommandSpec::available(
@@ -1363,7 +1618,15 @@ fn workbench_commands(
                 "Go to operations",
                 "Inspect local topology lifecycle, hosted peers, and retained receipts.",
                 "Operations",
-                None,
+                Some("Ctrl-9"),
+                CommandKind::Navigate,
+            ),
+            Surface::Configuration => CommandSpec::available(
+                "navigate.configuration",
+                "Go to configuration",
+                "Inspect redacted live session facts and discover profile restart.",
+                "Configuration",
+                Some("Ctrl-,"),
                 CommandKind::Navigate,
             ),
         })
@@ -1403,10 +1666,25 @@ fn workbench_commands(
         Some("Tab"),
         CommandKind::Navigate,
     );
-    commands.push(if chronos && vellum {
-        focus
+    commands.push(
+        if chronos && vellum && shell.surfaces().contains(&Surface::Workspace) {
+            focus
+        } else {
+            focus.unavailable("Both Chronos and Vellum are required")
+        },
+    );
+    let open_file = CommandSpec::available(
+        "vellum.document.open",
+        "Open a file in Vellum",
+        "Enter one bounded locator and submit it through Vellum's owner-controlled runtime admission path.",
+        "Vellum",
+        Some("Ctrl-O"),
+        CommandKind::Guarded,
+    );
+    commands.push(if vellum {
+        open_file
     } else {
-        focus.unavailable("Both Chronos and Vellum are required")
+        open_file.unavailable("Vellum is not configured")
     });
     let save = CommandSpec::available(
         "vellum.save",
@@ -1480,6 +1758,55 @@ fn workbench_commands(
         } else {
             "Chronos is not configured"
         })
+    });
+    let agent_work_item = CommandSpec::available(
+        "workitem.agent.new",
+        "Create task with local agent",
+        "Create a Chronos work item, carry its entered text into a guarded prompt for the selected local Daimon session, and open the resulting conversation.",
+        "Work item journey",
+        Some("Shift-N"),
+        CommandKind::Guarded,
+    );
+    commands.push(if chronos_writes && daimon_execution {
+        agent_work_item
+    } else {
+        agent_work_item.unavailable(if !chronos_writes {
+            if chronos {
+                "Chronos writes are disabled for this session"
+            } else {
+                "Chronos is not configured"
+            }
+        } else if daimon_control {
+            "A credential-free Daimon execution policy is required"
+        } else {
+            "A selected local Daimon agent session is not configured"
+        })
+    });
+    let return_to_board = CommandSpec::available(
+        "workitem.agent.return",
+        "Return to the Kanban board",
+        "Return to Chronos and request a fresh owner projection so status changes are visible.",
+        "Work item journey",
+        None,
+        CommandKind::Observe,
+    );
+    commands.push(if chronos {
+        return_to_board
+    } else {
+        return_to_board.unavailable("Chronos is not configured")
+    });
+    let open_agent_chat = CommandSpec::available(
+        "workitem.agent.chat",
+        "Open the local-agent conversation",
+        "Open Daimon's selected-session event timeline for the current local-agent discussion.",
+        "Work item journey",
+        None,
+        CommandKind::Navigate,
+    );
+    commands.push(if daimon {
+        open_agent_chat
+    } else {
+        open_agent_chat.unavailable("A Daimon session presentation is not configured")
     });
     let cancel_task = CommandSpec::available(
         "chronos.task.cancel",
@@ -1912,6 +2239,30 @@ fn workbench_commands(
     });
     commands.extend([
         CommandSpec::available(
+            "configuration.providers.local",
+            "Configure local model providers",
+            "Review the owner boundary and exact profile/restart path for a local or ACP-backed Daimon provider.",
+            "Configuration",
+            None,
+            CommandKind::Lifecycle,
+        ),
+        CommandSpec::available(
+            "configuration.acp.sessions",
+            "Configure ACP agent sessions",
+            "Review the exact agent-session selection, execution-policy requirements, and clean profile restart path.",
+            "Configuration",
+            None,
+            CommandKind::Lifecycle,
+        ),
+        CommandSpec::available(
+            "configuration.agora.rooms",
+            "Configure Agora room control",
+            "Review the participant, transport, control capability, and profile restart required before creating rooms.",
+            "Configuration",
+            None,
+            CommandKind::Lifecycle,
+        ),
+        CommandSpec::available(
             "workbench.activity",
             "Show activity and receipts",
             "Review recent actions, refusals, and uncertain outcomes.",
@@ -2034,6 +2385,8 @@ fn execute_workbench_action<T: ServicePort>(
 ) -> (ActivityLevel, &'static str, String) {
     let destination = match action {
         "navigate.overview" => Some(Surface::Overview),
+        "navigate.chronos" => Some(Surface::Chronos),
+        "navigate.vellum" => Some(Surface::Vellum),
         "navigate.workspace" => Some(Surface::Workspace),
         "navigate.agora" => Some(Surface::Agora),
         "navigate.moira" => Some(Surface::Moira),
@@ -2042,6 +2395,7 @@ fn execute_workbench_action<T: ServicePort>(
         "navigate.aegis" => Some(Surface::Aegis),
         "navigate.hermes" => Some(Surface::Hermes),
         "navigate.operations" => Some(Surface::Operations),
+        "navigate.configuration" => Some(Surface::Configuration),
         _ => None,
     };
     if let Some(destination) = destination {
@@ -2063,13 +2417,16 @@ fn execute_workbench_action<T: ServicePort>(
             )
         }
         "vellum.save" => {
-            let _ = shell.activate(Surface::Workspace);
+            activate_peer_surface(shell, Surface::Vellum);
             *focus = Focus::Vellum;
-            match vellum
-                .as_mut()
-                .expect("palette enables save only with Vellum")
-                .apply(ServiceAction::Save)
-            {
+            let Some(vellum) = vellum.as_mut() else {
+                return (
+                    ActivityLevel::Warning,
+                    "vellum",
+                    "Vellum service is not configured".into(),
+                );
+            };
+            match vellum.apply(ServiceAction::Save) {
                 Ok(()) => (
                     ActivityLevel::Info,
                     "vellum",
@@ -2080,7 +2437,7 @@ fn execute_workbench_action<T: ServicePort>(
             }
         }
         "vellum.document.toggle-selection" => {
-            let _ = shell.activate(Surface::Workspace);
+            activate_peer_surface(shell, Surface::Vellum);
             *focus = Focus::Vellum;
             let editor = vellum
                 .as_mut()
@@ -2098,7 +2455,7 @@ fn execute_workbench_action<T: ServicePort>(
             }
         }
         "vellum.save-selected" => {
-            let _ = shell.activate(Surface::Workspace);
+            activate_peer_surface(shell, Surface::Vellum);
             *focus = Focus::Vellum;
             if vellum_atomic_replace.is_some() {
                 return (
@@ -2147,7 +2504,7 @@ fn execute_workbench_action<T: ServicePort>(
             )
         }
         "vellum.atomic-replace-selected" => {
-            let _ = shell.activate(Surface::Workspace);
+            activate_peer_surface(shell, Surface::Vellum);
             *focus = Focus::Vellum;
             if vellum_durable_save
                 .as_ref()
@@ -2166,8 +2523,29 @@ fn execute_workbench_action<T: ServicePort>(
                 "Atomic replace opened for the marked 1–16 document workset".into(),
             )
         }
-        "chronos.task.new" => {
+        "chronos.task.new" | "workitem.agent.new" => {
             invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::NewTask)
+        }
+        "workitem.agent.return" => {
+            activate_peer_surface(shell, Surface::Chronos);
+            *focus = Focus::Chronos;
+            let chronos = chronos
+                .as_mut()
+                .expect("palette enables board return only with Chronos");
+            chronos.update(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE));
+            (
+                ActivityLevel::Info,
+                "work-item",
+                "Returned to the Chronos board and queued a fresh owner projection".into(),
+            )
+        }
+        "workitem.agent.chat" => {
+            let _ = shell.activate(Surface::Daimon);
+            (
+                ActivityLevel::Info,
+                "work-item",
+                "Opened the selected Daimon session conversation".into(),
+            )
         }
         "chronos.task.cancel" => {
             invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::CancelSelectedTask)
@@ -2848,7 +3226,7 @@ fn invoke_chronos_workbench(
     chronos: &mut Option<Hub>,
     intent: WorkbenchIntent,
 ) -> (ActivityLevel, &'static str, String) {
-    let _ = shell.activate(Surface::Workspace);
+    activate_peer_surface(shell, Surface::Chronos);
     *focus = Focus::Chronos;
     match chronos
         .as_mut()
@@ -2858,6 +3236,92 @@ fn invoke_chronos_workbench(
         Ok(message) => (ActivityLevel::Info, "chronos", message.into()),
         Err(message) => (ActivityLevel::Warning, "chronos", message.into()),
     }
+}
+
+fn activate_peer_surface(shell: &mut Shell, preferred: Surface) {
+    if !shell.activate(preferred) {
+        let _ = shell.activate(Surface::Workspace);
+    }
+}
+
+fn command_feedback(action: &str, level: ActivityLevel, message: &str) -> String {
+    let (state, next) = match (level, action) {
+        (ActivityLevel::Success, _) => ("DONE", "Next: continue on the active surface."),
+        (ActivityLevel::Uncertain, _) => (
+            "OUTCOME UNKNOWN",
+            "Next: inspect Activity and recover the exact retained operation; do not retry blindly.",
+        ),
+        (ActivityLevel::Warning, "chronos.task.new") => (
+            "REFUSED",
+            "Next: enable Chronos writes, refresh current task state, then run the command again.",
+        ),
+        (ActivityLevel::Warning, "vellum.document.open") => (
+            "REFUSED",
+            "Next: configure Vellum with runtime file admission, then retry Ctrl-O.",
+        ),
+        (ActivityLevel::Warning, "agora.room.create") => (
+            "REFUSED",
+            "Next: configure Agora control, refresh the room revision, then retry.",
+        ),
+        (ActivityLevel::Warning, _) => (
+            "REFUSED",
+            "Next: inspect Configuration (Ctrl-,) and Activity (Ctrl-G), then retry only after the requirement is satisfied.",
+        ),
+        (ActivityLevel::Info, "chronos.task.new") => (
+            "READY",
+            "Next: enter one or more task IDs; Tab adds a row and Enter submits the exact batch.",
+        ),
+        (ActivityLevel::Info, "vellum.document.open") => (
+            "READY",
+            "Next: enter a file under an admitted root; Enter opens and Esc cancels.",
+        ),
+        (ActivityLevel::Info, "agora.room.create") => (
+            "READY",
+            "Next: complete the revision-bound room form, arm it, and confirm once.",
+        ),
+        (ActivityLevel::Info, action) if action.starts_with("navigate.") => (
+            "OPENED",
+            "Next: use M-x for available work or the surface footer for local controls.",
+        ),
+        (ActivityLevel::Info, "view.refresh" | "suite.refresh") => (
+            "QUEUED",
+            "Next: watch the status evidence settle; Ctrl-G retains the receipt.",
+        ),
+        (ActivityLevel::Info, _) => (
+            "READY",
+            "Next: follow the active workflow footer; Esc cancels before submission.",
+        ),
+    };
+    format!("{state} · {message} · {next}")
+}
+
+const fn chronos_surface_active(surface: Surface, focus: Focus) -> bool {
+    matches!(surface, Surface::Chronos)
+        || matches!(surface, Surface::Workspace) && matches!(focus, Focus::Chronos)
+}
+
+const fn vellum_surface_active(surface: Surface, focus: Focus) -> bool {
+    matches!(surface, Surface::Vellum)
+        || matches!(surface, Surface::Workspace) && matches!(focus, Focus::Vellum)
+}
+
+fn route_key_for_surface(key: KeyEvent, surface: Surface, focus: Focus) -> RoutedInput {
+    let effective_focus = match surface {
+        Surface::Chronos => Focus::Chronos,
+        Surface::Vellum => Focus::Vellum,
+        _ => focus,
+    };
+    if key.kind == KeyEventKind::Press
+        && key.modifiers == KeyModifiers::NONE
+        && key.code == KeyCode::Tab
+    {
+        return match surface {
+            Surface::Chronos => RoutedInput::Chronos(key),
+            Surface::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
+            _ => route_key(key, effective_focus),
+        };
+    }
+    route_key(key, effective_focus)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2912,6 +3376,21 @@ fn refresh_current<T: ServicePort>(
                 "Fresh observations queued across configured peers".into(),
             )
         }
+        Surface::Chronos => {
+            if let Some(component) = chronos {
+                component.update(refresh_key);
+                (ActivityLevel::Info, "chronos", "Refresh queued".into())
+            } else {
+                (ActivityLevel::Warning, "chronos", "Not configured".into())
+            }
+        }
+        Surface::Vellum => match vellum {
+            Some(component) => match component.apply(ServiceAction::Refresh) {
+                Ok(()) => (ActivityLevel::Info, "vellum", "Refresh queued".into()),
+                Err(error) => (ActivityLevel::Warning, "vellum", error.to_string()),
+            },
+            None => (ActivityLevel::Warning, "vellum", "Not configured".into()),
+        },
         Surface::Workspace if focus == Focus::Chronos => {
             if let Some(component) = chronos {
                 component.update(refresh_key);
@@ -2948,6 +3427,11 @@ fn refresh_current<T: ServicePort>(
             ActivityLevel::Info,
             "operations",
             "Lifecycle status is maintained from the live local host".into(),
+        ),
+        Surface::Configuration => (
+            ActivityLevel::Info,
+            "configuration",
+            "Session configuration is derived from immutable launch facts".into(),
         ),
     }
 }
@@ -3013,6 +3497,7 @@ fn session_configuration(
     shell: &Shell,
     chronos: Option<&Hub>,
     vellum: bool,
+    vellum_allow_add_file: bool,
     agora: bool,
     agora_control: bool,
     moira: bool,
@@ -3059,7 +3544,15 @@ fn session_configuration(
                 "disabled"
             }
         ),
-        format!("Vellum             {}", disposition(vellum)),
+        format!(
+            "Vellum             {} · Ctrl-O file admission {}",
+            disposition(vellum),
+            if vellum_allow_add_file {
+                "selected"
+            } else {
+                "owner-controlled"
+            }
+        ),
         format!(
             "Agora              {} · room creation {}",
             disposition(agora),
@@ -3104,6 +3597,75 @@ fn session_configuration(
         format!("Grounding          {}", disposition(grounding)),
         String::new(),
         "Credentials, grant handles, and provider locators are intentionally omitted.".into(),
+    ]
+}
+
+fn local_provider_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> {
+    let hosted = profile
+        .and_then(|profile| profile.daimon.as_ref())
+        .is_some_and(|daimon| daimon.host.is_some());
+    vec![
+        format!(
+            "current              Daimon owner configuration {}",
+            if hosted { "selected" } else { "not selected" }
+        ),
+        "owner                Daimon local-agent supervisor".into(),
+        "boundary             Pantheon never stores provider commands, models, credentials, or inherited secret values".into(),
+        String::new(),
+        "1  Add or edit the provider in Daimon's owner configuration (transport: acp for an ACP process).".into(),
+        "2  Keep provider command, arguments, model policy, and credential environment names in that owner document.".into(),
+        "3  Select deployment=hosted plus Daimon's executable/config and public agent_socket in the workspace profile.".into(),
+        "4  Run M-x configure ACP agent sessions to select owner-created sessions.".into(),
+        "5  Run M-x preflight and restart workspace profile; review the exact diff, arm, then confirm once.".into(),
+        String::new(),
+        "Result: Operations owns lifecycle; Daimon owns provider execution; Pantheon presents bounded evidence and controls.".into(),
+    ]
+}
+
+fn acp_session_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> {
+    let (sessions, execution) =
+        profile
+            .and_then(|profile| profile.daimon.as_ref())
+            .map_or((0, false), |daimon| {
+                (
+                    daimon.agent_sessions.len() + usize::from(daimon.agent_session.is_some()),
+                    daimon.execution.is_some(),
+                )
+            });
+    vec![
+        format!("current              {sessions} exact ACP/Daimon session selector(s)"),
+        format!(
+            "execution policy     {}",
+            if execution { "selected" } else { "not selected" }
+        ),
+        "owner                Daimon creates, resumes, authenticates, and durably records ACP sessions".into(),
+        String::new(),
+        "1  Start or recover the session through the selected Daimon provider owner.".into(),
+        "2  Put its exact 32-hex session ID in daimon.agent_sessions (1–16) and select agent_socket.".into(),
+        "3  Add a credential-free execution policy only for prompt, permission, and reattach controls.".into(),
+        "4  Preflight and restart the workspace profile from M-x; no live selector mutation is implied.".into(),
+        "5  Open Daimon, refresh the set, and use Space to choose the bounded workset.".into(),
+        String::new(),
+        "Failure orientation: unavailable sessions stay explicit; provider liveness never fabricates workflow completion.".into(),
+    ]
+}
+
+fn agora_room_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> {
+    let configured = profile.and_then(|profile| profile.agora.as_ref()).is_some();
+    vec![
+        format!(
+            "current              Agora room control {}",
+            if configured { "selected" } else { "not selected" }
+        ),
+        "owner                Agora daemon and actor-bound public client".into(),
+        String::new(),
+        "1  Configure or host Agora's owner daemon and public socket.".into(),
+        "2  Add agora.socket, participant, and conversation/composition transport to the workspace profile.".into(),
+        "3  Require rooms.read.v2 and the intended guarded room/message capabilities.".into(),
+        "4  Preflight and restart the profile; refresh Agora to obtain a stable room revision.".into(),
+        "5  Run M-x create an Agora room; complete the bounded form, arm, and confirm exactly once.".into(),
+        String::new(),
+        "The participant is an authenticated identity claim, not a credential or ambient room authority.".into(),
     ]
 }
 
@@ -3171,6 +3733,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         aegis_control_socket,
         mut grounding,
         vellum_control,
+        vellum_allow_add_file,
     } = peers;
     let mut agora_create: Option<agora_tui::CreateRoomComponent> = None;
     let mut agora_message: Option<agora_tui::ComposeMessageComponent> = None;
@@ -3192,6 +3755,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut daimon_post_receipt_refresh = false;
     let mut daimon_recovery_refresh = false;
     let mut daimon_unknown_evidence = false;
+    let mut work_item_agent = WorkItemAgentJourney::default();
     let mut hermes_acknowledge: Option<hermes_tui::AcknowledgeComponent> = None;
     let mut hermes_compaction: Option<hermes_tui::CompactionComponent> = None;
     let mut last_hermes_compaction_notice = String::new();
@@ -3217,6 +3781,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut vellum_durable_operation = None;
     let mut vellum_atomic_replace: Option<AtomicReplaceComponent> = None;
     let mut vellum_atomic_operation = None;
+    let mut vellum_open_prompt: Option<TextPrompt> = None;
     let commands = workbench_commands(
         &shell,
         chronos.is_some(),
@@ -3247,9 +3812,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut overlay = WorkbenchOverlay::None;
     let mut activity = ActivityLog::default();
     let mut instrumentation = Instrumentation::default();
+    let mut pending_ui_feedback: Option<(u64, ActivityLevel)> = None;
     let mut refresh_operations = RefreshOperations::default();
     let mut operations = OperationsRuntime::new(native_host);
-    let mut reconfiguration = current_profile.map(ReconfigurationWorkflow::new);
     let mut restart_profile = None;
     let mut drain_operations: Vec<(HostedPeerId, u64)> = Vec::new();
     activity.push(
@@ -3261,6 +3826,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         &shell,
         chronos.as_ref(),
         vellum.is_some(),
+        vellum_allow_add_file,
         agora.is_some(),
         agora_control.is_some(),
         moira.is_some(),
@@ -3277,6 +3843,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         aegis_control_socket.is_some(),
         grounding.is_some(),
     );
+    let provider_configuration_lines = local_provider_configuration(current_profile.as_ref());
+    let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
+    let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
+    let mut reconfiguration = current_profile.map(ReconfigurationWorkflow::new);
     let health_channels = [
         ("chronos", "tasks", chronos.is_some()),
         ("vellum", "workspace", vellum.is_some()),
@@ -3299,6 +3869,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     }
 
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
+        let _input_capture = InputCapture::enable()?;
         loop {
             if let Some((level, shutdown)) = operations.poll() {
                 settle_drain_operations(
@@ -3354,6 +3925,64 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     instrumentation.mark_peer_stage(operation, "peer_receipt", level);
                     instrumentation.settle_peer_operation(operation, level);
                     activity.push(level, "chronos", message);
+                    if let WorkItemAgentJourney::AwaitingTaskReceipt { draft } = &work_item_agent {
+                        if level != ActivityLevel::Success {
+                            work_item_agent = WorkItemAgentJourney::Failed;
+                            notice = command_feedback(
+                                "workitem.agent.new",
+                                level,
+                                "Chronos did not return an applied task receipt; the local agent was not invoked",
+                            );
+                            activity.push(level, "work-item", notice.clone());
+                        } else {
+                            let prompt = work_item_agent_prompt(draft);
+                            let observations = daimon_agent
+                                .as_ref()
+                                .map(daimon_tui::AgentSetComponent::selected_observations)
+                                .unwrap_or_default();
+                            let readiness = if observations.is_empty() {
+                                Some(
+                                    "No current selected Daimon session; refresh the configured local agent first"
+                                        .to_owned(),
+                                )
+                            } else {
+                                daimon_workset_error(
+                                    &observations,
+                                    "Ready with no active turn",
+                                    |view| {
+                                        view.phase == AgentSessionPhaseV1::Ready
+                                            && view.active_turn.is_none()
+                                    },
+                                )
+                            };
+                            if let Some(reason) = readiness {
+                                work_item_agent = WorkItemAgentJourney::Failed;
+                                notice = command_feedback(
+                                    "workitem.agent.new",
+                                    ActivityLevel::Warning,
+                                    &format!(
+                                        "Chronos created the task, but the local agent prompt could not open: {reason}"
+                                    ),
+                                );
+                                activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                            } else {
+                                let mut composer =
+                                    daimon_tui::AgentPromptComposer::new(observations.len())
+                                        .expect(
+                                            "a bounded nonempty selected session set was validated",
+                                        );
+                                composer.insert_text(&prompt);
+                                daimon_prompt_composer = Some(composer);
+                                daimon_permission_composer = None;
+                                daimon_control = None;
+                                let _ = shell.activate(Surface::Daimon);
+                                work_item_agent = WorkItemAgentJourney::ReviewingPrompt;
+                                notice = "READY · Chronos task created and local-agent prompt prepared · Next: review the carried work text, Tab to review, c to arm, then Enter once"
+                                    .into();
+                                activity.push(ActivityLevel::Success, "work-item", notice.clone());
+                            }
+                        }
+                    }
                 } else if let Some(operation) = refresh_operations.chronos.take() {
                     instrumentation.settle_peer_operation(operation, ActivityLevel::Success);
                     activity.push(
@@ -3520,7 +4149,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     instrumentation.settle_peer_operation(operation, level);
                 }
                 daimon_post_receipt_refresh = false;
-                notice = if settlement.is_ok() {
+                notice = if settlement.is_ok()
+                    && matches!(
+                        work_item_agent,
+                        WorkItemAgentJourney::ConversationReady
+                    )
+                {
+                    "DONE · Local-agent turn accepted and reconciled with the selected session conversation · Next: continue here, or run M-x Return to the Kanban board"
+                } else if settlement.is_ok() {
                     "Daimon child receipts reconciled with refreshed session projections"
                 } else {
                     "Daimon child receipts retained; refreshed session projection unavailable"
@@ -3555,6 +4191,24 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     };
                     notice = current.into();
                     activity.push(level, "daimon", current);
+                    if active_daimon_action == Some("workitem.agent.prompt")
+                        && level != ActivityLevel::Info
+                    {
+                        if control.disposition() == daimon_tui::AgentControlDisposition::Applied {
+                            work_item_agent = WorkItemAgentJourney::ConversationReady;
+                            notice = "DONE · Local-agent turn accepted; the selected Daimon timeline is the live conversation · Next: continue here, or run M-x Return to the Kanban board"
+                                .into();
+                            activity.push(ActivityLevel::Success, "work-item", notice.clone());
+                        } else {
+                            work_item_agent = WorkItemAgentJourney::Failed;
+                            notice = command_feedback(
+                                "workitem.agent.prompt",
+                                level,
+                                "The local-agent invocation did not produce an applied receipt; inspect the retained Daimon evidence before retrying",
+                            );
+                            activity.push(level, "work-item", notice.clone());
+                        }
+                    }
                     if level != ActivityLevel::Info {
                         if control.has_unknown() && !daimon_unknown_evidence {
                             if let Some(operation) = daimon_operation {
@@ -4069,6 +4723,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             let operations_view = operations.view();
             let render_started = Instant::now();
             terminal.draw(|frame| {
+                let prompt_notice = vellum_open_prompt.as_ref().map(|prompt| {
+                    prompt.display(usize::from(frame.area().width.saturating_sub(6)))
+                });
                 draw_shell_with_moira(
                     frame,
                     &shell,
@@ -4097,9 +4754,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         grounding: grounding.as_ref(),
                         operations: Some(&operations_view),
                         health: Some(&health_view),
+                        configuration: Some(&configuration),
                     },
                     focus,
-                    &notice,
+                    prompt_notice.as_deref().unwrap_or(&notice),
                 );
                 match overlay {
                     WorkbenchOverlay::None => {}
@@ -4108,6 +4766,27 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     WorkbenchOverlay::Activity => draw_activity(frame, &activity),
                     WorkbenchOverlay::Configuration => {
                         draw_inspector(frame, "Session configuration", &configuration);
+                    }
+                    WorkbenchOverlay::LocalProviders => {
+                        draw_inspector(
+                            frame,
+                            "Local provider configuration",
+                            &provider_configuration_lines,
+                        );
+                    }
+                    WorkbenchOverlay::AcpSessions => {
+                        draw_inspector(
+                            frame,
+                            "ACP session configuration",
+                            &acp_configuration_lines,
+                        );
+                    }
+                    WorkbenchOverlay::AgoraRooms => {
+                        draw_inspector(
+                            frame,
+                            "Agora room configuration",
+                            &agora_configuration_lines,
+                        );
                     }
                     WorkbenchOverlay::Reconfiguration => {
                         if let Some(workflow) = &reconfiguration {
@@ -4125,345 +4804,485 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 ActivityLevel::Success,
                 render_started.elapsed(),
             );
+            if let Some((operation, level)) = pending_ui_feedback.take() {
+                instrumentation.mark_peer_stage(operation, "feedback_presented", level);
+                instrumentation.mark_peer_stage(
+                    operation,
+                    "frame_rendered",
+                    ActivityLevel::Success,
+                );
+                instrumentation.settle_peer_operation(operation, level);
+            }
             if !event::poll(Duration::from_millis(25))? {
                 continue;
             }
-            match event::read()? {
+            let event = event::read()?;
+            let input_started = Instant::now();
+            let mut key_behavior = match &event {
+                Event::Key(key) => Some(BehaviorFacade::key(
+                    *key,
+                    overlay,
+                    shell.active(),
+                    vellum_open_prompt.is_none() && vellum_surface_active(shell.active(), focus),
+                )),
+                _ => None,
+            };
+            if let (Event::Key(key), Some(KeyBehavior::CommandPaletteInput)) =
+                (&event, key_behavior)
+            {
+                key_behavior = Some(BehaviorFacade::palette(palette.key(*key)));
+            }
+            if key_behavior == Some(KeyBehavior::SafeExit) {
+                // Safe exit crosses overlay boundaries, then reaches the one
+                // guarded exit implementation at the bottom of this dispatch.
+                overlay = WorkbenchOverlay::None;
+            }
+            match event {
                 Event::Paste(text) if overlay == WorkbenchOverlay::Commands => {
                     palette.insert(&text);
                 }
-                Event::Key(key) if overlay == WorkbenchOverlay::Commands => {
-                    match palette.key(key) {
-                        PaletteOutcome::None => {}
-                        PaletteOutcome::Dismiss => overlay = WorkbenchOverlay::None,
-                        PaletteOutcome::Unavailable(reason) => {
-                            notice = reason.into();
-                            activity.push(ActivityLevel::Warning, "palette", reason);
+                Event::Key(_)
+                    if matches!(key_behavior, Some(KeyBehavior::CommandUnavailable(_))) =>
+                {
+                    let Some(KeyBehavior::CommandUnavailable(reason)) = key_behavior else {
+                        unreachable!("guarded above")
+                    };
+                    let operation = instrumentation
+                        .begin_ui_operation_at("workbench.command.unavailable", input_started)
+                        .map(|(operation, _)| operation);
+                    if let Some(operation) = operation {
+                        instrumentation.mark_peer_stage(
+                            operation,
+                            "command_dispatched",
+                            ActivityLevel::Warning,
+                        );
+                        pending_ui_feedback = Some((operation, ActivityLevel::Warning));
+                    }
+                    notice = command_feedback(
+                        "workbench.command.unavailable",
+                        ActivityLevel::Warning,
+                        reason,
+                    );
+                    activity.push(ActivityLevel::Warning, "palette", notice.clone());
+                    overlay = WorkbenchOverlay::None;
+                }
+                Event::Key(_) if matches!(key_behavior, Some(KeyBehavior::ExecuteCommand(_))) => {
+                    let Some(KeyBehavior::ExecuteCommand(action)) = key_behavior else {
+                        unreachable!("guarded above")
+                    };
+                    let ui_operation = instrumentation.begin_ui_operation_at(action, input_started);
+                    let ui_correlation = ui_operation.map(|(_, correlation)| correlation);
+                    if let Some((operation, _)) = ui_operation {
+                        instrumentation.mark_peer_stage(
+                            operation,
+                            "command_dispatched",
+                            ActivityLevel::Info,
+                        );
+                    }
+                    if action.starts_with("navigate.") {
+                        vellum_open_prompt = None;
+                        confirming_discard = false;
+                    }
+                    let configuration_overlay = match action {
+                        "configuration.providers.local" => Some((
+                            WorkbenchOverlay::LocalProviders,
+                            "Local provider configuration",
+                        )),
+                        "configuration.acp.sessions" => {
+                            Some((WorkbenchOverlay::AcpSessions, "ACP session configuration"))
                         }
-                        PaletteOutcome::Execute(action) => {
-                            if action == "workbench.help" {
-                                overlay = WorkbenchOverlay::Help;
-                                continue;
-                            }
-                            if action == "workbench.activity" {
-                                overlay = WorkbenchOverlay::Activity;
-                                continue;
-                            }
-                            if action == "workbench.configuration" {
-                                overlay = WorkbenchOverlay::Configuration;
-                                continue;
-                            }
-                            if action == "workbench.reconfigure" {
-                                if reconfiguration.is_some() {
-                                    overlay = WorkbenchOverlay::Reconfiguration;
-                                }
-                                continue;
-                            }
-                            if action == "workbench.instrumentation" {
-                                instrumentation.record(
-                                    action,
-                                    "pantheon",
-                                    ActivityLevel::Info,
-                                    Duration::ZERO,
-                                );
-                                overlay = WorkbenchOverlay::Instrumentation;
-                                continue;
-                            }
-                            if matches!(
+                        "configuration.agora.rooms" => {
+                            Some((WorkbenchOverlay::AgoraRooms, "Agora room configuration"))
+                        }
+                        _ => None,
+                    };
+                    if let Some((next_overlay, label)) = configuration_overlay {
+                        notice = format!(
+                            "OPENED · {label} · Next: follow the owner/profile checklist, then run workspace-profile preflight from M-x"
+                        );
+                        activity.push(ActivityLevel::Info, "configuration", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = next_overlay;
+                        continue;
+                    }
+                    if action == "workbench.help" {
+                        notice =
+                            "OPENED · Contextual help · Next: F1 or C-g returns to work".into();
+                        activity.push(ActivityLevel::Info, "pantheon", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::Help;
+                        continue;
+                    }
+                    if action == "workbench.activity" {
+                        notice =
+                            "OPENED · Activity and receipts · Next: C-g returns to work".into();
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::Activity;
+                        continue;
+                    }
+                    if action == "workbench.configuration" {
+                        notice = "OPENED · Session configuration · Next: inspect requirements or run workspace reconfiguration from M-x".into();
+                        activity.push(ActivityLevel::Info, "configuration", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::Configuration;
+                        continue;
+                    }
+                    if action == "workbench.reconfigure" {
+                        if reconfiguration.is_some() {
+                            notice = "READY · Workspace profile preflight · Next: enter a profile path and press Enter".into();
+                            overlay = WorkbenchOverlay::Reconfiguration;
+                        } else {
+                            notice = command_feedback(
                                 action,
-                                "ledger.compact.v1"
-                                    | "ledger.events.disclose.v1"
-                                    | "ledger.acknowledge.v1"
-                            ) && (hermes_compaction.as_ref().is_some_and(|control| {
-                                matches!(
-                                    control.disposition(),
-                                    hermes_tui::CompactionDisposition::Pending
-                                        | hermes_tui::CompactionDisposition::OutcomeUnknown
-                                )
-                            }) || hermes_compaction_post_receipt_refresh
-                                || hermes_compaction_operation.is_some()
-                                || hermes_disclosure.as_ref().is_some_and(|control| {
-                                    control.disposition()
-                                        == hermes_tui::DisclosureDisposition::Pending
-                                })
-                                || hermes_disclosure_operation.is_some()
-                                || hermes_acknowledge.as_ref().is_some_and(|control| {
-                                    matches!(
-                                        control.disposition(),
-                                        hermes_tui::AcknowledgeDisposition::Pending
-                                            | hermes_tui::AcknowledgeDisposition::OutcomeUnknown
-                                    )
-                                })
-                                || hermes_post_receipt_refresh
-                                || hermes_operation.is_some())
-                            {
-                                overlay = WorkbenchOverlay::None;
-                                notice = "A Hermes control is still pending, reconciling, or outcome-unknown; settle it before opening another"
+                                ActivityLevel::Warning,
+                                "This session was not launched from a workspace profile",
+                            );
+                        }
+                        let level = if reconfiguration.is_some() {
+                            ActivityLevel::Info
+                        } else {
+                            ActivityLevel::Warning
+                        };
+                        activity.push(level, "configuration", notice.clone());
+                        pending_ui_feedback = ui_operation.map(|(operation, _)| (operation, level));
+                        continue;
+                    }
+                    if action == "workbench.instrumentation" {
+                        instrumentation.record(
+                            action,
+                            "pantheon",
+                            ActivityLevel::Info,
+                            Duration::ZERO,
+                        );
+                        notice = "OPENED · Presentation instrumentation · Next: inspect correlations and budget violations; C-g returns".into();
+                        activity.push(ActivityLevel::Info, "presentation", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::Instrumentation;
+                        continue;
+                    }
+                    if action == "vellum.document.open" {
+                        overlay = WorkbenchOverlay::None;
+                        if vellum.is_none() {
+                            notice = command_feedback(
+                                action,
+                                ActivityLevel::Warning,
+                                "Vellum service is not configured",
+                            );
+                            activity.push(ActivityLevel::Warning, "vellum", notice.clone());
+                            pending_ui_feedback = ui_operation
+                                .map(|(operation, _)| (operation, ActivityLevel::Warning));
+                            continue;
+                        }
+                        activate_peer_surface(&mut shell, Surface::Vellum);
+                        focus = Focus::Vellum;
+                        vellum_open_prompt = Some(TextPrompt::new(4096, "Open file"));
+                        notice = command_feedback(
+                            action,
+                            ActivityLevel::Info,
+                            "Vellum file admission prompt opened",
+                        );
+                        activity.push(ActivityLevel::Info, "vellum", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        continue;
+                    }
+                    if matches!(
+                        action,
+                        "ledger.compact.v1" | "ledger.events.disclose.v1" | "ledger.acknowledge.v1"
+                    ) && (hermes_compaction.as_ref().is_some_and(|control| {
+                        matches!(
+                            control.disposition(),
+                            hermes_tui::CompactionDisposition::Pending
+                                | hermes_tui::CompactionDisposition::OutcomeUnknown
+                        )
+                    }) || hermes_compaction_post_receipt_refresh
+                        || hermes_compaction_operation.is_some()
+                        || hermes_disclosure.as_ref().is_some_and(|control| {
+                            control.disposition() == hermes_tui::DisclosureDisposition::Pending
+                        })
+                        || hermes_disclosure_operation.is_some()
+                        || hermes_acknowledge.as_ref().is_some_and(|control| {
+                            matches!(
+                                control.disposition(),
+                                hermes_tui::AcknowledgeDisposition::Pending
+                                    | hermes_tui::AcknowledgeDisposition::OutcomeUnknown
+                            )
+                        })
+                        || hermes_post_receipt_refresh
+                        || hermes_operation.is_some())
+                    {
+                        overlay = WorkbenchOverlay::None;
+                        notice = "A Hermes control is still pending, reconciling, or outcome-unknown; settle it before opening another"
                                     .into();
-                                activity.push(ActivityLevel::Warning, "hermes", notice.clone());
-                                continue;
+                        activity.push(ActivityLevel::Warning, "hermes", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Warning));
+                        continue;
+                    }
+                    overlay = WorkbenchOverlay::None;
+                    let refresh_surface = shell.active();
+                    let refresh_focus = focus;
+                    let refresh_pending_before = (
+                        agora.as_ref().is_some_and(|value| value.request_pending()),
+                        moira.as_ref().is_some_and(|value| value.request_pending()),
+                        if let Some(value) = daimon_agent.as_ref() {
+                            value.request_pending()
+                        } else {
+                            daimon.as_ref().is_some_and(|value| value.request_pending())
+                        },
+                        hermes.as_ref().is_some_and(|value| value.request_pending()),
+                        aegis.as_ref().is_some_and(|value| value.request_pending()),
+                        grounding
+                            .as_ref()
+                            .is_some_and(|value| value.request_pending()),
+                    );
+                    let started = Instant::now();
+                    let (level, source, message) = execute_workbench_action(
+                        action,
+                        &mut shell,
+                        &mut focus,
+                        &mut chronos,
+                        &mut vellum,
+                        vellum_control.as_ref(),
+                        &mut vellum_durable_save,
+                        &mut vellum_atomic_replace,
+                        &mut agora,
+                        agora_control.as_ref(),
+                        &mut agora_create,
+                        &mut agora_message,
+                        &mut moira,
+                        moira_control_socket.as_deref(),
+                        &mut moira_reconciliation,
+                        &mut daimon,
+                        &mut daimon_agent,
+                        daimon_agent_control_socket.as_deref(),
+                        daimon_execution_policy.as_ref(),
+                        &mut daimon_prompt_composer,
+                        &mut daimon_permission_composer,
+                        &mut daimon_control,
+                        &mut hermes,
+                        hermes_operator_socket.as_deref(),
+                        &mut hermes_compaction,
+                        hermes_disclosure_socket.as_deref(),
+                        &mut hermes_disclosure,
+                        hermes_control_socket.as_deref(),
+                        &mut hermes_acknowledge,
+                        &mut aegis,
+                        aegis_control_socket.as_deref(),
+                        &mut aegis_revoke,
+                        &mut aegis_managed,
+                        &mut grounding,
+                        &mut operations,
+                    );
+                    if action == "workitem.agent.new" {
+                        work_item_agent = if level == ActivityLevel::Info {
+                            WorkItemAgentJourney::EditingTask {
+                                draft: String::new(),
                             }
-                            overlay = WorkbenchOverlay::None;
-                            let refresh_surface = shell.active();
-                            let refresh_focus = focus;
-                            let refresh_pending_before = (
-                                agora.as_ref().is_some_and(|value| value.request_pending()),
-                                moira.as_ref().is_some_and(|value| value.request_pending()),
-                                if let Some(value) = daimon_agent.as_ref() {
-                                    value.request_pending()
-                                } else {
-                                    daimon.as_ref().is_some_and(|value| value.request_pending())
-                                },
-                                hermes.as_ref().is_some_and(|value| value.request_pending()),
-                                aegis.as_ref().is_some_and(|value| value.request_pending()),
-                                grounding
+                        } else {
+                            WorkItemAgentJourney::Failed
+                        };
+                    }
+                    let peer_workflow_opened = level == ActivityLevel::Info
+                        && matches!(
+                            action,
+                            "workitem.agent.new"
+                                | "agora.room.create"
+                                | "agora.message.compose"
+                                | "moira.reconciliation.keep-uncertain"
+                                | "moira.reconciliation.fail-terminal"
+                                | "moira.reconciliation.cancel"
+                                | "moira.reconciliation.compensate"
+                                | "moira.reconciliation.admit-failed"
+                                | "moira.reconciliation.admit-succeeded"
+                                | "moira.reconciliation.retry"
+                                | "daimon.session.prompt"
+                                | "daimon.session.permission"
+                                | "daimon.session.reattach"
+                                | "daimon.session.advance"
+                                | "daimon.session.cancel"
+                                | "daimon.session.close"
+                                | "ledger.compact.v1"
+                                | "ledger.events.disclose.v1"
+                                | "ledger.acknowledge.v1"
+                                | "aegis.epoch.revoke"
+                                | "aegis.authority.manage"
+                                | "vellum.save-selected"
+                                | "vellum.atomic-replace-selected"
+                        );
+                    let mut correlated_refresh = false;
+                    if matches!(
+                        action,
+                        "suite.refresh" | "view.refresh" | "workitem.agent.return"
+                    ) {
+                        let refresh_correlation =
+                            ui_correlation.unwrap_or_else(|| instrumentation.new_correlation());
+                        let suite = action == "suite.refresh";
+                        let current = |surface| suite || refresh_surface == surface;
+                        let chronos_selected = action == "workitem.agent.return"
+                            || suite
+                            || refresh_surface == Surface::Chronos
+                            || (refresh_surface == Surface::Workspace
+                                && refresh_focus == Focus::Chronos);
+                        correlated_refresh |= begin_refresh_correlated(
+                            chronos_selected && chronos.is_some(),
+                            action,
+                            "chronos",
+                            &mut refresh_operations.chronos,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                        correlated_refresh |= begin_refresh_correlated(
+                            current(Surface::Agora)
+                                && !refresh_pending_before.0
+                                && agora.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "agora",
+                            &mut refresh_operations.agora,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                        correlated_refresh |= begin_refresh_correlated(
+                            current(Surface::Moira)
+                                && !refresh_pending_before.1
+                                && moira.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "moira",
+                            &mut refresh_operations.moira,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                        let daimon_pending = if let Some(value) = daimon_agent.as_ref() {
+                            value.request_pending()
+                        } else {
+                            daimon.as_ref().is_some_and(|value| value.request_pending())
+                        };
+                        correlated_refresh |= begin_refresh_correlated(
+                            current(Surface::Daimon) && !refresh_pending_before.2 && daimon_pending,
+                            action,
+                            "daimon",
+                            &mut refresh_operations.daimon,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                        correlated_refresh |= begin_refresh_correlated(
+                            current(Surface::Hermes)
+                                && !refresh_pending_before.3
+                                && hermes.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "hermes",
+                            &mut refresh_operations.hermes,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                        correlated_refresh |= begin_refresh_correlated(
+                            current(Surface::Aegis)
+                                && !refresh_pending_before.4
+                                && aegis.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "aegis",
+                            &mut refresh_operations.aegis,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                        correlated_refresh |= begin_refresh_correlated(
+                            current(Surface::Grounding)
+                                && !refresh_pending_before.5
+                                && grounding
                                     .as_ref()
                                     .is_some_and(|value| value.request_pending()),
-                            );
-                            let started = Instant::now();
-                            let (level, source, message) = execute_workbench_action(
-                                action,
-                                &mut shell,
-                                &mut focus,
-                                &mut chronos,
-                                &mut vellum,
-                                vellum_control.as_ref(),
-                                &mut vellum_durable_save,
-                                &mut vellum_atomic_replace,
-                                &mut agora,
-                                agora_control.as_ref(),
-                                &mut agora_create,
-                                &mut agora_message,
-                                &mut moira,
-                                moira_control_socket.as_deref(),
-                                &mut moira_reconciliation,
-                                &mut daimon,
-                                &mut daimon_agent,
-                                daimon_agent_control_socket.as_deref(),
-                                daimon_execution_policy.as_ref(),
-                                &mut daimon_prompt_composer,
-                                &mut daimon_permission_composer,
-                                &mut daimon_control,
-                                &mut hermes,
-                                hermes_operator_socket.as_deref(),
-                                &mut hermes_compaction,
-                                hermes_disclosure_socket.as_deref(),
-                                &mut hermes_disclosure,
-                                hermes_control_socket.as_deref(),
-                                &mut hermes_acknowledge,
-                                &mut aegis,
-                                aegis_control_socket.as_deref(),
-                                &mut aegis_revoke,
-                                &mut aegis_managed,
-                                &mut grounding,
-                                &mut operations,
-                            );
-                            let peer_workflow_opened = level == ActivityLevel::Info
-                                && matches!(
-                                    action,
-                                    "agora.room.create"
-                                        | "agora.message.compose"
-                                        | "moira.reconciliation.keep-uncertain"
-                                        | "moira.reconciliation.fail-terminal"
-                                        | "moira.reconciliation.cancel"
-                                        | "moira.reconciliation.compensate"
-                                        | "moira.reconciliation.admit-failed"
-                                        | "moira.reconciliation.admit-succeeded"
-                                        | "moira.reconciliation.retry"
-                                        | "daimon.session.prompt"
-                                        | "daimon.session.permission"
-                                        | "daimon.session.reattach"
-                                        | "daimon.session.advance"
-                                        | "daimon.session.cancel"
-                                        | "daimon.session.close"
-                                        | "ledger.compact.v1"
-                                        | "ledger.events.disclose.v1"
-                                        | "ledger.acknowledge.v1"
-                                        | "aegis.epoch.revoke"
-                                        | "aegis.authority.manage"
-                                        | "vellum.save-selected"
-                                        | "vellum.atomic-replace-selected"
-                                );
-                            let mut correlated_refresh = false;
-                            if matches!(action, "suite.refresh" | "view.refresh") {
-                                let refresh_correlation = instrumentation.new_correlation();
-                                let suite = action == "suite.refresh";
-                                let current = |surface| suite || refresh_surface == surface;
-                                let chronos_selected = suite
-                                    || (refresh_surface == Surface::Workspace
-                                        && refresh_focus == Focus::Chronos);
-                                correlated_refresh |= begin_refresh_correlated(
-                                    chronos_selected && chronos.is_some(),
-                                    action,
-                                    "chronos",
-                                    &mut refresh_operations.chronos,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                                correlated_refresh |= begin_refresh_correlated(
-                                    current(Surface::Agora)
-                                        && !refresh_pending_before.0
-                                        && agora
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "agora",
-                                    &mut refresh_operations.agora,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                                correlated_refresh |= begin_refresh_correlated(
-                                    current(Surface::Moira)
-                                        && !refresh_pending_before.1
-                                        && moira
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "moira",
-                                    &mut refresh_operations.moira,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                                let daimon_pending = if let Some(value) = daimon_agent.as_ref() {
-                                    value.request_pending()
-                                } else {
-                                    daimon.as_ref().is_some_and(|value| value.request_pending())
-                                };
-                                correlated_refresh |= begin_refresh_correlated(
-                                    current(Surface::Daimon)
-                                        && !refresh_pending_before.2
-                                        && daimon_pending,
-                                    action,
-                                    "daimon",
-                                    &mut refresh_operations.daimon,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                                correlated_refresh |= begin_refresh_correlated(
-                                    current(Surface::Hermes)
-                                        && !refresh_pending_before.3
-                                        && hermes
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "hermes",
-                                    &mut refresh_operations.hermes,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                                correlated_refresh |= begin_refresh_correlated(
-                                    current(Surface::Aegis)
-                                        && !refresh_pending_before.4
-                                        && aegis
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "aegis",
-                                    &mut refresh_operations.aegis,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                                correlated_refresh |= begin_refresh_correlated(
-                                    current(Surface::Grounding)
-                                        && !refresh_pending_before.5
-                                        && grounding
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "grounding",
-                                    &mut refresh_operations.grounding,
-                                    &mut instrumentation,
-                                    started,
-                                    Some(refresh_correlation),
-                                );
-                            }
-                            if matches!(action, "agora.room.open" | "agora.room.back") {
-                                correlated_refresh |= begin_refresh(
-                                    !refresh_pending_before.0
-                                        && agora
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "agora",
-                                    &mut refresh_operations.agora,
-                                    &mut instrumentation,
-                                    started,
-                                );
-                            }
-                            if matches!(action, "moira.saga.open" | "moira.saga.back") {
-                                correlated_refresh |= begin_refresh(
-                                    !refresh_pending_before.1
-                                        && moira
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "moira",
-                                    &mut refresh_operations.moira,
-                                    &mut instrumentation,
-                                    started,
-                                );
-                            }
-                            if matches!(action, "aegis.page.next" | "aegis.page.previous") {
-                                correlated_refresh |= begin_refresh(
-                                    !refresh_pending_before.4
-                                        && aegis
-                                            .as_ref()
-                                            .is_some_and(|value| value.request_pending()),
-                                    action,
-                                    "aegis",
-                                    &mut refresh_operations.aegis,
-                                    &mut instrumentation,
-                                    started,
-                                );
-                            }
-                            if !peer_workflow_opened && !correlated_refresh {
-                                instrumentation.record(action, source, level, started.elapsed());
-                            }
-                            if matches!(
-                                action,
-                                "moira.reconciliation.keep-uncertain"
-                                    | "moira.reconciliation.fail-terminal"
-                                    | "moira.reconciliation.cancel"
-                                    | "moira.reconciliation.compensate"
-                                    | "moira.reconciliation.admit-failed"
-                                    | "moira.reconciliation.admit-succeeded"
-                                    | "moira.reconciliation.retry"
-                            ) && level == ActivityLevel::Info
-                                && moira_reconciliation.is_some()
-                            {
-                                active_moira_action = Some(action);
-                                if moira_operation.is_none()
-                                    && moira_reconciliation
-                                        .as_ref()
-                                        .is_some_and(|control| control.request_pending())
-                                {
-                                    moira_operation =
-                                        instrumentation.begin_peer_operation(action, "moira");
-                                }
-                            }
-                            if action.starts_with("daimon.session.")
-                                && daimon_control.is_some()
-                                && level == ActivityLevel::Info
-                            {
-                                active_daimon_action = Some(action);
-                            }
-                            notice.clone_from(&message);
-                            activity.push(level, source, message);
+                            action,
+                            "grounding",
+                            &mut refresh_operations.grounding,
+                            &mut instrumentation,
+                            started,
+                            Some(refresh_correlation),
+                        );
+                    }
+                    if matches!(action, "agora.room.open" | "agora.room.back") {
+                        correlated_refresh |= begin_refresh(
+                            !refresh_pending_before.0
+                                && agora.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "agora",
+                            &mut refresh_operations.agora,
+                            &mut instrumentation,
+                            started,
+                        );
+                    }
+                    if matches!(action, "moira.saga.open" | "moira.saga.back") {
+                        correlated_refresh |= begin_refresh(
+                            !refresh_pending_before.1
+                                && moira.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "moira",
+                            &mut refresh_operations.moira,
+                            &mut instrumentation,
+                            started,
+                        );
+                    }
+                    if matches!(action, "aegis.page.next" | "aegis.page.previous") {
+                        correlated_refresh |= begin_refresh(
+                            !refresh_pending_before.4
+                                && aegis.as_ref().is_some_and(|value| value.request_pending()),
+                            action,
+                            "aegis",
+                            &mut refresh_operations.aegis,
+                            &mut instrumentation,
+                            started,
+                        );
+                    }
+                    if !peer_workflow_opened && !correlated_refresh {
+                        instrumentation.record(action, source, level, started.elapsed());
+                    }
+                    if matches!(
+                        action,
+                        "moira.reconciliation.keep-uncertain"
+                            | "moira.reconciliation.fail-terminal"
+                            | "moira.reconciliation.cancel"
+                            | "moira.reconciliation.compensate"
+                            | "moira.reconciliation.admit-failed"
+                            | "moira.reconciliation.admit-succeeded"
+                            | "moira.reconciliation.retry"
+                    ) && level == ActivityLevel::Info
+                        && moira_reconciliation.is_some()
+                    {
+                        active_moira_action = Some(action);
+                        if moira_operation.is_none()
+                            && moira_reconciliation
+                                .as_ref()
+                                .is_some_and(|control| control.request_pending())
+                        {
+                            moira_operation = instrumentation.begin_peer_operation(action, "moira");
                         }
                     }
+                    if action.starts_with("daimon.session.")
+                        && daimon_control.is_some()
+                        && level == ActivityLevel::Info
+                    {
+                        active_daimon_action = Some(action);
+                    }
+                    notice = command_feedback(action, level, &message);
+                    activity.push(level, source, notice.clone());
+                    pending_ui_feedback = ui_operation.map(|(operation, _)| (operation, level));
                 }
                 Event::Paste(text) if overlay == WorkbenchOverlay::Reconfiguration => {
                     if let Some(workflow) = &mut reconfiguration {
                         workflow.insert(&text);
                     }
                 }
-                Event::Key(key) if overlay == WorkbenchOverlay::Reconfiguration => {
+                Event::Key(key) if key_behavior == Some(KeyBehavior::ReconfigurationInput) => {
                     if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
                         overlay = WorkbenchOverlay::None;
                         continue;
@@ -4644,26 +5463,51 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         workflow.insert(&character.to_string());
                     }
                 }
-                Event::Key(key)
-                    if overlay != WorkbenchOverlay::None
-                        && (is_key(key, KeyCode::Esc, KeyModifiers::NONE)
-                            || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
-                            || is_key(key, KeyCode::Char('g'), KeyModifiers::CONTROL)) =>
-                {
+                Event::Key(_) if key_behavior == Some(KeyBehavior::DismissOverlay) => {
                     overlay = WorkbenchOverlay::None;
                 }
-                Event::Key(_) if overlay != WorkbenchOverlay::None => {}
-                Event::Key(key) if is_key(key, KeyCode::Char('p'), KeyModifiers::CONTROL) => {
+                Event::Key(_) if key_behavior == Some(KeyBehavior::Suppress) => {}
+                Event::Key(_) if key_behavior == Some(KeyBehavior::OpenCommands) => {
                     palette.reset();
                     overlay = WorkbenchOverlay::Commands;
                 }
-                Event::Key(key) if is_key(key, KeyCode::F(1), KeyModifiers::NONE) => {
-                    overlay = WorkbenchOverlay::Help;
+                Event::Mouse(mouse)
+                    if matches!(mouse.kind, MouseEventKind::Down(MouseButton::Left)) =>
+                {
+                    if let Some(surface) =
+                        surface_tab_at(&shell, terminal.size()?.width, mouse.column, mouse.row)
+                        && shell.activate(surface)
+                    {
+                        vellum_open_prompt = None;
+                        confirming_discard = false;
+                        notice = format!("surface moved to {} by mouse", surface.label());
+                    }
                 }
-                Event::Key(key) if is_key(key, KeyCode::Char('g'), KeyModifiers::CONTROL) => {
-                    overlay = WorkbenchOverlay::Activity;
+                Event::Mouse(mouse)
+                    if mouse.row <= 2 && matches!(mouse.kind, MouseEventKind::ScrollUp) =>
+                {
+                    shell.previous();
+                    vellum_open_prompt = None;
+                    confirming_discard = false;
+                    notice = format!("surface moved to {} by mouse", shell.active().label());
+                }
+                Event::Mouse(mouse)
+                    if mouse.row <= 2 && matches!(mouse.kind, MouseEventKind::ScrollDown) =>
+                {
+                    shell.next();
+                    vellum_open_prompt = None;
+                    confirming_discard = false;
+                    notice = format!("surface moved to {} by mouse", shell.active().label());
                 }
                 Event::Resize(..) => continue,
+                Event::Paste(text) if vellum_open_prompt.is_some() => {
+                    if let Some(prompt) = &mut vellum_open_prompt {
+                        notice = match prompt.insert(&text) {
+                            Ok(()) => "Vellum open path updated".into(),
+                            Err(error) => error.to_string(),
+                        };
+                    }
+                }
                 Event::Paste(text)
                     if shell.active() == Surface::Daimon && daimon_prompt_composer.is_some() =>
                 {
@@ -4700,9 +5544,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         }
                     }
                 }
-                Event::Paste(text)
-                    if shell.active() == Surface::Workspace && focus == Focus::Vellum =>
-                {
+                Event::Paste(text) if vellum_surface_active(shell.active(), focus) => {
                     if let Some(vellum) = &mut vellum {
                         let started = Instant::now();
                         let result = vellum.apply(ServiceAction::Insert(text));
@@ -4729,19 +5571,61 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 Event::Paste(_) => {
                     notice = "Paste is available only in the focused Vellum pane".into();
                 }
-                Event::Key(key) if shell_input(key).is_some() => {
-                    match shell_input(key).expect("matched above") {
-                        ShellInput::NextSurface => shell.next(),
-                        ShellInput::PreviousSurface => shell.previous(),
+                Event::Key(key)
+                    if vellum_open_prompt.is_some()
+                        && key_behavior == Some(KeyBehavior::SurfaceLocal) =>
+                {
+                    let mut prompt = vellum_open_prompt.take().expect("matched above");
+                    match prompt.key(key) {
+                        Ok(PromptInput::Pending) => vellum_open_prompt = Some(prompt),
+                        Ok(PromptInput::Cancel) => {
+                            notice = "Vellum open cancelled".into();
+                        }
+                        Ok(PromptInput::Submit(locator)) if locator.is_empty() => {
+                            notice = "Vellum open refused: enter a file locator".into();
+                            vellum_open_prompt = Some(prompt);
+                        }
+                        Ok(PromptInput::Submit(locator)) => {
+                            let started = Instant::now();
+                            let result = vellum
+                                .as_mut()
+                                .expect("open prompt exists only with Vellum")
+                                .admit_file(locator);
+                            let level = if result.is_ok() {
+                                ActivityLevel::Success
+                            } else {
+                                ActivityLevel::Warning
+                            };
+                            instrumentation.record(
+                                "vellum.document.open",
+                                "vellum",
+                                level,
+                                started.elapsed(),
+                            );
+                            notice = result.map_or_else(
+                                |error| error.to_string(),
+                                |()| "Vellum admitted and opened the file".into(),
+                            );
+                            activity.push(level, "vellum", notice.clone());
+                        }
+                        Err(error) => {
+                            notice = error.to_string();
+                            vellum_open_prompt = Some(prompt);
+                        }
                     }
+                }
+                Event::Key(_) if matches!(key_behavior, Some(KeyBehavior::Navigate(_))) => {
+                    let Some(KeyBehavior::Navigate(input)) = key_behavior else {
+                        unreachable!("guarded above")
+                    };
+                    BehaviorFacade::navigate(&mut shell, input);
+                    vellum_open_prompt = None;
                     confirming_discard = false;
                     notice = format!("surface moved to {}", shell.active().label());
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Agora
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if agora_message.is_some() && is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
                         if agora_message.as_ref().is_some_and(|control| {
@@ -4832,9 +5716,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Moira
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if moira_reconciliation.is_some()
                         && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
@@ -4928,9 +5810,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Daimon
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if daimon_permission_composer.is_some()
                         && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
@@ -5097,7 +5977,17 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                         }
                                     };
                                     daimon_prompt_composer = None;
-                                    active_daimon_action = Some("daimon.session.prompt");
+                                    active_daimon_action = Some(
+                                        if matches!(
+                                            work_item_agent,
+                                            WorkItemAgentJourney::ReviewingPrompt
+                                        ) {
+                                            work_item_agent = WorkItemAgentJourney::Invoking;
+                                            "workitem.agent.prompt"
+                                        } else {
+                                            "daimon.session.prompt"
+                                        },
+                                    );
                                     notice = "Exact Daimon prompt-set proposal opened; c arms, Enter starts the bounded run".into();
                                     activity.push(ActivityLevel::Info, "daimon", notice.clone());
                                 }
@@ -5221,9 +6111,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Hermes
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if hermes_compaction.is_some() && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
                     {
@@ -5403,9 +6291,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Aegis
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if let Some(control) = &mut aegis_managed {
                         let before = control.disposition();
@@ -5537,9 +6423,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Operations
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if key.kind != KeyEventKind::Press {
                         continue;
@@ -5578,9 +6462,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 }
                 Event::Key(key)
                     if shell.active() == Surface::Grounding
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     if let Some(grounding) = &mut grounding {
                         if let Some(input) = tellus::translate_key(key) {
@@ -5608,12 +6490,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     }
                 }
                 Event::Key(key)
-                    if shell.active() == Surface::Workspace
-                        && focus == Focus::Vellum
+                    if vellum_surface_active(shell.active(), focus)
                         && vellum_atomic_replace.is_some()
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     let control = vellum_atomic_replace.as_mut().expect("matched above");
                     let disposition_before = control.disposition();
@@ -5720,12 +6599,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     }
                 }
                 Event::Key(key)
-                    if shell.active() == Surface::Workspace
-                        && focus == Focus::Vellum
+                    if vellum_surface_active(shell.active(), focus)
                         && vellum_durable_save.is_some()
-                        && !(key.kind == KeyEventKind::Press
-                            && key.modifiers == KeyModifiers::CONTROL
-                            && key.code == KeyCode::Char('q')) =>
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
                     let control = vellum_durable_save.as_mut().expect("matched above");
                     if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
@@ -5770,7 +6646,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         }
                     }
                 }
-                Event::Key(key) => match route_key(key, focus) {
+                Event::Key(key) => match route_key_for_surface(key, shell.active(), focus) {
                     RoutedInput::Exit => {
                         let agora_unresolved = agora_create.as_ref().is_some_and(|control| {
                             control.request_pending() || control.recovery_required()
@@ -5886,7 +6762,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         }
                     }
                     RoutedInput::Chronos(input) => {
-                        if shell.active() != Surface::Workspace {
+                        if !chronos_surface_active(shell.active(), focus) {
                             notice = format!("{} has no input peer", shell.active().label());
                         } else if let Some(chronos) = &mut chronos {
                             let started = Instant::now();
@@ -5899,10 +6775,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 && is_key(input, KeyCode::Char('y'), KeyModifiers::NONE);
                             let confirming_eligibility_batch =
                                 chronos.confirming_eligibility_batch();
+                            if chronos.composing_task_batch() {
+                                work_item_agent.capture_task_key(input);
+                            }
                             if chronos.update(input) == Lifecycle::CloseRequested {
                                 notice = "Use Ctrl-Q to exit the complete workbench".into();
                             }
                             if submitting_task_batch && !chronos.composing_task_batch() {
+                                work_item_agent.task_submitted();
                                 chronos_operation = instrumentation
                                     .begin_peer_operation_at(
                                         "chronos.task.submit-batch",
@@ -5943,7 +6823,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             notice = "Chronos service is not configured".into();
                         }
                     }
-                    RoutedInput::Vellum(_input) if shell.active() != Surface::Workspace => {
+                    RoutedInput::Vellum(_input)
+                        if !vellum_surface_active(shell.active(), focus) =>
+                    {
                         notice = format!("{} has no input peer", shell.active().label());
                     }
                     RoutedInput::Vellum(input) if vellum.is_none() => {
@@ -5954,6 +6836,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         ServiceInput::CancelQuit => {
                             confirming_discard = false;
                             notice = "discard cancelled".into();
+                        }
+                        ServiceInput::Apply(ServiceAction::Save) | ServiceInput::Open => {
+                            unreachable!("Vellum open and save are behavior-facade commands")
                         }
                         ServiceInput::Apply(action) => {
                             let action_id = vellum_action_id(&action);
@@ -5970,10 +6855,6 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 |()| "Vellum action accepted".into(),
                             );
                             confirming_discard = false;
-                        }
-                        ServiceInput::Open => {
-                            notice = "Workspace admission remains service/operator-owned in the composite"
-                                .into();
                         }
                         ServiceInput::Quit => unreachable!("Ctrl-Q is host-owned"),
                         ServiceInput::Unsupported => {
@@ -6011,6 +6892,192 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn behavior_facade_enforces_overlay_global_navigation_and_peer_precedence() {
+        let ctrl = |character| KeyEvent::new(KeyCode::Char(character), KeyModifiers::CONTROL);
+        let plain = |character| KeyEvent::new(KeyCode::Char(character), KeyModifiers::NONE);
+
+        for overlay in [
+            WorkbenchOverlay::None,
+            WorkbenchOverlay::Commands,
+            WorkbenchOverlay::Help,
+            WorkbenchOverlay::Activity,
+            WorkbenchOverlay::Configuration,
+            WorkbenchOverlay::LocalProviders,
+            WorkbenchOverlay::AcpSessions,
+            WorkbenchOverlay::AgoraRooms,
+            WorkbenchOverlay::Reconfiguration,
+            WorkbenchOverlay::Instrumentation,
+        ] {
+            assert_eq!(
+                BehaviorFacade::key(ctrl('q'), overlay, Surface::Vellum, true),
+                KeyBehavior::SafeExit
+            );
+        }
+        assert_eq!(
+            BehaviorFacade::key(
+                plain('x'),
+                WorkbenchOverlay::Commands,
+                Surface::Overview,
+                false,
+            ),
+            KeyBehavior::CommandPaletteInput
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE),
+                WorkbenchOverlay::Help,
+                Surface::Overview,
+                false,
+            ),
+            KeyBehavior::DismissOverlay
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain('x'), WorkbenchOverlay::Help, Surface::Overview, false,),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            BehaviorFacade::key(ctrl('p'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::OpenCommands
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain('r'), WorkbenchOverlay::None, Surface::Overview, false),
+            KeyBehavior::ExecuteCommand("view.refresh")
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain('r'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                KeyEvent::new(KeyCode::Char('3'), KeyModifiers::ALT),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::ExecuteCommand("navigate.agora")
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain('o'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            BehaviorFacade::key(ctrl('o'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::ExecuteCommand("vellum.document.open")
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                KeyEvent::new(
+                    KeyCode::Char('O'),
+                    KeyModifiers::CONTROL | KeyModifiers::SHIFT,
+                ),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::ExecuteCommand("vellum.document.open")
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                KeyEvent::new(KeyCode::Char('\u{f}'), KeyModifiers::NONE),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::ExecuteCommand("vellum.document.open")
+        );
+        assert_eq!(
+            BehaviorFacade::key(ctrl('s'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::ExecuteCommand("vellum.save")
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                KeyEvent::new(KeyCode::Char('N'), KeyModifiers::SHIFT),
+                WorkbenchOverlay::None,
+                Surface::Chronos,
+                false,
+            ),
+            KeyBehavior::ExecuteCommand("workitem.agent.new")
+        );
+    }
+
+    #[test]
+    fn behavior_facade_applies_navigation_in_one_place() {
+        let mut shell = Shell::new(vec![
+            Surface::Overview,
+            Surface::Chronos,
+            Surface::Configuration,
+        ])
+        .unwrap();
+        BehaviorFacade::navigate(&mut shell, ShellInput::NextSurface);
+        assert_eq!(shell.active(), Surface::Chronos);
+        BehaviorFacade::navigate(
+            &mut shell,
+            ShellInput::ActivateSurface(Surface::Configuration),
+        );
+        assert_eq!(shell.active(), Surface::Configuration);
+        BehaviorFacade::navigate(&mut shell, ShellInput::PreviousSurface);
+        assert_eq!(shell.active(), Surface::Chronos);
+    }
+
+    #[test]
+    fn behavior_facade_normalizes_palette_outcomes_into_shared_commands() {
+        assert_eq!(
+            BehaviorFacade::palette(PaletteOutcome::Execute("navigate.agora")),
+            KeyBehavior::ExecuteCommand("navigate.agora")
+        );
+        assert_eq!(
+            BehaviorFacade::palette(PaletteOutcome::Unavailable("not configured")),
+            KeyBehavior::CommandUnavailable("not configured")
+        );
+        assert_eq!(
+            BehaviorFacade::palette(PaletteOutcome::Dismiss),
+            KeyBehavior::DismissOverlay
+        );
+        assert_eq!(
+            BehaviorFacade::palette(PaletteOutcome::None),
+            KeyBehavior::Suppress
+        );
+    }
+
+    #[test]
+    fn command_feedback_is_observable_and_orients_the_next_step() {
+        let ready = command_feedback(
+            "chronos.task.new",
+            ActivityLevel::Info,
+            "Opened the bounded Chronos new-task form",
+        );
+        assert!(ready.starts_with("READY ·"));
+        assert!(ready.contains("Next:"));
+        assert!(ready.contains("Tab adds a row"));
+
+        let refused = command_feedback(
+            "vellum.document.open",
+            ActivityLevel::Warning,
+            "Vellum service is not configured",
+        );
+        assert!(refused.starts_with("REFUSED ·"));
+        assert!(refused.contains("runtime file admission"));
+    }
+
+    #[test]
+    fn work_item_agent_journey_carries_bounded_task_text_into_the_prompt() {
+        let mut journey = WorkItemAgentJourney::EditingTask {
+            draft: String::new(),
+        };
+        journey.capture_task_key(KeyEvent::new(KeyCode::Char('R'), KeyModifiers::SHIFT));
+        journey.capture_task_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
+        journey.capture_task_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
+        journey.capture_task_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL));
+        journey.task_submitted();
+        let WorkItemAgentJourney::AwaitingTaskReceipt { draft } = journey else {
+            panic!("task submission should advance the journey");
+        };
+        assert_eq!(draft, "Re\n");
+        let prompt = work_item_agent_prompt(&draft);
+        assert_eq!(prompt, "Re");
+    }
 
     fn local_profile(name: &str, surfaces: Vec<Surface>) -> WorkspaceProfile {
         WorkspaceProfile {
@@ -6087,6 +7154,23 @@ mod tests {
     }
 
     #[test]
+    fn standalone_peer_surfaces_keep_tab_local_while_legacy_workspace_switches_focus() {
+        let tab = KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE);
+        assert!(matches!(
+            route_key_for_surface(tab, Surface::Chronos, Focus::Chronos),
+            RoutedInput::Chronos(key) if key == tab
+        ));
+        assert!(matches!(
+            route_key_for_surface(tab, Surface::Vellum, Focus::Chronos),
+            RoutedInput::Vellum(_)
+        ));
+        assert!(matches!(
+            route_key_for_surface(tab, Surface::Workspace, Focus::Chronos),
+            RoutedInput::SwitchFocus
+        ));
+    }
+
+    #[test]
     fn daimon_filter_key_exposes_protocol_derived_event_views() {
         let key = KeyEvent::new(KeyCode::Char('f'), KeyModifiers::NONE);
         assert_eq!(
@@ -6128,6 +7212,9 @@ mod tests {
             "workspace.focus.toggle",
             "vellum.save",
             "chronos.task.new",
+            "workitem.agent.new",
+            "workitem.agent.return",
+            "workitem.agent.chat",
             "chronos.task.cancel",
             "chronos.schedule.open",
             "chronos.schedule.task-pause",
@@ -6158,6 +7245,9 @@ mod tests {
             "workbench.activity",
             "workbench.help",
             "workbench.configuration",
+            "configuration.providers.local",
+            "configuration.acp.sessions",
+            "configuration.agora.rooms",
             "workbench.reconfigure",
             "workbench.instrumentation",
         ] {
@@ -6311,8 +7401,8 @@ mod tests {
     fn session_configuration_is_bounded_to_non_secret_launch_facts() {
         let shell = Shell::new(vec![Surface::Overview, Surface::Moira]).expect("valid shell");
         let lines = session_configuration(
-            &shell, None, false, false, false, true, false, false, false, false, false, false,
-            false, false, false, false, false, false,
+            &shell, None, false, false, false, false, true, false, false, false, false, false,
+            false, false, false, false, false, false, false,
         );
         let rendered = lines.join("\n");
         assert!(rendered.contains("Overview · Moira"));

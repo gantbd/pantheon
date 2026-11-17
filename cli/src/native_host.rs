@@ -643,6 +643,7 @@ impl NativeHost {
         credential: Option<&Path>,
         allow_edit: bool,
         allow_save: bool,
+        allow_add_file: bool,
     ) -> Result<(), StartupFailure<String>> {
         self.registry
             .start_or_rollback(HostedPeerId::Vellum, || -> Result<_, String> {
@@ -652,6 +653,7 @@ impl NativeHost {
                     credential: credential.map(Path::to_path_buf),
                     allow_edit,
                     allow_save,
+                    allow_add_file,
                 };
                 let (ready, readiness) = mpsc::sync_channel(1);
                 let owner = thread::Builder::new()
@@ -681,6 +683,7 @@ impl NativeHost {
         _credential: Option<&Path>,
         _allow_edit: bool,
         _allow_save: bool,
+        _allow_add_file: bool,
     ) -> Result<(), StartupFailure<String>> {
         self.registry.start_or_rollback(HostedPeerId::Vellum, || {
             Err::<((), fn() -> ShutdownDisposition), _>(
@@ -835,6 +838,7 @@ struct VellumOwnerConfig {
     credential: Option<PathBuf>,
     allow_edit: bool,
     allow_save: bool,
+    allow_add_file: bool,
 }
 
 #[cfg(target_os = "macos")]
@@ -867,6 +871,11 @@ fn run_vellum_owner(
         if config.allow_save {
             actions = actions.join(AuthorityActionSetV1::singleton(
                 AuthorityActionV1::PersistSource,
+            ));
+        }
+        if config.allow_add_file {
+            actions = actions.join(AuthorityActionSetV1::singleton(
+                AuthorityActionV1::AdmitFile,
             ));
         }
         let mut daemon = LocalDaemon::bind_with_persistent_identity_and_action_ceiling(

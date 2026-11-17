@@ -84,7 +84,7 @@ The initial single-machine budgets are deliberately concrete:
 - reference 120×40 palette workload (1,000 searches and 100 full renders): 2 s;
 - at most 32 correlated peer operations, 64 completed/in-flight trace records
   with eight stages each, 64 action metric series, 64 activity entries, and a
-  64-byte palette query retained in memory;
+  64-byte minibuffer query retained in memory;
 - no transport wait or peer computation on the render/update thread.
 
 CI runs the reference workload through the same instrumentation and fails on a
@@ -97,6 +97,12 @@ failed projection without parsing presentation text. Chronos publishes changed
 projection settlement through its hub; Vellum's synchronous service and poll
 paths are timed directly. Explicit age/freshness budgets for every projection
 remain a delivery requirement where the peer protocol exposes that evidence.
+Presentation commands use the same correlation discipline: input classification,
+minibuffer resolution, dispatch, user-visible feedback, the first rendered
+feedback frame, and terminal disposition are one bounded trace. Peer spans
+caused by that command reuse its correlation. A command is not considered
+settled merely because its handler returned; the orienting success/refusal and
+next step must have reached both Activity and a visible frame.
 
 The activity/receipt sheet is the human projection of this model. Structured
 export must be optional, local-first, credential-free, bounded, and routed
@@ -159,27 +165,77 @@ phase for effects.
 7. **Editors keep their text.** Global punctuation does not steal ordinary text
    from Vellum. Universal workbench keys use control/function keys.
 8. **Small terminals remain usable.** Every overlay is bounded and every core
-   operation remains reachable without a mouse or color perception.
+   operation remains reachable without a mouse or color perception. Mouse
+   capture is scoped to the workbench and currently owns only explicit shell
+   navigation; peers remain keyboard-driven until their APIs expose pointer
+   intents. The
+   overview deliberately folds into a compact signal list instead of crushing
+   desktop-shaped cards into a short viewport.
 
 ## Information architecture
 
 The persistent frame has four layers:
 
 - brand and current surface;
-- configured surface rail;
+- configured surface tab rail (`[` / `]` sequentially, stable `Ctrl-0`–`Ctrl-9`
+  for Overview through Operations, `Ctrl-,` for Configuration, equivalent
+  `Alt` numbers, and mnemonic `Alt` shortcuts for every first-class surface);
+  clicking a tab or wheeling over the rail provides pointer navigation; at
+  narrow widths it preserves identity with numbered glyphs;
 - peer-owned content region;
 - current outcome plus `Ctrl-P actions`, `F1 help`, `Ctrl-G activity`, and safe
   exit hints.
 
 Overlays never acquire peer authority:
 
-- **Command palette:** searchable registry of available and unavailable work.
+Keyboard behavior crosses one host-owned `BehaviorFacade`. It classifies each
+key once using explicit precedence—safe exit, active overlay, global
+workbench command, host refresh, surface navigation, then surface-local
+workflow/peer input. Overlay and peer handlers consume behaviors rather than
+re-recognizing global chords, so a binding cannot silently change meaning as
+new tabs or sheets are added. Peer-native translators remain the final
+surface-local boundary and therefore retain their own editing semantics.
+Palette outcomes are normalized by the same facade into `ExecuteCommand`
+behaviors. F1, Ctrl-G, semantic surface shortcuts, Vellum open/save, and their
+palette entries therefore converge on one command implementation instead of
+maintaining parallel shortcut and palette paths.
+
+The work-item journey follows that same route. `Shift-N` and its minibuffer
+entry both resolve to `workitem.agent.new`; the journey captures only the
+bounded text typed into the Chronos form, waits for the task receipt, prepares
+the selected local Daimon session's prompt, and stops on refusal or uncertainty.
+Agent dispatch retains the ordinary review/arm/confirm guard. Returning to the
+board requests a fresh Chronos projection rather than showing optimistic state.
+The Daimon event timeline is the current conversation surface. A genuinely new
+per-task session and comments embedded in a Chronos ticket remain explicit
+contract gaps: Pantheon will not infer Daimon's dynamic task binding or invent
+a Chronos comment mutation.
+
+- **Minibuffer:** `Ctrl-P` opens a bottom-anchored Emacs-style `M-x` prompt
+  without obscuring the active surface. It provides strict command completion,
+  C-p/C-n candidate motion, Tab completion, C-g cancellation, cursor/editing
+  chords, and M-p/M-n history over the same available/unavailable registry.
 - **Workflow sheet:** peer-owned fields, current witnesses, confirmation, and
   one exact submit/recover path.
 - **Help:** generated from the same registry, so documentation cannot drift from
   runtime actions.
 - **Activity & receipts:** bounded newest-first outcomes with explicit severity
   and uncertainty.
+
+Every command result is phrased as an observable state (`READY`, `QUEUED`,
+`OPENED`, `DONE`, `REFUSED`, or `OUTCOME UNKNOWN`), preserves the owner-returned
+reason, and includes a concrete `Next:` orientation. Refusal never disappears
+with the minibuffer, and uncertainty never becomes a retry suggestion.
+
+The visual language is intentionally calm but not anonymous. A near-black
+canvas and raised graphite panels provide continuity; cyan is navigation,
+green is settled evidence, amber is guarded attention, red is degradation or
+uncertainty, and each surface carries one restrained accent. Rounded containers
+and sparse glyphs create rhythm without turning every fact into a box. Like a
+good oscilloscope, motion and color must reveal signal rather than decorate
+noise: Pantheon uses gauges and tables only for observed facts, never invented
+telemetry. The active workspace pane receives a strong focus ring, while peer
+components retain their own native information grammar inside it.
 
 ## Coherent shell, fit-for-purpose surfaces
 
@@ -205,13 +261,24 @@ to the concern, and a user who learned one Pantheon workflow should still know
 how to discover actions, verify authority, confirm effects, recover uncertainty,
 inspect instrumentation, and return home in every other surface.
 
+Chronos and Vellum are first-class full-frame surfaces. Version-one profiles
+that explicitly select `workspace` retain the qualified side-by-side legacy
+composition, but new profiles should select `chronos` and `vellum` separately.
+Configuration is likewise a persistent surface rather than a palette-only
+sheet; `Alt-,` opens its bounded redacted launch facts from anywhere.
+Agora, Moira, Daimon, Grounding, Aegis, and Hermes also retain distinct
+operational landing layers when disconnected: each describes its real
+workflows, exact profile connection contract, and discovery path instead of
+collapsing into a generic empty-state card. Once attached, the same tab hands
+its body to the peer-owned renderer.
+
 ## Capability coverage
 
 | Area | Current interactive depth | Next composition step |
 | --- | --- | --- |
 | Navigation and discovery | Searchable action palette, surface rail, contextual help, direct Agora/Moira detail entry, and Aegis paging | Recent-action ranking and breadcrumbs |
 | Observability | Every configured peer component; palette refresh for current/all peers; cross-peer Overview distinguishing unobserved, observing, current-with-age, degraded, busy, and outcome-uncertain channels from actual settlement/control evidence | Add revision drill-down and protocol-derived resource summaries where peers expose them |
-| Workspace work | Typed palette entry into Chronos's bounded 1–128 task atomic-graph composer, exact cancellation confirmation, and scheduling surface; Vellum per-document edit state, marked-set owner-atomic query/replace, and bounded independently receipted durable-save worksets | Additional Vellum edit transforms and remaining document effects |
+| Workspace work | Typed palette entry into Chronos's bounded 1–128 task atomic-graph composer, exact cancellation confirmation, and scheduling surface; guarded create-task → selected-local-agent prompt → conversation → refreshed-board journey; Vellum per-document edit state, owner-authorized Ctrl-O file admission, marked-set owner-atomic query/replace, and bounded independently receipted durable-save worksets | Compose Daimon session-open with dynamic exact Chronos task binding, then add task comments only when Chronos publishes that mutation |
 | Moira | Saga inspection/evidence/receipts plus bounded sparse 1–16 selection across every reconciliation disposition: keep-uncertain, fail-terminal, cancel, compensate, effect-bound failed/successful evidence admission, and retry; explicit bounded domain-time entry; exact visible proposals; just-in-time challenges; per-child receipts; stop-on-unknown recovery/resume; instrumentation; and durable reopen evidence | Compose the selected agent, participation, and deliberation components through their independent public clients |
 | Daimon | Presence plus a bounded configured 1–16 session workset; sparse selection; phase-aware owner-state candidates that explicitly retain the separate authority requirement; protocol-derived all/conversation/action/decision/usage event filters; exact observed-window counts and input/output usage totals across the complete current workset; multiline prompting, challenge-native per-session permission choices, and exact detached-session reattachment backed by one reusable credential-free execution-policy profile; independently settled prompt/permission/reattach/advance/cancel/close runs with owner-returned projections, post-receipt refresh, stop-on-unknown, retained evidence, exact sent-session recovery inspection without retry, mixed-state blocker diagnostics, and exit protection | Add owner-published cost/time/resource evidence when the protocol exposes it, without importing provider policy |
 | Aegis | Bounded authority/grant/decision observation; exact-current-epoch global revocation; and one private bounded managed session for 1–16-scope issue/attenuate, retained ancestry review, and authorization. Exact owner confirmations, arm/confirm, one attempt, uncertainty fencing, redacted facts, instrumentation, and live durable-daemon qualification keep handles inside the owner component | Add owner-defined bulk grant import/reconciliation only if Aegis publishes such a contract |
@@ -250,4 +317,11 @@ claim of authority or completion.
    the original authority flags.
 5. Polish adaptive layouts, accessibility, mouse affordances, themes, command
    history, and end-to-end live qualification only after the action model is
-   complete.
+   complete. **In progress:** the shared shell now has an adaptive named/glyph
+   tab rail, direct tab navigation, semantic dark theme, responsive compact
+   overview, live-signal table and gauge, focused-pane framing, and cohesive
+   palette/help/activity sheets. Mouse affordances and command history remain.
+   **Breadth complete:** tmux qualification now drives the real binary across
+   every first-class surface and global presentation keybinding; the
+   operational gate separately mounts the real Moira, Daimon, Hermes, Aegis,
+   and Grounding peers.

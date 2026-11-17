@@ -1957,12 +1957,11 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "configured_stream",
         "configured_cursor",
         "05050505050505050505050505050505",
-        "health: 6 current · 0 observing · 0 degraded · 0 unobserved",
-        "moira / sagas: current · evidence",
-        "daimon / sessions/events: current · evidence",
-        "hermes / ledger/cursors: current · evidence",
-        "aegis / authority: current · evidence",
-        "grounding / provenance: current · evidence",
+        "moira                 sagas",
+        "daimon                sessions/events",
+        "hermes                ledger/cursors",
+        "aegis                 authority",
+        "grounding             provenance",
         "events: 1 visible / 2 observed · filter usage",
         "observed windows 1/2 events visible · usage input=21 output=34",
         "0 in flight · 0 budget violations",
@@ -1977,6 +1976,107 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         assert!(
             !gate.contains(forbidden),
             "operational gate performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn tui_breadth_gate_drives_every_first_class_surface_and_global_key() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/tui_breadth.sh")).expect("TUI breadth gate");
+    for required in [
+        "tmux",
+        "OVERVIEW",
+        "CHRONOS",
+        "VELLUM",
+        "AGORA",
+        "MOIRA",
+        "DAIMON",
+        "GROUNDING",
+        "AEGIS",
+        "HERMES",
+        "OPERATIONS",
+        "CONFIGURATION",
+        "M-c",
+        "M-v",
+        "M-,",
+        "M-2",
+        "[48;5u",
+        "[57;5u",
+        "\\x1b[<0;14;2M",
+        "C-p",
+        "F1",
+        "C-g",
+        "C-q",
+        "Fresh observations queued across configured peers",
+        "PASS: tmux drove every Pantheon surface",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(gate.contains(required), "TUI breadth gate omits {required}");
+    }
+}
+
+#[test]
+fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
+    for required in [
+        "tui-demo:",
+        "./tests/live/tui_breadth.sh",
+        "./tests/live/tui_operational_depth.sh",
+        "--chronos-allow-writes",
+        "--vellum-allow-add-file",
+    ] {
+        assert!(makefile.contains(required), "Makefile omits {required}");
+    }
+
+    let run_gate = fs::read_to_string(root.join("tests/live/make_run.sh")).expect("make run gate");
+    for required in [
+        "make run",
+        "Task batch",
+        "Open file",
+        "source.txt",
+        "Ctrl-O-capable hosted Vellum",
+    ] {
+        assert!(
+            run_gate.contains(required),
+            "make run gate omits {required}"
+        );
+    }
+
+    let depth = fs::read_to_string(root.join("tests/live/tui_operational_depth.sh"))
+        .expect("TUI operational depth gate");
+    for required in [
+        "make_run",
+        "chronos_mutation",
+        "dual_service",
+        "agora_mutation",
+        "moira_reconciliation",
+        "daimon_prompt",
+        "work_item_agent_journey",
+        "grounding_attach",
+        "aegis_attach",
+        "hermes_attach",
+        "operational depth exercised every configured peer surface",
+    ] {
+        assert!(depth.contains(required), "TUI depth gate omits {required}");
+    }
+
+    let journey = fs::read_to_string(root.join("tests/live/work_item_agent_journey.sh"))
+        .expect("work item agent journey");
+    for required in [
+        "create task with local agent",
+        "Compose Daimon prompt",
+        "Local-agent turn accepted",
+        "return to the kanban board",
+        "agent_set_fixture",
+        "PASS: Chronos task -> guarded local-agent prompt -> Daimon conversation -> refreshed Kanban board",
+    ] {
+        assert!(
+            journey.contains(required),
+            "work-item journey omits {required}"
         );
     }
 }

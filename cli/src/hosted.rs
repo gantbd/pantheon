@@ -182,7 +182,7 @@ where
                 Err(_) => HandoffResult::PublicationUnknown,
             }
         });
-        let shell = Shell::new(vec![Surface::Workspace, Surface::Agora])?;
+        let shell = Shell::new(vec![Surface::Chronos, Surface::Vellum, Surface::Agora])?;
         run_multi_peer_terminal(shell, Some(chronos), Some(editor), Some(agora))
     })();
     let _ = port.0.send(Request::Stop);

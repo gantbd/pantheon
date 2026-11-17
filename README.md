@@ -10,9 +10,18 @@ input and service authority.
 
 The active terminal-experience architecture, precedent study, capability map,
 and delivery sequence live in
-[`docs/tui-experience.md`](docs/tui-experience.md). The interactive shell now
-provides a searchable `Ctrl-P` action palette, generated `F1` help, and a
-bounded `Ctrl-G` activity/receipt timeline; unavailable guarded work remains
+[`docs/tui-experience.md`](docs/tui-experience.md). The broader product model,
+component use cases, and aggregate journey acceptance catalogue live in
+[`docs/use-cases-and-user-journeys.md`](docs/use-cases-and-user-journeys.md).
+The interactive shell now
+provides a searchable `Ctrl-P` Emacs-style minibuffer, generated `F1` help, and a
+bounded `Ctrl-G` activity/receipt timeline. `[` and `]` move across the adaptive
+surface tab rail. On enhanced-keyboard terminals, stable semantic shortcuts use `Ctrl-0` for Overview,
+`Ctrl-1` through `Ctrl-9` for Chronos through Operations, and `Ctrl-,` for
+Configuration; equivalent `Alt` numbers and mnemonic shortcuts
+(`Alt-H/C/V/A/M/D/G/E/L/O` and `Alt-,`) remain available. Clicking a tab or
+wheeling over the rail also navigates. These bindings open every first-class
+surface, including the redacted Configuration pane; unavailable guarded work remains
 discoverable with an exact reason instead of disappearing. The palette also
 exposes a redacted session-configuration sheet, whole-suite refresh, Chronos
 work forms, peer detail navigation, and Moira's selected-saga keep-uncertain,
@@ -30,6 +39,24 @@ internals. It never records prompts, documents, credentials, grant handles, or
 provider locators. An Operations surface also exposes the live local-host
 lifecycle, hosted-peer census, guarded reverse-order drain, and retained exact
 per-peer shutdown receipts.
+
+On the Chronos surface, `Shift-N` (or `M-x Create task with local agent`)
+starts the cross-peer work-item journey. Pantheon retains the bounded task text
+entered in the peer form, waits for an applied Chronos receipt, and then opens a
+prefilled, guarded prompt for the selected local Daimon session. The user still
+reviews, arms, and confirms the provider effect. `M-x Open the local-agent
+conversation` returns to its event timeline; `M-x Return to the Kanban board`
+returns to Chronos and queues a fresh owner projection. This revision does not
+pretend to open a new Daimon session or write comments into Chronos: those need
+owner-published dynamic task-binding/session-open and ticket-comment contracts.
+
+`make run` is the operational local-development path: it hosts writable
+Chronos plus editable/saveable Vellum seeded with this repository's README,
+with runtime file admission enabled. Override `PANTHEON_RUN_ROOT` or
+`PANTHEON_RUN_VELLUM_ROOT` (an initial regular file) to isolate its state or
+seed a different workspace.
+Ctrl-O and Chronos `n` are therefore functional in the default run target, not
+merely advertised by an unconfigured surface.
 
 With an exact Hermes stream and consumer selected, the Hermes surface can also
 acknowledge an exact operator-selected range from the current cursor through
@@ -51,12 +78,15 @@ task completion from edits. The host preserves Vellum's dirty/indeterminate exit
 laws and never retries an uncertain effect. Chronos writes remain disabled
 unless explicitly enabled; Vellum authority remains entirely service-owned.
 
-The versioned workspace shell also names Overview, Agora, Moira, Daimon,
-Grounding, Aegis, Hermes, and local-host Operations surfaces. Overview reports
+The versioned workspace shell also names Overview, Chronos, Vellum, Agora,
+Moira, Daimon, Grounding, Aegis, Hermes, local-host Operations, and
+Configuration surfaces. Chronos and Vellum receive independent full-frame
+presentations; legacy profiles may still select the side-by-side `workspace`
+surface. Overview reports
 each configured peer channel as configured-but-unobserved, observing, current
 with evidence age, or degraded; live control state adds busy and
 outcome-uncertain markers without turning configuration into a readiness claim.
-Overview and the Chronos/Vellum Workspace are live in the standalone binary. A workspace profile may attach Agora through
+Overview and the independent Chronos and Vellum surfaces are live in the standalone binary. A workspace profile may attach Agora through
 the selected private Unix client by supplying its socket and participant claim;
 the daemon authenticates the connected OS peer and remains the authority owner.
 A trusted host can instead supply an independently constructed `agora-tui`
@@ -195,8 +225,14 @@ the standalone Chronos Hub. Press **7** to view the plan.
 atomic service. Add `--vellum-credential PATH` for Vellum's optional local credential
 handshake. In hosted mode the same private record configures both the daemon
 verifier and client claim provider without placing credential material in the
-profile or lifecycle receipt. Tab changes focus and Ctrl-Q requests
+profile or lifecycle receipt. Tab changes focus, Ctrl-O opens Vellum's bounded
+file-admission prompt, and Ctrl-Q requests
 whole-workbench exit.
+Hosted sessions must opt into runtime file admission with
+`--vellum-allow-add-file` or `"allow_add_file": true`; Pantheon maps that
+selection to Vellum's native `AdmitFile` ceiling and otherwise preserves the
+owner's refusal. Attached sessions inherit the independently launched Vellum
+daemon's action ceiling.
 The Chronos new-task form accepts one task directly or a bounded batch of up to
 128 unique IDs by adding rows with Tab. Enter sends the exact set as one
 owner-atomic `SubmitGraph`; Pantheon does not issue one mutation per task.
@@ -691,8 +727,8 @@ ledger authority.
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
 Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one
 Pantheon headless invocation and one Ratatui session. The live Overview must
-settle all six peer evidence channels—including Daimon's distinct presence and
-session/event channels—as current with observable evidence age. This
+render all six peer evidence channels—including Daimon's distinct presence and
+session/event channels—with explicit current or degraded evidence state. This
 coexistence gate exercises only peer-owned observation capabilities; it does
 not claim native hosting or mutation authority for those peers.
 
@@ -700,6 +736,11 @@ Run `sh tests/live/reconfiguration_restart.sh` to qualify the interactive
 configuration journey without peer fixtures: exact shell/profile diff,
 arm/confirm, terminal-safe process replacement, and inspection of the
 replacement session's selected surfaces.
+
+Run `sh tests/live/tui_breadth.sh` to launch the real binary under tmux and
+exercise all eleven first-class surfaces, mnemonic and numeric direct
+navigation, sequential navigation, Configuration disclosure, host refresh,
+palette, help, activity, and safe exit.
 
 Run `sh tests/live/reconfiguration_hosted_restart.sh` for the full lifecycle
 case. Pantheon hosts one real Chronos topology, preflights a different hosted

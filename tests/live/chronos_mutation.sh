@@ -71,6 +71,7 @@ def palette(query, expected):
 
 try:
     tmux("new-session", "-d", "-x", "160", "-y", "40", "-s", "chronos", command)
+    keys("M-1")
     expect("Observed 0 tasks", timeout=30)
 
     keys("n")

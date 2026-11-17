@@ -111,8 +111,8 @@ def expect(*markers):
 
 try:
     tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "workbench", command)
-    expect("Grounding: attached")
-    tmux("send-keys", "-t", "workbench", "]")
+    expect("grounding", "current")
+    tmux("send-keys", "-t", "workbench", "M-6")
     expect("Grounding", "fixture/sample", "current")
     tmux("send-keys", "-t", "workbench", "C-q")
     deadline = time.monotonic() + 5

@@ -86,7 +86,7 @@ finish_agora() {
 "$chronos_bin" "$chronos_dir" --atomic-state --observer-history --allow-writes >"$chronos_log" 2>&1 &
 chronos_pid=$!
 "$vellum_bin" --socket "$vellum_socket" --control "$vellum_control" \
-  --allow-edit --allow-save -- "$source_file" >"$vellum_log" 2>&1 &
+  --allow-edit --allow-save --allow-add-file -- "$source_file" >"$vellum_log" 2>&1 &
 vellum_pid=$!
 
 attempt=0
@@ -144,11 +144,11 @@ assert next(peer for peer in report["peers"] if peer["peer"] == "vellum")["statu
 
 workspace_profile="$scratch/workspace-profile.json"
 printf '%s\n' \
-  '{"version":1,"name":"Live gate","surfaces":["overview","workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null}}' \
+  '{"version":1,"name":"Live gate","surfaces":["overview","chronos","vellum","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"},{"name":"Offline","directory":"offline"}],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null}}' \
   >"$workspace_profile"
 profile_check=$("$workbench_bin" --workspace-profile "$workspace_profile" --check-profile)
 case "$profile_check" in
-  'workspace profile valid: 3 surfaces'*) ;;
+  'workspace profile valid: 4 surfaces'*) ;;
   *)
     echo 'FAIL: workbench did not validate the workspace profile' >&2
     exit 1
@@ -157,7 +157,7 @@ esac
 
 triple_profile="$scratch/triple-workspace.json"
 printf '%s\n' \
-  '{"version":1,"name":"Attached triple gate","surfaces":["overview","workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null,"requires":["workspace.inventory.v1"]}}' \
+  '{"version":1,"name":"Attached triple gate","surfaces":["overview","chronos","vellum","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"socket":"vellum.sock","credential":null,"requires":["workspace.inventory.v1"]}}' \
   >"$triple_profile"
 start_agora
 triple_snapshot=$("$workbench_bin" headless --workspace-profile "$triple_profile")
@@ -195,7 +195,7 @@ def expect(*markers):
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "workbench").stdout
         if all(marker in screen for marker in markers):
-            return
+            return screen
         time.sleep(0.025)
     raise AssertionError(f"Missing {markers!r} in:\n{screen}")
 
@@ -207,23 +207,47 @@ def switch(name):
 
 try:
     tmux("new-session", "-d", "-x", "240", "-y", "36", "-s", "workbench", command)
-    expect("Chronos: attached", "Vellum: attached", "Agora: attached")
+    expect("✓ 3  CURRENT", "✓ chronos", "✓ vellum", "✓ agora")
     tmux("send-keys", "-t", "workbench", "]")
-    expect("Chronos  ·  revision", "Observed 0 tasks", "alpha")
+    current = expect("CHRONOS", "Chronos  ·  revision", "Observed 0 tasks")
+    assert "alpha" not in current, current
     switch("Offline")
-    expect("Offline  ·  revision", "Refresh failed", "alpha")
+    expect("Offline  ·  revision", "Refresh failed")
     switch("Chronos")
-    expect("Chronos  ·  revision", "Observed 0 tasks", "alpha")
+    expect("Chronos  ·  revision", "Observed 0 tasks")
+    tmux("send-keys", "-t", "workbench", "]")
+    expect("VELLUM", "focus=Vellum", "alpha")
+    tmux("send-keys", "-t", "workbench", "C-o")
+    expect("Open file (Enter/Esc):")
+    tmux("send-keys", "-t", "workbench", "Escape")
+    expect("Vellum open cancelled", "alpha")
+    tmux("send-keys", "-t", "workbench", "C-o")
+    expect("Open file (Enter/Esc):")
+    tmux("send-keys", "-t", "workbench", "C-p")
+    expect("*Completions*", "MINIBUFFER", "M-x")
+    tmux("send-keys", "-t", "workbench", "-l", "go to agora")
+    tmux("send-keys", "-t", "workbench", "Enter")
+    expect("AGORA · rooms · revision 11", "Profile Room")
+    tmux("send-keys", "-t", "workbench", "M-2")
+    current = expect("VELLUM", "alpha")
+    assert "Open file (Enter/Esc):" not in current, current
+    tmux("send-keys", "-t", "workbench", "C-o")
+    expect("Open file (Enter/Esc):")
+    tmux("send-keys", "-t", "workbench", "-l", str(Path(scratch) / "source.txt"))
+    tmux("send-keys", "-t", "workbench", "Enter")
+    expect("Vellum admitted and opened the file", "alpha")
     tmux("send-keys", "-t", "workbench", "Tab")
-    expect("focus=Vellum", "alpha")
-    tmux("send-keys", "-t", "workbench", "Tab")
-    expect("focus=Chronos")
+    expect("VELLUM", "alpha")
     tmux("send-keys", "-t", "workbench", "]")
     expect("AGORA · rooms · revision 11", "Profile Room")
     tmux("send-keys", "-t", "workbench", "Enter")
     expect("Profile Agora transport is live")
     tmux("send-keys", "-t", "workbench", "[")
-    expect("Chronos  ·  revision", "alpha")
+    expect("VELLUM", "alpha")
+    tmux("send-keys", "-t", "workbench", "[")
+    expect("CHRONOS", "Chronos  ·  revision")
+    tmux("send-keys", "-t", "workbench", "C-q")
+    expect("Unsaved Vellum edit; Ctrl-Q again discards")
     tmux("send-keys", "-t", "workbench", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
@@ -245,7 +269,7 @@ echo 'PASS: attached Agora + Chronos + Vellum services -> one workbench composit
 
 hosted_profile="$scratch/hosted-workspace.json"
 printf '%s\n' \
-  '{"version":1,"name":"Mixed hosted gate","surfaces":["workspace","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"deployment":"hosted","workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}' \
+  '{"version":1,"name":"Mixed hosted gate","surfaces":["chronos","vellum","agora"],"agora":{"socket":"agora.sock","participant":"operator","requires":["rooms.read.v2"]},"chronos":{"deployment":"hosted","workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"allow_add_file":true,"requires":["workspace.inventory.v1"]}}' \
   >"$hosted_profile"
 
 start_agora
@@ -287,11 +311,39 @@ try:
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
-        if "Chronos  ·  revision" in screen and "alpha" in screen:
+        if "CHRONOS" in screen and "Chronos  ·  revision" in screen:
             break
         time.sleep(0.025)
     else:
         raise AssertionError(f"Hosted Pantheon panes not ready:\n{screen}")
+    tmux("send-keys", "-t", "hosted", "]")
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
+        if "VELLUM" in screen and "alpha" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Hosted Vellum pane not ready:\n{screen}")
+    tmux("send-keys", "-t", "hosted", "C-o")
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
+        if "Open file (Enter/Esc):" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Hosted Vellum Ctrl-O prompt missing:\n{screen}")
+    tmux("send-keys", "-t", "hosted", "-l", str(Path(scratch) / "source.txt"))
+    tmux("send-keys", "-t", "hosted", "Enter")
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
+        if "Vellum admitted and opened the file" in screen and "alpha" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Hosted Vellum Ctrl-O admission did not settle:\n{screen}")
     tmux("send-keys", "-t", "hosted", "]")
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:

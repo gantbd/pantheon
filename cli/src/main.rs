@@ -98,6 +98,7 @@ struct Options {
     vellum_roots: Vec<PathBuf>,
     vellum_allow_edit: bool,
     vellum_allow_save: bool,
+    vellum_allow_add_file: bool,
     moira_bindings: Vec<(String, PathBuf, String)>,
     daimon_bindings: Vec<(String, PathBuf)>,
     check_profile: bool,
@@ -154,7 +155,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     };
     if first == "--help" {
         println!(
-            "pantheon controls\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}",
+            "pantheon controls\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
             usage()
         );
         std::process::exit(0);
@@ -164,7 +165,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if management && !workspace_profile {
         return Err("manage requires --workspace-profile PATH".into());
     }
-    let mut shell = Shell::dual_peer();
+    let mut shell = Shell::workbench();
     let mut workspace_name = "Pantheon".to_owned();
     let mut loaded_workspace_profile = None;
     let mut agora = None;
@@ -201,6 +202,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut host_vellum = false;
     let mut vellum_roots = Vec::new();
     let mut vellum_requires = Vec::new();
+    let mut vellum_allow_edit = false;
+    let mut vellum_allow_save = false;
+    let mut vellum_allow_add_file = false;
     let mut chronos_streams = if workspace_profile {
         let path = required_arg(&mut args, "--workspace-profile requires PATH")?;
         let path = PathBuf::from(path);
@@ -339,6 +343,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             vellum_socket = Some(vellum.socket);
             vellum_credential = vellum.credential;
             vellum_roots = vellum.roots;
+            vellum_allow_add_file = vellum.allow_add_file;
         }
         if let Some(chronos) = profile.chronos {
             host_chronos = chronos.deployment == DeploymentMode::Hosted;
@@ -381,8 +386,6 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut chronos_cancel_receipts = false;
     let mut check_profile = false;
     let mut operation_id = None;
-    let mut vellum_allow_edit = false;
-    let mut vellum_allow_save = false;
     while let Some(argument) = args.next() {
         if argument == "--vellum-service" && vellum_socket.is_none() {
             vellum_socket = Some(PathBuf::from(
@@ -410,6 +413,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             vellum_allow_edit = true;
         } else if argument == "--vellum-allow-save" && !vellum_allow_save {
             vellum_allow_save = true;
+        } else if argument == "--vellum-allow-add-file" && !vellum_allow_add_file {
+            vellum_allow_add_file = true;
         } else if argument == "--chronos-planning" && chronos_planning.is_none() {
             chronos_planning =
                 Some(required_arg(&mut args, "--chronos-planning requires PATH")?.into());
@@ -480,7 +485,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if !host_vellum && !vellum_roots.is_empty() {
         return Err("--vellum-root requires hosted Vellum".into());
     }
-    if (vellum_allow_edit || vellum_allow_save) && !host_vellum {
+    if (vellum_allow_edit || vellum_allow_save || vellum_allow_add_file) && !host_vellum {
         return Err("Vellum authority ceiling flags require hosted Vellum".into());
     }
     if operation_id.is_some() && !headless {
@@ -600,6 +605,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         vellum_roots,
         vellum_allow_edit,
         vellum_allow_save,
+        vellum_allow_add_file,
         moira_bindings,
         daimon_bindings,
         check_profile,
@@ -2987,6 +2993,7 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
             options.vellum_credential.as_deref(),
             options.vellum_allow_edit,
             options.vellum_allow_save,
+            options.vellum_allow_add_file,
         )
         .map_err(|failure| format!("hosted Vellum startup refused: {failure:?}"))?;
     }
@@ -3207,6 +3214,7 @@ fn interactive(
             aegis_control_socket,
             grounding,
             vellum_control,
+            vellum_allow_add_file: options.vellum_allow_add_file,
         },
         native_host.take(),
         current_profile,

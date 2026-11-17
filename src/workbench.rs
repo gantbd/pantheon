@@ -8,6 +8,8 @@ use ratatui::{
 };
 use std::time::{Duration, Instant};
 
+use crate::theme;
+
 pub const MAX_COMMAND_QUERY_BYTES: usize = 64;
 pub const MAX_ACTIVITY_ENTRIES: usize = 64;
 pub const MAX_INSTRUMENTED_ACTIONS: usize = 64;
@@ -39,11 +41,11 @@ impl CommandKind {
 
     const fn color(self) -> Color {
         match self {
-            Self::Navigate => Color::Cyan,
-            Self::Observe => Color::Blue,
-            Self::Work => Color::Green,
-            Self::Guarded => Color::Yellow,
-            Self::Lifecycle => Color::Magenta,
+            Self::Navigate => theme::CYAN,
+            Self::Observe => theme::BLUE,
+            Self::Work => theme::GREEN,
+            Self::Guarded => theme::YELLOW,
+            Self::Lifecycle => theme::VIOLET,
         }
     }
 }
@@ -100,7 +102,10 @@ pub enum PaletteOutcome {
 pub struct CommandPalette {
     commands: Vec<CommandSpec>,
     query: String,
+    cursor: usize,
     selected: usize,
+    history: Vec<String>,
+    history_cursor: Option<usize>,
 }
 
 impl CommandPalette {
@@ -108,7 +113,10 @@ impl CommandPalette {
         Self {
             commands,
             query: String::new(),
+            cursor: 0,
             selected: 0,
+            history: Vec::new(),
+            history_cursor: None,
         }
     }
 
@@ -120,9 +128,15 @@ impl CommandPalette {
         &self.query
     }
 
+    pub const fn cursor(&self) -> usize {
+        self.cursor
+    }
+
     pub fn reset(&mut self) {
         self.query.clear();
+        self.cursor = 0;
         self.selected = 0;
+        self.history_cursor = None;
     }
 
     pub fn visible(&self) -> Vec<&CommandSpec> {
@@ -141,9 +155,11 @@ impl CommandPalette {
             if self.query.len() + character.len_utf8() > MAX_COMMAND_QUERY_BYTES {
                 break;
             }
-            self.query.push(character);
+            self.query.insert(self.cursor, character);
+            self.cursor += character.len_utf8();
         }
         self.selected = 0;
+        self.history_cursor = None;
     }
 
     pub fn key(&mut self, key: KeyEvent) -> PaletteOutcome {
@@ -152,35 +168,88 @@ impl CommandPalette {
         }
         match (key.modifiers, key.code) {
             (_, KeyCode::Esc) => PaletteOutcome::Dismiss,
-            (KeyModifiers::CONTROL, KeyCode::Char('p')) => PaletteOutcome::Dismiss,
-            (KeyModifiers::NONE, KeyCode::Up) => {
-                let count = self.visible().len();
-                if count != 0 {
-                    self.selected = self.selected.checked_sub(1).unwrap_or(count - 1);
-                }
+            (KeyModifiers::CONTROL, KeyCode::Char('g')) => PaletteOutcome::Dismiss,
+            (KeyModifiers::NONE, KeyCode::Up) | (KeyModifiers::CONTROL, KeyCode::Char('p')) => {
+                self.select_previous()
+            }
+            (KeyModifiers::NONE, KeyCode::Down) | (KeyModifiers::CONTROL, KeyCode::Char('n')) => {
+                self.select_next()
+            }
+            (KeyModifiers::ALT, KeyCode::Char('p')) => self.history_previous(),
+            (KeyModifiers::ALT, KeyCode::Char('n')) => self.history_next(),
+            (KeyModifiers::CONTROL, KeyCode::Char('a')) | (KeyModifiers::NONE, KeyCode::Home) => {
+                self.cursor = 0;
                 PaletteOutcome::None
             }
-            (KeyModifiers::NONE, KeyCode::Down) => {
-                let count = self.visible().len();
-                if count != 0 {
-                    self.selected = (self.selected + 1) % count;
+            (KeyModifiers::CONTROL, KeyCode::Char('e')) | (KeyModifiers::NONE, KeyCode::End) => {
+                self.cursor = self.query.len();
+                PaletteOutcome::None
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('b')) | (KeyModifiers::NONE, KeyCode::Left) => {
+                self.move_cursor_left();
+                PaletteOutcome::None
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('f')) | (KeyModifiers::NONE, KeyCode::Right) => {
+                self.move_cursor_right();
+                PaletteOutcome::None
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('u')) => {
+                self.query.clear();
+                self.cursor = 0;
+                self.selected = 0;
+                PaletteOutcome::None
+            }
+            (KeyModifiers::CONTROL, KeyCode::Char('k')) => {
+                self.query.truncate(self.cursor);
+                self.selected = 0;
+                PaletteOutcome::None
+            }
+            (KeyModifiers::NONE, KeyCode::Tab) => {
+                if let Some(completion) = self.selected().map(|command| command.id) {
+                    self.query.clear();
+                    self.query.push_str(completion);
+                    self.cursor = self.query.len();
+                    self.selected = 0;
                 }
                 PaletteOutcome::None
             }
             (KeyModifiers::NONE, KeyCode::Enter) => {
-                self.selected().map_or(PaletteOutcome::None, |command| {
-                    if command.enabled {
-                        PaletteOutcome::Execute(command.id)
-                    } else {
-                        PaletteOutcome::Unavailable(
-                            command.unavailable.unwrap_or("action unavailable"),
-                        )
-                    }
-                })
+                let Some((id, enabled, unavailable)) = self
+                    .selected()
+                    .map(|command| (command.id, command.enabled, command.unavailable))
+                else {
+                    return PaletteOutcome::None;
+                };
+                if enabled {
+                    self.remember(id);
+                    PaletteOutcome::Execute(id)
+                } else {
+                    PaletteOutcome::Unavailable(unavailable.unwrap_or("action unavailable"))
+                }
             }
             (KeyModifiers::NONE, KeyCode::Backspace) => {
-                self.query.pop();
+                if self.cursor != 0 {
+                    let previous = self.query[..self.cursor]
+                        .char_indices()
+                        .next_back()
+                        .map_or(0, |(index, _)| index);
+                    self.query.drain(previous..self.cursor);
+                    self.cursor = previous;
+                }
                 self.selected = 0;
+                self.history_cursor = None;
+                PaletteOutcome::None
+            }
+            (KeyModifiers::NONE, KeyCode::Delete) => {
+                if self.cursor < self.query.len() {
+                    let next = self.query[self.cursor..]
+                        .char_indices()
+                        .nth(1)
+                        .map_or(self.query.len(), |(index, _)| self.cursor + index);
+                    self.query.drain(self.cursor..next);
+                }
+                self.selected = 0;
+                self.history_cursor = None;
                 PaletteOutcome::None
             }
             (KeyModifiers::NONE | KeyModifiers::SHIFT, KeyCode::Char(character)) => {
@@ -189,6 +258,85 @@ impl CommandPalette {
             }
             _ => PaletteOutcome::None,
         }
+    }
+
+    fn select_previous(&mut self) -> PaletteOutcome {
+        let count = self.visible().len();
+        if count != 0 {
+            self.selected = self.selected.checked_sub(1).unwrap_or(count - 1);
+        }
+        PaletteOutcome::None
+    }
+
+    fn select_next(&mut self) -> PaletteOutcome {
+        let count = self.visible().len();
+        if count != 0 {
+            self.selected = (self.selected + 1) % count;
+        }
+        PaletteOutcome::None
+    }
+
+    fn history_previous(&mut self) -> PaletteOutcome {
+        if self.history.is_empty() {
+            return PaletteOutcome::None;
+        }
+        let index = self
+            .history_cursor
+            .map_or(self.history.len() - 1, |index| index.saturating_sub(1));
+        self.history_cursor = Some(index);
+        self.query.clone_from(&self.history[index]);
+        self.cursor = self.query.len();
+        self.selected = 0;
+        PaletteOutcome::None
+    }
+
+    fn history_next(&mut self) -> PaletteOutcome {
+        let Some(index) = self.history_cursor else {
+            return PaletteOutcome::None;
+        };
+        if index + 1 < self.history.len() {
+            self.history_cursor = Some(index + 1);
+            self.query.clone_from(&self.history[index + 1]);
+        } else {
+            self.history_cursor = None;
+            self.query.clear();
+        }
+        self.cursor = self.query.len();
+        self.selected = 0;
+        PaletteOutcome::None
+    }
+
+    fn move_cursor_left(&mut self) {
+        if self.cursor != 0 {
+            self.cursor = self.query[..self.cursor]
+                .char_indices()
+                .next_back()
+                .map_or(0, |(index, _)| index);
+        }
+    }
+
+    fn move_cursor_right(&mut self) {
+        if self.cursor < self.query.len() {
+            self.cursor = self.query[self.cursor..]
+                .char_indices()
+                .nth(1)
+                .map_or(self.query.len(), |(index, _)| self.cursor + index);
+        }
+    }
+
+    fn remember(&mut self, command: &'static str) {
+        let entry = if self.query.trim().is_empty() {
+            command.to_owned()
+        } else {
+            self.query.clone()
+        };
+        if self.history.last() != Some(&entry) {
+            if self.history.len() == 32 {
+                self.history.remove(0);
+            }
+            self.history.push(entry);
+        }
+        self.history_cursor = None;
     }
 }
 
@@ -231,10 +379,10 @@ impl ActivityLevel {
 
     const fn color(self) -> Color {
         match self {
-            Self::Info => Color::Cyan,
-            Self::Success => Color::Green,
-            Self::Warning => Color::Yellow,
-            Self::Uncertain => Color::Red,
+            Self::Info => theme::CYAN,
+            Self::Success => theme::GREEN,
+            Self::Warning => theme::YELLOW,
+            Self::Uncertain => theme::RED,
         }
     }
 }
@@ -378,6 +526,60 @@ impl Instrumentation {
     ) -> Option<u64> {
         let correlation_id = self.new_correlation();
         self.begin_correlated_peer_operation_at(action, peer, started, correlation_id)
+    }
+
+    /// Starts one presentation-owned span at the input boundary. The caller
+    /// keeps it open through command resolution, visible feedback, and the
+    /// first frame containing that feedback.
+    pub fn begin_ui_operation_at(
+        &mut self,
+        action: &'static str,
+        started: Instant,
+    ) -> Option<(u64, u64)> {
+        if self.in_flight.len() == MAX_IN_FLIGHT_OPERATIONS {
+            self.dropped_operations = self.dropped_operations.saturating_add(1);
+            return None;
+        }
+        let correlation_id = self.new_correlation();
+        self.next_operation_id = self.next_operation_id.saturating_add(1);
+        let id = self.next_operation_id;
+        let index = self.metric_index(action, "presentation");
+        let metric = &mut self.actions[index];
+        metric.dispatches = metric.dispatches.saturating_add(1);
+        metric.submitted = metric.submitted.saturating_add(1);
+        metric.in_flight = metric.in_flight.saturating_add(1);
+        metric.max_in_flight = metric.max_in_flight.max(metric.in_flight);
+        self.in_flight.push(InFlightOperation {
+            id,
+            action,
+            peer: "presentation",
+            started,
+            budget: LOCAL_ACTION_BUDGET,
+        });
+        if self.traces.len() == MAX_OPERATION_TRACES {
+            self.traces.remove(0);
+        }
+        self.traces.push(OperationTrace {
+            operation_id: id,
+            correlation_id,
+            action,
+            peer: "presentation",
+            stages: vec![
+                TraceStage {
+                    stage: "input_classified",
+                    elapsed_micros: 0,
+                    level: None,
+                },
+                TraceStage {
+                    stage: "command_resolved",
+                    elapsed_micros: u64::try_from(started.elapsed().as_micros())
+                        .unwrap_or(u64::MAX),
+                    level: Some(ActivityLevel::Info),
+                },
+            ],
+            complete: false,
+        });
+        Some((id, correlation_id))
     }
 
     /// Allocates one local correlation shared by every subsystem span caused
@@ -589,36 +791,17 @@ impl Instrumentation {
     }
 
     pub fn lines(&self) -> Vec<String> {
-        let mut lines = vec![
-            format!(
-                "{} in flight · {} budget violations · local ≤{}ms · peer ≤{}ms",
-                self.in_flight_count(),
-                self.budget_violations(),
-                LOCAL_ACTION_BUDGET.as_millis(),
-                PEER_ROUND_TRIP_BUDGET.as_millis()
-            ),
-            "action · peer                 calls  fly  ok  warn  ?  slow  last/max μs".into(),
-            String::new(),
-        ];
+        let mut lines = vec![format!(
+            "{} in flight · {} budget violations · local ≤{}ms · peer ≤{}ms",
+            self.in_flight_count(),
+            self.budget_violations(),
+            LOCAL_ACTION_BUDGET.as_millis(),
+            PEER_ROUND_TRIP_BUDGET.as_millis()
+        )];
         if self.actions.is_empty() {
             lines.push("No instrumented workbench actions yet.".into());
             return lines;
         }
-        lines.extend(self.actions.iter().rev().map(|metric| {
-            format!(
-                "{:<24} {:<9} {:>5} {:>4} {:>3} {:>5} {:>2} {:>5} {:>7}/{:<7}",
-                metric.action,
-                metric.peer,
-                metric.dispatches,
-                metric.in_flight,
-                metric.succeeded,
-                metric.warnings,
-                metric.uncertain,
-                metric.budget_violations,
-                metric.last_latency_micros,
-                metric.max_latency_micros,
-            )
-        }));
         if !self.traces.is_empty() {
             lines.push(String::new());
             lines.push("recent end-to-end traces (correlation/operation · peer · stages)".into());
@@ -635,37 +818,58 @@ impl Instrumentation {
                 )
             }));
         }
+        lines.extend([
+            String::new(),
+            "action · peer                 calls  fly  ok  warn  ?  slow  last/max μs".into(),
+        ]);
+        lines.extend(self.actions.iter().rev().map(|metric| {
+            format!(
+                "{:<24} {:<9} {:>5} {:>4} {:>3} {:>5} {:>2} {:>5} {:>7}/{:<7}",
+                metric.action,
+                metric.peer,
+                metric.dispatches,
+                metric.in_flight,
+                metric.succeeded,
+                metric.warnings,
+                metric.uncertain,
+                metric.budget_violations,
+                metric.last_latency_micros,
+                metric.max_latency_micros,
+            )
+        }));
         lines
     }
 }
 
 pub fn draw_command_palette(frame: &mut Frame<'_>, palette: &CommandPalette) {
-    let area = centered(frame.area(), 84, 72);
+    let frame_area = frame.area();
+    let width = frame_area.width.min(108);
+    let height = frame_area.height.saturating_sub(2).clamp(6, 14);
+    let area = Rect::new(
+        frame_area.x + frame_area.width.saturating_sub(width) / 2,
+        frame_area.y + frame_area.height.saturating_sub(height),
+        width,
+        height,
+    );
     frame.render_widget(Clear, area);
-    let [query, results, detail, footer] = Layout::vertical([
-        Constraint::Length(3),
+    let [results, detail, query, footer] = Layout::vertical([
         Constraint::Min(4),
-        Constraint::Length(4),
+        Constraint::Length(3),
+        Constraint::Length(3),
         Constraint::Length(1),
     ])
     .areas(area);
-    frame.render_widget(
-        Paragraph::new(Line::from(vec![
-            Span::styled("⌕ ", Style::default().fg(Color::Cyan)),
-            Span::raw(palette.query()),
-            Span::styled("█", Style::default().fg(Color::DarkGray)),
-        ]))
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Command palette "),
-        ),
-        query,
-    );
     let visible = palette.visible();
+    let capacity = usize::from(results.height.saturating_sub(2)).max(1);
+    let start = palette
+        .selected
+        .saturating_sub(capacity.saturating_sub(1))
+        .min(visible.len().saturating_sub(capacity));
     let items = visible
         .iter()
         .enumerate()
+        .skip(start)
+        .take(capacity)
         .map(|(index, command)| {
             let selected = index == palette.selected;
             let marker = if selected { "›" } else { " " };
@@ -678,14 +882,20 @@ pub fn draw_command_palette(frame: &mut Frame<'_>, palette: &CommandPalette) {
                 Span::styled(
                     command.title,
                     if selected {
-                        Style::default().add_modifier(Modifier::BOLD)
-                    } else if command.enabled {
                         Style::default()
+                            .fg(theme::TEXT)
+                            .bg(theme::PANEL_RAISED)
+                            .add_modifier(Modifier::BOLD)
+                    } else if command.enabled {
+                        Style::default().fg(theme::TEXT).bg(theme::PANEL_RAISED)
                     } else {
-                        Style::default().fg(Color::DarkGray)
+                        Style::default().fg(theme::MUTED).bg(theme::PANEL_RAISED)
                     },
                 ),
-                Span::styled(availability, Style::default().fg(Color::DarkGray)),
+                Span::styled(
+                    availability,
+                    Style::default().fg(theme::MUTED).bg(theme::PANEL_RAISED),
+                ),
             ]);
             ListItem::new(line)
         })
@@ -696,7 +906,14 @@ pub fn draw_command_palette(frame: &mut Frame<'_>, palette: &CommandPalette) {
         } else {
             items
         })
-        .block(Block::default().borders(Borders::LEFT | Borders::RIGHT)),
+        .style(theme::raised())
+        .block(
+            Block::default()
+                .title(" *Completions* · commands and guarded work ")
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(theme::FAINT).bg(theme::PANEL_RAISED))
+                .style(theme::raised()),
+        ),
         results,
     );
     let detail_text = palette.selected().map_or_else(
@@ -720,13 +937,51 @@ pub fn draw_command_palette(frame: &mut Frame<'_>, palette: &CommandPalette) {
     );
     frame.render_widget(
         Paragraph::new(detail_text)
+            .style(theme::panel())
             .wrap(Wrap { trim: true })
-            .block(Block::default().borders(Borders::ALL).title(" Action ")),
+            .block(theme::card(" SELECTED ACTION ", theme::VIOLET)),
         detail,
     );
+    let before = &palette.query()[..palette.cursor()];
+    let (cursor, after) = palette.query()[palette.cursor()..].chars().next().map_or(
+        (" ".to_owned(), ""),
+        |character| {
+            let next = palette.cursor() + character.len_utf8();
+            (character.to_string(), &palette.query()[next..])
+        },
+    );
     frame.render_widget(
-        Paragraph::new(" ↑↓ select  Enter run  Esc close  •  type to filter ")
-            .style(Style::default().fg(Color::DarkGray)),
+        Paragraph::new(Line::from(vec![
+            Span::styled(
+                "M-x ",
+                Style::default()
+                    .fg(theme::CYAN)
+                    .bg(theme::PANEL_RAISED)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                before,
+                Style::default().fg(theme::TEXT).bg(theme::PANEL_RAISED),
+            ),
+            Span::styled(
+                cursor,
+                Style::default()
+                    .fg(theme::PANEL)
+                    .bg(theme::PINK)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                after,
+                Style::default().fg(theme::TEXT).bg(theme::PANEL_RAISED),
+            ),
+        ]))
+        .style(theme::raised())
+        .block(theme::card(" MINIBUFFER ", theme::CYAN)),
+        query,
+    );
+    frame.render_widget(
+        Paragraph::new(" C-p/C-n select · TAB complete · RET run · C-g quit · M-p/M-n history ")
+            .style(theme::muted()),
         footer,
     );
 }
@@ -736,23 +991,35 @@ pub fn draw_help(frame: &mut Frame<'_>, commands: &[CommandSpec]) {
     frame.render_widget(Clear, area);
     let mut lines = vec![
         Line::from(vec![
-            Span::styled("Ctrl-P", Style::default().fg(Color::Cyan)),
+            Span::styled("Ctrl-P", theme::key()),
             Span::raw("  Search every available action"),
         ]),
         Line::from(vec![
-            Span::styled("F1", Style::default().fg(Color::Cyan)),
+            Span::styled("F1", theme::key()),
             Span::raw("      Toggle this contextual help"),
         ]),
         Line::from(vec![
-            Span::styled("Ctrl-G", Style::default().fg(Color::Cyan)),
+            Span::styled("Ctrl-G", theme::key()),
             Span::raw("  Show activity and receipts"),
         ]),
         Line::from(vec![
-            Span::styled("[ / ]", Style::default().fg(Color::Cyan)),
+            Span::styled("[ / ]", theme::key()),
             Span::raw("   Previous / next surface"),
         ]),
         Line::from(vec![
-            Span::styled("Ctrl-Q", Style::default().fg(Color::Cyan)),
+            Span::styled("Ctrl/Alt 0–9", theme::key()),
+            Span::raw(" Dashboard / direct component surface"),
+        ]),
+        Line::from(vec![
+            Span::styled("Ctrl-,", theme::key()),
+            Span::raw("   Open live session configuration"),
+        ]),
+        Line::from(vec![
+            Span::styled("Mouse", theme::key()),
+            Span::raw("    Click or wheel the surface rail"),
+        ]),
+        Line::from(vec![
+            Span::styled("Ctrl-Q", theme::key()),
             Span::raw("  Safely leave the workbench"),
         ]),
         Line::from(""),
@@ -774,17 +1041,16 @@ pub fn draw_help(frame: &mut Frame<'_>, commands: &[CommandSpec]) {
                     Span::raw(format!("{:<28}", command.title)),
                     Span::styled(
                         command.shortcut.unwrap_or("palette"),
-                        Style::default().fg(Color::DarkGray),
+                        Style::default().fg(theme::MUTED).bg(theme::PANEL_RAISED),
                     ),
                 ])
             }),
     );
     frame.render_widget(
-        Paragraph::new(lines).wrap(Wrap { trim: false }).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Pantheon help "),
-        ),
+        Paragraph::new(lines)
+            .style(theme::raised())
+            .wrap(Wrap { trim: false })
+            .block(theme::modal(" PANTHEON · FIELD GUIDE ")),
         area,
     );
 }
@@ -809,7 +1075,7 @@ pub fn draw_activity(frame: &mut Frame<'_>, activity: &ActivityLog) {
                     ),
                     Span::styled(
                         format!("#{:<4} {:<10}", entry.sequence, entry.source),
-                        Style::default().fg(Color::DarkGray),
+                        Style::default().fg(theme::MUTED).bg(theme::PANEL_RAISED),
                     ),
                     Span::raw(entry.message.as_str()),
                 ])
@@ -817,11 +1083,12 @@ pub fn draw_activity(frame: &mut Frame<'_>, activity: &ActivityLog) {
             .collect()
     };
     frame.render_widget(
-        Paragraph::new(lines).wrap(Wrap { trim: false }).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Activity & receipts • newest first • Esc closes "),
-        ),
+        Paragraph::new(lines)
+            .style(theme::raised())
+            .wrap(Wrap { trim: false })
+            .block(theme::modal(
+                " ACTIVITY & RECEIPTS · THE WORKBENCH REMEMBERS ",
+            )),
         area,
     );
 }
@@ -836,12 +1103,15 @@ pub fn draw_inspector(frame: &mut Frame<'_>, title: &str, lines: &[String]) {
         lines.iter().cloned().map(Line::from).collect()
     };
     frame.render_widget(
-        Paragraph::new(body).wrap(Wrap { trim: false }).block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(format!(" {title} "))
-                .title_bottom(" Esc close "),
-        ),
+        Paragraph::new(body)
+            .style(theme::raised())
+            .wrap(Wrap { trim: false })
+            .block(
+                theme::modal(format!(" {title} ")).title_bottom(Line::styled(
+                    " Esc close ",
+                    Style::default().fg(theme::MUTED).bg(theme::PANEL_RAISED),
+                )),
+            ),
         area,
     );
 }
@@ -900,6 +1170,34 @@ mod tests {
         assert_eq!(
             palette.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
             PaletteOutcome::Unavailable("Vellum is not configured")
+        );
+    }
+
+    #[test]
+    fn minibuffer_supports_completion_editing_selection_and_history() {
+        let mut palette = CommandPalette::new(commands());
+        palette.insert("refresh");
+        assert_eq!(palette.cursor(), "refresh".len());
+        assert_eq!(
+            palette.key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE)),
+            PaletteOutcome::None
+        );
+        assert_eq!(palette.query(), "view.refresh");
+        assert_eq!(
+            palette.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
+            PaletteOutcome::Execute("view.refresh")
+        );
+        palette.reset();
+        palette.key(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::ALT));
+        assert_eq!(palette.query(), "view.refresh");
+        palette.key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::CONTROL));
+        palette.insert("x");
+        assert_eq!(palette.query(), "xview.refresh");
+        palette.key(KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL));
+        assert!(palette.query().is_empty());
+        assert_eq!(
+            palette.key(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL)),
+            PaletteOutcome::Dismiss
         );
     }
 
@@ -1027,6 +1325,49 @@ mod tests {
     }
 
     #[test]
+    fn instrumentation_traces_input_through_visible_feedback_frame() {
+        let mut instrumentation = Instrumentation::default();
+        let (operation, correlation) = instrumentation
+            .begin_ui_operation_at("chronos.task.new", Instant::now())
+            .expect("bounded UI span");
+        assert!(instrumentation.mark_peer_stage(
+            operation,
+            "command_dispatched",
+            ActivityLevel::Info,
+        ));
+        assert!(instrumentation.mark_peer_stage(
+            operation,
+            "feedback_presented",
+            ActivityLevel::Info,
+        ));
+        assert!(instrumentation.mark_peer_stage(
+            operation,
+            "frame_rendered",
+            ActivityLevel::Success,
+        ));
+        instrumentation.settle_peer_operation(operation, ActivityLevel::Info);
+        let trace = instrumentation.traces().last().expect("UI trace");
+        assert_eq!(trace.correlation_id, correlation);
+        assert_eq!(trace.peer, "presentation");
+        assert!(trace.complete);
+        assert_eq!(
+            trace
+                .stages
+                .iter()
+                .map(|stage| stage.stage)
+                .collect::<Vec<_>>(),
+            [
+                "input_classified",
+                "command_resolved",
+                "command_dispatched",
+                "feedback_presented",
+                "frame_rendered",
+                "terminal_disposition",
+            ]
+        );
+    }
+
+    #[test]
     fn reference_palette_and_render_path_meets_measured_budget() {
         let started = Instant::now();
         let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
@@ -1072,7 +1413,8 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(rendered.contains("Command palette"));
+        assert!(rendered.contains("MINIBUFFER"));
+        assert!(rendered.contains("M-x"));
         assert!(rendered.contains("Refresh current view"));
         terminal
             .draw(|frame| draw_inspector(frame, "Configuration", &["peer: ready".into()]))

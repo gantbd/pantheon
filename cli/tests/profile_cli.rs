@@ -26,7 +26,7 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
         .expect("run profile check");
     assert!(output.status.success());
     let report = String::from_utf8(output.stdout).unwrap();
-    assert!(report.starts_with("workspace profile valid: 9 surfaces\n"));
+    assert!(report.starts_with("workspace profile valid: 11 surfaces\n"));
     for expected in [
         "agora: observation=rooms.read.v2 operator=messages.read.v2 management=topology.attach.v1",
         "moira: observation=sagas.inspect.v1 operator=sagas.reconciliation.v1,sagas.evidence.v1,sagas.operator-receipts.v1 management=topology.attach.v1",

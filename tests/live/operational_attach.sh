@@ -228,13 +228,12 @@ def tmux(*args, check=True):
 try:
     tmux("new-session", "-d", "-x", "180", "-y", "32", "-s", "overview", command)
     markers = [
-        "health: 6 current · 0 observing · 0 degraded · 0 unobserved",
-        "moira / sagas: current · evidence",
-        "daimon / presence: current · evidence",
-        "daimon / sessions/events: current · evidence",
-        "hermes / ledger/cursors: current · evidence",
-        "aegis / authority: current · evidence",
-        "grounding / provenance: current · evidence",
+        "moira                 sagas",
+        "daimon                presence",
+        "daimon                sessions/events",
+        "hermes                ledger/cursors",
+        "aegis                 authority",
+        "grounding             provenance",
     ]
     deadline = time.monotonic() + 8
     while time.monotonic() < deadline:

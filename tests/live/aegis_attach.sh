@@ -194,8 +194,8 @@ def expect(*markers):
 
 try:
     tmux("new-session", "-d", "-x", "120", "-y", "28", "-s", "workbench", command)
-    expect("Aegis: attached")
-    tmux("send-keys", "-t", "workbench", "]")
+    expect("aegis", "current")
+    tmux("send-keys", "-t", "workbench", "M-7")
     expect("Aegis", "page: 1", "epoch: 0", "active grants: 6", "grant #0", "decision #3")
     tmux("send-keys", "-t", "workbench", "n")
     expect("page: 2", "grant #4", "grant #5", "decision #4", "decision #5")

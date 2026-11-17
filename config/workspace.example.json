@@ -3,14 +3,16 @@
   "name": "Local engine federation",
   "surfaces": [
     "overview",
-    "workspace",
+    "chronos",
+    "vellum",
     "agora",
     "moira",
     "daimon",
     "grounding",
     "aegis",
     "hermes",
-    "operations"
+    "operations",
+    "configuration"
   ],
   "agora": {
     "socket": "../run/agora.sock",
@@ -89,6 +91,7 @@
     "socket": "../run/vellum.sock",
     "credential": null,
     "roots": [],
+    "allow_add_file": false,
     "requires": ["workspace.inventory.v1"]
   }
 }
