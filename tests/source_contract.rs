@@ -207,15 +207,15 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "94a805a2b02af5a75d113dc3447d610b9f1b900f"
+        "7cbe44618afcefae52d326a3a83027c46fb2c3ac"
     );
     assert_eq!(
         source["inputs"]["chronos"]["revision"],
-        "88f009130f1b19babe92edb4008b112159888ef3"
+        "26366ec9172b48280d9bba3688572edf1c0d2719"
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "072dceb3a3c06e8d86a0be03fb872ca2f7fb7a81"
+        "63689c5397e6a0b84879692b05436693390838cb"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],

@@ -708,7 +708,7 @@ source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f
 
 [[package]]
 name = "keystone-storage"
-version = "0.0.1"
+version = "0.0.1-chronos.1"
 
 [[package]]
 name = "libc"

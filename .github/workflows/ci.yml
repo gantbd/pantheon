@@ -34,13 +34,13 @@ jobs:
         with: { repository: gantbd/agora, ref: 45b11bcd1e9b7b21e79faf8f1794f8379622f635, path: agora, persist-credentials: false }
       - name: Check out Agora TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/agora-tui, ref: 072dceb3a3c06e8d86a0be03fb872ca2f7fb7a81, path: agora-tui, persist-credentials: false }
+        with: { repository: gantbd/agora-tui, ref: 63689c5397e6a0b84879692b05436693390838cb, path: agora-tui, persist-credentials: false }
       - name: Check out Chronos
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/chronos, ref: 88f009130f1b19babe92edb4008b112159888ef3, path: chronos, persist-credentials: false }
+        with: { repository: gantbd/chronos, ref: 26366ec9172b48280d9bba3688572edf1c0d2719, path: chronos, persist-credentials: false }
       - name: Check out Chronos TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/chronos-tui, ref: 94a805a2b02af5a75d113dc3447d610b9f1b900f, path: chronos-tui, persist-credentials: false }
+        with: { repository: gantbd/chronos-tui, ref: 7cbe44618afcefae52d326a3a83027c46fb2c3ac, path: chronos-tui, persist-credentials: false }
       - name: Check out Daimon
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/daimon, ref: 07caa33d835c634947cc16109d1c999581501835, path: daimon, persist-credentials: false }

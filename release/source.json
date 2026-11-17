@@ -10,17 +10,17 @@
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
-      "revision": "072dceb3a3c06e8d86a0be03fb872ca2f7fb7a81",
+      "revision": "63689c5397e6a0b84879692b05436693390838cb",
       "workingTreeClean": true
     },
     "chronos": {
       "repository": "https://github.com/gantbd/chronos",
-      "revision": "88f009130f1b19babe92edb4008b112159888ef3",
+      "revision": "26366ec9172b48280d9bba3688572edf1c0d2719",
       "workingTreeClean": true
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
-      "revision": "94a805a2b02af5a75d113dc3447d610b9f1b900f",
+      "revision": "7cbe44618afcefae52d326a3a83027c46fb2c3ac",
       "workingTreeClean": true
     },
     "daimon": {
