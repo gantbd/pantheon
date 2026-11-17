@@ -10,7 +10,7 @@
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
-      "revision": "2c56a1431cde62aecd358b572c0b01d28c4cb8a6",
+      "revision": "36c6c624360de88ee24c0c9035d5ad36bb62e9a5",
       "workingTreeClean": true
     },
     "chronos": {

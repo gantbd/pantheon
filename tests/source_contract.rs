@@ -402,7 +402,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "2c56a1431cde62aecd358b572c0b01d28c4cb8a6"
+        "36c6c624360de88ee24c0c9035d5ad36bb62e9a5"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],

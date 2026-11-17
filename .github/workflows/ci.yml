@@ -34,7 +34,7 @@ jobs:
         with: { repository: gantbd/agora, ref: 9ab9e0f2c467c3b6501e08c44f10f679b8ed6cd8, path: agora, persist-credentials: false }
       - name: Check out Agora TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/agora-tui, ref: 2c56a1431cde62aecd358b572c0b01d28c4cb8a6, path: agora-tui, persist-credentials: false }
+        with: { repository: gantbd/agora-tui, ref: 36c6c624360de88ee24c0c9035d5ad36bb62e9a5, path: agora-tui, persist-credentials: false }
       - name: Check out Chronos
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/chronos, ref: 43fdf6f33fa526899639f03cc32e398bcea86010, path: chronos, persist-credentials: false }
