@@ -219,7 +219,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "2e047e449a957161a3de58ca1cecd210913a05b6"
+        "0360287449e4d7499e8040a55c996dcdea035991"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -243,7 +243,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "f7d35fc09e7b03dbe72ec96733817d9a01826c4f"
+        "a43991b430a3a38961c6e1a40f2e5aca8d733696"
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
