@@ -117,16 +117,27 @@ owner.
   from this qualification run. The owner advanced to revision 1, projected six
   Ready items and reported `Applied. Observed 6 tasks on this page.` After a
   clean topology drain and owner restart, the same revision and all six Ready
-  items reopened and the UI reported `Observed 6 tasks on this page.`
+  items reopened. A seventh local-agent delegation/persona-transition item then
+  advanced the owner to revision 2 and reported `Applied. Observed 7 tasks on
+  this page.`
 - Captured work covers Moira-seeded signal correlation, durable role-activation
   history/no-authority proof, configurable discovery capture and agent sifting,
   the operator agenda, UI-configurable local providers, and evidence-prefilled
-  `Capture in Chronos` behavior.
+  `Capture in Chronos` behavior. The seventh item covers selecting Chronos work
+  for a qualified local agent with an explicit persona/work-mode transition.
 - The batch form made six-title capture fast, but every task landed at priority
   zero and the form could not attach owner, impact, evidence/correlation,
   acceptance checks, dependencies or proposed priority. Those omissions make
   later sifting reconstruct context and are therefore product gaps, not merely
   richer task-description wishes.
+- Source audit found that Chronos already owns priority, dependencies, required
+  capabilities, maximum attempts and retry-safety policy, while the reusable TUI
+  submit path sends only task IDs and silently applies owner defaults. Those
+  existing fields should become a validated advanced capture/configuration path.
+  Chronos intentionally content-minimizes its coordination record; descriptions,
+  evidence and acceptance material belong in an authorized linked Vellum
+  artifact (or another selected content owner), with Moira coordinating the two
+  receipts rather than inflating or duplicating the Chronos record.
 - No agent-assisted sift is exposed from the board, and no configurable profile
   explains its criteria, model/provider, context boundary or decision limits.
 - The first launch found a stale Vellum socket and returned only
@@ -213,8 +224,11 @@ Owners: Rune for authored definitions, Dendrite for exact distributed/grounding
 digests and Moira for workflow/deliberation instantiation. A missing lifecycle
 owner may be selected only after the capability audit.
 
-- [ ] Audit Rune, Dendrite and Moira against bounded register, resolve, activate,
-  migrate, deprecate, retire and tombstone requirements.
+- [x] Audit Rune, Dendrite and Moira against bounded register, resolve, activate,
+  migrate, deprecate, retire and tombstone requirements. The evidence-backed
+  [`work-mode-owner-audit.md`](work-mode-owner-audit.md) finds complementary
+  authoring, grounding and instance ownership, but no generic durable definition
+  lifecycle owner; Pantheon remains a projection/action host.
 - [ ] Publish only the missing contracts, with immutable definition digests and
   a named sovereign owner.
 - [ ] Refuse executable content, bearer material, hidden routes and unbounded
@@ -233,6 +247,10 @@ The existing Chronos-to-selected-Daimon prompt remains a qualified presentation
 slice, not completion.
 
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
+- [ ] From the selected task, choose a qualified local provider, declared work
+  mode/persona, bounded delegation, grounding depth, tools and budgets through a
+  reviewable Pantheon form; show the effective owner-backed configuration before
+  invocation.
 - [ ] Configure and qualify the selected local provider through an owner-backed
   Pantheon surface; the existing checklist-only overlay does not satisfy this.
 - [ ] Present provider/model health, conformance, effective tool/context budget,
@@ -241,10 +259,17 @@ slice, not completion.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
 - [ ] Create or bind an exact Agora task room.
 - [ ] Open a per-task Daimon session bound to the exact Chronos attempt.
+- [ ] Allow an explicit participation transition between dogfood modes without
+  silently changing principal identity, authority, accountability, tool grants,
+  budgets or approval rights. Each switch retains the prior activation,
+  rationale, scope and owner revision.
 - [ ] Admit addressed room messages through an explicit replay-safe prompt
   command; ordinary chatter never becomes a prompt.
 - [ ] Link Dendrite grounding, Aegis decisions, Daimon progress, Vellum proposals,
   Agora responses, Chronos status/comments and Moira settlement.
+- [ ] Let the local agent propose Chronos status, priority, dependency, comment
+  and follow-up changes with evidence and rationale; apply only the exact
+  accepted owner transitions and keep refusal/partial/uncertain outcomes visible.
 - [ ] Recover every lost-reply cut without duplicate task, room, provider call,
   edit or message.
 - [ ] Qualify the same journey through TUI and headless clients with detach,
@@ -252,6 +277,20 @@ slice, not completion.
 
 Exit evidence: J1 plus acceptance cases 1–30 and the owner-specific recovery
 cases implicated by the selected profile.
+
+### J1 dogfood participation matrix
+
+| Mode | Useful delegated work | Required human boundary |
+|---|---|---|
+| Executive sponsor | Frame outcomes, sponsorship constraints, funding/exposure bounds and stage questions | A model cannot become the accountable executive, approve funding or issue rollout go/no-go |
+| Product owner | Refine user value, affected-user impact, acceptance evidence and backlog ordering proposals | Ranking is advisory; contested scope, priority and discard/merge decisions remain human/owner transitions |
+| Project manager | Surface dependencies, milestones, risks, blockers, agenda items and follow-up proposals | Scheduling does not grant authority; escalation, commitment and sign-off retain named owners |
+| IC collaborator | Investigate, design, implement, test, review and explain bounded work with cited evidence | Tool/file/effect scope remains explicit; authored output cannot self-review or self-approve |
+
+The first local-Qwen dogfood should run the same bounded audit once per selected
+mode, retain distinct reports and correlation/model/profile evidence, then ask a
+human to compare utility and boundary adherence. Persona text alone is not a
+work-mode activation and must never be used to infer delegation or authority.
 
 ## Milestone 4 — J33 human-gated ensemble decisions
 
