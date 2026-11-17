@@ -35,7 +35,7 @@
     },
     "moira": {
       "repository": "https://github.com/gantbd/moira",
-      "revision": "113d7d2cdc0c80a02fed8439a551f7b6bf8aaea5",
+      "revision": "f7d35fc09e7b03dbe72ec96733817d9a01826c4f",
       "workingTreeClean": true
     },
     "hermes": {
@@ -80,7 +80,7 @@
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "0e4dcad304989bf6f472a7e9d8be50a301643c59",
+      "revision": "2e047e449a957161a3de58ca1cecd210913a05b6",
       "workingTreeClean": true
     },
     "vellum": {
