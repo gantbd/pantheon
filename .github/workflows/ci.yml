@@ -46,7 +46,7 @@ jobs:
         with: { repository: gantbd/daimon, ref: 8d4238ce6433b250c2f081f7c9508905778994c0, path: daimon, persist-credentials: false }
       - name: Check out Daimon TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/daimon-tui, ref: 667c6db58e6382262acb75127932ebd9a5e82f89, path: daimon-tui, persist-credentials: false }
+        with: { repository: gantbd/daimon-tui, ref: c6888396d2c044c290c6f688cb5c1f613464f0cc, path: daimon-tui, persist-credentials: false }
       - name: Check out Hermes
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/hermes, ref: e666416071d1b5b6f4bdb7669a3984ef6d8a3162, path: hermes, persist-credentials: false }
