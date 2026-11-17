@@ -43,7 +43,7 @@ jobs:
         with: { repository: gantbd/chronos-tui, ref: 7cbe44618afcefae52d326a3a83027c46fb2c3ac, path: chronos-tui, persist-credentials: false }
       - name: Check out Daimon
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/daimon, ref: b33ca7427cfe0baaeb2f3d53dd287d3185262b32, path: daimon, persist-credentials: false }
+        with: { repository: gantbd/daimon, ref: ca358a46e7b18b0b93599d0e7cc1bfdff36e3636, path: daimon, persist-credentials: false }
       - name: Check out Daimon TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/daimon-tui, ref: b63705bddd4f4778de13a2c2824717ca8d76edd1, path: daimon-tui, persist-credentials: false }
@@ -55,10 +55,10 @@ jobs:
         with: { repository: gantbd/hermes-tui, ref: 27f857df701edf6261f09cf38d74f1a48ba0cb7e, path: hermes-tui, persist-credentials: false }
       - name: Check out Moira
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/moira, ref: aea0842ef0c4b0421df14cf7a68c1c8afe0be5c9, path: moira, persist-credentials: false }
+        with: { repository: gantbd/moira, ref: 23f32236b0d1b43138835df3813271b1bacd58f2, path: moira, persist-credentials: false }
       - name: Check out Moira TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/moira-tui, ref: 08564ecf28e909c40235c729df4ee7eace65a302, path: moira-tui, persist-credentials: false }
+        with: { repository: gantbd/moira-tui, ref: 3237746050b0160b8a4200482a6e4caf0fea9191, path: moira-tui, persist-credentials: false }
       - name: Check out Tellus
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/tellus, ref: 03a920e9b1457ae33428acb9672c5fd320c69e72, path: tellus, persist-credentials: false }
