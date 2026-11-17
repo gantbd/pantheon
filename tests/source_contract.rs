@@ -434,7 +434,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "8d4238ce6433b250c2f081f7c9508905778994c0"
+        "33575c65f55fc8703c044d30515b2ab1fd0dd13e"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
