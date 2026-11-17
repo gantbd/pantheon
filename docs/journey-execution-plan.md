@@ -132,8 +132,14 @@ owner.
   richer task-description wishes.
 - Source audit found that Chronos already owns priority, dependencies, required
   capabilities, maximum attempts and retry-safety policy, while the reusable TUI
-  submit path sends only task IDs and silently applies owner defaults. Those
-  existing fields should become a validated advanced capture/configuration path.
+  submit path sent only task IDs and silently applied owner defaults. The first
+  correction now opens a bounded pre-submit review for every exact task, exposes
+  all five owner fields, submits one atomic `SubmitGraph`, preserves the reviewed
+  graph when dispatch cannot be queued, and shows applied values in both hosted
+  and standalone projections. A real Pantheon/tmux qualification proved
+  structured capture, scheduling, independently receipted cancellation, clean
+  shutdown and exact durable reopen. Rich owner/impact/evidence material remains
+  deliberately outside this content-minimized record.
   Chronos intentionally content-minimizes its coordination record; descriptions,
   evidence and acceptance material belong in an authorized linked Vellum
   artifact (or another selected content owner), with Moira coordinating the two
@@ -245,6 +251,15 @@ Exit evidence: acceptance cases 98–105.
 
 The existing Chronos-to-selected-Daimon prompt remains a qualified presentation
 slice, not completion.
+
+The dogfood path now also exposes four guarded one-turn collaboration lenses—
+Executive Sponsor, Product Owner, Project Manager and IC Collaborator—through
+the same command/behavior facade and Daimon prompt review used for ordinary
+work. The prepared prompt explicitly says that a lens is not human identity,
+organizational title, work-mode activation, delegation, authority, approval or
+sign-off. This makes role-shaped collaboration usable now and testable in the
+task-to-agent journey, while intentionally leaving durable role activation,
+provider selection and authority binding to their sovereign owner contracts.
 
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
 - [ ] From the selected task, choose a qualified local provider, declared work

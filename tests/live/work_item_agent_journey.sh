@@ -28,7 +28,7 @@ cargo build --manifest-path "$root/Cargo.toml" \
 fixture="$workspace/daimon-tui/target/debug/examples/agent_set_fixture"
 workbench="$root/target/debug/pantheon"
 
-"$fixture" "$scratch/daimon.sock" "$scratch/receipts" prompt \
+"$fixture" "$scratch/daimon.sock" "$scratch/receipts" prompt-lens \
   >"$scratch/fixture.out" 2>"$scratch/fixture.err" &
 fixture_pid=$!
 attempt=0
@@ -122,17 +122,21 @@ try:
     tmux("new-session", "-d", "-x", "170", "-y", "34", "-s", session, command)
     expect("CHRONOS", "Board", "revision 0", timeout=30)
     keys("C-p", "C-u")
-    literal("create task with local agent")
-    expect("Create task with local agent")
+    literal("create task with product owner agent lens")
+    expect("Create task with product owner agent lens")
     keys("Enter")
     expect("Task batch")
     literal("inspect")
     keys("Tab")
     literal("report drift")
     keys("Enter")
+    expect("Review 2 exact task(s)")
+    keys("Enter")
     expect(
         "DAIMON",
         "Compose Daimon prompt",
+        "product-owner collaboration lens",
+        "not a human identity",
         "inspect",
         "report drift",
         timeout=20,
@@ -165,4 +169,4 @@ fixture_pid=
 test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 1
 grep 'session 1 prompted' "$scratch/receipts" >/dev/null
 
-echo 'PASS: Chronos task -> guarded local-agent prompt -> Daimon conversation -> refreshed Kanban board'
+echo 'PASS: Chronos task -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board'

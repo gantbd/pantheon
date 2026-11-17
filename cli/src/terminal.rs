@@ -372,9 +372,11 @@ enum WorkItemAgentJourney {
     Idle,
     EditingTask {
         draft: String,
+        lens: Option<AgentCollaborationLens>,
     },
     AwaitingTaskReceipt {
         draft: String,
+        lens: Option<AgentCollaborationLens>,
     },
     ReviewingPrompt,
     Invoking,
@@ -384,7 +386,7 @@ enum WorkItemAgentJourney {
 
 impl WorkItemAgentJourney {
     fn capture_task_key(&mut self, key: KeyEvent) {
-        let Self::EditingTask { draft } = self else {
+        let Self::EditingTask { draft, .. } = self else {
             return;
         };
         match key.code {
@@ -407,20 +409,94 @@ impl WorkItemAgentJourney {
     }
 
     fn task_submitted(&mut self) {
-        if let Self::EditingTask { draft } = std::mem::take(self) {
-            *self = Self::AwaitingTaskReceipt { draft };
+        if let Self::EditingTask { draft, lens } = std::mem::take(self) {
+            *self = Self::AwaitingTaskReceipt { draft, lens };
         }
     }
 }
 
-fn work_item_agent_prompt(draft: &str) -> String {
+fn work_item_agent_prompt(draft: &str, lens: Option<AgentCollaborationLens>) -> String {
     let work = draft.trim();
-    if work.is_empty() {
+    let work = if work.is_empty() {
         "Review the newly created Chronos work item and ask the operator for its missing details."
-            .into()
+            .to_owned()
     } else {
-        work.into()
+        work.to_owned()
+    };
+    if let Some(lens) = lens {
+        format!(
+            "{}\n\nWork item:\n{work}",
+            agent_collaboration_lens_prompt(lens)
+        )
+    } else {
+        work
     }
+}
+
+#[derive(Clone, Copy)]
+struct AgentCollaborationLens {
+    action: &'static str,
+    new_task_action: &'static str,
+    name: &'static str,
+    title: &'static str,
+    new_task_title: &'static str,
+    guidance: &'static str,
+}
+
+const AGENT_COLLABORATION_LENSES: [AgentCollaborationLens; 4] = [
+    AgentCollaborationLens {
+        action: "workitem.agent.lens.executive",
+        new_task_action: "workitem.agent.new.executive",
+        name: "Executive sponsor",
+        title: "Shift local agent to executive sponsor lens",
+        new_task_title: "Create task with executive sponsor agent lens",
+        guidance: "Adopt an executive-sponsor collaboration lens for this turn: connect the work to outcomes, material risk, sponsorship, decision ownership, and explicit human go/no-go gates.",
+    },
+    AgentCollaborationLens {
+        action: "workitem.agent.lens.product-owner",
+        new_task_action: "workitem.agent.new.product-owner",
+        name: "Product owner",
+        title: "Shift local agent to product owner lens",
+        new_task_title: "Create task with product owner agent lens",
+        guidance: "Adopt a product-owner collaboration lens for this turn: advocate for affected users, clarify value and acceptance evidence, expose tradeoffs, and propose ordering without silently committing priority.",
+    },
+    AgentCollaborationLens {
+        action: "workitem.agent.lens.project-manager",
+        new_task_action: "workitem.agent.new.project-manager",
+        name: "Project manager",
+        title: "Shift local agent to project manager lens",
+        new_task_title: "Create task with project manager agent lens",
+        guidance: "Adopt a project-manager collaboration lens for this turn: make dependencies, owners, sequencing, delivery risk, status, and next coordination actions explicit.",
+    },
+    AgentCollaborationLens {
+        action: "workitem.agent.lens.ic-collaborator",
+        new_task_action: "workitem.agent.new.ic-collaborator",
+        name: "IC collaborator",
+        title: "Shift local agent to IC collaborator lens",
+        new_task_title: "Create task with IC collaborator agent lens",
+        guidance: "Adopt an individual-contributor collaboration lens for this turn: work concretely with the operator, inspect evidence, propose and test implementation details, and surface uncertainty early.",
+    },
+];
+
+fn agent_collaboration_lens(action: &str) -> Option<AgentCollaborationLens> {
+    AGENT_COLLABORATION_LENSES
+        .iter()
+        .copied()
+        .find(|lens| lens.action == action)
+}
+
+fn agent_task_collaboration_lens(action: &str) -> Option<AgentCollaborationLens> {
+    AGENT_COLLABORATION_LENSES
+        .iter()
+        .copied()
+        .find(|lens| lens.new_task_action == action)
+}
+
+fn agent_collaboration_lens_prompt(lens: AgentCollaborationLens) -> String {
+    format!(
+        "{}\n\nBoundary: this is a reviewable collaboration lens for one agent turn. It is not a human identity, organizational title, work-mode activation, delegation, authority, approval, or sign-off. Preserve the actual principal and accountable human, and ask before crossing any human gate.",
+        lens.guidance
+    )
 }
 
 #[derive(Default)]
@@ -1784,6 +1860,48 @@ fn workbench_commands(
             "A selected local Daimon agent session is not configured"
         })
     });
+    for lens in AGENT_COLLABORATION_LENSES {
+        let new_task_command = CommandSpec::available(
+            lens.new_task_action,
+            lens.new_task_title,
+            "Create exact Chronos work, then carry its reviewed text and the selected non-authority collaboration lens into one guarded first Daimon prompt.",
+            "Work item journey",
+            None,
+            CommandKind::Guarded,
+        );
+        commands.push(if chronos_writes && daimon_execution {
+            new_task_command
+        } else {
+            new_task_command.unavailable(if !chronos_writes {
+                if chronos {
+                    "Chronos writes are disabled for this session"
+                } else {
+                    "Chronos is not configured"
+                }
+            } else if daimon_control {
+                "A credential-free Daimon execution policy is required"
+            } else {
+                "A selected local Daimon agent session is not configured"
+            })
+        });
+        let command = CommandSpec::available(
+            lens.action,
+            lens.title,
+            "Open a guarded, reviewable one-turn lens change for the selected local Daimon session. A lens never grants role, delegation, authority, approval, or human identity.",
+            "Work item journey",
+            None,
+            CommandKind::Guarded,
+        );
+        commands.push(if daimon_execution {
+            command
+        } else {
+            command.unavailable(if daimon_control {
+                "A credential-free Daimon execution policy is required"
+            } else {
+                "A selected local Daimon agent session is not configured"
+            })
+        });
+    }
     let return_to_board = CommandSpec::available(
         "workitem.agent.return",
         "Return to the Kanban board",
@@ -2407,6 +2525,54 @@ fn execute_workbench_action<T: ServicePort>(
             ActivityLevel::Info,
             "pantheon",
             format!("Opened {}", destination.label()),
+        );
+    }
+    if agent_task_collaboration_lens(action).is_some() {
+        return invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::NewTask);
+    }
+    if let Some(lens) = agent_collaboration_lens(action) {
+        let _ = shell.activate(Surface::Daimon);
+        let Some(agent) = daimon_agent.as_ref() else {
+            return (
+                ActivityLevel::Warning,
+                "daimon",
+                "No current Daimon agent observation; refresh the selected session first".into(),
+            );
+        };
+        let observations = agent.selected_observations();
+        if observations.is_empty() {
+            return (
+                ActivityLevel::Warning,
+                "daimon",
+                "Selected Daimon sessions do not yet have current observations; refresh first"
+                    .into(),
+            );
+        }
+        if let Some(error) =
+            daimon_workset_error(&observations, "Ready with no active turn", |view| {
+                view.phase == AgentSessionPhaseV1::Ready && view.active_turn.is_none()
+            })
+        {
+            return (ActivityLevel::Warning, "daimon", error);
+        }
+        let _ = daimon_execution_policy
+            .expect("palette enables collaboration lenses only with an execution policy");
+        let mut composer = match daimon_tui::AgentPromptComposer::new(observations.len()) {
+            Ok(composer) => composer,
+            Err(error) => return (ActivityLevel::Warning, "daimon", error.into()),
+        };
+        composer.insert_text(&agent_collaboration_lens_prompt(lens));
+        *daimon_prompt_composer = Some(composer);
+        *daimon_permission_composer = None;
+        *daimon_control = None;
+        return (
+            ActivityLevel::Info,
+            "work-item",
+            format!(
+                "{} collaboration lens prepared for {} selected local-agent session(s); review before sending, and retain actual authority boundaries",
+                lens.name,
+                observations.len()
+            ),
         );
     }
     match action {
@@ -3274,7 +3440,7 @@ fn command_feedback(action: &str, level: ActivityLevel, message: &str) -> String
         ),
         (ActivityLevel::Info, "chronos.task.new") => (
             "READY",
-            "Next: enter one or more task IDs; Tab adds a row and Enter submits the exact batch.",
+            "Next: enter one or more task IDs; Tab adds a row, Enter reviews owner fields, then Enter submits once.",
         ),
         (ActivityLevel::Info, "vellum.document.open") => (
             "READY",
@@ -3950,7 +4116,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     instrumentation.mark_peer_stage(operation, "peer_receipt", level);
                     instrumentation.settle_peer_operation(operation, level);
                     activity.push(level, "chronos", message);
-                    if let WorkItemAgentJourney::AwaitingTaskReceipt { draft } = &work_item_agent {
+                    if let WorkItemAgentJourney::AwaitingTaskReceipt { draft, lens } =
+                        &work_item_agent
+                    {
                         if level != ActivityLevel::Success {
                             work_item_agent = WorkItemAgentJourney::Failed;
                             notice = command_feedback(
@@ -3960,7 +4128,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             );
                             activity.push(level, "work-item", notice.clone());
                         } else {
-                            let prompt = work_item_agent_prompt(draft);
+                            let prompt = work_item_agent_prompt(draft, *lens);
                             let observations = daimon_agent
                                 .as_ref()
                                 .map(daimon_tui::AgentSetComponent::selected_observations)
@@ -5109,42 +5277,46 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut grounding,
                         &mut operations,
                     );
-                    if action == "workitem.agent.new" {
+                    if action == "workitem.agent.new"
+                        || agent_task_collaboration_lens(action).is_some()
+                    {
                         work_item_agent = if level == ActivityLevel::Info {
                             WorkItemAgentJourney::EditingTask {
                                 draft: String::new(),
+                                lens: agent_task_collaboration_lens(action),
                             }
                         } else {
                             WorkItemAgentJourney::Failed
                         };
                     }
                     let peer_workflow_opened = level == ActivityLevel::Info
-                        && matches!(
-                            action,
-                            "workitem.agent.new"
-                                | "agora.room.create"
-                                | "agora.message.compose"
-                                | "moira.reconciliation.keep-uncertain"
-                                | "moira.reconciliation.fail-terminal"
-                                | "moira.reconciliation.cancel"
-                                | "moira.reconciliation.compensate"
-                                | "moira.reconciliation.admit-failed"
-                                | "moira.reconciliation.admit-succeeded"
-                                | "moira.reconciliation.retry"
-                                | "daimon.session.prompt"
-                                | "daimon.session.permission"
-                                | "daimon.session.reattach"
-                                | "daimon.session.advance"
-                                | "daimon.session.cancel"
-                                | "daimon.session.close"
-                                | "ledger.compact.v1"
-                                | "ledger.events.disclose.v1"
-                                | "ledger.acknowledge.v1"
-                                | "aegis.epoch.revoke"
-                                | "aegis.authority.manage"
-                                | "vellum.save-selected"
-                                | "vellum.atomic-replace-selected"
-                        );
+                        && (agent_task_collaboration_lens(action).is_some()
+                            || matches!(
+                                action,
+                                "workitem.agent.new"
+                                    | "agora.room.create"
+                                    | "agora.message.compose"
+                                    | "moira.reconciliation.keep-uncertain"
+                                    | "moira.reconciliation.fail-terminal"
+                                    | "moira.reconciliation.cancel"
+                                    | "moira.reconciliation.compensate"
+                                    | "moira.reconciliation.admit-failed"
+                                    | "moira.reconciliation.admit-succeeded"
+                                    | "moira.reconciliation.retry"
+                                    | "daimon.session.prompt"
+                                    | "daimon.session.permission"
+                                    | "daimon.session.reattach"
+                                    | "daimon.session.advance"
+                                    | "daimon.session.cancel"
+                                    | "daimon.session.close"
+                                    | "ledger.compact.v1"
+                                    | "ledger.events.disclose.v1"
+                                    | "ledger.acknowledge.v1"
+                                    | "aegis.epoch.revoke"
+                                    | "aegis.authority.manage"
+                                    | "vellum.save-selected"
+                                    | "vellum.atomic-replace-selected"
+                            ));
                     let mut correlated_refresh = false;
                     if matches!(
                         action,
@@ -7107,18 +7279,38 @@ mod tests {
     fn work_item_agent_journey_carries_bounded_task_text_into_the_prompt() {
         let mut journey = WorkItemAgentJourney::EditingTask {
             draft: String::new(),
+            lens: None,
         };
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('R'), KeyModifiers::SHIFT));
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
         journey.capture_task_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL));
         journey.task_submitted();
-        let WorkItemAgentJourney::AwaitingTaskReceipt { draft } = journey else {
+        let WorkItemAgentJourney::AwaitingTaskReceipt { draft, lens } = journey else {
             panic!("task submission should advance the journey");
         };
         assert_eq!(draft, "Re\n");
-        let prompt = work_item_agent_prompt(&draft);
+        assert!(lens.is_none());
+        let prompt = work_item_agent_prompt(&draft, lens);
         assert_eq!(prompt, "Re");
+    }
+
+    #[test]
+    fn collaboration_lenses_are_one_turn_guidance_without_synthetic_authority() {
+        for lens in AGENT_COLLABORATION_LENSES {
+            let prompt = agent_collaboration_lens_prompt(lens);
+            assert!(prompt.contains(lens.guidance));
+            assert!(prompt.contains("one agent turn"));
+            assert!(prompt.contains("not a human identity"));
+            assert!(prompt.contains("not a human identity") && prompt.contains("authority"));
+            assert!(agent_collaboration_lens(lens.action).is_some());
+            assert!(agent_task_collaboration_lens(lens.new_task_action).is_some());
+            let work_prompt = work_item_agent_prompt("inspect", Some(lens));
+            assert!(work_prompt.contains("Work item:\ninspect"));
+            assert!(work_prompt.contains(lens.guidance));
+        }
+        assert!(agent_collaboration_lens("workitem.agent.lens.unknown").is_none());
+        assert!(agent_task_collaboration_lens("workitem.agent.new.unknown").is_none());
     }
 
     fn local_profile(name: &str, surfaces: Vec<Surface>) -> WorkspaceProfile {
@@ -7255,6 +7447,14 @@ mod tests {
             "vellum.save",
             "chronos.task.new",
             "workitem.agent.new",
+            "workitem.agent.new.executive",
+            "workitem.agent.new.product-owner",
+            "workitem.agent.new.project-manager",
+            "workitem.agent.new.ic-collaborator",
+            "workitem.agent.lens.executive",
+            "workitem.agent.lens.product-owner",
+            "workitem.agent.lens.project-manager",
+            "workitem.agent.lens.ic-collaborator",
             "workitem.agent.return",
             "workitem.agent.chat",
             "chronos.task.cancel",

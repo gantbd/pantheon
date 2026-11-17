@@ -715,6 +715,8 @@ fn chronos_mutation_gate_uses_the_peer_component_and_proves_durable_reopen() {
         "--chronos-scheduling",
         "--chronos-cancel-receipts",
         "Task batch",
+        "Review 3 exact task(s)",
+        "retry=idempotent",
         "workbench-secondary",
         "Observed 3 tasks",
         "Set concurrency capacity to 3?",
@@ -767,7 +769,12 @@ fn chronos_batch_composer_reuses_one_owner_atomic_graph() {
     for required in [
         "MAX_SUBMIT_BATCH",
         "Input::NextItem",
-        "Action::SubmitBatch(ids)",
+        "Action::SubmitGraph(tasks)",
+        "TaskPriority",
+        "TaskDependencies",
+        "TaskCapabilities",
+        "TaskMaxAttempts",
+        "RetrySafety::ConnectorIdempotent",
     ] {
         assert!(
             component.contains(required),
@@ -776,6 +783,7 @@ fn chronos_batch_composer_reuses_one_owner_atomic_graph() {
     }
     for required in [
         "Action::SubmitBatch(ids)",
+        "Action::SubmitGraph(tasks)",
         "Command::SubmitGraph",
         ".collect()",
     ] {
@@ -2070,12 +2078,14 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
     let journey = fs::read_to_string(root.join("tests/live/work_item_agent_journey.sh"))
         .expect("work item agent journey");
     for required in [
-        "create task with local agent",
+        "create task with product owner agent lens",
         "Compose Daimon prompt",
         "Local-agent turn accepted",
+        "product-owner collaboration lens",
+        "not a human identity",
         "return to the kanban board",
         "agent_set_fixture",
-        "PASS: Chronos task -> guarded local-agent prompt -> Daimon conversation -> refreshed Kanban board",
+        "PASS: Chronos task -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board",
     ] {
         assert!(
             journey.contains(required),
