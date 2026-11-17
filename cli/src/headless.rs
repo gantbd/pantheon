@@ -766,6 +766,8 @@ fn observe_moira_participation(
                     "principal_type": "agent",
                     "participation": hex_bytes(&view.binding.participation.0),
                     "revision": view.revision,
+                    "previously_observed_revision": null,
+                    "revision_history": "not_published",
                     "phase": format!("{:?}", view.phase),
                     "session_revision": view.session_revision,
                     "event_cursor": view.last_event_cursor,

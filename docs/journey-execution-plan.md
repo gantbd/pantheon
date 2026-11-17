@@ -21,6 +21,14 @@ does not close an item.
    requires named-human adjudication.
 7. Qualify TUI, CLI/headless, restart/recovery, and accessibility behavior before
    calling a journey complete.
+8. Anything expected to vary by user, workspace or deployment must have a
+   discoverable, validated owner-backed configuration path in Pantheon; source
+   edits, environment variables and opaque profile files are escape hatches, not
+   the normal user journey.
+9. Let users capture discoveries into Chronos with the current evidence already
+   attached. Agent-assisted sifting may recommend deduplication, ordering and
+   rationale, but only an admitted owner/human transition may discard, commit or
+   materially reprioritize work.
 
 ## Dogfood evidence and user-advocacy ledger
 
@@ -54,6 +62,79 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   and provider commands remain in the sovereign owner; Pantheon edits or invokes
   only an explicit bounded owner contract and presents its receipts.
 
+### Operational discovery loop
+
+- [ ] Add a consistent `Capture in Chronos` behavior to failures, anomalies,
+  missing-capability notices and qualification results. Prefill the responsible
+  owner, surface, correlation identity, observed impact, reproduction/evidence
+  references and a proposed acceptance check; never copy credentials or private
+  content implicitly.
+- [ ] Make configurable policies discoverable at the point of use and in the
+  Configuration surface, including provider profiles, observation sources,
+  correlation fields, time windows, cursor/freshness thresholds, metric
+  cardinality budgets, sampling visibility and agent-sifting profiles.
+- [ ] Retain each discovered item through Chronos's stable identity, revision,
+  receipt and recovery contract rather than a Pantheon-only checklist.
+- [ ] Offer a bounded agent-assisted backlog sift that proposes duplicate
+  clusters, dependencies, urgency/value/risk ordering, missing acceptance
+  evidence and rationale. Preserve the original items and mark uncertainty,
+  disagreement and unavailable context.
+- [ ] Present every proposed merge, close or material priority change for human
+  review when a reasonable user advocate could contest lost scope, affected-user
+  impact or sequencing; agent ranking is advice, not commitment authority.
+- [ ] Qualify capture, sift, accept/refuse and restart recovery in TUI and
+  headless modes, including partial batch outcomes and an unavailable agent.
+
+### Chronos operator agenda
+
+- [ ] Project one operator agenda across owner-native approvals, sign-offs,
+  permission decisions, exception reviews, uncertain outcomes and stale or
+  expiring human gates; retain each source owner's identity and revision.
+- [ ] For every agenda entry show why this operator is being asked, the admitted
+  authority/delegation (or its absence), requested decision, changed facts,
+  deadline/expiry, consequence of acting or waiting, evidence, dissent and exact
+  next owner action. Presence on the agenda grants no authority.
+- [ ] Make views, notification thresholds, grouping, quiet periods, escalation
+  policy and time/risk ordering configurable without hiding overdue, safety or
+  human-advocate items.
+- [ ] Let agents summarize, cluster and recommend order while preserving raw
+  owner facts and uncertainty; only the named human or governing owner can make
+  an approval, sign-off or policy decision.
+- [ ] Execute accept, refuse, request-changes, delegate, defer and inspect actions
+  through stable owner commands with confirmation proportional to risk,
+  observable receipts and lost-reply recovery. Batch action must stop or split
+  when authority, semantics or confirmation challenges differ.
+- [ ] Qualify accessibility, keyboard/mouse operation, restart, expiry during
+  review, stale agenda entries, replaced decisions and unavailable owners.
+
+Exit evidence: J33/J35/J36 human gates plus acceptance cases 73, 82, 93, 111,
+112 and 113; an agenda is a projection and action router, never an authority
+owner.
+
+### 2026-11-17 — Chronos backlog dogfood
+
+- Pantheon's real writable Chronos surface atomically admitted six discoveries
+  from this qualification run. The owner advanced to revision 1, projected six
+  Ready items and reported `Applied. Observed 6 tasks on this page.` After a
+  clean topology drain and owner restart, the same revision and all six Ready
+  items reopened and the UI reported `Observed 6 tasks on this page.`
+- Captured work covers Moira-seeded signal correlation, durable role-activation
+  history/no-authority proof, configurable discovery capture and agent sifting,
+  the operator agenda, UI-configurable local providers, and evidence-prefilled
+  `Capture in Chronos` behavior.
+- The batch form made six-title capture fast, but every task landed at priority
+  zero and the form could not attach owner, impact, evidence/correlation,
+  acceptance checks, dependencies or proposed priority. Those omissions make
+  later sifting reconstruct context and are therefore product gaps, not merely
+  richer task-description wishes.
+- No agent-assisted sift is exposed from the board, and no configurable profile
+  explains its criteria, model/provider, context boundary or decision limits.
+- The first launch found a stale Vellum socket and returned only
+  `binding refused: \"service\"`; a fresh root recovered. Startup feedback should
+  name the conflicting endpoint/owner and offer inspect, reconnect, replace or
+  choose-another-path actions rather than requiring the user to infer a stale
+  socket from a generic binding failure.
+
 ## Milestone 0 — stabilize the product contract
 
 - [x] Establish the user-journey blueprint and acceptance catalogue.
@@ -79,8 +160,15 @@ for governed agent participation. Pantheon is a client and projection host.
   public Unix client, Pantheon headless projection, and Pantheon TUI rendering.
 - [ ] Define a Keystone participation projection law only after a second
   sovereign human/freeform participation record proves the shared fields.
-- [ ] Project current and prior owner revision consistently without copying the
-  semantic record into Pantheon.
+- [x] Project the current and previously observed owner revision consistently
+  without copying the semantic record into Pantheon. Moira's reusable client
+  preserves only the prior revision number, refuses regressing or in-place
+  rewritten projections, and retains the last trusted view with orienting
+  feedback; headless honestly reports that no revision history was published.
+- [ ] Recover the exact prior activation after process/client restart from its
+  sovereign owner (acceptance case 96). Moira currently publishes only the
+  current agent participation, so Pantheon must not manufacture durable history
+  from display state.
 - [x] Show principal type, role/work mode, scope, delegation and authority
   references, budgets, grounding, accountable owner, policy epoch and expiry
   where the selected owner actually publishes them; keep missing facts visible.
@@ -88,10 +176,36 @@ for governed agent participation. Pantheon is a client and projection host.
   method and grounding reference while explicitly identifying role/work mode,
   scope, delegation, budgets, authority reference, policy epoch, expiry and an
   accountable human as not published by this owner.
-- [ ] Prove that a role label grants no authority and a stale client cannot
-  overwrite a newer transition.
+- [x] Prove against Moira's durable owner that a stale client cannot overwrite a
+  newer participation transition; the restarted qualification attempts the
+  stale mutation, receives `RevisionConflict`, and reopens unchanged revision 2.
+- [ ] Prove that a role label grants no authority once a sovereign role/work-mode
+  activation owner exists. Moira publishes a persona lens, not a role label, so
+  treating that lens as acceptance-case-72 evidence would overclaim.
 
 Exit evidence: acceptance cases 71, 72, 86, 96 and 97.
+
+### Cross-cutting observation uplift seeded by P0
+
+- [ ] Define a bounded correlation projection from Moira participation
+  observations using the owner, participation, workflow, deliberation, member,
+  session, task/attempt, revision, event cursor and grounding identities already
+  qualified here.
+- [ ] Let event, log, metric and trace surfaces pivot on those exact identities
+  without collapsing their meanings: an owner observation is not itself a
+  domain/integration event, log record, metric sample, span or alert.
+- [ ] Preserve source/observed/ingest time, cursor gaps, sampling, reset,
+  cardinality and missing-data status so a correlated view cannot manufacture a
+  causal order or a falsely complete green state.
+- [ ] Give users one orienting path from a participation anomaly to its
+  correlated signals and back, with unavailable sources and the next safe action
+  stated explicitly instead of requiring manual identifier copying.
+- [ ] Qualify correlation through owner restart, cursor continuation, delayed
+  arrival and partial telemetry failure while leaving the underlying domain
+  result unchanged.
+
+Exit evidence: acceptance cases 54–70, initially anchored by the qualified P0
+Moira participation fixture rather than a parallel Pantheon-owned truth store.
 
 ## Milestone 2 — P1 declarative work modes
 

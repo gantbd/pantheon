@@ -90,6 +90,8 @@ fn restarted_owner_preserves_current_not_found_refusal_and_transport_truth() {
     let peer = participation_peer(&current.peers);
     assert_eq!(peer["status"], "current");
     assert_eq!(peer["revision"], 2);
+    assert!(peer["previously_observed_revision"].is_null());
+    assert_eq!(peer["revision_history"], "not_published");
     assert_eq!(peer["phase"], "Ready");
     assert_eq!(peer["accountable_owner"], "moira");
     assert_eq!(peer["principal_type"], "agent");
@@ -324,6 +326,36 @@ fn prime(database: &Path) {
             },
         },
     );
+    assert_eq!(
+        service
+            .execute(p::CommandV1::Apply {
+                expected_storage_revision: Some(2),
+                mutation: Box::new(p::MutationV1::Prepare {
+                    participation: p::ParticipationIdV1([2; 16]),
+                    expected_revision: 1,
+                    operation: p::OperationV1::Open {
+                        key: p::IdempotencyKeyV1([40; 16]),
+                        execution: p::ExecutionIdV1([41; 16]),
+                    },
+                }),
+            })
+            .unwrap(),
+        p::ReplyV1::Refused(p::RefusalV1::RevisionConflict)
+    );
+    assert!(matches!(
+        service
+            .execute(p::CommandV1::Participation {
+                participation: p::ParticipationIdV1([2; 16]),
+            })
+            .unwrap(),
+        p::ReplyV1::Accepted(outcome)
+            if matches!(*outcome, p::OutcomeV1::Participation(Some(p::ParticipationViewV1 {
+                revision: 2,
+                phase: p::PhaseV1::Ready,
+                pending: None,
+                ..
+            })))
+    ));
 }
 
 fn apply(
