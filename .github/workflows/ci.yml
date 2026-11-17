@@ -43,7 +43,7 @@ jobs:
         with: { repository: gantbd/chronos-tui, ref: 52b7a664ed1caf89eea0c94a7a3a480aa721455d, path: chronos-tui, persist-credentials: false }
       - name: Check out Daimon
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/daimon, ref: 65dc2cd3ea596a3839d01ac08c16f3dff03209bd, path: daimon, persist-credentials: false }
+        with: { repository: gantbd/daimon, ref: 51b4dcb00480f017adca2e324daf6f6c96c21efb, path: daimon, persist-credentials: false }
       - name: Check out Daimon TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/daimon-tui, ref: c6888396d2c044c290c6f688cb5c1f613464f0cc, path: daimon-tui, persist-credentials: false }
