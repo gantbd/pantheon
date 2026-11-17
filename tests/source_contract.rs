@@ -203,51 +203,51 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellumTui"]["revision"],
-        "b88fafc78ee72028f79ebbc38450dc84e9b82f63"
+        "1bd09e171cd679eae479715f6203ef5d0b8a5d50"
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "2ec9df3188e9c1e17993c3768fe86065007168cf"
+        "94a805a2b02af5a75d113dc3447d610b9f1b900f"
     );
     assert_eq!(
         source["inputs"]["chronos"]["revision"],
-        "840569516b769b263232c3d814517c66dcadcdf0"
+        "88f009130f1b19babe92edb4008b112159888ef3"
     );
     assert_eq!(
         source["inputs"]["agoraTui"]["revision"],
-        "df128d4968003b41a2c267d01672b6ff511b8bea"
+        "072dceb3a3c06e8d86a0be03fb872ca2f7fb7a81"
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "7f51d0b904ae8b1f66b4d16c38b9bffeeb5726d8"
+        "3db12dce6b6a04222c403f689b5d723dda810488"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
-        "5bc81cb53b13fe79c6f2061911ddb868ddce1e88"
+        "e66aabc3dfd4abe3ec84ecf55d5663aef47af273"
     );
     assert_eq!(
         source["inputs"]["hermesTui"]["revision"],
-        "609120e9d1a35fb9c8303b22c32bc057d161b5ef"
+        "27f857df701edf6261f09cf38d74f1a48ba0cb7e"
     );
     assert_eq!(
         source["inputs"]["hermes"]["revision"],
-        "cd9cd8d73f74a41af0d360f45f08318a49909890"
+        "f5e5f12a5cd258f38bf5f1b004ed7a961d14bf08"
     );
     assert_eq!(
         source["inputs"]["aegisTui"]["revision"],
-        "91bc808e34df0a9a386dd72be81efa49fdca50d8"
+        "258065605c86ebccf375aea47521a858f8f723b1"
     );
     assert_eq!(
         source["inputs"]["aegis"]["revision"],
-        "a50c621b2cb69542eef2d0b88518a9cbbc8d4d06"
+        "0446e4fcf7412be9e0313523235d4e674d2fdd94"
     );
     assert_eq!(
         source["inputs"]["moira"]["revision"],
-        "836ec4ded4bc52eb95cd8aff7ebac68f294896ea"
+        "92018a832b6e2a0cfcb990f74818723ef2478434"
     );
     assert_eq!(
         source["inputs"]["daimon"]["revision"],
-        "31121dc6389fbaee5069e094ea362c4910821039"
+        "07caa33d835c634947cc16109d1c999581501835"
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
@@ -255,23 +255,23 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["vellum"]["revision"],
-        "a59d8a343145b31ff5288499903fb002a1b61a84"
+        "898affc1860869ab7fd4d4de369ca3556bc12aaf"
     );
     assert_eq!(
         source["inputs"]["agora"]["revision"],
-        "a86a8a6eba54a5191c245f87f3664f026403f051"
+        "45b11bcd1e9b7b21e79faf8f1794f8379622f635"
     );
     assert_eq!(
         source["inputs"]["groundingTui"]["revision"],
-        "11d75c218e2e9614ae6bef6bde05b9eb96222c62"
+        "03a920e9b1457ae33428acb9672c5fd320c69e72"
     );
     assert_eq!(
         source["inputs"]["keystone"]["revision"],
-        "d0337e789375e911caed8b02b8a5a9065e29ac1e"
+        "2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
     );
     assert_eq!(
         source["inputs"]["keystoneGit"]["revision"],
-        "8a7970cb77e668f3488ecd97dae7c9e765f170cc"
+        "2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
     );
     for input in [
         "agoraTui",
@@ -299,15 +299,9 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert_eq!(source["localRelease"]["qualified"], true);
     assert_eq!(source["localRelease"]["target"], "aarch64-apple-darwin");
     assert_eq!(source["localRelease"]["profileSchema"], 1);
-    assert_eq!(source["ci"]["qualified"], false);
-    assert_eq!(source["ci"]["blockers"].as_array().unwrap().len(), 1);
-    assert!(
-        source["ci"]["blockers"][0]
-            .as_str()
-            .unwrap()
-            .contains("immutable remote reachability")
-    );
-    assert_eq!(source["remoteReachabilityQualified"], false);
+    assert_eq!(source["ci"]["qualified"], true);
+    assert!(source["ci"]["blockers"].as_array().unwrap().is_empty());
+    assert_eq!(source["remoteReachabilityQualified"], true);
     assert_eq!(source["cratesIoPublished"], false);
 
     let manifest = fs::read_to_string(root.join("Cargo.toml")).expect("manifest");

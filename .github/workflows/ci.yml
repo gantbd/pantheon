@@ -31,10 +31,10 @@ jobs:
         with: { repository: gantbd/aegis-tui, ref: 258065605c86ebccf375aea47521a858f8f723b1, path: aegis-tui, persist-credentials: false }
       - name: Check out Agora
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/agora, ref: a86a8a6eba54a5191c245f87f3664f026403f051, path: agora, persist-credentials: false }
+        with: { repository: gantbd/agora, ref: 45b11bcd1e9b7b21e79faf8f1794f8379622f635, path: agora, persist-credentials: false }
       - name: Check out Agora TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/agora-tui, ref: df128d4968003b41a2c267d01672b6ff511b8bea, path: agora-tui, persist-credentials: false }
+        with: { repository: gantbd/agora-tui, ref: 072dceb3a3c06e8d86a0be03fb872ca2f7fb7a81, path: agora-tui, persist-credentials: false }
       - name: Check out Chronos
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/chronos, ref: 88f009130f1b19babe92edb4008b112159888ef3, path: chronos, persist-credentials: false }
@@ -55,19 +55,19 @@ jobs:
         with: { repository: gantbd/hermes-tui, ref: 27f857df701edf6261f09cf38d74f1a48ba0cb7e, path: hermes-tui, persist-credentials: false }
       - name: Check out Moira
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/moira, ref: f18da96ae4ba584e1e2f01fdd7e39d04b34b1b95, path: moira, persist-credentials: false }
+        with: { repository: gantbd/moira, ref: 92018a832b6e2a0cfcb990f74818723ef2478434, path: moira, persist-credentials: false }
       - name: Check out Moira TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/moira-tui, ref: f29bab484f94a11c7c9dc1b1b40eb9a563e4fca0, path: moira-tui, persist-credentials: false }
+        with: { repository: gantbd/moira-tui, ref: 3db12dce6b6a04222c403f689b5d723dda810488, path: moira-tui, persist-credentials: false }
       - name: Check out Tellus
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with: { repository: gantbd/tellus, ref: 03a920e9b1457ae33428acb9672c5fd320c69e72, path: tellus, persist-credentials: false }
       - name: Check out Vellum
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/vellum, ref: a59d8a343145b31ff5288499903fb002a1b61a84, path: vellum, persist-credentials: false }
+        with: { repository: gantbd/vellum, ref: 898affc1860869ab7fd4d4de369ca3556bc12aaf, path: vellum, persist-credentials: false }
       - name: Check out Vellum TUI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-        with: { repository: gantbd/vellum-tui, ref: b88fafc78ee72028f79ebbc38450dc84e9b82f63, path: vellum-tui, persist-credentials: false }
+        with: { repository: gantbd/vellum-tui, ref: 1bd09e171cd679eae479715f6203ef5d0b8a5d50, path: vellum-tui, persist-credentials: false }
       - name: Install pinned Rust toolchain
         run: rustup toolchain install 1.95.0 --profile minimal --component clippy,rustfmt
       - name: Fetch locked dependencies

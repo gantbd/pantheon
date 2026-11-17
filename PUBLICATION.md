@@ -11,7 +11,6 @@ Do not claim a qualified release until the Agora suite is public and qualified,
 every pinned peer revision is reachable, and `scripts/qualify-source.py` has
 recorded the resulting exact closure in `release/source.json`.
 
-As of the initial public push, the local closure is intentionally blocked:
-Chronos selects `rustix` 1.1.6 while the concurrently remediated Vellum source
-still pins 1.1.4. Resolve that at the owning peer before qualifying Pantheon;
-Pantheon must not patch around incompatible peer locks.
+The public source receipt records the dependency-closed revisions qualified by
+Pantheon. Any peer advance must update that receipt and the matching immutable
+CI checkout before the composition is described as qualified again.

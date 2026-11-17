@@ -531,23 +531,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tellus"
-version = "0.1.0"
-dependencies = [
- "crossterm",
- "ratatui",
-]
-
-[[package]]
-name = "tellus-local-client"
-version = "0.1.0"
-dependencies = [
- "tellus",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "hashbrown"
 version = "0.16.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -706,22 +689,22 @@ version = "0.0.1"
 [[package]]
 name = "keystone-codec"
 version = "0.0.1"
-source = "git+https://github.com/gantbd/keystone?rev=8a7970cb77e668f3488ecd97dae7c9e765f170cc#8a7970cb77e668f3488ecd97dae7c9e765f170cc"
+source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4#2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
 
 [[package]]
 name = "keystone-lifecycle"
 version = "0.0.1"
-source = "git+https://github.com/gantbd/keystone?rev=8a7970cb77e668f3488ecd97dae7c9e765f170cc#8a7970cb77e668f3488ecd97dae7c9e765f170cc"
+source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4#2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
 
 [[package]]
 name = "keystone-observe"
 version = "0.0.1"
-source = "git+https://github.com/gantbd/keystone?rev=8a7970cb77e668f3488ecd97dae7c9e765f170cc#8a7970cb77e668f3488ecd97dae7c9e765f170cc"
+source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4#2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
 
 [[package]]
 name = "keystone-replay"
 version = "0.0.1"
-source = "git+https://github.com/gantbd/keystone?rev=8a7970cb77e668f3488ecd97dae7c9e765f170cc#8a7970cb77e668f3488ecd97dae7c9e765f170cc"
+source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4#2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
 
 [[package]]
 name = "keystone-storage"
@@ -922,6 +905,89 @@ dependencies = [
 ]
 
 [[package]]
+name = "pantheon"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "aegis-tui",
+ "agora-client",
+ "agora-protocol",
+ "agora-tui",
+ "chronos-tui",
+ "crossterm",
+ "daimon-client",
+ "daimon-protocol",
+ "daimon-tui",
+ "hermes-client",
+ "hermes-protocol",
+ "hermes-tui",
+ "moira-client",
+ "moira-protocol",
+ "moira-tui",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "tellus",
+ "vellum-sdk-client",
+ "vellum-tui",
+]
+
+[[package]]
+name = "pantheon-cli"
+version = "0.1.0"
+dependencies = [
+ "aegis-admin-command",
+ "aegis-admin-session",
+ "aegis-client",
+ "aegis-local-client",
+ "aegis-tui",
+ "aegis-wire",
+ "agora-client",
+ "agora-local-client",
+ "agora-protocol",
+ "agora-tui",
+ "agora-wire",
+ "chronos-client",
+ "chronos-local",
+ "chronos-protocol",
+ "chronos-standalone",
+ "chronos-tui",
+ "crossterm",
+ "daimon-agent-command",
+ "daimon-client",
+ "daimon-protocol",
+ "daimon-tui",
+ "daimon-wire",
+ "hermes-client",
+ "hermes-consumer-command",
+ "hermes-disclosure-command",
+ "hermes-local-client",
+ "hermes-operator-command",
+ "hermes-protocol",
+ "hermes-tui",
+ "moira-client",
+ "moira-protocol",
+ "moira-reconciliation-command",
+ "moira-tui",
+ "moira-tui-local-client",
+ "nix",
+ "pantheon",
+ "ratatui",
+ "serde",
+ "serde_json",
+ "tellus",
+ "tellus-local-client",
+ "vellum-adapter-local-authentication",
+ "vellum-adapter-local-fs",
+ "vellum-daemon",
+ "vellum-host",
+ "vellum-sdk-client",
+ "vellum-tui",
+ "vellum-workspace",
+]
+
+[[package]]
 name = "parking_lot"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1066,9 +1132,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.1.4"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
+checksum = "e5e76742e5294153d4dde1207dbec5bdd81eef6fabdc0d2118babadabfd858aa"
 dependencies = [
  "bitflags",
  "errno",
@@ -1251,6 +1317,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tellus"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "ratatui",
+]
+
+[[package]]
+name = "tellus-local-client"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tellus",
 ]
 
 [[package]]
@@ -1466,7 +1549,7 @@ dependencies = [
 name = "vellum-wire"
 version = "0.1.0"
 dependencies = [
- "keystone-codec 0.0.1 (git+https://github.com/gantbd/keystone?rev=8a7970cb77e668f3488ecd97dae7c9e765f170cc)",
+ "keystone-codec 0.0.1 (git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4)",
  "vellum-protocol",
 ]
 
@@ -1534,89 +1617,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
 dependencies = [
  "windows-link",
-]
-
-[[package]]
-name = "pantheon"
-version = "0.1.0"
-dependencies = [
- "aegis-client",
- "aegis-protocol",
- "aegis-tui",
- "agora-client",
- "agora-protocol",
- "agora-tui",
- "chronos-tui",
- "crossterm",
- "daimon-client",
- "daimon-protocol",
- "daimon-tui",
- "tellus",
- "hermes-client",
- "hermes-protocol",
- "hermes-tui",
- "moira-client",
- "moira-protocol",
- "moira-tui",
- "ratatui",
- "serde",
- "serde_json",
- "vellum-sdk-client",
- "vellum-tui",
-]
-
-[[package]]
-name = "pantheon-cli"
-version = "0.1.0"
-dependencies = [
- "aegis-admin-command",
- "aegis-admin-session",
- "aegis-client",
- "aegis-local-client",
- "aegis-tui",
- "aegis-wire",
- "agora-client",
- "agora-local-client",
- "agora-protocol",
- "agora-tui",
- "agora-wire",
- "chronos-client",
- "chronos-local",
- "chronos-protocol",
- "chronos-standalone",
- "chronos-tui",
- "crossterm",
- "daimon-agent-command",
- "daimon-client",
- "daimon-protocol",
- "daimon-tui",
- "daimon-wire",
- "tellus",
- "tellus-local-client",
- "hermes-client",
- "hermes-consumer-command",
- "hermes-disclosure-command",
- "hermes-local-client",
- "hermes-operator-command",
- "hermes-protocol",
- "hermes-tui",
- "moira-client",
- "moira-protocol",
- "moira-reconciliation-command",
- "moira-tui",
- "moira-tui-local-client",
- "nix",
- "ratatui",
- "serde",
- "serde_json",
- "vellum-adapter-local-authentication",
- "vellum-adapter-local-fs",
- "vellum-daemon",
- "vellum-host",
- "vellum-sdk-client",
- "vellum-tui",
- "vellum-workspace",
- "pantheon",
 ]
 
 [[package]]

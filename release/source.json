@@ -5,57 +5,57 @@
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
-      "revision": "a86a8a6eba54a5191c245f87f3664f026403f051",
+      "revision": "45b11bcd1e9b7b21e79faf8f1794f8379622f635",
       "workingTreeClean": true
     },
     "agoraTui": {
       "repository": "https://github.com/gantbd/agora-tui",
-      "revision": "df128d4968003b41a2c267d01672b6ff511b8bea",
+      "revision": "072dceb3a3c06e8d86a0be03fb872ca2f7fb7a81",
       "workingTreeClean": true
     },
     "chronos": {
       "repository": "https://github.com/gantbd/chronos",
-      "revision": "840569516b769b263232c3d814517c66dcadcdf0",
+      "revision": "88f009130f1b19babe92edb4008b112159888ef3",
       "workingTreeClean": true
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
-      "revision": "2ec9df3188e9c1e17993c3768fe86065007168cf",
+      "revision": "94a805a2b02af5a75d113dc3447d610b9f1b900f",
       "workingTreeClean": true
     },
     "daimon": {
       "repository": "https://github.com/gantbd/daimon",
-      "revision": "31121dc6389fbaee5069e094ea362c4910821039",
+      "revision": "07caa33d835c634947cc16109d1c999581501835",
       "workingTreeClean": true
     },
     "daimonTui": {
       "repository": "https://github.com/gantbd/daimon-tui",
-      "revision": "5bc81cb53b13fe79c6f2061911ddb868ddce1e88",
+      "revision": "e66aabc3dfd4abe3ec84ecf55d5663aef47af273",
       "workingTreeClean": true
     },
     "moira": {
       "repository": "https://github.com/gantbd/moira",
-      "revision": "836ec4ded4bc52eb95cd8aff7ebac68f294896ea",
+      "revision": "92018a832b6e2a0cfcb990f74818723ef2478434",
       "workingTreeClean": true
     },
     "hermes": {
       "repository": "https://github.com/gantbd/hermes",
-      "revision": "cd9cd8d73f74a41af0d360f45f08318a49909890",
+      "revision": "f5e5f12a5cd258f38bf5f1b004ed7a961d14bf08",
       "workingTreeClean": true
     },
     "hermesTui": {
       "repository": "https://github.com/gantbd/hermes-tui",
-      "revision": "609120e9d1a35fb9c8303b22c32bc057d161b5ef",
+      "revision": "27f857df701edf6261f09cf38d74f1a48ba0cb7e",
       "workingTreeClean": true
     },
     "aegis": {
       "repository": "https://github.com/gantbd/aegis",
-      "revision": "a50c621b2cb69542eef2d0b88518a9cbbc8d4d06",
+      "revision": "0446e4fcf7412be9e0313523235d4e674d2fdd94",
       "workingTreeClean": true
     },
     "aegisTui": {
       "repository": "https://github.com/gantbd/aegis-tui",
-      "revision": "91bc808e34df0a9a386dd72be81efa49fdca50d8",
+      "revision": "258065605c86ebccf375aea47521a858f8f723b1",
       "workingTreeClean": true
     },
     "dendrite": {
@@ -65,32 +65,32 @@
     },
     "groundingTui": {
       "repository": "https://github.com/gantbd/tellus",
-      "revision": "11d75c218e2e9614ae6bef6bde05b9eb96222c62",
+      "revision": "03a920e9b1457ae33428acb9672c5fd320c69e72",
       "workingTreeClean": true
     },
     "keystone": {
       "repository": "https://github.com/gantbd/keystone",
-      "revision": "d0337e789375e911caed8b02b8a5a9065e29ac1e",
+      "revision": "2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4",
       "workingTreeClean": true
     },
     "keystoneGit": {
       "repository": "https://github.com/gantbd/keystone",
-      "revision": "8a7970cb77e668f3488ecd97dae7c9e765f170cc",
+      "revision": "2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4",
       "workingTreeClean": true
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "7f51d0b904ae8b1f66b4d16c38b9bffeeb5726d8",
+      "revision": "3db12dce6b6a04222c403f689b5d723dda810488",
       "workingTreeClean": true
     },
     "vellum": {
       "repository": "https://github.com/gantbd/vellum",
-      "revision": "a59d8a343145b31ff5288499903fb002a1b61a84",
+      "revision": "898affc1860869ab7fd4d4de369ca3556bc12aaf",
       "workingTreeClean": true
     },
     "vellumTui": {
       "repository": "https://github.com/gantbd/vellum-tui",
-      "revision": "b88fafc78ee72028f79ebbc38450dc84e9b82f63",
+      "revision": "1bd09e171cd679eae479715f6203ef5d0b8a5d50",
       "workingTreeClean": true
     }
   },
@@ -104,9 +104,9 @@
     "migration": "initial release; Pantheon owns no durable peer state; exact-schema profiles are preserved across atomic same-version replacement and unknown schemas fail closed"
   },
   "ci": {
-    "qualified": false,
-    "blockers": ["immutable remote reachability is not yet authorized or qualified"]
+    "qualified": true,
+    "blockers": []
   },
-  "remoteReachabilityQualified": false,
+  "remoteReachabilityQualified": true,
   "cratesIoPublished": false
 }
