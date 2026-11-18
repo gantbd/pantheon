@@ -22,6 +22,9 @@ trap cleanup EXIT HUP INT TERM
 chmod 700 "$scratch"
 mkdir "$scratch/workstream"
 chmod 700 "$scratch/workstream"
+mkdir "$scratch/artifacts"
+chmod 700 "$scratch/artifacts"
+printf 'hestia fixture model' >"$scratch/model.fixture"
 
 cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
   --package aegis-daemon --bin aegis-daemon --locked --offline
@@ -57,12 +60,37 @@ printf '%s\n' \
   '    "endpoint_reference": "daimon-local-model-loopback",' \
   "    \"executable\": \"$python\"," \
   "    \"arguments\": [\"$root/tests/fixtures/openai_qualification_server.py\", \"$scratch/provider.port\", \"$scratch/provider.count\", \"$provider_port\"]," \
+  '    "artifact": {"artifact":"qwen-staged-fixture","argument_index":4},' \
   '    "environment": [],' \
   "    \"readiness_address\": \"127.0.0.1:$provider_port\"," \
   '    "startup_timeout_ms": 5000,' \
   '    "probe_interval_ms": 10,' \
   '    "drain_timeout_ms": 1000' \
-  '  }]' \
+  '  }],' \
+  '  "artifacts": {' \
+  "    \"directory\": \"$scratch/artifacts\"," \
+  '    "max_inflight": 1,' \
+  '    "entries": [{' \
+  '      "entry": {' \
+  '        "artifact": "qwen-staged-fixture",' \
+  '        "model": {' \
+  '          "identity": "qwen/qwen3-coder-next",' \
+  '          "digest": [46,142,145,222,98,11,206,109,209,178,234,152,163,172,241,18,136,73,79,238,90,105,29,186,31,144,85,205,8,228,99,138],' \
+  '          "quantization": null,' \
+  '          "context_tokens": 32768' \
+  '        },' \
+  '        "registry": "fixture",' \
+  '        "source_revision": "fixture-1",' \
+  '        "license": "Apache-2.0",' \
+  '        "format": "Gguf",' \
+  '        "expected_size_bytes": 20,' \
+  '        "expected_digest": [46,142,145,222,98,11,206,109,209,178,234,152,163,172,241,18,136,73,79,238,90,105,29,186,31,144,85,205,8,228,99,138]' \
+  '      },' \
+  '      "executable": "/bin/cat",' \
+  '      "arguments": [],' \
+  "      \"source\": \"$scratch/model.fixture\"" \
+  '    }]' \
+  '  }' \
   '}' >"$scratch/hestia.json"
 chmod 600 "$scratch/hestia.json"
 "$hestia" "$scratch/hestia.json" >"$scratch/hestia.out" 2>"$scratch/hestia.err" &
@@ -81,12 +109,32 @@ done
 printf '%s\n' \
   '{' \
   '  "authority": [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9],' \
+  '  "artifact": "qwen-staged-fixture",' \
+  '  "operation": [11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11],' \
+  '  "expected_revision": 1,' \
+  '  "accepted_license": "Apache-2.0",' \
+  '  "expected_digest": [46,142,145,222,98,11,206,109,209,178,234,152,163,172,241,18,136,73,79,238,90,105,29,186,31,144,85,205,8,228,99,138]' \
+  '}' >"$scratch/hestia-acquire.json"
+"$hestiactl" acquire "$scratch/hestia.sock" "$scratch/hestia-acquire.json" >/dev/null
+attempt=0
+until "$hestiactl" artifact "$scratch/hestia.sock" qwen-staged-fixture | grep -q '"Admitted"'; do
+  attempt=$((attempt + 1))
+  if [ "$attempt" -ge 200 ]; then
+    echo 'FAIL: Hestia artifact did not become admitted' >&2
+    exit 1
+  fi
+  sleep 0.025
+done
+
+printf '%s\n' \
+  '{' \
+  '  "authority": [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9],' \
   '  "runtime": [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],' \
   '  "operation": [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],' \
   '  "expected_revision": 0,' \
   '  "expected_incarnation": 0,' \
   '  "hosting_profile": "local-model",' \
-  '  "model": {"identity":"qwen/qwen3-coder-next-staged","digest":null,"quantization":null,"context_tokens":32768},' \
+  '  "model": {"identity":"qwen/qwen3-coder-next","digest":[46,142,145,222,98,11,206,109,209,178,234,152,163,172,241,18,136,73,79,238,90,105,29,186,31,144,85,205,8,228,99,138],"quantization":null,"context_tokens":32768},' \
   '  "resources": {"memory_bytes":1073741824,"accelerator":"cpu","threads":4,"concurrency":1},' \
   '  "sandbox": "Inherited",' \
   '  "egress": "Inherited"' \
@@ -190,6 +238,7 @@ printf '%s\n' \
   '  },' \
   '  "hestia": {' \
   "    \"socket\": \"$scratch/hestia.sock\"," \
+  '    "artifact_catalog": true,' \
   '    "runtime_bindings": [{' \
   '      "provider_id": "04040404040404040404040404040404",' \
   '      "runtime_id": "08080808080808080808080808080808"' \
@@ -201,15 +250,14 @@ set +e
 headless=$("$workbench" headless --workspace-profile "$scratch/profile.json")
 headless_status=$?
 set -e
-if [ "$headless_status" -ne 0 ]; then
-  printf '%s\n' "$headless" >&2
-  echo 'FAIL: hosted local-model headless observation was incomplete' >&2
+if [ "$headless_status" -eq 0 ]; then
+  echo 'FAIL: mismatched Daimon/Hestia model identity was reported complete' >&2
   exit 1
 fi
 printf '%s' "$headless" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)
-assert report["complete"]
+assert not report["complete"]
 peer = next(peer for peer in report["peers"] if peer["peer"] == "daimon")
 assert peer["status"] == "current"
 assert peer["capability"] == "models.endpoint.attach.v1"
@@ -227,12 +275,14 @@ assert not provider["structured_output"] and provider["structured_tools"]
 assert provider.get("qualification") is None
 assert "address" not in provider and "path" not in provider and "bearer_token_env" not in provider
 hestia = next(peer for peer in report["peers"] if peer["peer"] == "hestia")
-assert hestia["status"] == "current"
+assert hestia["status"] == "partial"
+assert hestia["artifacts"]["status"] == "current"
+assert hestia["artifacts"]["catalog"][0]["lifecycle"] == "Admitted"
 runtime = hestia["runtimes"][0]["evidence"]
 assert runtime["lifecycle"] == "ready" and runtime["readiness"] == "ready"
 assert runtime["readiness_basis"] == "tcp_accept"
-assert runtime["model_identity"] == "qwen/qwen3-coder-next-staged"
-assert runtime["model_matches_provider"] and runtime["invocation_eligible"]
+assert runtime["model_identity"] == "qwen/qwen3-coder-next"
+assert not runtime["model_matches_provider"] and not runtime["invocation_eligible"]
 assert runtime["incarnation"] == 1 and runtime["revision"] == 2
 assert runtime["boundary"].startswith("Hestia lifecycle/readiness evidence only")
 assert report["hosted_shutdown"]["status"] == "clean"
@@ -384,7 +434,7 @@ try:
         "hosting_profile": "local-model",
         "model": {
             "identity": "qwen/qwen3-coder-next",
-            "digest": None,
+            "digest": [46,142,145,222,98,11,206,109,209,178,234,152,163,172,241,18,136,73,79,238,90,105,29,186,31,144,85,205,8,228,99,138],
             "quantization": None,
             "context_tokens": 32768,
         },

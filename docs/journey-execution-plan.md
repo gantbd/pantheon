@@ -115,6 +115,28 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   dogfood artifact after an explicit storage/license/resource decision.
   OpenRouter is a later Daimon provider-integration backlog item rather than a
   Hestia lifecycle shortcut.
+- The next Hestia slice closes the single-file artifact-to-runtime bridge.
+  One hosting profile binds an exact catalog artifact to a private server
+  argument position. Hestia refuses missing/unadmitted artifacts and complete
+  model-identity mismatches, then rechecks regular-file type, expected size and
+  SHA-256 immediately before starting the owned process. The composed live gate
+  proves admission → owner-private path injection → Hestia readiness → Daimon
+  qualification/invocation → clean drain, and deliberately proves that a
+  staged/final model mismatch leaves the initial headless report incomplete.
+  Qwen is still served by LM Studio: the fixture qualifies the ownership
+  contract, not a production Qwen deployment. Real GGUF/engine qualification,
+  multi-file MLX/Safetensors manifests, observable large-file verification and
+  resource/isolation enforcement remain open.
+- Two bounded Qwen3 Coder Next reviews completed through Pantheon's
+  Daimon/Chronos gate but were not accepted as approval evidence. The capacity
+  proposal contradicted its own byte arithmetic and invented a Vellum protocol;
+  the narrower Hestia review reported three blockers contradicted by the code
+  (pre-hash model comparison, missing index validation and an acquisition/start
+  race despite serialized owner dispatch). The harness delivered and retained
+  both results correctly. Categorization: model/context-grounding and verifier
+  calibration failure, not a transport or orchestration failure. Qwen remains
+  useful for decomposed candidate work, with deterministic checks and an
+  accountable integrator retaining acceptance authority.
 - Live Pantheon/Chronos dogfood admitted four owner-visible Ready items at board
   revision 6: priority-9 `hestia-model-artifact-acquisition-devstral`, priority-2
   `daimon-openrouter-provider-integration`, priority-5

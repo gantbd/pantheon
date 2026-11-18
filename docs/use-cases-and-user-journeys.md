@@ -1756,10 +1756,23 @@ bounded fixture, proves TUI/headless parity, and verifies that payload bytes
 remain outside the Pantheon repository. Admission explicitly grants no
 instantiation, qualification, invocation or scheduling authority.
 
+The first artifact-to-runtime bridge now binds one admitted single-file
+artifact to an opaque hosting profile at an exact private process-argument
+position. On every start Hestia requires idle admitted state and exact complete
+model identity, then rechecks regular-file type, expected size and SHA-256
+before exposing the path only to the owned server process. Missing, changed or
+model-mismatched artifacts refuse without publishing a runtime observation.
+The composed Pantheon gate qualifies admission → Hestia-owned serving process
+→ Daimon provider qualification/invocation → clean drain, including a negative
+cross-owner model-mismatch case. The current server is a bounded
+OpenAI-compatible fixture. Qwen remains served by LM Studio and is not yet a
+Hestia-owned model runtime; the UI and reports must preserve that distinction.
+
 Live registry search, signature/compatibility/resource-impact evidence,
 restart reconciliation of partial transfers, cancellation, multi-file
-manifests, update/retirement, runtime instantiation from an admitted artifact,
-enforced resource/sandbox preflight and Aegis-backed artifact/lifecycle
+manifests, update/retirement, production-engine/model qualification, observable
+and efficient large-artifact revalidation, enforced resource/sandbox preflight
+and Aegis-backed artifact/lifecycle
 authority remain required before this is a complete operational hosting
 product. Devstral remains the first intended real dogfood acquisition, subject
 to an explicit human storage/license/resource gate. Filesystem permissions are the current

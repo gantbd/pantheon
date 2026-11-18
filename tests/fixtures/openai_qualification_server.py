@@ -9,6 +9,8 @@ from pathlib import Path
 
 port_path = Path(sys.argv[1])
 count_path = Path(sys.argv[2])
+if len(sys.argv) > 4:
+    assert Path(sys.argv[4]).read_bytes() == b"hestia fixture model"
 listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 listener.bind(("127.0.0.1", int(sys.argv[3]) if len(sys.argv) > 3 else 0))
