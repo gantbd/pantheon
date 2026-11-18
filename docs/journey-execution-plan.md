@@ -263,6 +263,16 @@ owner.
   Ready identities. The malformed first draft produced while driving tmux was
   explicitly discarded before submission, providing useful confirmation that
   review/escape does not leak an accidental task into owner state.
+- Vellum discovery dogfood used the same `make run` surface to admit one atomic
+  two-task graph: `vellum-revision-bound-diff-review` at priority 7 with the
+  `vellum-diff` capability and `vellum-bounded-workspace-intelligence` at
+  priority 8 with `vellum-semantic`. Chronos advanced to revision 1, projected
+  both as Ready, cleanly drained, and reopened the same revision and tasks in a
+  fresh Pantheon process. The first item owns source-revision-bound before/after
+  review, provenance and stale-coordinate behavior. The second owns a bounded
+  workspace inventory/index plus an inspectable per-run context manifest with
+  coverage, freshness, exclusions and resource budget; it does not mean placing
+  every workspace byte in every model prompt.
 
 ## Milestone 0 — stabilize the product contract
 
@@ -399,6 +409,16 @@ Missing, ambiguous, wrong-owner or mismatched evidence stops before prompt
 preparation and tells the operator that the task exists but no agent was
 invoked. This proves the mapping to an already selected session; it still does
 not create a new task-bound session or a dynamic attempt.
+
+Pantheon can now also present one already-admitted Moira agent participation and
+ask Moira to prepare its exact Open effect through a review/arm/confirm sheet.
+The public client sends only the participation ID; Moira validates pristine
+Admitted state and derives the revision, idempotency key and execution identity
+from its complete retained binding. A real SQLite/Unix qualification proves one
+durable preparation, exact replay after daemon restart and no presentation-side
+identity invention. This is an owner-bound effect-preparation seam, not yet the
+J1 chain: participation admission/template instantiation, worker dispatch,
+per-task Daimon session creation and automatic Chronos-to-Moira routing remain.
 
 The earlier observation-only profile copy was a presentation-boundary leak.
 The aggregate headless observer now validates requirements against the complete

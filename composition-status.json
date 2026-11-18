@@ -316,9 +316,17 @@
       },
       "mutation": "qualified",
       "mutationCapabilities": {
+        "agent.open.prepare.v1": "qualified",
         "sagas.reconciliation.confirmation.v1": "qualified",
         "sagas.reconciliation.confirm.v1": "qualified",
         "sagas.reconciliation.recovery.v1": "qualified"
+      },
+      "interactiveControlComposition": {
+        "agent.open.prepare.v1": {
+          "state": "composed",
+          "when": "one exact already-admitted participation and mutate-capable owner endpoint are selected",
+          "evidence": ["moira-tui/src/open_control.rs", "pantheon/cli/src/terminal.rs", "pantheon/qualification/moira-participation/tests/live_participation.rs"]
+        }
       },
       "uncomposedPeerCapabilities": {
         "agent.session.observe.v1": { "peer": "qualified", "pantheon": "absent" },

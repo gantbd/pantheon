@@ -5,11 +5,17 @@ use std::{
     fs,
     os::unix::net::UnixStream,
     path::{Path, PathBuf},
+    sync::atomic::{AtomicU64, Ordering},
     thread,
     time::{Duration, Instant},
 };
 
-use moira_client::unix::{AgentParticipationUnixPort, ParticipationClientLimitsV1};
+static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
+
+use moira_client::{
+    AgentParticipationOpenClient, PrepareAgentOpenDispositionV1,
+    unix::{AgentParticipationUnixPort, ParticipationClientLimitsV1},
+};
 use moira_core::agent_participation::{LimitsV1 as DomainLimits, persistence::CodecLimitsV1};
 use moira_local_daemon::unix::{AgentParticipationAuthenticator, AgentParticipationDaemon};
 use moira_protocol::{WorkflowIdV1, agent_participation as p, deliberation as d};
@@ -24,6 +30,7 @@ use ratatui::{Terminal, backend::TestBackend};
 #[derive(Clone, Copy)]
 struct Authentication {
     read: bool,
+    mutate: bool,
 }
 
 impl AgentParticipationAuthenticator for Authentication {
@@ -32,7 +39,7 @@ impl AgentParticipationAuthenticator for Authentication {
     fn authenticate(&mut self, _: &UnixStream) -> Result<AccessV1, Self::Error> {
         Ok(AccessV1 {
             read: self.read,
-            mutate: false,
+            mutate: self.mutate,
         })
     }
 
@@ -53,8 +60,9 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let root = std::env::temp_dir().join(format!(
-            "pantheon-moira-participation-{}",
-            std::process::id()
+            "pmp-{}-{}",
+            std::process::id(),
+            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
         ));
         if root.exists() {
             fs::remove_dir_all(&root).unwrap();
@@ -194,17 +202,99 @@ fn restarted_owner_preserves_current_not_found_refusal_and_transport_truth() {
     refused.join().unwrap();
 }
 
+#[test]
+fn owner_derived_open_prepares_once_and_survives_restart() {
+    let fixture = Fixture::new();
+    prime_admitted(&fixture.database);
+
+    let first = serve_with_access(&fixture, true, true, 1, 8);
+    let port = AgentParticipationUnixPort::connect(
+        &fixture.socket,
+        ParticipationClientLimitsV1::default(),
+    )
+    .unwrap();
+    let mut control =
+        moira_tui::OpenControlComponent::new(port, p::ParticipationIdV1([2; 16]));
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        control.poll();
+        let text = render_open(&control);
+        if text.contains("c arms owner-derived open") {
+            assert!(text.contains("task key: 08080808"));
+            assert!(text.contains("persona: Researcher"));
+            break;
+        }
+        assert!(Instant::now() < deadline, "open review did not render");
+        thread::sleep(Duration::from_millis(5));
+    }
+    control.update(moira_tui::OpenControlInput::Confirm, true);
+    assert!(!control.request_pending());
+    control.update(moira_tui::OpenControlInput::Arm, true);
+    assert!(render_open(&control).contains("ARMED"));
+    control.update(moira_tui::OpenControlInput::Confirm, true);
+    let deadline = Instant::now() + Duration::from_secs(2);
+    loop {
+        control.poll();
+        let text = render_open(&control);
+        if text.contains("durably prepared") {
+            assert!(text.contains("pending operation: Some(Open"));
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "open preparation did not settle: {} / {}",
+            control.notice(),
+            text
+        );
+        thread::sleep(Duration::from_millis(5));
+    }
+    drop(control);
+    first.join().unwrap();
+
+    let restarted = serve_with_access(&fixture, true, true, 1, 8);
+    let port = AgentParticipationUnixPort::connect(
+        &fixture.socket,
+        ParticipationClientLimitsV1::default(),
+    )
+    .unwrap();
+    let mut client = AgentParticipationOpenClient::new(port);
+    assert!(matches!(
+        client.prepare(p::ParticipationIdV1([2; 16])).unwrap(),
+        PrepareAgentOpenDispositionV1::AlreadyPrepared {
+            storage_revision: 1,
+            participation: p::ParticipationViewV1 {
+                revision: 1,
+                phase: p::PhaseV1::Admitted,
+                pending: Some(p::OperationV1::Open { .. }),
+                ..
+            },
+        }
+    ));
+    drop(client);
+    restarted.join().unwrap();
+}
+
 fn serve(fixture: &Fixture, read: bool, connections: usize) -> thread::JoinHandle<()> {
+    serve_with_access(fixture, read, false, connections, 1)
+}
+
+fn serve_with_access(
+    fixture: &Fixture,
+    read: bool,
+    mutate: bool,
+    connections: usize,
+    max_requests: usize,
+) -> thread::JoinHandle<()> {
     let store =
         AgentParticipationSqliteStore::open(&fixture.database, [1; 16], participation_limits())
             .unwrap();
     let daemon = AgentParticipationDaemon::bind_new(
         &fixture.socket,
         AgentParticipationService::new(store),
-        Authentication { read },
+        Authentication { read, mutate },
         moira_wire::LimitsV1::default(),
         Duration::from_secs(2),
-        1,
+        max_requests,
     )
     .unwrap();
     thread::spawn(move || {
@@ -224,31 +314,26 @@ fn request(socket: &Path, participation: p::ParticipationIdV1, operation: &str) 
         moira_socket: None,
         moira_participation_socket: Some(socket.into()),
         moira_participation: Some(participation),
-        moira_requires: vec!["agent.participation.inspect.v1".into()],
         moira_hosted: false,
         daimon_socket: None,
         daimon_agent_socket: None,
         daimon_agent_session: None,
-        daimon_requires: Vec::new(),
+        daimon_execution_policy: None,
         daimon_hosted: false,
         hermes_socket: None,
         hermes_stream: None,
         hermes_consumer: None,
-        hermes_requires: Vec::new(),
         hermes_hosted: false,
         aegis_socket: None,
-        aegis_requires: Vec::new(),
         aegis_hosted: false,
         grounding_endpoint: None,
         grounding_token: None,
-        grounding_requires: Vec::new(),
         chronos: Vec::new(),
-        chronos_requires: Vec::new(),
         chronos_hosted: false,
         vellum_socket: None,
         vellum_credential: None,
-        vellum_requires: Vec::new(),
         vellum_hosted: false,
+        not_exercised_profile_requirements: Vec::new(),
     }
 }
 
@@ -270,6 +355,64 @@ fn peer_views(component: &moira_tui::ParticipationComponent) -> PeerViews<'_> {
         agora_message: None,
         moira: None,
         moira_participation: Some(component),
+        moira_open: None,
+        moira_reconciliation: None,
+        daimon: None,
+        daimon_agent: None,
+        daimon_permission: None,
+        daimon_prompt: None,
+        daimon_control: None,
+        hermes: None,
+        hermes_compaction: None,
+        hermes_disclosure: None,
+        hermes_acknowledge: None,
+        aegis: None,
+        aegis_managed: None,
+        aegis_revoke: None,
+        grounding: None,
+        operations: None,
+        health: None,
+        configuration: None,
+    }
+}
+
+fn render_open(control: &moira_tui::OpenControlComponent) -> String {
+    let mut terminal = Terminal::new(TestBackend::new(120, 34)).unwrap();
+    let shell = Shell::new(vec![Surface::Moira]).unwrap();
+    terminal
+        .draw(|frame| {
+            let mut peers = peer_views_empty();
+            peers.moira_open = Some(control);
+            draw_shell_with_moira(
+                frame,
+                &shell,
+                peers,
+                Focus::Chronos,
+                control.notice(),
+            );
+        })
+        .unwrap();
+    terminal
+        .backend()
+        .buffer()
+        .content()
+        .iter()
+        .map(|cell| cell.symbol())
+        .collect()
+}
+
+fn peer_views_empty() -> PeerViews<'static> {
+    PeerViews {
+        chronos: None,
+        vellum: None,
+        vellum_atomic_replace: None,
+        vellum_durable_save: None,
+        agora: None,
+        agora_create: None,
+        agora_message: None,
+        moira: None,
+        moira_participation: None,
+        moira_open: None,
         moira_reconciliation: None,
         daimon: None,
         daimon_agent: None,
@@ -356,6 +499,13 @@ fn prime(database: &Path) {
                 ..
             })))
     ));
+}
+
+fn prime_admitted(database: &Path) {
+    let mut service = AgentParticipationService::new(
+        AgentParticipationSqliteStore::open(database, [1; 16], participation_limits()).unwrap(),
+    );
+    apply(&mut service, None, p::MutationV1::Admit(binding()));
 }
 
 fn apply(

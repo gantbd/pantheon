@@ -2220,6 +2220,11 @@ fn moira_participation_gate_proves_restart_and_honest_failure_projections() {
         "persona: Researcher",
         "grounding depth: Activated",
         "not published: role/work mode · scope · delegation · budgets",
+        "owner_derived_open_prepares_once_and_survives_restart",
+        "OpenControlInput::Arm",
+        "OpenControlInput::Confirm",
+        "PrepareAgentOpenDispositionV1::AlreadyPrepared",
+        "pending operation: Some(Open",
     ] {
         assert!(
             gate.contains(required),

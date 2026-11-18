@@ -127,6 +127,7 @@ pub fn draw_shell(
             agora_message: None,
             moira: None,
             moira_participation: None,
+            moira_open: None,
             moira_reconciliation: None,
             daimon: None,
             daimon_agent: None,
@@ -160,6 +161,7 @@ pub struct PeerViews<'a> {
     pub agora_message: Option<&'a agora_tui::ComposeMessageComponent>,
     pub moira: Option<&'a moira_tui::Component>,
     pub moira_participation: Option<&'a moira_tui::ParticipationComponent>,
+    pub moira_open: Option<&'a moira_tui::OpenControlComponent>,
     pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
     pub daimon_agent: Option<&'a daimon_tui::AgentSetComponent>,
@@ -238,6 +240,7 @@ pub fn draw_shell_with_moira(
         agora_message,
         moira,
         moira_participation,
+        moira_open,
         moira_reconciliation,
         daimon,
         daimon_agent,
@@ -425,6 +428,11 @@ pub fn draw_shell_with_moira(
         }
         Surface::Agora if agora.is_some() => {
             agora.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Moira if moira_open.is_some() => {
+            moira_open
+                .expect("matched above")
+                .draw_in(frame, body, true);
         }
         Surface::Moira if moira_reconciliation.is_some() => {
             moira_reconciliation
@@ -1846,6 +1854,7 @@ mod tests {
                             agora_message: None,
                             moira: Some(&moira),
                             moira_participation: None,
+                            moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,
@@ -1910,6 +1919,7 @@ mod tests {
                             agora_message: None,
                             moira: None,
                             moira_participation: Some(&participation),
+                            moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,
@@ -1972,6 +1982,7 @@ mod tests {
                             agora_message: None,
                             moira: None,
                             moira_participation: None,
+                            moira_open: None,
                             moira_reconciliation: None,
                             daimon: Some(&daimon),
                             daimon_agent: None,
@@ -2033,6 +2044,7 @@ mod tests {
                             agora_message: None,
                             moira: None,
                             moira_participation: None,
+                            moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
                             daimon_agent: None,

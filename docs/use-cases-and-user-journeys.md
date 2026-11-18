@@ -1775,6 +1775,7 @@ following universal requirements:
 | --- | --- | --- |
 | Inventory, selected edit/save, durable execute/lookup | Qualified in Pantheon | Exact revision, independent authority, byte-exact persistence, lost-reply recovery |
 | Diff/review/annotation/history surface | Required | Stable source coordinates, author/provenance, comment lifecycle, stale mapping behavior |
+| Bounded workspace intelligence and agent context manifest | Required | Revisioned workspace inventory and incremental symbol/reference/dependency index; each run discloses included and omitted sources, freshness, retrieval rationale, limits and exact content identities without claiming every workspace byte was prompted |
 | Multi-document change set | Required | Declared read/write dependencies, prepare/validate/publish, all-or-refuse owner semantics |
 | Language/semantic services | Required through ports | LSP/Tree-sitter profile, version pin, cancellation, freshness, incomplete/error distinctions |
 | External writer/collaboration | Required before multi-user claims | Explicit concurrency model, merge/conflict, local undo ownership, saved-state evidence |
@@ -1950,6 +1951,16 @@ dynamic Vellum document selection/reading through the owner, Agora room,
 durable typed journey link, or Chronos ticket comments; those remain Required
 below and need owner-published contracts rather than presentation-side
 inference.
+
+Moira's selected participation surface now adds one bounded next step for an
+already-admitted agent member: Pantheon reviews the exact retained binding,
+arms the action, and sends only `PrepareOpen { participation }`. Moira alone
+checks current pristine Admitted state and derives the storage/revision-bound
+Open operation identities; the durable pending operation replays after owner
+restart without a second mutation. This closes presentation-to-owner effect
+preparation but does not admit the participation, dispatch a worker, create a
+new Daimon session, or connect the operation automatically to newly admitted
+Chronos work.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,

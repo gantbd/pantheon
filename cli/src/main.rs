@@ -3167,6 +3167,10 @@ fn interactive(
     } else {
         None
     };
+    let moira_participation_control = options
+        .moira_participation_socket
+        .clone()
+        .zip(options.moira_participation);
     let moira_participation = match (
         options.moira_participation_socket,
         options.moira_participation,
@@ -3314,6 +3318,7 @@ fn interactive(
             agora_control,
             moira,
             moira_participation,
+            moira_participation_control,
             moira_control_socket,
             daimon,
             daimon_agent,

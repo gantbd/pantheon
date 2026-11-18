@@ -1099,6 +1099,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             agora_control: None,
             moira,
             moira_participation: None,
+            moira_participation_control: None,
             moira_control_socket: None,
             daimon,
             daimon_agent: None,
@@ -1122,6 +1123,10 @@ pub struct OperationalPeers {
     pub agora_control: Option<AgoraControlConfig>,
     pub moira: Option<moira_tui::Component>,
     pub moira_participation: Option<moira_tui::ParticipationComponent>,
+    pub moira_participation_control: Option<(
+        PathBuf,
+        moira_protocol::agent_participation::ParticipationIdV1,
+    )>,
     pub moira_control_socket: Option<PathBuf>,
     pub daimon: Option<daimon_tui::Component>,
     pub daimon_agent: Option<daimon_tui::AgentSetComponent>,
@@ -1666,6 +1671,7 @@ fn workbench_commands(
     agora: bool,
     agora_control: bool,
     moira: bool,
+    moira_participation: bool,
     moira_control: bool,
     daimon: bool,
     daimon_control: bool,
@@ -2154,6 +2160,20 @@ fn workbench_commands(
             "Agora is not configured"
         })
     });
+    let prepare_agent_open = CommandSpec::available(
+        "moira.participation.open.prepare",
+        "Prepare selected Moira agent session",
+        "Review the exact admitted participation, then ask Moira to derive and durably prepare its session-open effect; a separate owner worker dispatches it.",
+        "Moira",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if moira_participation {
+        prepare_agent_open
+    } else {
+        prepare_agent_open
+            .unavailable("A selected Moira participation control endpoint is required")
+    });
     for (command, configured) in [
         (
             CommandSpec::available(
@@ -2562,6 +2582,11 @@ fn execute_workbench_action<T: ServicePort>(
     agora_message: &mut Option<agora_tui::ComposeMessageComponent>,
     moira: &mut Option<moira_tui::Component>,
     moira_participation: &mut Option<moira_tui::ParticipationComponent>,
+    moira_participation_control: Option<&(
+        PathBuf,
+        moira_protocol::agent_participation::ParticipationIdV1,
+    )>,
+    moira_open: &mut Option<moira_tui::OpenControlComponent>,
     moira_control_socket: Option<&Path>,
     moira_reconciliation: &mut Option<moira_tui::ReconciliationBatchComponent>,
     daimon: &mut Option<daimon_tui::Component>,
@@ -2889,6 +2914,7 @@ fn execute_workbench_action<T: ServicePort>(
             )
         }
         "moira.saga.back" => {
+            *moira_open = None;
             *moira_reconciliation = None;
             let _ = shell.activate(Surface::Moira);
             moira
@@ -2901,6 +2927,32 @@ fn execute_workbench_action<T: ServicePort>(
                 "Returned to the saga list".into(),
             )
         }
+        "moira.participation.open.prepare" => {
+            let _ = shell.activate(Surface::Moira);
+            let (socket, participation) = moira_participation_control
+                .expect("palette enables open preparation only with a selected control endpoint");
+            let port = match moira_client::unix::AgentParticipationUnixPort::connect(
+                socket,
+                moira_client::unix::ParticipationClientLimitsV1::default(),
+            ) {
+                Ok(port) => port,
+                Err(error) => {
+                    return (
+                        ActivityLevel::Warning,
+                        "moira",
+                        format!("Moira participation control connection refused: {error:?}"),
+                    );
+                }
+            };
+            *moira_reconciliation = None;
+            *moira_open = Some(moira_tui::OpenControlComponent::new(port, *participation));
+            (
+                ActivityLevel::Info,
+                "moira",
+                "Exact admitted participation queued for session-open review; c arms and Enter asks Moira to prepare it"
+                    .into(),
+            )
+        }
         action @ ("moira.reconciliation.keep-uncertain"
         | "moira.reconciliation.fail-terminal"
         | "moira.reconciliation.cancel"
@@ -2909,6 +2961,7 @@ fn execute_workbench_action<T: ServicePort>(
         | "moira.reconciliation.admit-succeeded"
         | "moira.reconciliation.retry") => {
             let _ = shell.activate(Surface::Moira);
+            *moira_open = None;
             let sagas = moira
                 .as_ref()
                 .map(moira_tui::Component::selected_saga_views)
@@ -5110,6 +5163,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         agora_control,
         mut moira,
         mut moira_participation,
+        moira_participation_control,
         moira_control_socket,
         mut daimon,
         mut daimon_agent,
@@ -5133,6 +5187,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut agora_operation = None;
     let mut agora_message_operation = None;
     let mut moira_reconciliation: Option<moira_tui::ReconciliationBatchComponent> = None;
+    let mut moira_open: Option<moira_tui::OpenControlComponent> = None;
+    let mut last_moira_open_notice = String::new();
     let mut last_moira_reconciliation_notice = String::new();
     let mut active_moira_action: Option<&'static str> = None;
     let mut moira_operation = None;
@@ -5182,6 +5238,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         agora.is_some(),
         agora_control.is_some(),
         moira.is_some(),
+        moira_participation_control.is_some(),
         moira_control_socket.is_some(),
         daimon.is_some() || daimon_agent.is_some(),
         daimon_agent.is_some() && daimon_agent_control_socket.is_some(),
@@ -5616,6 +5673,22 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             }
             if let Some(participation) = &mut moira_participation {
                 participation.poll();
+            }
+            if let Some(control) = &mut moira_open {
+                control.poll();
+                let current = control.notice();
+                if current != last_moira_open_notice {
+                    let level = if control.recovery_required() {
+                        ActivityLevel::Uncertain
+                    } else if control.request_pending() {
+                        ActivityLevel::Info
+                    } else {
+                        ActivityLevel::Success
+                    };
+                    notice = current.into();
+                    activity.push(level, "moira", current);
+                    last_moira_open_notice = current.into();
+                }
             }
             if let Some(reconciliation) = &mut moira_reconciliation {
                 reconciliation.poll();
@@ -6203,6 +6276,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     moira
                         .as_ref()
                         .is_some_and(moira_tui::Component::request_pending)
+                        || moira_open
+                            .as_ref()
+                            .is_some_and(moira_tui::OpenControlComponent::request_pending)
                         || moira_reconciliation
                             .as_ref()
                             .is_some_and(|control| control.request_pending())
@@ -6268,9 +6344,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             .as_ref()
                             .is_some_and(agora_tui::ComposeMessageComponent::recovery_required)
                 }
-                "moira" => moira_reconciliation
-                    .as_ref()
-                    .is_some_and(moira_tui::ReconciliationBatchComponent::recovery_required),
+                "moira" => {
+                    moira_open
+                        .as_ref()
+                        .is_some_and(moira_tui::OpenControlComponent::recovery_required)
+                        || moira_reconciliation
+                            .as_ref()
+                            .is_some_and(moira_tui::ReconciliationBatchComponent::recovery_required)
+                }
                 "daimon" => daimon_control.as_ref().is_some_and(|control| {
                     control.disposition() == daimon_tui::AgentControlDisposition::OutcomeUnknown
                 }),
@@ -6313,6 +6394,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         agora_message: agora_message.as_ref(),
                         moira: moira.as_ref(),
                         moira_participation: moira_participation.as_ref(),
+                        moira_open: moira_open.as_ref(),
                         moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),
                         daimon_agent: daimon_agent.as_ref(),
@@ -6697,6 +6779,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut agora_message,
                         &mut moira,
                         &mut moira_participation,
+                        moira_participation_control.as_ref(),
+                        &mut moira_open,
                         moira_control_socket.as_deref(),
                         &mut moira_reconciliation,
                         &mut daimon,
@@ -7415,7 +7499,50 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     if shell.active() == Surface::Moira
                         && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
-                    if moira_reconciliation.is_some()
+                    if moira_open.is_some() && is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                        let control = moira_open.as_mut().expect("checked above");
+                        if control.armed() {
+                            control.update(moira_tui::OpenControlInput::Back, true);
+                            notice = "Moira agent-session open disarmed".into();
+                        } else if control.request_pending() || control.recovery_required() {
+                            notice = "Moira agent-session open is pending or outcome-unknown; refresh owner state before closing"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "moira", notice.clone());
+                        } else {
+                            moira_open = None;
+                            last_moira_open_notice.clear();
+                            notice = "Closed agent-session open review without another preparation"
+                                .into();
+                        }
+                    } else if let Some(control) = &mut moira_open {
+                        let input = if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) {
+                            Some(moira_tui::OpenControlInput::Refresh)
+                        } else if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) {
+                            Some(moira_tui::OpenControlInput::Arm)
+                        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+                            Some(moira_tui::OpenControlInput::Confirm)
+                        } else {
+                            None
+                        };
+                        if let Some(input) = input {
+                            control.update(input, true);
+                            notice = match input {
+                                moira_tui::OpenControlInput::Refresh => {
+                                    "Moira open-state inspection queued"
+                                }
+                                moira_tui::OpenControlInput::Arm => {
+                                    "Moira agent-session open arm requested"
+                                }
+                                moira_tui::OpenControlInput::Confirm => {
+                                    "Moira agent-session open preparation submitted once"
+                                }
+                                moira_tui::OpenControlInput::Back
+                                | moira_tui::OpenControlInput::Close => unreachable!(),
+                            }
+                            .into();
+                            activity.push(ActivityLevel::Info, "moira", notice.clone());
+                        }
+                    } else if moira_reconciliation.is_some()
                         && is_key(key, KeyCode::Esc, KeyModifiers::NONE)
                     {
                         if moira_reconciliation.as_ref().is_some_and(|control| {
@@ -9158,12 +9285,13 @@ mod tests {
             .expect("valid shell");
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, false, true, true,
+            true, true, true, true, true, true, true, true, true,
         );
         for expected in [
             "navigate.overview",
             "navigate.workspace",
             "navigate.moira",
+            "moira.participation.open.prepare",
             "view.refresh",
             "vellum.atomic-replace-selected",
             "suite.refresh",
@@ -9229,6 +9357,7 @@ mod tests {
             if matches!(
                 route.capability,
                 "messages.speak.v2"
+                    | "agent.open.prepare.v1"
                     | "agents.session.prompt.v1"
                     | "agents.session.permission.v1"
                     | "agents.session.reattach.v1"
@@ -9238,6 +9367,7 @@ mod tests {
             ) {
                 let composed_id = match route.capability {
                     "messages.speak.v2" => "agora.message.compose",
+                    "agent.open.prepare.v1" => "moira.participation.open.prepare",
                     "agents.session.prompt.v1" => "daimon.session.prompt",
                     "agents.session.permission.v1" => "daimon.session.permission",
                     "agents.session.reattach.v1" => "daimon.session.reattach",
@@ -9267,7 +9397,7 @@ mod tests {
         let shell = Shell::new(vec![Surface::Overview]).expect("valid shell");
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false, false, false,
+            false, false, false, false, false, false, false, false, false, false, false,
         );
         let save = commands
             .iter()
