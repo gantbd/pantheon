@@ -604,8 +604,19 @@ receipt, asynchronously inspects Daimon's validated owner catalogue, and
 requires that task's published external key to equal the frozen execution key.
 Missing, ambiguous, wrong-owner or mismatched evidence stops before prompt
 preparation and tells the operator that the task exists but no agent was
-invoked. This proves the mapping to an already selected session; it still does
-not create a new task-bound session or a dynamic attempt.
+invoked. The next qualified slice now continues that exact binding through a
+human-gated fresh-session review. A validated workspace profile supplies the
+opaque workspace and bounded session budget; Pantheon generates fresh session,
+execution and idempotency identities, reviews the exact owner envelope, and
+dispatches once only after the operator arms it. The owner-created session is
+then admitted into an initially empty Daimon presentation workset, observed as
+one exact Ready session, and only then receives the carried work-item prompt.
+Outcome-unknown fences that session identity for inspection without prompt or
+redispatch. `tests/live/daimon_open.sh` proves the shared standalone/Pantheon
+headless guard, while `tests/live/work_item_agent_journey.sh` drives the real
+tmux surface from Chronos task creation through session open, prompt acceptance,
+and return to the Kanban board. Headless observation projects the open policy
+without inventing a preexisting session.
 
 Pantheon can now also present one already-admitted Moira agent participation and
 ask Moira to prepare its exact Open effect through a review/arm/confirm sheet.
@@ -721,7 +732,7 @@ model, organizational and training-lineage correlation remain explicit gaps.
   headlessly. `tests/live/task_conversation.sh` qualifies the real TUI path,
   headless parity and owner restart recovery. Room creation remains a separate
   Agora capability; this completed increment binds an already open exact room.
-- [ ] Open a per-task Daimon session bound to the exact Chronos attempt.
+- [x] Open a per-task Daimon session bound to the exact Chronos attempt.
 - [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or
   raw HTTP; retain exact task/execution/profile/context/tool/budget identities,

@@ -5,12 +5,14 @@ use crossterm::event::{
     MouseEventKind, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
 };
 use daimon_agent_command::{
-    AdvanceRequest, CancelRequest, CloseRequest, PermissionRequest, PromptRequest, ReattachRequest,
+    AdvanceRequest, CancelRequest, CloseRequest, OpenRequest, PermissionRequest, PromptRequest,
+    ReattachRequest,
 };
 use daimon_protocol::{
-    AgentTurnIdV1, ContextReferenceIdV1, ExecuteRequestV1, ExecutionBudgetV1, ExecutionIdV1,
-    HarnessProfileIdV1, IdempotencyKeyV1, PrincipalIdV1, TaskAttemptRefV1, ToolCapabilityIdV1,
-    agent::{AgentEventV1, AgentSessionPhaseV1},
+    AgentSessionIdV1, AgentTurnIdV1, ContextReferenceIdV1, ExecuteRequestV1, ExecutionBudgetV1,
+    ExecutionIdV1, HarnessProfileIdV1, IdempotencyKeyV1, PrincipalIdV1, TaskAttemptRefV1,
+    ToolCapabilityIdV1,
+    agent::{AgentEventV1, AgentOutcomeV1, AgentSessionBudgetV1, AgentSessionPhaseV1},
 };
 use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
 use serde::Deserialize;
@@ -38,7 +40,8 @@ use vellum_tui::{
 use crate::capabilities::GUARDED_CONTROL_ROUTES;
 use crate::native_host::NativeHost;
 use crate::profile::{
-    AgoraTransportProfile, DaimonExecutionPolicyProfile, TaskConversationProfile, WorkspaceProfile,
+    AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
+    TaskConversationProfile, WorkspaceProfile,
 };
 #[cfg(test)]
 use crate::provider::{
@@ -107,6 +110,7 @@ enum WorkbenchOverlay {
     LocalProviders,
     ProviderEdit,
     ProviderQualification,
+    DaimonSessionOpen,
     ModelTaskInvocation,
     TaskConversation,
     AcpSessions,
@@ -123,6 +127,7 @@ enum KeyBehavior {
     CommandPaletteInput,
     ProviderEditInput,
     ProviderQualificationInput,
+    DaimonSessionOpenInput,
     ModelTaskInvocationInput,
     TaskConversationInput,
     ReconfigurationInput,
@@ -168,6 +173,16 @@ impl BehaviorFacade {
                     KeyBehavior::DismissOverlay
                 } else {
                     KeyBehavior::ProviderQualificationInput
+                };
+            }
+            WorkbenchOverlay::DaimonSessionOpen => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::DaimonSessionOpenInput
                 };
             }
             WorkbenchOverlay::ModelTaskInvocation => {
@@ -474,6 +489,13 @@ enum WorkItemAgentJourney {
         task_id: String,
     },
     AwaitingTaskBinding,
+    ReviewingSessionOpen,
+    OpeningSession,
+    AwaitingSessionObservation {
+        draft: String,
+        lens: Option<AgentCollaborationLens>,
+        session: AgentSessionIdV1,
+    },
     ReviewingPrompt,
     Invoking,
     ConversationReady,
@@ -1233,6 +1255,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             daimon_model: None,
             daimon_agent: None,
             daimon_agent_control_socket: None,
+            daimon_agent_open: None,
             daimon_execution_policy: None,
             hermes: None,
             hermes_operator_socket: None,
@@ -1262,6 +1285,7 @@ pub struct OperationalPeers {
     pub daimon_model: Option<DaimonModelView>,
     pub daimon_agent: Option<daimon_tui::AgentSetComponent>,
     pub daimon_agent_control_socket: Option<PathBuf>,
+    pub daimon_agent_open: Option<crate::profile::DaimonAgentOpenProfile>,
     pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
     pub hermes: Option<hermes_tui::Component>,
     pub hermes_operator_socket: Option<PathBuf>,
@@ -4735,6 +4759,255 @@ struct ModelWorkItemBindingEvidence {
     execution: ModelTaskExecutionProjection,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum DaimonSessionOpenPhase {
+    Reviewing,
+    Opening,
+    Opened,
+    Fenced,
+    Refused,
+}
+
+enum DaimonSessionOpenResult {
+    Opened(AgentSessionIdV1),
+    OutcomeUnknown(AgentSessionIdV1),
+    NotSent(String),
+    Refused(String),
+}
+
+struct DaimonSessionOpenWorker {
+    result: Receiver<DaimonSessionOpenResult>,
+    started: Instant,
+}
+
+struct DaimonSessionOpenWorkflow {
+    phase: DaimonSessionOpenPhase,
+    socket: PathBuf,
+    request: OpenRequest,
+    task_id: String,
+    owner: String,
+    document_digest: String,
+    draft: String,
+    lens: Option<AgentCollaborationLens>,
+    armed: bool,
+    notice: String,
+    worker: Option<DaimonSessionOpenWorker>,
+}
+
+impl DaimonSessionOpenWorkflow {
+    fn new(
+        socket: PathBuf,
+        policy: &DaimonExecutionPolicyProfile,
+        open: &DaimonAgentOpenProfile,
+        evidence: WorkItemBindingEvidence,
+        draft: String,
+        lens: Option<AgentCollaborationLens>,
+    ) -> Result<Self, String> {
+        Ok(Self {
+            phase: DaimonSessionOpenPhase::Reviewing,
+            socket,
+            request: OpenRequest {
+                session: AgentSessionIdV1::new(fresh_identity()?),
+                execution: daimon_execution_request(policy)?,
+                workspace: parse_hex_identity(&open.workspace)?,
+                budget: AgentSessionBudgetV1 {
+                    max_elapsed_millis: open.budget.max_elapsed_millis,
+                    max_turns: open.budget.max_turns,
+                    max_events: open.budget.max_events,
+                    max_event_bytes: open.budget.max_event_bytes,
+                    max_prompt_bytes: open.budget.max_prompt_bytes,
+                    max_permission_requests: open.budget.max_permission_requests,
+                },
+                now: current_unix_time()?,
+            },
+            task_id: evidence.task_id,
+            owner: evidence.owner,
+            document_digest: evidence.document_digest,
+            draft,
+            lens,
+            armed: false,
+            notice: "READY · Review the fresh exact session, workspace, execution envelope, and owner budget; press c to arm."
+                .into(),
+            worker: None,
+        })
+    }
+
+    fn input(&mut self, key: KeyEvent) {
+        if self.phase != DaimonSessionOpenPhase::Reviewing {
+            return;
+        }
+        if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) {
+            self.armed = !self.armed;
+            self.notice = if self.armed {
+                "ARMED · Enter offers this exact session once to Daimon; transport uncertainty will fence the identity without retry."
+            } else {
+                "READY · Session open disarmed; review the exact owner envelope or press c."
+            }
+            .into();
+        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) && self.armed {
+            self.start();
+        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+            self.notice =
+                "REFUSED · Session open is not armed · Next: review the envelope and press c."
+                    .into();
+        }
+    }
+
+    fn start(&mut self) {
+        if self.worker.is_some() {
+            return;
+        }
+        let socket = self.socket.clone();
+        let request = self.request.clone();
+        let confirmation = request.confirmation();
+        let expected_session = request.session;
+        let (sender, result) = sync_channel(1);
+        std::thread::spawn(move || {
+            let outcome = match daimon_client::unix::connect_agent(
+                &socket,
+                daimon_wire::LimitsV1::default(),
+                daimon_wire::agent::AgentWireLimitsV1::default(),
+                Duration::from_secs(5),
+            ) {
+                Ok((service_session, port)) => {
+                    match daimon_agent_command::open(service_session, port, request, &confirmation)
+                    {
+                        Ok(AgentOutcomeV1::Session(view)) if view.session == expected_session => {
+                            DaimonSessionOpenResult::Opened(expected_session)
+                        }
+                        Ok(AgentOutcomeV1::OutcomeUnknown { .. }) => {
+                            DaimonSessionOpenResult::OutcomeUnknown(expected_session)
+                        }
+                        Ok(_) => DaimonSessionOpenResult::Refused(
+                            "owner returned an invalid session-open outcome".into(),
+                        ),
+                        Err(daimon_agent_command::OpenError::MutationTransport(
+                            daimon_client::unix::AgentClientErrorV1::OutcomeUnknown(_error),
+                        )) => DaimonSessionOpenResult::OutcomeUnknown(expected_session),
+                        Err(daimon_agent_command::OpenError::MutationTransport(
+                            daimon_client::unix::AgentClientErrorV1::NotSent(error),
+                        )) => DaimonSessionOpenResult::NotSent(format!("{error:?}")),
+                        Err(error) => DaimonSessionOpenResult::Refused(format!("{error:?}")),
+                    }
+                }
+                Err(error) => DaimonSessionOpenResult::NotSent(format!("{error:?}")),
+            };
+            let _ = sender.send(outcome);
+        });
+        self.phase = DaimonSessionOpenPhase::Opening;
+        self.armed = false;
+        self.notice = "OPENING · One exact owner request is in flight; Pantheon will not redispatch an uncertain outcome."
+            .into();
+        self.worker = Some(DaimonSessionOpenWorker {
+            result,
+            started: Instant::now(),
+        });
+    }
+
+    fn settle(&mut self) -> Option<(ActivityLevel, Duration, Option<AgentSessionIdV1>)> {
+        let worker = self.worker.as_ref()?;
+        let result = match worker.result.try_recv() {
+            Ok(result) => result,
+            Err(TryRecvError::Empty) => return None,
+            Err(TryRecvError::Disconnected) => DaimonSessionOpenResult::NotSent(
+                "session-open worker ended without an owner result".into(),
+            ),
+        };
+        let elapsed = worker.started.elapsed();
+        self.worker = None;
+        match result {
+            DaimonSessionOpenResult::Opened(session) => {
+                self.phase = DaimonSessionOpenPhase::Opened;
+                self.notice = "OPENED · Daimon accepted the fresh exact session · Next: Pantheon is admitting only that owner-created identity into the bounded workset."
+                    .into();
+                Some((ActivityLevel::Success, elapsed, Some(session)))
+            }
+            DaimonSessionOpenResult::OutcomeUnknown(session) => {
+                self.phase = DaimonSessionOpenPhase::Fenced;
+                self.notice = "OUTCOME UNKNOWN · The exact session identity is fenced and will not be redispatched · Next: inspect that identity before choosing any fresh operation."
+                    .into();
+                Some((ActivityLevel::Uncertain, elapsed, Some(session)))
+            }
+            DaimonSessionOpenResult::NotSent(reason) => {
+                self.phase = DaimonSessionOpenPhase::Refused;
+                self.notice = format!(
+                    "NOT SENT · {reason} · Next: restore the owner endpoint, then create a fresh reviewed session operation"
+                );
+                Some((ActivityLevel::Warning, elapsed, None))
+            }
+            DaimonSessionOpenResult::Refused(reason) => {
+                self.phase = DaimonSessionOpenPhase::Refused;
+                self.notice = format!(
+                    "REFUSED · Daimon rejected the exact session-open request: {reason} · Next: inspect owner policy before a fresh operation"
+                );
+                Some((ActivityLevel::Warning, elapsed, None))
+            }
+        }
+    }
+
+    fn lines(&self) -> Vec<String> {
+        let encode = |bytes: &[u8]| {
+            bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        };
+        vec![
+            format!(
+                "phase                 {}",
+                match self.phase {
+                    DaimonSessionOpenPhase::Reviewing if self.armed => "ARMED",
+                    DaimonSessionOpenPhase::Reviewing => "REVIEWING",
+                    DaimonSessionOpenPhase::Opening => "OPENING",
+                    DaimonSessionOpenPhase::Opened => "OPENED",
+                    DaimonSessionOpenPhase::Fenced => "OUTCOME UNKNOWN",
+                    DaimonSessionOpenPhase::Refused => "REFUSED",
+                }
+            ),
+            self.notice.clone(),
+            String::new(),
+            format!("Chronos task          {}", self.task_id),
+            format!("owner                 {}", self.owner),
+            format!("owner document        {}", self.document_digest),
+            format!(
+                "fresh session         {}",
+                encode(&self.request.session.into_bytes())
+            ),
+            format!("workspace             {}", encode(&self.request.workspace)),
+            format!(
+                "session budget        {} ms · {} turns · {} events · {} B/event · {} B/prompt · {} permissions",
+                self.request.budget.max_elapsed_millis,
+                self.request.budget.max_turns,
+                self.request.budget.max_events,
+                self.request.budget.max_event_bytes,
+                self.request.budget.max_prompt_bytes,
+                self.request.budget.max_permission_requests,
+            ),
+            "human gate            review → arm → confirm once".into(),
+            "authority             Daimon owner/Aegis policy; this screen grants none".into(),
+            String::new(),
+            "Boundary: opening creates one governed agent session. It does not submit the work prompt, create an Agora room, update Chronos status/comments, or approve agent effects."
+                .into(),
+            match self.phase {
+                DaimonSessionOpenPhase::Reviewing => {
+                    "c arm/disarm · Enter confirm only while armed · Esc close"
+                }
+                DaimonSessionOpenPhase::Opening => {
+                    "Owner operation in progress · Ctrl-Q waits for settlement"
+                }
+                DaimonSessionOpenPhase::Opened => {
+                    "Owner accepted · waiting for bounded workset observation"
+                }
+                DaimonSessionOpenPhase::Fenced => {
+                    "Outcome remains fenced · inspect exact session identity; no retry"
+                }
+                DaimonSessionOpenPhase::Refused => "Esc close · correct owner policy before retry",
+            }
+            .into(),
+        ]
+    }
+}
+
 struct ModelTaskInvocationPlan {
     executable: PathBuf,
     config: PathBuf,
@@ -6699,6 +6972,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         daimon_model,
         mut daimon_agent,
         daimon_agent_control_socket,
+        daimon_agent_open,
         daimon_execution_policy,
         mut hermes,
         hermes_operator_socket,
@@ -6725,6 +6999,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut active_moira_action: Option<&'static str> = None;
     let mut moira_operation = None;
     let mut daimon_control: Option<daimon_tui::AgentControlBatchComponent> = None;
+    let mut daimon_session_open: Option<DaimonSessionOpenWorkflow> = None;
     let mut daimon_prompt_composer: Option<daimon_tui::AgentPromptComposer> = None;
     let mut daimon_permission_composer: Option<daimon_tui::AgentPermissionComposer> = None;
     let mut last_daimon_control_notice = String::new();
@@ -6894,6 +7169,60 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 instrumentation.record("models.task.invoke.result", "daimon", level, elapsed);
                 activity.push(level, "work-item", notice.clone());
             }
+            if let Some((level, elapsed, session)) = daimon_session_open
+                .as_mut()
+                .and_then(DaimonSessionOpenWorkflow::settle)
+            {
+                let workflow = daimon_session_open
+                    .as_ref()
+                    .expect("settled Daimon session-open workflow exists");
+                notice = workflow.notice.clone();
+                instrumentation.record("agents.session.open.result", "daimon", level, elapsed);
+                activity.push(level, "work-item", notice.clone());
+                if let Some(session) = session {
+                    let draft = workflow.draft.clone();
+                    let lens = workflow.lens;
+                    match daimon_agent
+                        .as_mut()
+                        .ok_or("Daimon session presentation became unavailable")
+                        .and_then(|agent| agent.admit_session(session))
+                    {
+                        Ok(()) if level == ActivityLevel::Success => {
+                            work_item_agent = WorkItemAgentJourney::AwaitingSessionObservation {
+                                draft,
+                                lens,
+                                session,
+                            };
+                            overlay = WorkbenchOverlay::None;
+                            let _ = shell.activate(Surface::Daimon);
+                            notice = "OBSERVING · Fresh owner-created Daimon session admitted to the bounded workset · Next: wait for the exact current projection before reviewing the work prompt"
+                                .into();
+                            activity.push(ActivityLevel::Info, "work-item", notice.clone());
+                        }
+                        Ok(()) => {
+                            work_item_agent = WorkItemAgentJourney::Failed;
+                            overlay = WorkbenchOverlay::None;
+                            let _ = shell.activate(Surface::Daimon);
+                            notice = "OUTCOME UNKNOWN · Exact session identity admitted for inspection only; Pantheon will not submit a prompt or redispatch the open operation"
+                                .into();
+                            activity.push(ActivityLevel::Uncertain, "work-item", notice.clone());
+                        }
+                        Err(reason) => {
+                            work_item_agent = WorkItemAgentJourney::Failed;
+                            notice = command_feedback(
+                                "workitem.agent.new",
+                                ActivityLevel::Warning,
+                                &format!(
+                                    "Daimon session-open settled, but the exact session could not enter the bounded workset: {reason}"
+                                ),
+                            );
+                            activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                        }
+                    }
+                } else {
+                    work_item_agent = WorkItemAgentJourney::Failed;
+                }
+            }
             if let Some((level, elapsed)) = provider_qualification
                 .as_mut()
                 .and_then(ProviderQualificationWorkflow::settle)
@@ -7043,6 +7372,65 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                         ActivityLevel::Warning,
                                         &format!(
                                             "Chronos created the task and its model mapping was proven, but the invocation review could not open: {reason}"
+                                        ),
+                                    );
+                                    activity.push(
+                                        ActivityLevel::Warning,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                            }
+                            continue;
+                        }
+                        if let Some(open) = daimon_agent_open.as_ref() {
+                            let Some(policy) = daimon_execution_policy.as_ref() else {
+                                work_item_agent = WorkItemAgentJourney::Failed;
+                                notice = command_feedback(
+                                    "workitem.agent.new",
+                                    ActivityLevel::Warning,
+                                    "Chronos created the task and its Daimon mapping was proven, but the session-open execution policy became unavailable",
+                                );
+                                activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                                continue;
+                            };
+                            let Some(socket) = daimon_agent_control_socket.as_ref() else {
+                                work_item_agent = WorkItemAgentJourney::Failed;
+                                notice = command_feedback(
+                                    "workitem.agent.new",
+                                    ActivityLevel::Warning,
+                                    "Chronos created the task and its Daimon mapping was proven, but the session-open owner endpoint became unavailable",
+                                );
+                                activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                                continue;
+                            };
+                            match DaimonSessionOpenWorkflow::new(
+                                socket.clone(),
+                                policy,
+                                open,
+                                evidence,
+                                inspection.draft,
+                                inspection.lens,
+                            ) {
+                                Ok(workflow) => {
+                                    daimon_session_open = Some(workflow);
+                                    overlay = WorkbenchOverlay::DaimonSessionOpen;
+                                    work_item_agent = WorkItemAgentJourney::ReviewingSessionOpen;
+                                    notice = "READY · Chronos task created and exact Daimon owner binding proven · Next: review the fresh session envelope, press c to arm, then Enter once"
+                                        .into();
+                                    activity.push(
+                                        ActivityLevel::Success,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                                Err(reason) => {
+                                    work_item_agent = WorkItemAgentJourney::Failed;
+                                    notice = command_feedback(
+                                        "workitem.agent.new",
+                                        ActivityLevel::Warning,
+                                        &format!(
+                                            "Chronos created the task and its Daimon mapping was proven, but the fresh session review could not open: {reason}"
                                         ),
                                     );
                                     activity.push(
@@ -7394,6 +7782,49 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 .and_then(daimon_tui::AgentSetComponent::poll_settlement);
             health.settle("daimon", "presence", daimon_settlement);
             health.settle("daimon", "sessions/events", daimon_agent_settlement);
+            if let (
+                Some(settlement),
+                WorkItemAgentJourney::AwaitingSessionObservation {
+                    draft,
+                    lens,
+                    session,
+                },
+            ) = (daimon_agent_settlement, &work_item_agent)
+            {
+                let draft = draft.clone();
+                let lens = *lens;
+                let session = *session;
+                let observations = daimon_agent
+                    .as_ref()
+                    .map(daimon_tui::AgentSetComponent::selected_observations)
+                    .unwrap_or_default();
+                let exact_ready = settlement.is_ok()
+                    && observations.len() == 1
+                    && observations[0].view.session == session
+                    && observations[0].view.phase == AgentSessionPhaseV1::Ready
+                    && observations[0].view.active_turn.is_none();
+                if exact_ready {
+                    let mut composer = daimon_tui::AgentPromptComposer::new(1)
+                        .expect("one exact owner-created session is a bounded workset");
+                    composer.insert_text(&work_item_agent_prompt(&draft, lens));
+                    daimon_prompt_composer = Some(composer);
+                    daimon_permission_composer = None;
+                    daimon_control = None;
+                    daimon_session_open = None;
+                    work_item_agent = WorkItemAgentJourney::ReviewingPrompt;
+                    notice = "READY · Fresh Daimon session is current and the work-item prompt is prepared · Next: review the carried work text, Tab to review, c to arm, then Enter once"
+                        .into();
+                    activity.push(ActivityLevel::Success, "work-item", notice.clone());
+                } else {
+                    work_item_agent = WorkItemAgentJourney::Failed;
+                    notice = command_feedback(
+                        "workitem.agent.new",
+                        ActivityLevel::Warning,
+                        "The fresh Daimon session did not settle as one exact Ready session with no active turn; no prompt was submitted",
+                    );
+                    activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                }
+            }
             if daimon_recovery_refresh && let Some(settlement) = daimon_agent_settlement {
                 let available = settlement.is_ok();
                 if let Some(control) = &mut daimon_control {
@@ -7959,6 +8390,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         || daimon_control
                             .as_ref()
                             .is_some_and(|control| control.request_pending())
+                        || daimon_session_open
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some())
                 }
                 "hermes" => {
                     hermes
@@ -8019,9 +8453,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             .as_ref()
                             .is_some_and(moira_tui::ReconciliationBatchComponent::recovery_required)
                 }
-                "daimon" => daimon_control.as_ref().is_some_and(|control| {
-                    control.disposition() == daimon_tui::AgentControlDisposition::OutcomeUnknown
-                }),
+                "daimon" => {
+                    daimon_control.as_ref().is_some_and(|control| {
+                        control.disposition() == daimon_tui::AgentControlDisposition::OutcomeUnknown
+                    }) || daimon_session_open
+                        .as_ref()
+                        .is_some_and(|workflow| workflow.phase == DaimonSessionOpenPhase::Fenced)
+                }
                 "hermes" => {
                     hermes_compaction.as_ref().is_some_and(|control| {
                         control.disposition() == hermes_tui::CompactionDisposition::OutcomeUnknown
@@ -8123,6 +8561,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             draw_inspector(
                                 frame,
                                 "Qualify local model provider",
+                                &workflow.lines(),
+                            );
+                        }
+                    }
+                    WorkbenchOverlay::DaimonSessionOpen => {
+                        if let Some(workflow) = &daimon_session_open {
+                            draw_inspector(
+                                frame,
+                                "Open fresh Daimon session for Chronos task",
                                 &workflow.lines(),
                             );
                         }
@@ -8850,6 +9297,24 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         overlay = WorkbenchOverlay::None;
                     }
                 }
+                Event::Key(key) if key_behavior == Some(KeyBehavior::DaimonSessionOpenInput) => {
+                    if let Some(workflow) = &mut daimon_session_open {
+                        workflow.input(key);
+                        notice = workflow.notice.clone();
+                        if workflow.phase == DaimonSessionOpenPhase::Opening {
+                            work_item_agent = WorkItemAgentJourney::OpeningSession;
+                            instrumentation.record(
+                                "agents.session.open.dispatch",
+                                "daimon",
+                                ActivityLevel::Info,
+                                Duration::ZERO,
+                            );
+                            activity.push(ActivityLevel::Info, "work-item", notice.clone());
+                        }
+                    } else {
+                        overlay = WorkbenchOverlay::None;
+                    }
+                }
                 Event::Key(key) if key_behavior == Some(KeyBehavior::ModelTaskInvocationInput) => {
                     if let Some(workflow) = &mut model_task_invocation {
                         workflow.input(key);
@@ -8947,7 +9412,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             control.request_pending() || control.recovery_required()
                         }) || daimon_post_receipt_refresh
                             || daimon_recovery_refresh
-                            || daimon_operation.is_some();
+                            || daimon_operation.is_some()
+                            || daimon_session_open
+                                .as_ref()
+                                .is_some_and(|workflow| workflow.worker.is_some());
                         let aegis_unresolved =
                             aegis_revoke.as_ref().is_some_and(|control| {
                                 matches!(
@@ -9073,6 +9541,20 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     {
                         notice = "WAIT · Provider owner operation is pending · Next: remain here until the exact plan or receipt settles"
                             .into();
+                    } else if overlay == WorkbenchOverlay::DaimonSessionOpen
+                        && daimon_session_open
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some())
+                    {
+                        notice = "WAIT · Daimon session-open operation is pending · Next: remain here until the exact owner result settles"
+                            .into();
+                    } else if overlay == WorkbenchOverlay::DaimonSessionOpen {
+                        daimon_session_open = None;
+                        work_item_agent = WorkItemAgentJourney::Failed;
+                        overlay = WorkbenchOverlay::None;
+                        notice = "CANCELLED · Fresh Daimon session review closed without dispatch · The Chronos task remains created and uninvoked"
+                            .into();
+                        activity.push(ActivityLevel::Info, "work-item", notice.clone());
                     } else {
                         overlay = WorkbenchOverlay::None;
                     }
@@ -10405,7 +10887,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             control.request_pending() || control.recovery_required()
                         }) || daimon_post_receipt_refresh
                             || daimon_recovery_refresh
-                            || daimon_operation.is_some();
+                            || daimon_operation.is_some()
+                            || daimon_session_open
+                                .as_ref()
+                                .is_some_and(|workflow| workflow.worker.is_some());
                         let aegis_unresolved =
                             aegis_revoke.as_ref().is_some_and(|control| {
                                 matches!(
@@ -11517,6 +12002,66 @@ mod tests {
                 .unwrap_err()
                 .contains("accepts one task")
         );
+    }
+
+    #[test]
+    fn fresh_daimon_session_review_is_human_gated_and_owner_bound() {
+        let policy = DaimonExecutionPolicyProfile {
+            principal: "10".repeat(16),
+            profile: "11".repeat(16),
+            task_attempt: crate::profile::DaimonTaskAttemptProfile {
+                task_key: "14".repeat(16),
+                task_incarnation: 3,
+                attempt_number: 2,
+            },
+            context: vec!["12".repeat(16)],
+            tools: vec!["13".repeat(16)],
+            budget: crate::profile::DaimonExecutionBudgetProfile {
+                max_elapsed_millis: 60_000,
+                max_input_tokens: 4_096,
+                max_output_tokens: 8_192,
+                max_tool_calls: 16,
+                max_context_bytes: 1_048_576,
+                max_output_bytes: 1_048_576,
+            },
+        };
+        let open = DaimonAgentOpenProfile {
+            workspace: "15".repeat(16),
+            budget: crate::profile::DaimonAgentSessionBudgetProfile {
+                max_elapsed_millis: 60_000,
+                max_turns: 8,
+                max_events: 128,
+                max_event_bytes: 65_536,
+                max_prompt_bytes: 16_384,
+                max_permission_requests: 4,
+            },
+        };
+        let mut workflow = DaimonSessionOpenWorkflow::new(
+            PathBuf::from("/owner/agent.sock"),
+            &policy,
+            &open,
+            WorkItemBindingEvidence {
+                task_id: "chronos-task".into(),
+                external_task_key: "14".repeat(16),
+                owner: "daimon-local-agent".into(),
+                document_digest: format!("sha256:{}", "22".repeat(32)),
+                model: None,
+            },
+            "Investigate the work item".into(),
+            None,
+        )
+        .unwrap();
+        workflow.input(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+        assert!(workflow.worker.is_none());
+        assert!(workflow.notice.contains("not armed"));
+        workflow.input(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::NONE));
+        assert!(workflow.armed);
+        assert!(workflow.worker.is_none());
+        let lines = workflow.lines().join("\n");
+        assert!(lines.contains("Chronos task          chronos-task"));
+        assert!(lines.contains("owner                 daimon-local-agent"));
+        assert!(lines.contains("human gate            review → arm → confirm once"));
+        assert!(lines.contains("does not submit the work prompt"));
     }
 
     #[test]

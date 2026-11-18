@@ -1997,6 +1997,35 @@ fn daimon_prompt_reuses_the_owner_guard_and_document_in_both_shells() {
 }
 
 #[test]
+fn daimon_session_open_reuses_the_owner_guard_and_document_in_both_shells() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate =
+        fs::read_to_string(root.join("tests/live/daimon_open.sh")).expect("Daimon open gate");
+    for required in [
+        "agent_open_fixture",
+        "daimon-tui",
+        "pantheon",
+        "agent-open",
+        "daimon-agent-open",
+        "agents.session.open.v1",
+        "request.json",
+        "standalone.marker",
+        "workbench.marker",
+        "--locked",
+        "--offline",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Daimon session-open gate omits {required}"
+        );
+    }
+    let cli = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
+    assert!(cli.contains("daimon_agent_command::open"));
+    assert!(cli.contains("parse_open_document"));
+    assert!(!cli.contains("AgentCommandV1::Open"));
+}
+
+#[test]
 fn daimon_permission_reuses_the_owner_guard_and_exact_challenge_in_both_shells() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/daimon_permission.sh"))
@@ -2160,10 +2189,12 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "product-owner collaboration lens",
         "not a human identity",
         "local-agent-task",
-        "provider_catalog_owner.sh",
+        "provider_catalog_open_owner.sh",
         "return to the kanban board",
-        "agent_set_fixture",
-        "PASS: Chronos task -> exact owner binding -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board",
+        "agent_open_journey_fixture",
+        "Open fresh Daimon session for Chronos task",
+        "human-gated fresh Daimon session",
+        "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded product-owner-lensed prompt -> refreshed Kanban board",
     ] {
         assert!(
             journey.contains(required),

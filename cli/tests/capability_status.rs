@@ -54,7 +54,7 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
                 &status,
                 "daimon",
                 mode,
-                capabilities::daimon(mode, hosted, true, false, true),
+                capabilities::daimon(mode, hosted, true, false, true, false),
             );
             assert_route(
                 &status,

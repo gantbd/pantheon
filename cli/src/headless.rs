@@ -20,7 +20,8 @@ use vellum_sdk_client::{
 use crate::capabilities::RequirementDisposition;
 use crate::management::PeerRuntime;
 use crate::profile::{
-    AgoraProfile, AgoraTransportProfile, DaimonExecutionPolicyProfile, DaimonHostProfile,
+    AgoraProfile, AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
+    DaimonHostProfile,
 };
 use crate::provider::provider_catalog;
 use pantheon::{AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
@@ -39,6 +40,7 @@ pub struct HeadlessRequest {
     pub daimon_model_socket: Option<PathBuf>,
     pub daimon_agent_socket: Option<PathBuf>,
     pub daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
+    pub daimon_agent_open: Option<DaimonAgentOpenProfile>,
     pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
     pub daimon_provider_owner: Option<DaimonHostProfile>,
     pub daimon_hosted: bool,
@@ -152,6 +154,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             request.daimon_model_socket,
             request.daimon_agent_socket,
             request.daimon_agent_session,
+            request.daimon_agent_open.as_ref(),
             request.daimon_execution_policy.as_ref(),
         );
         record_observation(
@@ -584,6 +587,7 @@ fn observe_daimon(
     model_socket: Option<PathBuf>,
     agent_socket: Option<PathBuf>,
     agent_session: Option<daimon_protocol::AgentSessionIdV1>,
+    agent_open: Option<&DaimonAgentOpenProfile>,
     execution_policy: Option<&DaimonExecutionPolicyProfile>,
 ) -> (serde_json::Value, bool) {
     use daimon_client::ReadOnlyClient;
@@ -597,9 +601,10 @@ fn observe_daimon(
             Some(socket) => observe_daimon_model(socket),
             None => (serde_json::Value::Null, true),
         };
-        let (agent, current) = match (agent_socket, agent_session) {
-            (Some(socket), Some(session)) => observe_daimon_agent(socket, session),
-            (None, None) => (serde_json::Value::Null, true),
+        let (agent, current) = match (agent_socket, agent_session, agent_open) {
+            (Some(socket), Some(session), _) => observe_daimon_agent(socket, session),
+            (Some(socket), None, Some(open)) => observe_daimon_open_endpoint(socket, open),
+            (None, None, None) => (serde_json::Value::Null, true),
             _ => (
                 serde_json::json!({"status": "configuration_refused"}),
                 false,
@@ -608,11 +613,13 @@ fn observe_daimon(
         return (
             serde_json::json!({
                 "peer": "daimon",
-                "capability": if model.is_null() { "agents.session.inspect.v1" } else { "models.endpoint.attach.v1" },
+                "capability": if model.is_null() {
+                    if agent_open.is_some() { "agents.session.open.v1" } else { "agents.session.inspect.v1" }
+                } else { "models.endpoint.attach.v1" },
                 "capabilities": match (model.is_null(), agent.is_null()) {
-                    (false, false) => vec!["models.endpoint.attach.v1", "agents.session.inspect.v1"],
+                    (false, false) => vec!["models.endpoint.attach.v1", if agent_open.is_some() { "agents.session.open.v1" } else { "agents.session.inspect.v1" }],
                     (false, true) => vec!["models.endpoint.attach.v1"],
-                    (true, false) => vec!["agents.session.inspect.v1"],
+                    (true, false) => vec![if agent_open.is_some() { "agents.session.open.v1" } else { "agents.session.inspect.v1" }],
                     (true, true) => Vec::<&str>::new(),
                 },
                 "status": if current && model_current { "current" } else { "partial" },
@@ -645,9 +652,10 @@ fn observe_daimon(
     match client.read_presence(64) {
         Ok(ReplyV1::Accepted(OutcomeV1::Presence { entries, truncated })) => {
             let current = entries.iter().filter(|entry| !entry.stale).count();
-            let (agent, agent_current) = match (agent_socket, agent_session) {
-                (Some(socket), Some(session)) => observe_daimon_agent(socket, session),
-                (None, None) => (serde_json::Value::Null, true),
+            let (agent, agent_current) = match (agent_socket, agent_session, agent_open) {
+                (Some(socket), Some(session), _) => observe_daimon_agent(socket, session),
+                (Some(socket), None, Some(open)) => observe_daimon_open_endpoint(socket, open),
+                (None, None, None) => (serde_json::Value::Null, true),
                 _ => (
                     serde_json::json!({"status": "configuration_refused"}),
                     false,
@@ -663,6 +671,8 @@ fn observe_daimon(
                     "capability": capability,
                     "capabilities": if agent.is_null() {
                         vec![capability]
+                    } else if agent_open.is_some() {
+                        vec![capability, "agents.session.open.v1"]
                     } else {
                         vec![capability, "agents.session.inspect.v1"]
                     },
@@ -697,6 +707,50 @@ fn observe_daimon(
                 false,
             )
         }
+    }
+}
+
+fn observe_daimon_open_endpoint(
+    socket: PathBuf,
+    open: &DaimonAgentOpenProfile,
+) -> (serde_json::Value, bool) {
+    use std::time::Duration;
+
+    match daimon_client::unix::connect_agent(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => {
+            drop(connection);
+            (
+                serde_json::json!({
+                    "status": "current",
+                    "capability": "agents.session.open.v1",
+                    "workspace": open.workspace,
+                    "session_budget": {
+                        "max_elapsed_millis": open.budget.max_elapsed_millis,
+                        "max_turns": open.budget.max_turns,
+                        "max_events": open.budget.max_events,
+                        "max_event_bytes": open.budget.max_event_bytes,
+                        "max_prompt_bytes": open.budget.max_prompt_bytes,
+                        "max_permission_requests": open.budget.max_permission_requests,
+                    },
+                    "selected_session": serde_json::Value::Null,
+                    "boundary": "endpoint attachment and configured open policy only; no agent session was invented or opened",
+                }),
+                true,
+            )
+        }
+        Err(error) => (
+            serde_json::json!({
+                "status": "connect_refused",
+                "capability": "agents.session.open.v1",
+                "detail": format!("{error:?}"),
+            }),
+            false,
+        ),
     }
 }
 
@@ -1562,6 +1616,7 @@ mod tests {
             daimon_model_socket: None,
             daimon_agent_socket: None,
             daimon_agent_session: None,
+            daimon_agent_open: None,
             daimon_execution_policy: None,
             daimon_provider_owner: None,
             daimon_hosted: false,

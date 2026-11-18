@@ -21,12 +21,12 @@ mkdir "$scratch/chronos"
 chmod 700 "$scratch/chronos"
 
 cargo build --manifest-path "$workspace/daimon-tui/Cargo.toml" \
-  --package daimon-tui-cli --example agent_set_fixture --locked --offline
+  --package daimon-tui-cli --example agent_open_journey_fixture --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
   --package pantheon-cli --bin pantheon --locked --offline
 
 workbench="$root/target/debug/pantheon"
-catalog_owner="$root/tests/support/provider_catalog_owner.sh"
+catalog_owner="$root/tests/support/provider_catalog_open_owner.sh"
 
 cat >"$scratch/provider-catalog.json" <<'EOF'
 {
@@ -69,7 +69,17 @@ cat >"$scratch/profile.json" <<EOF
   "daimon": {
     "deployment": "hosted",
     "agent_socket": "$scratch/daimon.sock",
-    "agent_sessions": ["07070707070707070707070707070707"],
+    "agent_open": {
+      "workspace": "15151515151515151515151515151515",
+      "budget": {
+        "max_elapsed_millis": 60000,
+        "max_turns": 8,
+        "max_events": 128,
+        "max_event_bytes": 65536,
+        "max_prompt_bytes": 16384,
+        "max_permission_requests": 4
+      }
+    },
     "execution": {
       "principal": "10101010101010101010101010101010",
       "profile": "11111111111111111111111111111111",
@@ -89,7 +99,7 @@ cat >"$scratch/profile.json" <<EOF
       "executable": "$catalog_owner",
       "config": "$scratch/provider-catalog.json"
     },
-    "requires": ["agents.session-set.inspect.v1", "agents.session-set.prompt.v1"]
+    "requires": ["agents.session.open.v1"]
   }
 }
 EOF
@@ -115,13 +125,7 @@ assert "not role activation" in execution["boundary"]
 assert report["not_exercised_profile_requirements"] == [
     {
         "peer": "daimon",
-        "capability": "agents.session-set.inspect.v1",
-        "disposition": "not_exercised",
-        "reason": "aggregate_observation_only",
-    },
-    {
-        "peer": "daimon",
-        "capability": "agents.session-set.prompt.v1",
+        "capability": "agents.session.open.v1",
         "disposition": "not_exercised",
         "reason": "aggregate_observation_only",
     },
@@ -186,6 +190,14 @@ try:
     expect("Review 1 exact task(s)")
     keys("Enter")
     expect(
+        "Open fresh Daimon session for Chronos task",
+        "fresh session",
+        "human gate",
+        "does not submit the work prompt",
+        timeout=20,
+    )
+    keys("c", "Enter")
+    expect(
         "DAIMON",
         "Compose Daimon prompt",
         "product-owner collaboration lens",
@@ -215,7 +227,8 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 1
-grep 'session 1 prompted' "$scratch/receipts" >/dev/null
+test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 2
+grep '^opened$' "$scratch/receipts" >/dev/null
+grep '^prompted$' "$scratch/receipts" >/dev/null
 
-echo 'PASS: Chronos task -> exact owner binding -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board'
+echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded product-owner-lensed prompt -> refreshed Kanban board'

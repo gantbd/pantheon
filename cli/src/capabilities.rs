@@ -122,6 +122,7 @@ pub fn daimon(
     presence: bool,
     model_endpoint: bool,
     selected_agent: bool,
+    session_open: bool,
 ) -> Vec<Capability> {
     let mut capabilities = Vec::new();
     if mode == Mode::Headless {
@@ -134,18 +135,23 @@ pub fn daimon(
         if model_endpoint {
             capabilities.push(capability("models.endpoint.attach.v1", Plane::Observation));
         }
-    } else if selected_agent {
+    } else if selected_agent || session_open {
         if presence {
             capabilities.push(capability("agents.presence.v1", Plane::Observation));
         }
-        capabilities.extend([
-            capability("agents.session.inspect.v1", Plane::Operator),
-            capability("agents.session-set.inspect.v1", Plane::Operator),
-            capability("agents.session-set.control.v1", Plane::Operator),
-            capability("agents.session-set.prompt.v1", Plane::Operator),
-            capability("agents.session-set.permission.v1", Plane::Operator),
-            capability("agents.session-set.reattach.v1", Plane::Operator),
-        ]);
+        if selected_agent {
+            capabilities.extend([
+                capability("agents.session.inspect.v1", Plane::Operator),
+                capability("agents.session-set.inspect.v1", Plane::Operator),
+                capability("agents.session-set.control.v1", Plane::Operator),
+                capability("agents.session-set.prompt.v1", Plane::Operator),
+                capability("agents.session-set.permission.v1", Plane::Operator),
+                capability("agents.session-set.reattach.v1", Plane::Operator),
+            ]);
+        }
+        if session_open {
+            capabilities.push(capability("agents.session.open.v1", Plane::Operator));
+        }
     } else {
         if presence {
             capabilities.push(capability("agents.presence.v1", Plane::Operator));
@@ -403,6 +409,11 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
     },
     GuardedControlRoute {
         peer: "daimon",
+        capability: "agents.session.open.v1",
+        command: "daimon-agent-open",
+    },
+    GuardedControlRoute {
+        peer: "daimon",
         capability: "agents.session.advance.v1",
         command: "daimon-agent-advance",
     },
@@ -504,8 +515,8 @@ mod tests {
 
     #[test]
     fn observation_negotiation_preserves_but_does_not_exercise_workspace_controls() {
-        let observed = daimon(Mode::Headless, false, true, false, true);
-        let configured = daimon(Mode::Interactive, false, true, false, true);
+        let observed = daimon(Mode::Headless, false, true, false, true, false);
+        let configured = daimon(Mode::Interactive, false, true, false, true, false);
         let required = vec![
             "agents.session.inspect.v1".to_owned(),
             "agents.session-set.prompt.v1".to_owned(),
@@ -627,7 +638,7 @@ mod tests {
 
     #[test]
     fn daimon_interactive_reports_both_visible_components() {
-        let selected = daimon(Mode::Interactive, false, true, false, true);
+        let selected = daimon(Mode::Interactive, false, true, false, true, false);
         assert!(
             selected
                 .iter()
@@ -641,8 +652,28 @@ mod tests {
     }
 
     #[test]
+    fn daimon_session_open_does_not_invent_a_preexisting_session() {
+        let selected = daimon(Mode::Interactive, false, false, false, false, true);
+        assert!(
+            selected
+                .iter()
+                .any(|capability| capability.id == "agents.session.open.v1")
+        );
+        assert!(
+            !selected
+                .iter()
+                .any(|capability| capability.id == "agents.session.inspect.v1")
+        );
+        assert!(GUARDED_CONTROL_ROUTES.iter().any(|route| {
+            route.peer == "daimon"
+                && route.capability == "agents.session.open.v1"
+                && route.command == "daimon-agent-open"
+        }));
+    }
+
+    #[test]
     fn local_model_interactive_reports_the_governed_task_invocation_control() {
-        let selected = daimon(Mode::Interactive, true, false, true, false);
+        let selected = daimon(Mode::Interactive, true, false, true, false, false);
         assert!(
             selected
                 .iter()

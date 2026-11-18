@@ -119,6 +119,10 @@ pub struct DaimonProfile {
     /// so interactive fan-out remains inspectable.
     #[serde(default)]
     pub agent_sessions: Vec<String>,
+    /// Policy for opening a fresh owner-backed interactive session. When this
+    /// is present the initial session workset may be empty; Pantheon must
+    /// obtain a human confirmation before asking Daimon to create a session.
+    pub agent_open: Option<DaimonAgentOpenProfile>,
     /// Credential-free execution policy with one frozen task attempt. Each
     /// interactive prompt, permission, or reattach still receives fresh
     /// execution and idempotency identities.
@@ -158,6 +162,25 @@ pub struct DaimonExecutionBudgetProfile {
     pub max_tool_calls: u32,
     pub max_context_bytes: usize,
     pub max_output_bytes: usize,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonAgentOpenProfile {
+    /// Exact workspace identity understood by the configured Daimon owner.
+    pub workspace: String,
+    pub budget: DaimonAgentSessionBudgetProfile,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonAgentSessionBudgetProfile {
+    pub max_elapsed_millis: u64,
+    pub max_turns: u32,
+    pub max_events: u64,
+    pub max_event_bytes: usize,
+    pub max_prompt_bytes: usize,
+    pub max_permission_requests: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -533,8 +556,12 @@ impl WorkspaceProfile {
             if agent_sessions.len() > daimon_tui::AgentSetComponent::MAX_SESSIONS {
                 return Err("Daimon agent session set exceeds the 16-session bound");
             }
-            match (&daimon.agent_socket, agent_sessions.is_empty()) {
-                (Some(socket), false) => {
+            match (
+                &daimon.agent_socket,
+                agent_sessions.is_empty(),
+                daimon.agent_open.is_some(),
+            ) {
+                (Some(socket), false, _) | (Some(socket), true, true) => {
                     validate_path(socket)?;
                     for (index, session) in agent_sessions.iter().enumerate() {
                         if daimon_tui::parse_agent_session(session).is_none() {
@@ -545,16 +572,36 @@ impl WorkspaceProfile {
                         }
                     }
                 }
-                (None, true) => {}
+                (None, true, false) => {}
                 _ => {
                     return Err(
-                        "Daimon agent socket and at least one session must be configured together",
+                        "Daimon agent socket requires an initial session set or session-open policy",
+                    );
+                }
+            }
+            if let Some(open) = &daimon.agent_open {
+                validate_hex_identifier(&open.workspace, "Daimon session-open workspace")?;
+                if daimon.execution.is_none() {
+                    return Err("Daimon session-open policy requires an execution policy");
+                }
+                if open.budget.max_elapsed_millis == 0
+                    || open.budget.max_turns == 0
+                    || open.budget.max_events == 0
+                    || open.budget.max_event_bytes == 0
+                    || open.budget.max_prompt_bytes == 0
+                {
+                    return Err(
+                        "Daimon session-open policy requires non-zero time, turn, event, and byte budgets",
                     );
                 }
             }
             if let Some(execution) = &daimon.execution {
-                if daimon.agent_socket.is_none() || agent_sessions.is_empty() {
-                    return Err("Daimon execution policy requires an agent socket and session set");
+                if daimon.agent_socket.is_none()
+                    || (agent_sessions.is_empty() && daimon.agent_open.is_none())
+                {
+                    return Err(
+                        "Daimon execution policy requires an agent socket and session set or session-open policy",
+                    );
                 }
                 validate_hex_identifier(&execution.principal, "Daimon execution principal")?;
                 validate_hex_identifier(&execution.profile, "Daimon execution profile")?;
@@ -597,7 +644,7 @@ impl WorkspaceProfile {
                     let agent_owner = daimon.socket.is_none()
                         && daimon.model_socket.is_none()
                         && daimon.agent_socket.is_some()
-                        && !agent_sessions.is_empty();
+                        && (!agent_sessions.is_empty() || daimon.agent_open.is_some());
                     if !model_owner && !agent_owner {
                         return Err(
                             "hosted Daimon requires exactly one model endpoint or exact agent selection",
@@ -1123,6 +1170,42 @@ mod tests {
             .unwrap()
             .replace("\"max_output_tokens\":8192", "\"max_output_tokens\":0");
         assert!(WorkspaceProfile::parse(zero_budget.as_bytes(), Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn daimon_session_open_policy_allows_an_honestly_empty_initial_workset() {
+        let valid = br#"{
+          "version":1,"name":"Daimon open","surfaces":["daimon"],
+          "daimon":{"agent_socket":"agent.sock",
+            "agent_open":{"workspace":"15151515151515151515151515151515",
+              "budget":{"max_elapsed_millis":60000,"max_turns":8,
+                "max_events":128,"max_event_bytes":65536,
+                "max_prompt_bytes":16384,"max_permission_requests":4}},
+            "execution":{
+              "principal":"10101010101010101010101010101010",
+              "profile":"11111111111111111111111111111111",
+              "task_attempt":{"task_key":"14141414141414141414141414141414",
+                "task_incarnation":1,"attempt_number":1},
+              "context":[],"tools":[],
+              "budget":{"max_elapsed_millis":60000,"max_input_tokens":4096,
+                "max_output_tokens":8192,"max_tool_calls":32,
+                "max_context_bytes":1048576,"max_output_bytes":1048576}
+            }}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let daimon = profile.daimon.unwrap();
+        assert!(daimon.agent_sessions.is_empty());
+        assert_eq!(daimon.agent_open.unwrap().budget.max_permission_requests, 4);
+
+        let without_execution = String::from_utf8(valid.to_vec()).unwrap().replace(
+            ",\n            \"execution\":{",
+            ",\n            \"unused\":{",
+        );
+        assert!(WorkspaceProfile::parse(without_execution.as_bytes(), Path::new(".")).is_err());
+        let zero_turns = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("\"max_turns\":8", "\"max_turns\":0");
+        assert!(WorkspaceProfile::parse(zero_turns.as_bytes(), Path::new(".")).is_err());
     }
 
     #[test]

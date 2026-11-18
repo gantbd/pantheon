@@ -71,6 +71,7 @@ struct Options {
     daimon_agent_socket: Option<PathBuf>,
     daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     daimon_agent_sessions: Vec<daimon_protocol::AgentSessionIdV1>,
+    daimon_agent_open: Option<pantheon_cli::profile::DaimonAgentOpenProfile>,
     daimon_execution_policy: Option<pantheon_cli::profile::DaimonExecutionPolicyProfile>,
     daimon_host: Option<DaimonProcessOptions>,
     hermes_socket: Option<PathBuf>,
@@ -180,6 +181,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut daimon_agent_socket = None;
     let mut daimon_agent_session = None;
     let mut daimon_agent_sessions = Vec::new();
+    let mut daimon_agent_open = None;
     let mut daimon_execution_policy = None;
     let mut daimon_requires = Vec::new();
     let mut daimon_host = None;
@@ -270,6 +272,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         }
         if let Some(daimon) = profile.daimon {
             daimon_execution_policy = daimon.execution.clone();
+            daimon_agent_open = daimon.agent_open.clone();
             if daimon.deployment == DeploymentMode::Hosted {
                 let host = daimon
                     .host
@@ -525,6 +528,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_socket.is_some(),
         daimon_model_socket.is_some(),
         daimon_agent_socket.is_some() && !daimon_agent_sessions.is_empty(),
+        daimon_agent_socket.is_some() && daimon_agent_open.is_some(),
     );
     let hermes_capabilities =
         capabilities::hermes(mode, hermes_host.is_some(), hermes_consumer.is_some());
@@ -607,6 +611,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             daimon_socket.is_some(),
             daimon_model_socket.is_some(),
             daimon_agent_socket.is_some() && !daimon_agent_sessions.is_empty(),
+            daimon_agent_socket.is_some() && daimon_agent_open.is_some(),
         ),
     )?;
     negotiate_selected_route(
@@ -689,6 +694,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_agent_socket,
         daimon_agent_session,
         daimon_agent_sessions,
+        daimon_agent_open,
         daimon_execution_policy,
         daimon_host,
         hermes_socket,
@@ -733,7 +739,10 @@ fn negotiate_capabilities(
 }
 
 fn usage() -> &'static str {
-    "pantheon [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\npantheon vellum-durable-save <execute|lookup> SOCKET CREDENTIAL vdo1.OPERATION_HEX DOCUMENT_ORDINAL EXPECTED_REVISION\npantheon agora-create-room SOCKET PARTICIPANT <conversation|composition> ROOM_ID NAME <open|invite-only> EXPECTED_REVISION 'CREATE AGORA ROOM ROOM_ID NAMED NAME ADMISSION <OPEN|INVITE ONLY> AT REVISION EXPECTED_REVISION'\npantheon daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\npantheon daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\npantheon daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\npantheon daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\npantheon daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\npantheon daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\npantheon aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\npantheon aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\npantheon aegis-manage-session SOCKET\npantheon hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\npantheon hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\npantheon hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\npantheon moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\npantheon moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\npantheon moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Pantheon owns service startup and drain. Peer commands reuse their owner guards and application contracts: Agora room creation binds the exact room facts and current revision, uses the actor-bound owner client and does not retry an uncertain outcome; Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. Vellum durable save execute/lookup uses the peer-owned public-client guard and caller-persisted identity; Pantheon grants no authentication, action authority, persistence or retry permission. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    concat!(
+        "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
+        "pantheon [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\npantheon vellum-durable-save <execute|lookup> SOCKET CREDENTIAL vdo1.OPERATION_HEX DOCUMENT_ORDINAL EXPECTED_REVISION\npantheon agora-create-room SOCKET PARTICIPANT <conversation|composition> ROOM_ID NAME <open|invite-only> EXPECTED_REVISION 'CREATE AGORA ROOM ROOM_ID NAMED NAME ADMISSION <OPEN|INVITE ONLY> AT REVISION EXPECTED_REVISION'\npantheon daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\npantheon daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\npantheon daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\npantheon daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\npantheon daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\npantheon daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\npantheon aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\npantheon aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\npantheon aegis-manage-session SOCKET\npantheon hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\npantheon hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\npantheon hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\npantheon moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\npantheon moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\npantheon moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Pantheon owns service startup and drain. Peer commands reuse their owner guards and application contracts: Agora room creation binds the exact room facts and current revision, uses the actor-bound owner client and does not retry an uncertain outcome; Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. Vellum durable save execute/lookup uses the peer-owned public-client guard and caller-persisted identity; Pantheon grants no authentication, action authority, persistence or retry permission. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
+    )
 }
 
 fn vellum_connector(
@@ -868,6 +877,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "moira-reconciliation-recover")
     {
         return moira_reconciliation_recover(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "daimon-agent-open")
+    {
+        return daimon_agent_open(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)
@@ -1920,6 +1935,102 @@ fn daimon_close_failure(
             "actual_revision": actual.map(|view| view.revision),
             "actual_phase": actual.map(|view| format!("{:?}", view.phase)),
             "actual_active_turn": actual.and_then(|view| view.active_turn).map(|_| "present"),
+        }))?
+    );
+    Err(std::io::Error::other(message).into())
+}
+
+fn daimon_agent_open(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use daimon_agent_command::{OpenError, parse_open_document};
+    use daimon_client::unix::AgentClientErrorV1;
+    use daimon_protocol::agent::AgentOutcomeV1;
+    use std::time::Duration;
+
+    let socket = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let document_path = args.next().map(PathBuf::from).ok_or_else(usage)?;
+    let confirmation = args
+        .next()
+        .and_then(|value| value.into_string().ok())
+        .ok_or_else(usage)?;
+    if args.next().is_some() {
+        return Err(usage().into());
+    }
+    let document = read_daimon_bounded(&document_path, 64 * 1024)?;
+    let request = parse_open_document(&document)
+        .map_err(|error| format!("Daimon session-open document refused: {error:?}"))?;
+    let (service_session, port) = match daimon_client::unix::connect_agent(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok(connection) => connection,
+        Err(error) => return daimon_open_failure("not_sent", &format!("{error:?}"), None),
+    };
+    match daimon_agent_command::open(service_session, port, request, &confirmation) {
+        Ok(AgentOutcomeV1::Session(view)) => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "version": 1,
+                    "shell": "workbench",
+                    "peer": "daimon",
+                    "capability": daimon_agent_command::OPEN_CAPABILITY,
+                    "complete": true,
+                    "status": "opened",
+                    "session": moira_hex(&view.session.into_bytes()),
+                    "revision": view.revision,
+                    "phase": format!("{:?}", view.phase),
+                    "last_event_cursor": view.last_event_cursor,
+                }))?
+            );
+            Ok(())
+        }
+        Ok(AgentOutcomeV1::OutcomeUnknown { .. }) => daimon_open_failure(
+            "outcome_unknown",
+            "Daimon retained an indeterminate session-open outcome; inspect the exact session before any further action",
+            None,
+        ),
+        Ok(AgentOutcomeV1::Events(_)) => daimon_open_failure(
+            "invalid_reply",
+            "unexpected Daimon session-open reply",
+            None,
+        ),
+        Err(OpenError::ConfirmationMismatch { required }) => daimon_open_failure(
+            "confirmation_refused",
+            "exact Daimon session-open confirmation required",
+            Some(&required),
+        ),
+        Err(OpenError::MutationTransport(AgentClientErrorV1::OutcomeUnknown(error))) => {
+            daimon_open_failure("outcome_unknown", &format!("{error:?}"), None)
+        }
+        Err(OpenError::MutationTransport(AgentClientErrorV1::NotSent(error))) => {
+            daimon_open_failure("not_sent", &format!("{error:?}"), None)
+        }
+        Err(OpenError::MutationRefused(refusal)) => {
+            daimon_open_failure("refused", &format!("{refusal:?}"), None)
+        }
+        Err(error) => daimon_open_failure("unavailable", &format!("{error:?}"), None),
+    }
+}
+
+fn daimon_open_failure(
+    status: &str,
+    message: &str,
+    required_confirmation: Option<&str>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "shell": "workbench",
+            "peer": "daimon",
+            "capability": daimon_agent_command::OPEN_CAPABILITY,
+            "complete": false,
+            "status": status,
+            "required_confirmation": required_confirmation,
         }))?
     );
     Err(std::io::Error::other(message).into())
@@ -3246,17 +3357,24 @@ fn interactive(
     };
     let daimon_agent_control_socket = options.daimon_agent_socket.clone();
     let daimon_agent = if let Some(socket) = options.daimon_agent_socket {
-        Some(daimon_tui::AgentSetComponent::new_with_connector(
-            move || {
-                daimon_client::unix::connect_agent(
-                    &socket,
-                    daimon_wire::LimitsV1::default(),
-                    daimon_wire::agent::AgentWireLimitsV1::default(),
-                    std::time::Duration::from_secs(5),
-                )
-            },
-            options.daimon_agent_sessions,
-        )?)
+        let connector = move || {
+            daimon_client::unix::connect_agent(
+                &socket,
+                daimon_wire::LimitsV1::default(),
+                daimon_wire::agent::AgentWireLimitsV1::default(),
+                std::time::Duration::from_secs(5),
+            )
+        };
+        if options.daimon_agent_sessions.is_empty() {
+            Some(daimon_tui::AgentSetComponent::new_empty_with_connector(
+                connector,
+            ))
+        } else {
+            Some(daimon_tui::AgentSetComponent::new_with_connector(
+                connector,
+                options.daimon_agent_sessions,
+            )?)
+        }
     } else {
         None
     };
@@ -3382,6 +3500,7 @@ fn interactive(
             daimon_model,
             daimon_agent,
             daimon_agent_control_socket,
+            daimon_agent_open: options.daimon_agent_open,
             daimon_execution_policy: options.daimon_execution_policy,
             hermes,
             hermes_operator_socket,
@@ -3866,6 +3985,7 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         daimon_model_socket: options.daimon_model_socket.clone(),
         daimon_agent_socket: options.daimon_agent_socket.clone(),
         daimon_agent_session: options.daimon_agent_session,
+        daimon_agent_open: options.daimon_agent_open.clone(),
         daimon_execution_policy: options.daimon_execution_policy.clone(),
         daimon_provider_owner: options
             .workspace_profile
