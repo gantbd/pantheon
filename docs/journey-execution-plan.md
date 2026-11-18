@@ -7,7 +7,7 @@ Governing blueprint: [`use-cases-and-user-journeys.md`](use-cases-and-user-journ
 This plan turns the product journeys into bounded delivery increments. A checked
 item means the named owner contracts, refusal/uncertainty behavior, interactive
 and headless projections, and executable evidence all exist. Presentation alone
-does not close an item.
+does not close an item; input profiles share one behavior facade.
 
 ## Delivery rules
 
@@ -167,6 +167,16 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Configuration surface, including provider profiles, observation sources,
   correlation fields, time windows, cursor/freshness thresholds, metric
   cardinality budgets, sampling visibility and agent-sifting profiles.
+- [ ] Give Vellum a first-class revision-bound diff/review surface for document
+  and multi-document changes, with provenance, stale-coordinate mapping,
+  semantic-impact evidence and accept/refuse behavior routed through the shared
+  behavior facade.
+- [ ] Make Vellum whole-workspace aware under an explicit resource policy:
+  eagerly retain the manifest, resource metadata, declaration/reference index,
+  diagnostics and revision graph; keep the active workset and bounded dependency
+  closure hot; load other document bodies and parse trees on demand. Project
+  index generation, scope, freshness, incompleteness, eviction and memory/context
+  budgets so IDE-like resolution never masquerades as complete or current.
 - [ ] Retain each discovered item through Chronos's stable identity, revision,
   receipt and recovery contract rather than a Pantheon-only checklist.
 - [ ] Offer a bounded agent-assisted backlog sift that proposes duplicate
@@ -425,6 +435,25 @@ matches Vellum headless's exact source digest. The run also exposed that a
 persistent TUI connection currently excludes a second headless Vellum client;
 attach/concurrency remains an owner-level gap rather than a reason to fork
 workspace state.
+
+The longer dogfood session then exposed two presentation/runtime gaps. Idle
+polling exhausted Vellum's bounded 256-request replay register in about a
+minute, and Pantheon had not enabled terminal bracketed-paste mode, so a
+multiline atomic replacement was interpreted as source and command keystrokes.
+Vellum clients now renew only after unresolved effects are absent, rebuild the
+new identity's exact inventory/view/selection/snapshot witness, and preserve
+local persistence truth only when the owner snapshot is equal. Pantheon checks
+capacity at each editor action as well as idle polling and records renewal;
+bracketed multiline paste is bounded, line-ending normalized and all-or-none.
+Real tmux gates cross the old request ceiling and execute a three-document
+multiline atomic replacement through independent durable receipts.
+
+The same Vellum workset delivered Moira's first content-free execution-cohort
+correlation slice. The governed harness now retains shared principal, profile
+and context-manifest facts; `moira-methodical-local` projects them to operators.
+Shared principal/profile identity is `correlated`, while distinct identities
+remain `not_established` rather than becoming an independence claim. Provider,
+model, organizational and training-lineage correlation remain explicit gaps.
 
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
 - [ ] From the selected task, choose a qualified local provider, declared work

@@ -91,6 +91,10 @@ def keys(*values):
 def literal(value):
     tmux("send-keys", "-t", "vellum-atomic", "-l", value)
 
+def paste(value):
+    tmux("set-buffer", value)
+    tmux("paste-buffer", "-p", "-t", "vellum-atomic")
+
 def palette(query, expected):
     keys("C-p")
     literal(query)
@@ -116,14 +120,16 @@ try:
     expect("Vellum atomic replace", "One revision-bound in-memory transaction")
     literal("alpha")
     keys("Tab")
-    literal("omega")
+    paste("omega\nline")
     keys("Enter")
     expect("4 matches across 3 exact documents", "document 1 @ revision 0")
     keys("c", "Enter")
     expect("published atomically across 3 changed documents")
 
-    keys("q")
-    expect("three omega", "Dirty")
+    keys("Escape")
+    expect("Edit query/replacement; Enter rebuilds exact preview")
+    keys("Escape")
+    expect("three omega", "line", "Dirty")
     palette("inspect tui instrumentation", "Inspect TUI instrumentation")
     expect("vellum.atomic-replace", "owner_atomic_receipt", timeout=10)
     keys("C-g")
@@ -142,10 +148,14 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-test "$(cat "$scratch/one.txt")" = 'omega omega one'
-test "$(cat "$scratch/two.txt")" = 'omega two'
-test "$(cat "$scratch/three.txt")" = 'three omega'
+test "$(cat "$scratch/one.txt")" = 'omega
+line omega
+line one'
+test "$(cat "$scratch/two.txt")" = 'omega
+line two'
+test "$(cat "$scratch/three.txt")" = 'three omega
+line'
 test ! -e "$scratch/vellum.sock"
 test ! -e "$scratch/vellum.sock.control"
 
-echo 'PASS: marked set -> exact N-document preview -> one owner-atomic edit -> traced receipt -> independent durable saves'
+echo 'PASS: bracketed multiline paste -> exact N-document preview -> one owner-atomic edit -> traced receipt -> independent durable saves'

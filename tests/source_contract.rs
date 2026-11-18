@@ -1011,7 +1011,8 @@ fn vellum_atomic_replace_gate_proves_one_real_n_document_publication_and_trace()
         "published atomically across 3 changed documents",
         "owner_atomic_receipt",
         "Vellum run settled: 3 durable",
-        "omega omega one",
+        "omega\nline omega\nline one",
+        "bracketed multiline paste",
         "one owner-atomic edit",
     ] {
         assert!(
@@ -1025,6 +1026,8 @@ fn vellum_atomic_replace_gate_proves_one_real_n_document_publication_and_trace()
         "vellum.atomic-replace-selected",
         "owner_atomic_receipt",
         "vellum.atomic-replace.commit",
+        "EnableBracketedPaste",
+        "DisableBracketedPaste",
     ] {
         assert!(
             terminal.contains(required),
@@ -1042,6 +1045,31 @@ fn vellum_atomic_replace_gate_proves_one_real_n_document_publication_and_trace()
         assert!(
             !gate.contains(forbidden),
             "Vellum atomic replace gate imports or performs {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn vellum_request_rotation_gate_crosses_the_old_replay_capacity_ceiling() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/vellum_request_rotation.sh"))
+        .expect("Vellum request rotation live gate");
+    for required in [
+        "x\" * 190",
+        "y\" * 190",
+        "vellum.client.renew-identity",
+        "durable source mismatch",
+        "two bounded client identities",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Vellum request rotation gate omits {required}"
+        );
+    }
+    for forbidden in ["git push", "cargo publish", "gh release", "curl "] {
+        assert!(
+            !gate.contains(forbidden),
+            "Vellum request rotation gate performs {forbidden}"
         );
     }
 }

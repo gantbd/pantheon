@@ -1,8 +1,8 @@
 use chronos_tui::{Hub, Lifecycle, WorkbenchIntent};
 use crossterm::event::{
-    self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent, KeyEventKind,
-    KeyModifiers, KeyboardEnhancementFlags, MouseButton, MouseEventKind,
-    PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
+    self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+    Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, KeyboardEnhancementFlags, MouseButton,
+    MouseEventKind, PopKeyboardEnhancementFlags, PushKeyboardEnhancementFlags,
 };
 use daimon_agent_command::{
     AdvanceRequest, CancelRequest, CloseRequest, PermissionRequest, PromptRequest, ReattachRequest,
@@ -65,14 +65,18 @@ impl InputCapture {
                 )
             )?;
         }
-        crossterm::execute!(std::io::stdout(), EnableMouseCapture)?;
+        crossterm::execute!(std::io::stdout(), EnableBracketedPaste, EnableMouseCapture)?;
         Ok(Self { enhanced_keyboard })
     }
 }
 
 impl Drop for InputCapture {
     fn drop(&mut self) {
-        let _ = crossterm::execute!(std::io::stdout(), DisableMouseCapture);
+        let _ = crossterm::execute!(
+            std::io::stdout(),
+            DisableMouseCapture,
+            DisableBracketedPaste
+        );
         if self.enhanced_keyboard {
             let _ = crossterm::execute!(std::io::stdout(), PopKeyboardEnhancementFlags);
         }
@@ -5853,10 +5857,42 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     &mut activity,
                 );
             }
-            if last_vellum_poll.elapsed() >= Duration::from_millis(250) {
+            if last_vellum_poll.elapsed() >= Duration::from_secs(1) {
                 if let Some(vellum) = &mut vellum {
                     let started = Instant::now();
-                    let result = vellum.poll();
+                    let renew_identity = vellum.issued_requests() >= 192;
+                    let result: Result<(), String> = if renew_identity {
+                        vellum
+                            .renew_identity()
+                            .map_err(|error| {
+                                format!("Vellum client identity renewal refused: {error:?}")
+                            })
+                            .and_then(|()| vellum.poll().map_err(|error| error.to_string()))
+                    } else {
+                        vellum.poll().map_err(|error| error.to_string())
+                    };
+                    if renew_identity {
+                        let level = if result.is_ok() {
+                            ActivityLevel::Success
+                        } else {
+                            ActivityLevel::Warning
+                        };
+                        instrumentation.record(
+                            "vellum.client.renew-identity",
+                            "vellum",
+                            level,
+                            started.elapsed(),
+                        );
+                        activity.push(
+                            level,
+                            "vellum",
+                            if result.is_ok() {
+                                "Vellum replay identity renewed before request capacity exhaustion"
+                            } else {
+                                "Vellum replay identity renewal failed; editing is fenced until recovery"
+                            },
+                        );
+                    }
                     health.settle(
                         "vellum",
                         "workspace",
@@ -6960,6 +6996,17 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     }
                 }
                 Event::Paste(text)
+                    if vellum_surface_active(shell.active(), focus)
+                        && vellum_atomic_replace.is_some() =>
+                {
+                    let control = vellum_atomic_replace.as_mut().expect("matched above");
+                    notice = if control.insert_text(&text, true) {
+                        "Pasted bounded literal text into Vellum atomic replace".into()
+                    } else {
+                        control.notice().into()
+                    };
+                }
+                Event::Paste(text)
                     if shell.active() == Surface::Daimon && daimon_prompt_composer.is_some() =>
                 {
                     if let Some(composer) = &mut daimon_prompt_composer {
@@ -6999,6 +7046,19 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     if let Some(vellum) = &mut vellum {
                         let started = Instant::now();
                         let result = vellum.apply(ServiceAction::Insert(text));
+                        if vellum.take_identity_renewal() {
+                            instrumentation.record(
+                                "vellum.client.renew-identity",
+                                "vellum",
+                                ActivityLevel::Success,
+                                started.elapsed(),
+                            );
+                            activity.push(
+                                ActivityLevel::Success,
+                                "vellum",
+                                "Vellum replay identity renewed before request capacity exhaustion",
+                            );
+                        }
                         let level = if result.is_ok() {
                             ActivityLevel::Success
                         } else {
@@ -7994,10 +8054,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         )
                     {
                         Some(AtomicReplaceInput::Close)
-                    } else if key.kind == KeyEventKind::Press
-                        && key.modifiers == KeyModifiers::NONE
-                        && let KeyCode::Char(character) = key.code
-                    {
+                    } else if let Some(character) = bounded_text_character(key) {
                         Some(AtomicReplaceInput::Character(character))
                     } else {
                         None
@@ -8310,7 +8367,21 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         ServiceInput::Apply(action) => {
                             let action_id = vellum_action_id(&action);
                             let started = Instant::now();
-                            let result = vellum.as_mut().expect("checked above").apply(action);
+                            let editor = vellum.as_mut().expect("checked above");
+                            let result = editor.apply(action);
+                            if editor.take_identity_renewal() {
+                                instrumentation.record(
+                                    "vellum.client.renew-identity",
+                                    "vellum",
+                                    ActivityLevel::Success,
+                                    started.elapsed(),
+                                );
+                                activity.push(
+                                    ActivityLevel::Success,
+                                    "vellum",
+                                    "Vellum replay identity renewed before request capacity exhaustion",
+                                );
+                            }
                             let level = if result.is_ok() {
                                 ActivityLevel::Success
                             } else {

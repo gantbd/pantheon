@@ -42,6 +42,11 @@ Qualification evidence:
 - The exercised cohort was explicitly two **agent-modeled stakeholder
   perspectives** and two **technical SMEs**. It was not four actual
   stakeholders, and the run must not be described that way.
+- The follow-on owner slice now computes content-free cohort correlation before
+  dispatch, retains it with the governed harness result and projects it from
+  `moira-methodical-local`. Shared principal/profile identity is explicitly
+  `correlated`; distinct identities remain `not_established` and never become a
+  claim of cognitive independence. Public tests cover both dispositions.
 
 ## Categorical assessment
 
@@ -52,7 +57,7 @@ Qualification evidence:
 | Equity and coverage | **Partial / no-go** | Exact digests retain population, map, coverage and equity artifacts. There is no owner-native schema/projection for required, present, missing, excluded, unavailable, conflicted and overrepresented constituencies, accessible participation or burden/benefit distribution. A digest alone is not an equitable process. |
 | Actual stakeholder participation | **Fail for this run** | The human requester materially corrected the design, but no typed Agora/Moira member report retained that human contribution. The two stakeholder members were agent-modeled and correctly labeled; neither claimed lived experience, consent or mandate. |
 | Technical grounding | **Pass for the bounded slice** | Dendrite resolved exact Rune method state, fold/surface identities, concern roots and orthogonality evidence for all four members. Stakeholder constituency and equity are not yet inputs to Dendrite routing, so technical orthogonality must not be mistaken for representative coverage. |
-| Independence and correlation | **Fail for mature use** | All four executions used the same Qwen model, provider, principal, harness and exact-output pattern. Different lenses/standing labels do not provide cognitive or organizational independence. The common-cause correlation is visible but not yet scored or challenged. |
+| Independence and correlation | **Partial / no-go** | The original four executions used the same Qwen model, provider, principal and harness; different lenses/standing labels still provide no cognitive or organizational independence. Moira now retains and projects shared principal/profile/context-manifest facts and conservatively labels shared execution identity `correlated`, while distinct identities remain `not_established`. Provider/model identity, organizational control, training lineage and substantive cross-challenge are not yet included, and the original live cohort has not yet been rerun through this projection. |
 | Context quality | **Partial / harness leak** | The live qualifier injected stakeholder standing through a hard-coded context-to-instruction mapping. The normal Moira→Daimon participation/prompt contract still binds persona and grounding but not stakeholder representation, constituency, mandate or conflicts. |
 | Challenge quality | **Weak / unassessed model capability** | The provider was instructed to return exact schema content. This proves composition and attribution, not steelmanning, bidirectional challenge, disconfirming evidence, or model judgment. Model quality cannot be inferred from this run. |
 | Actionability and dissent | **Structural pass; semantic partial** | Reports, evidence and dissent identities survive durable owner paths. The forced outputs did not produce meaningful findings, dispositions, rebuttals or a contested synthesis. |
@@ -60,7 +65,7 @@ Qualification evidence:
 | Human gates and authority | **Fail / not exercised** | Aegis authorized the selected bounded effect, but no `HumanGateRequestV1`, presentation receipt or named-human response was exercised. Ensemble agreement still cannot authorize rollout, and this assessment is a human-facing no-go rather than an automated decision. |
 | Vellum context/workspace | **Partial** | The selected result can cross the Vellum owner and recover exactly. Vellum is not yet used as the cohort’s shared, revision-pinned context workspace or as the retained home for the stakeholder map/equity evidence. |
 | Operational usability | **Partial** | The executable path is real and fast, but it remains a qualification command with hard-coded identities. Provider/model, cohort, standing, evidence, room and gate configuration are not yet manageable through Pantheon’s operator UI. |
-| Observability | **Partial / Moira gap** | Pass/fail, call count, owner receipts and durable state are observable. Per-member latency/token/cost, cohort changes, admission rationale, cross-component correlation and traces are not projected as the events/logs/metrics/traces needed for operational diagnosis. |
+| Observability | **Partial / Moira gap narrowed** | Pass/fail, call count, owner receipts, durable state and content-free execution-cohort correlation are observable. Per-member latency/token/cost, provider/model lineage, cohort changes, admission rationale, cross-component correlation and traces are still not projected as the events/logs/metrics/traces needed for operational diagnosis. |
 | Outcome usefulness | **High for architecture discovery; low for decision quality** | Dogfooding exposed stakeholder-standing, equity, prompt-boundary, Agora-breadth and protocol-version defects. It did not produce decision-grade stakeholder review content. |
 
 ## Failure and surprise classification
@@ -70,7 +75,7 @@ Qualification evidence:
 | Stakeholder standing did not reach the normal model prompt/participation binding | Harness/boundary | Context |
 | Cohort fitness `yes` is caller-asserted with opaque evidence digests | Owner/authority contract | Harness |
 | Equity and missing/excluded/overrepresented coverage have no typed owner artifact | Owner/domain contract | Presentation |
-| Same provider/model/principal/harness served all four members | Cohort design | Model correlation |
+| Same provider/model/principal/harness served all four members; the original run predated the new correlation projection | Cohort design | Model correlation |
 | Exact-output instruction prevents assessing reviewer reasoning quality | Harness/evaluation | Model assessment |
 | Only the selected member publishes to Agora | Composition/harness | User experience |
 | Human corrections are not retained as an attributed ensemble contribution | Composition/context | User experience |
@@ -97,15 +102,18 @@ Qualification evidence:
 6. Exercise at least one actual human stakeholder contribution and one modeled
    stakeholder perspective without conflating them, then exercise a supported
    human-advocate gate and named-human response.
-7. Add per-member and cross-owner Moira observations for latency, usage,
-   refusals, cohort changes, correlation, gate state and outcome follow-up.
+7. Extend the now-present execution-cohort correlation with provider/model and
+   organizational lineage, then add per-member and cross-owner Moira
+   observations for latency, usage, refusals, cohort changes, gate state and
+   outcome follow-up.
 8. Repeat this categorical assessment with substantive, non-forced reviewer
    outputs and owner dispositions. Model reasoning quality remains unassessed
    until that run.
 
 ## Pause state
 
-Work intentionally pauses at this assessment. The changes are uncommitted so a
-human can review the contract and the no-go findings before any protocol or
-rollout decision. No later implementation, commit or push is implied by this
-report.
+The requested review pause ended when the human explicitly said to proceed.
+The no-go remains authoritative for mature stakeholder-ensemble rollout, while
+bounded implementation and qualification may continue. Any final rollout or
+other reasonably contestable material decision still requires the named-human
+gate described in the governing journey plan.
