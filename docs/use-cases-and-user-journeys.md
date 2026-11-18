@@ -1768,6 +1768,16 @@ cross-owner model-mismatch case. The current server is a bounded
 OpenAI-compatible fixture. Qwen remains served by LM Studio and is not yet a
 Hestia-owned model runtime; the UI and reports must preserve that distinction.
 
+An opt-in live qualification now also proves a real, pinned single-file model:
+Hestia downloads and admits Qwen2.5-Coder-1.5B-Instruct Q4_K_M from its exact
+official revision, revalidates its 1,117,320,768 bytes and SHA-256, starts an
+owned `llama-server`, exercises one OpenAI-compatible completion, then drains
+and shuts down. Hestia TCP-accept readiness and provider readiness remain
+separate observations—the real server returned HTTP 503 while loading after it
+had begun accepting connections. The lifecycle clients now wait within the
+owner's bounded long-start budget without extending ordinary observation
+deadlines. Qwen3-Coder-Next remains served by LM Studio.
+
 Live registry search, signature/compatibility/resource-impact evidence,
 restart reconciliation of partial transfers, cancellation, multi-file
 manifests, update/retirement, production-engine/model qualification, observable

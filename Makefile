@@ -1,4 +1,4 @@
-.PHONY: check hygiene fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-moira-deliberation qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact
+.PHONY: check hygiene fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-moira-deliberation qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -36,6 +36,9 @@ qualify-agora-shared-context:
 
 qualify-hestia-artifact:
 	./tests/live/hestia_artifact_acquisition.sh
+
+qualify-hestia-real-model:
+	PANTHEON_LIVE_MODEL=1 ./tests/live/hestia_real_model.sh
 
 check: hygiene fmt lint test doc
 

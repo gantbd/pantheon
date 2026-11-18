@@ -127,6 +127,28 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   contract, not a production Qwen deployment. Real GGUF/engine qualification,
   multi-file MLX/Safetensors manifests, observable large-file verification and
   resource/isolation enforcement remain open.
+- The opt-in real-model gate now pins Qwen2.5-Coder-1.5B-Instruct Q4_K_M at
+  Hugging Face revision `2ab9f8f42af02fc212effaef7c4850c885e965f4`, exact
+  size `1,117,320,768` and SHA-256
+  `cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046`.
+  Hestia acquired and admitted those bytes, reverified them at start, injected
+  the private path into its configured `llama-server`, served a real completion,
+  and drained and shut down cleanly. This exposed and fixed a presentation/client
+  boundary leak: the owner allowed a 300-second startup, while `hestiactl` and
+  `hestia-tui` abandoned lifecycle replies after five seconds. Lifecycle workers
+  now retain a bounded 420-second settlement window while observations retain
+  their short deadline. It also empirically proved that Hestia TCP acceptance
+  can precede provider readiness (`/v1/models` returned 503 while loading), so
+  the gate checks those facts separately. Daimon composition for this real
+  engine, persisted admission/restart, and hashing/loading progress remain open.
+  Qwen3-Coder-Next continues to be served by LM Studio.
+- Live Pantheon/Chronos dogfood admitted the two independently executable
+  follow-ups at owner revision 37: priority-8
+  `hestia-real-model-daimon-composition` and priority-6
+  `hestia-model-start-progress-observability`. The batch form preserved the
+  exact reviewed graph across invalid field input and submitted both changes in
+  one owner revision. Existing `hestia-sovereign-local-inference-host` work was
+  reused rather than duplicated.
 - Two bounded Qwen3 Coder Next reviews completed through Pantheon's
   Daimon/Chronos gate but were not accepted as approval evidence. The capacity
   proposal contradicted its own byte arithmetic and invented a Vellum protocol;

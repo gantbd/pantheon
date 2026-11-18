@@ -1914,6 +1914,31 @@ fn hestia_artifact_gate_proves_human_review_owner_admission_and_repository_hygie
 }
 
 #[test]
+fn hestia_real_model_gate_separates_host_readiness_from_provider_readiness() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/hestia_real_model.sh"))
+        .expect("Hestia real-model gate");
+    for required in [
+        "PANTHEON_LIVE_MODEL",
+        "Qwen2.5-Coder-1.5B-Instruct",
+        "2ab9f8f42af02fc212effaef7c4850c885e965f4",
+        "cc324af070c2ecbfd324a30884d2f951a7ff756aba85cb811a6ec436933bb046",
+        "1117320768",
+        "llama-server",
+        "/v1/models",
+        "/v1/chat/completions",
+        "Artifact admitted",
+        "drain",
+        "shut down a real Qwen GGUF",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Hestia real-model gate omits {required}"
+        );
+    }
+}
+
+#[test]
 fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =
