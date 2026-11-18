@@ -161,6 +161,53 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   orchestration or lifecycle failure. This supports using the small model for
   bounded mechanical verification while retaining stronger models and an
   accountable integrator for architecture decisions.
+- The opt-in Hestia specialist-model smoke bench now pins, acquires, verifies,
+  serves and drains three complementary Apache-2.0 GGUFs in addition to the
+  Qwen coding baseline: SmolLM3 3B Q4_K_M at revision
+  `4965cb60b150737b68a0408c36aeefb65078f894` (1,915,305,312 bytes, SHA-256
+  `8334b850b7bd46238c16b0c550df2138f0889bf433809008cc17a8b05761863e`),
+  OLMo 2 1B Instruct Q4_K_M at revision
+  `62f8c199538474c3e33ed5d7e0580abd66686a27` (935,515,296 bytes, SHA-256
+  `abd8187934a438fbf7cfff0a1de5b9d2793ce913f158794df1951dcba6c93cc6`),
+  and Granite 4 H-Tiny Q4_K_M at revision
+  `08d5a8a9741dd5c1a95d2d39e25253226aa1464e` (4,230,976,352 bytes, SHA-256
+  `5a38b08c441ae1adbafb1d2b8a7167e0d48734d83af68b268cefea1eec553dcd`).
+  OLMo correctly classified exit-zero without an expected-output assertion as
+  uncertain and is the strongest immediate candidate for bounded asynchronous
+  test triage. SmolLM produced a structured checklist but overclaimed generic
+  completion requirements; Granite presented value and risk but placed human
+  review after automatic closure. The latter two are useful contributors, not
+  decision owners. Model role assignment therefore remains evidence-based and
+  configurable; the smoke gate proves serving, not fitness or approval.
+- The same bench exposed two Hestia product gaps under real restart conditions:
+  a killed owner can leave a stale Unix socket, and an admitted artifact cannot
+  yet be reconstructed from its verified on-disk digest after daemon restart.
+  The safe qualification workaround uses the retained file only as a new
+  acquisition source so Hestia recounts and rehashes every byte into a fresh
+  store; normal users must not have to recopy multi-gigabyte models. Durable
+  catalog restoration, stale-owner recovery and observable cold-start phases
+  remain P0 usability work.
+- LM Studio remains deliberately installed as the third-party provider testing
+  ground so attach/federate behavior cannot collapse into Hestia-specific
+  assumptions. Ollama currently retains Gemma3 27B and two Qwen3 variants
+  (about 52 GB total) and may be retired only after Hestia plus Daimon/Pantheon
+  prove equivalent required coding/specialist invocation, readiness and
+  operator-observation behavior. Removal is an explicit post-parity action, not
+  an inferred consequence of one successful local completion.
+- Live Pantheon/Chronos dogfood admitted priority-8
+  `hestia-artifact-catalog-restart-recovery` and priority-4
+  `ollama-retirement-after-hestia-provider-parity` at revision 39, followed by
+  priority-7 `oculus-local-model-lifecycle-telemetry`, priority-6
+  `local-model-specialist-ensemble-evaluation`, and priority-4
+  `acp-harness-provider-privacy-qualification` at revision 40. The ensemble
+  item means evaluation through Moira's deliberation/saga ownership: Dendrite
+  supplies grounded concern routing, Daimon invokes exact participants, Hestia
+  or LM Studio serves models, Agora carries attributed conversation, Oculus
+  observes, and Chronos tracks the work. None of those peers independently
+  acquires Moira's cohort, synthesis, dissent, uncertainty or disposition
+  authority. Claude, Codex, Gemini, Muse and future ACP harnesses require
+  explicit credential, context-disclosure, retention and egress qualification;
+  provider availability is not permission to disclose workspace context.
 - Two bounded Qwen3 Coder Next reviews completed through Pantheon's
   Daimon/Chronos gate but were not accepted as approval evidence. The capacity
   proposal contradicted its own byte arithmetic and invented a Vellum protocol;
