@@ -41,9 +41,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   and `daimon-contribution-delivery-contract` at owner revision 15.
 - Chronos public coordination can submit and cancel work, while claim and
   completion remain a trusted in-process worker profile with native grants and
-  leases. Delivered external work therefore cannot be honestly adopted after
-  the fact. The next owner slice must preserve grant, lease, revision and
-  evidence semantics without turning worker authority into a bearer protocol.
+  leases. J1 must therefore enter prospectively through Moira's trusted
+  receiver: admit the work, claim and renew it with private Chronos authority,
+  invoke Daimon, retain the exact result in the owning Moira workflow, then
+  settle or fence Chronos from that retained evidence. The receiver now exposes
+  this in-process admitted-result bridge and the durable four-store path proves
+  it without adding a wire or bearer completion API. Normal-user owner-worker
+  packaging and Chronos status/comment projection remain open; historical
+  out-of-band work remains honestly Ready rather than adopted after the fact.
 - Daimon task invocation retains task, execution, provider, context, usage,
   disposition and output-digest evidence and returns bounded safe text to the
   authenticated caller. Pantheon already presents a 4,096-character MODEL
@@ -748,11 +753,14 @@ capability planes), configuration-based control whitelisting, a synthetic
 `--attest` authority flag, and a generic SQLite receipt queue. The run therefore
 proved useful reviewed contribution, not autonomous approval or delivery.
 
-It also exposed a material dogfood gap: Pantheon can configure/drive interactive
-ACP sessions, while its governed terminal-model path is not yet operationally
-reachable from a task. The developer had to enter through Daimon's qualification
-seam, and the model received a curated prompt rather than bounded repository
-exploration, iterative challenge, or a typed proposal schema.
+Pantheon's governed terminal-model path is now operationally reachable from an
+exact Chronos task: the live Qwen qualification used Pantheon's reviewed Daimon
+invocation, retained attributed usage and digest evidence, and presented bounded
+safe output. Invocation is no longer the material gap. Bounded workspace
+discovery and context, independent ensemble challenge, a typed proposal schema,
+durable Agora delivery, and Moira-mediated Chronos status/comment settlement
+remain open. The model still received a curated prompt rather than repository
+exploration or iterative challenge, which contributed to the rejected overreach.
 
 Vellum is now part of the dogfood context path rather than a ceremonial output
 target. The same assessment document was opened and edited through the live
