@@ -2223,16 +2223,18 @@ revisions or digests; the public protocol, bounded wire, durable v5 checkpoint,
 service mapping and `moira-vellum` reader preserve the same facts without
 importing Vellum document semantics into Moira. Legacy v3 checkpoints without
 gate state migrate; v4 bytes are refused rather than reinterpreted. Pantheon
-therefore presents a pending agenda item as `inspect_only`, not blocked for
-missing references and not actionable as an approval. Before response control
-is enabled, a selected artifact adapter must resolve and verify the complete
-decision packet and retain the attributable rationale; Vellum may present and
-edit that material, while the selected durable artifact owner retains its
-revision/evidence contract. The first reader boundary remains qualified in
-`moira-vellum`: an opaque route selects one exact Vellum document and refuses
-unless its public snapshot matches the expected revision, SHA-256 and size
-bound. The remaining gap is Pantheon composition of that selected reader and a
-separately qualified Aegis-authorized response control.
+therefore presents a pending agenda item as `inspect_only`, not actionable as
+an approval. A trusted workspace-profile route now selects the artifact
+adapter: one opaque Moira owner/artifact identity maps to one exact Vellum
+workspace/document, and both headless and interactive Pantheon continuously
+resolve the complete packet through `moira-vellum`. The Moira pane presents
+verified human-readable text only when the public snapshot matches the
+expected revision, SHA-256 and size bound; otherwise it presents an actionable
+refusal and offers no disposition. Vellum may present and edit the material
+while the selected durable artifact owner retains its revision/evidence
+contract. The remaining gap is the separately qualified, command-scoped
+Aegis-authorized response control and attributable rationale capture; packet
+verification alone never becomes approval authority.
 
 ### J5. Produce and review a grounded code/document change
 

@@ -1,5 +1,6 @@
 //! Headless peer observation shared by the standalone CLI and deployments.
 
+use std::collections::BTreeMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
@@ -14,6 +15,7 @@ use moira_protocol::{
     SagaOutcomeV1, SagaReplyV1, agent_participation as participation,
     deliberation as deliberation_protocol,
 };
+use moira_vellum::{DecisionPacketAdapter, DocumentRouteV1, ExternalDocumentRefV1};
 use sha2::{Digest, Sha256};
 use vellum_sdk_client::{
     transport::{
@@ -28,7 +30,7 @@ use crate::hestia::observe_provider_runtime;
 use crate::management::PeerRuntime;
 use crate::profile::{
     AgoraProfile, AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
-    DaimonHostProfile, HestiaProfile, TaskConversationProfile,
+    DaimonHostProfile, HestiaProfile, MoiraDecisionPacketReaderProfile, TaskConversationProfile,
 };
 use crate::provider::provider_catalog;
 use pantheon::{AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
@@ -44,6 +46,7 @@ pub struct HeadlessRequest {
     pub moira_participation: Option<participation::ParticipationIdV1>,
     pub moira_deliberation_socket: Option<PathBuf>,
     pub moira_deliberation: Option<deliberation_protocol::DeliberationIdV1>,
+    pub moira_decision_packet_reader: Option<MoiraDecisionPacketReaderProfile>,
     pub moira_hosted: bool,
     pub daimon_socket: Option<PathBuf>,
     pub daimon_model_socket: Option<PathBuf>,
@@ -167,7 +170,23 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         request.moira_deliberation_socket,
         request.moira_deliberation,
     ) {
-        let (observation, current) = observe_moira_deliberation(socket, deliberation);
+        let (mut observation, mut current, packet_reference) =
+            observe_moira_deliberation(socket, deliberation);
+        if let (Some(reader), Some(reference), Some(vellum_socket)) = (
+            request.moira_decision_packet_reader.as_ref(),
+            packet_reference,
+            request.vellum_socket.as_ref(),
+        ) && let Some(object) = observation.as_object_mut()
+        {
+            let (packet, packet_current) = observe_decision_packet(
+                vellum_socket,
+                request.vellum_credential.as_deref(),
+                reader,
+                reference,
+            );
+            current &= packet_current;
+            object.insert("decision_packet_reader".into(), packet);
+        }
         record_observation(
             &mut peers,
             &mut management,
@@ -523,6 +542,26 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                 .get("registry_revision")
                 .map(serde_json::Value::to_string)
                 .unwrap_or_else(|| "unknown".into());
+            let packet_is_current = peer
+                .get("decision_packet_reader")
+                .and_then(|reader| reader.get("status"))
+                .and_then(serde_json::Value::as_str)
+                == Some("current");
+            let blocker = if packet_is_current {
+                "Pantheon verified the exact decision packet, but no Aegis-authorized response control is composed"
+            } else {
+                "Moira publishes an exact decision-packet reference, but Pantheon has no current selected packet reader or Aegis-authorized response control"
+            };
+            let requested_action = if packet_is_current {
+                "inspect the verified decision packet; response remains unavailable until the command-scoped Aegis control is composed"
+            } else {
+                "inspect the exact packet reference; configure and qualify its selected reader before any human disposition is offered"
+            };
+            let next_owner_action = if packet_is_current {
+                "compose and qualify the command-scoped response control without weakening the human gate"
+            } else {
+                "select and qualify the decision-packet reader, then compose the command-scoped response control"
+            };
             agenda.push(AgendaEntry {
                 source_peer: "moira-deliberation".into(),
                 source_instance: None,
@@ -531,13 +570,13 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                 kind: AgendaKind::HumanGate,
                 urgency: AgendaUrgency::Blocking,
                 actionability: AgendaActionability::InspectOnly,
-                blocker: Some("Moira publishes an exact decision-packet reference, but Pantheon has no selected packet reader or Aegis-authorized response control".into()),
+                blocker: Some(blocker.into()),
                 title: "Named-human deliberation gate".into(),
                 why_operator: format!("Moira retained an unresolved gate for reviewer {reviewer}"),
                 authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
-                requested_action: "inspect the exact packet reference; configure and qualify its selected reader before any human disposition is offered".into(),
+                requested_action: requested_action.into(),
                 consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
-                next_owner_action: "select and qualify the decision-packet reader, then compose the command-scoped response control".into(),
+                next_owner_action: next_owner_action.into(),
                 route: "navigate.moira.deliberation".into(),
             });
         } else if name == "moira-deliberation" && status != "current" {
@@ -1405,7 +1444,11 @@ fn observe_moira_participation(
 fn observe_moira_deliberation(
     socket: PathBuf,
     id: deliberation_protocol::DeliberationIdV1,
-) -> (serde_json::Value, bool) {
+) -> (
+    serde_json::Value,
+    bool,
+    Option<deliberation_protocol::HumanGateMaterialRefV1>,
+) {
     let capability = "deliberation.inspect.v1";
     let port = match moira_tui_local_client::LocalDeliberationPort::connect(
         socket,
@@ -1421,6 +1464,7 @@ fn observe_moira_deliberation(
                     format!("{error:?}"),
                 ),
                 false,
+                None,
             );
         }
     };
@@ -1429,8 +1473,13 @@ fn observe_moira_deliberation(
         moira_tui::DeliberationObservation::Current {
             registry_revision,
             view,
-        } => (
-            serde_json::json!({
+        } => {
+            let packet_reference = view
+                .human_gate_request
+                .filter(|_| view.human_gate_response.is_none())
+                .map(|request| request.decision_packet);
+            (
+                serde_json::json!({
                 "peer": "moira-deliberation",
                 "capability": capability,
                 "status": "current",
@@ -1438,9 +1487,11 @@ fn observe_moira_deliberation(
                 "registry_revision": registry_revision,
                 "deliberation": moira_tui::deliberation_view_json(*view),
                 "boundary": "read-only evidence and stakeholder standing; Pantheon infers no ensemble fitness, frontier, authority, or human disposition",
-            }),
-            true,
-        ),
+                }),
+                true,
+                packet_reference,
+            )
+        }
         moira_tui::DeliberationObservation::NotFound { registry_revision } => (
             serde_json::json!({
                 "peer": "moira-deliberation",
@@ -1449,6 +1500,7 @@ fn observe_moira_deliberation(
                 "registry_revision": registry_revision,
             }),
             false,
+            None,
         ),
         moira_tui::DeliberationObservation::Stale => (
             peer_failure(
@@ -1458,6 +1510,7 @@ fn observe_moira_deliberation(
                 "registry revision changed during observation",
             ),
             false,
+            None,
         ),
         moira_tui::DeliberationObservation::NeedsReopen => (
             peer_failure(
@@ -1467,10 +1520,12 @@ fn observe_moira_deliberation(
                 "owner store requires reopen",
             ),
             false,
+            None,
         ),
         moira_tui::DeliberationObservation::Refused(reason) => (
             peer_failure("moira-deliberation", capability, "refused", reason),
             false,
+            None,
         ),
         moira_tui::DeliberationObservation::InvalidReply => (
             peer_failure(
@@ -1480,6 +1535,7 @@ fn observe_moira_deliberation(
                 "unexpected owner reply",
             ),
             false,
+            None,
         ),
         moira_tui::DeliberationObservation::Transport => (
             peer_failure(
@@ -1489,8 +1545,96 @@ fn observe_moira_deliberation(
                 "owner transport unavailable",
             ),
             false,
+            None,
         ),
     }
+}
+
+fn observe_decision_packet(
+    socket: &std::path::Path,
+    credential: Option<&std::path::Path>,
+    profile: &MoiraDecisionPacketReaderProfile,
+    reference: deliberation_protocol::HumanGateMaterialRefV1,
+) -> (serde_json::Value, bool) {
+    let failure = |stage: &'static str, detail: String| {
+        (
+            serde_json::json!({
+                "status": "refused",
+                "stage": stage,
+                "detail": detail,
+                "next_action": "repair the selected packet route or Vellum evidence, then refresh before deciding",
+                "boundary": "packet-read failure grants no response authority and no disposition is inferred",
+            }),
+            false,
+        )
+    };
+    let owner_route = match decode_fixed_hex::<16>(&profile.owner_route) {
+        Some(value) => value,
+        None => return failure("profile", "invalid owner route".into()),
+    };
+    let artifact_route = match decode_fixed_hex::<16>(&profile.artifact_route) {
+        Some(value) => value,
+        None => return failure("profile", "invalid artifact route".into()),
+    };
+    let Some(workspace) = vellum_protocol::WorkspaceIdV1::new(profile.vellum_workspace) else {
+        return failure("profile", "invalid Vellum workspace identity".into());
+    };
+    let Some(document) =
+        vellum_protocol::WorkspaceDocumentIdV1::new(workspace, profile.vellum_document)
+    else {
+        return failure("profile", "invalid Vellum document identity".into());
+    };
+    let credential = credential.map(PathBuf::from);
+    let connector = match vellum_connector(socket.to_path_buf(), credential.as_ref()) {
+        Ok(value) => value,
+        Err(error) => return failure("connect", error),
+    };
+    let port = match RemoteTransport::new(connector, TransportLimits::reference()) {
+        Ok(value) => value,
+        Err(error) => return failure("transport", format!("{error:?}")),
+    };
+    let target = ExternalDocumentRefV1 {
+        workspace: owner_route,
+        document: artifact_route,
+    };
+    let mut routes = BTreeMap::new();
+    routes.insert(
+        target,
+        DocumentRouteV1 {
+            workspace,
+            document,
+        },
+    );
+    let mut reader = match DecisionPacketAdapter::connect(port, routes, profile.max_packet_bytes) {
+        Ok(value) => value,
+        Err(error) => return failure("handshake", format!("{error:?}")),
+    };
+    match reader.read(reference) {
+        Ok(packet) => (
+            serde_json::json!({
+                "status": "current",
+                "owner_route": hex_bytes(&packet.reference.owner_route),
+                "artifact_route": hex_bytes(&packet.reference.artifact_route),
+                "revision": packet.reference.expected_revision,
+                "sha256": hex_bytes(&packet.reference.expected_sha256),
+                "text": packet.text,
+                "boundary": "exact Vellum bytes verified against Moira's revision and digest; response authority remains unavailable",
+            }),
+            true,
+        ),
+        Err(error) => failure("read", format!("{error:?}")),
+    }
+}
+
+fn decode_fixed_hex<const N: usize>(value: &str) -> Option<[u8; N]> {
+    if value.len() != N * 2 || !value.is_ascii() {
+        return None;
+    }
+    let mut decoded = [0; N];
+    for (index, byte) in decoded.iter_mut().enumerate() {
+        *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16).ok()?;
+    }
+    Some(decoded)
 }
 
 fn participation_operation_kind(operation: participation::OperationV1) -> &'static str {
@@ -1773,6 +1917,7 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
                     .expect("successful snapshot refresh publishes snapshot");
                 let digest: [u8; 32] = Sha256::digest(snapshot.text.as_bytes()).into();
                 contexts.push(serde_json::json!({
+                    "workspace": document.workspace().get(),
                     "document": document.get(),
                     "revision": snapshot.revision,
                     "witness": snapshot.witness.get(),
@@ -1938,6 +2083,7 @@ mod tests {
             moira_participation: None,
             moira_deliberation_socket: None,
             moira_deliberation: None,
+            moira_decision_packet_reader: None,
             moira_hosted: false,
             daimon_socket: None,
             daimon_model_socket: None,
@@ -2070,7 +2216,7 @@ mod tests {
                 }
             }
         });
-        let agenda = project_operator_agenda(&[pending, settled]);
+        let agenda = project_operator_agenda(&[pending.clone(), settled]);
         assert_eq!(agenda.entries.len(), 1);
         let entry = &agenda.entries[0];
         assert_eq!(entry.kind, AgendaKind::HumanGate);
@@ -2083,9 +2229,32 @@ mod tests {
             entry
                 .blocker
                 .as_deref()
-                .is_some_and(|value| value.contains("no selected packet reader"))
+                .is_some_and(|value| value.contains("no current selected packet reader"))
         );
         assert!(entry.authority.contains("grants none"));
         assert_eq!(entry.route, "navigate.moira.deliberation");
+
+        let mut verified = pending;
+        verified["decision_packet_reader"] = serde_json::json!({
+            "status": "current",
+            "text": "Approve the bounded rollout?"
+        });
+        let verified_agenda = project_operator_agenda(&[verified]);
+        let verified_entry = &verified_agenda.entries[0];
+        assert_eq!(
+            verified_entry.actionability,
+            AgendaActionability::InspectOnly
+        );
+        assert!(
+            verified_entry
+                .blocker
+                .as_deref()
+                .is_some_and(|value| value.contains("verified the exact decision packet"))
+        );
+        assert!(
+            verified_entry
+                .requested_action
+                .contains("response remains unavailable")
+        );
     }
 }

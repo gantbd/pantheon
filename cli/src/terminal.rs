@@ -15,14 +15,20 @@ use daimon_protocol::{
     agent::{AgentEventV1, AgentOutcomeV1, AgentSessionBudgetV1, AgentSessionPhaseV1},
 };
 use hestia_protocol::{OperationIdV1 as HestiaOperationIdV1, RuntimeIdV1 as HestiaRuntimeIdV1};
-use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
+use moira_protocol::{
+    OperatorDispositionV1, ReconciliationProposalV1,
+    deliberation::{HumanGateMaterialRefV1, HumanGateRequestV1},
+};
+use moira_vellum::{
+    DecisionPacketAdapter, DecisionPacketErrorV1, DocumentRouteV1, ExternalDocumentRefV1,
+};
 use serde::Deserialize;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::sync::mpsc::{Receiver, TryRecvError, sync_channel};
+use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, TrySendError, sync_channel};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vellum_sdk_client::{
     protocol::{DurableOperationRefV1, ServicePort},
@@ -62,10 +68,10 @@ use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, Topo
 use pantheon::{
     ActivityLevel, ActivityLog, AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency,
     CommandKind, CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus,
-    Instrumentation, KeybindingGuide, OperationsReceiptView, OperationsView, OperatorAgendaView,
-    PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput,
-    SuiteHealthView, Surface, decide_exit, draw_activity, draw_command_palette, draw_help,
-    draw_inspector, draw_shell_with_moira, shell_input, surface_tab_at,
+    HumanGatePacketView, Instrumentation, KeybindingGuide, OperationsReceiptView, OperationsView,
+    OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews, RoutedInput,
+    Shell, ShellInput, SuiteHealthView, Surface, decide_exit, draw_activity, draw_command_palette,
+    draw_help, draw_inspector, draw_shell_with_moira, shell_input, surface_tab_at,
 };
 
 struct InputCapture {
@@ -1043,6 +1049,7 @@ fn operator_agenda_view(
     chronos: Option<&Hub>,
     moira_participation: Option<&moira_tui::ParticipationComponent>,
     moira_deliberation: Option<&moira_tui::DeliberationComponent>,
+    moira_decision_packet: Option<&MoiraDecisionPacketComponent>,
 ) -> OperatorAgendaView {
     let mut agenda = OperatorAgendaView::default();
     if let Some(chronos) = chronos {
@@ -1104,6 +1111,13 @@ fn operator_agenda_view(
     if let Some(observation) =
         moira_deliberation.and_then(moira_tui::DeliberationComponent::operator_agenda_observation)
     {
+        let packet_is_current =
+            moira_decision_packet.is_some_and(|packet| packet.current_for(observation.request));
+        let blocker = if packet_is_current {
+            "Pantheon verified the exact decision packet, but no Aegis-authorized response control is composed"
+        } else {
+            "Moira publishes an exact decision-packet reference, but Pantheon has no current selected packet reader or Aegis-authorized response control"
+        };
         agenda.push(AgendaEntry {
             source_peer: "moira-deliberation".into(),
             source_instance: None,
@@ -1112,16 +1126,24 @@ fn operator_agenda_view(
             kind: AgendaKind::HumanGate,
             urgency: AgendaUrgency::Blocking,
             actionability: AgendaActionability::InspectOnly,
-            blocker: Some("Moira publishes an exact decision-packet reference, but Pantheon has no selected packet reader or Aegis-authorized response control".into()),
+            blocker: Some(blocker.into()),
             title: "Named-human deliberation gate".into(),
             why_operator: format!(
                 "Moira retained an unresolved gate for reviewer {}",
                 agenda_identity(observation.request.reviewer)
             ),
             authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
-            requested_action: "inspect the exact packet reference; configure and qualify its selected reader before any human disposition is offered".into(),
+            requested_action: if packet_is_current {
+                "inspect the verified decision packet; response remains unavailable until the command-scoped Aegis control is composed"
+            } else {
+                "inspect the exact packet reference; configure and qualify its selected reader before any human disposition is offered"
+            }.into(),
             consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
-            next_owner_action: "select and qualify the decision-packet reader, then compose the command-scoped response control".into(),
+            next_owner_action: if packet_is_current {
+                "compose and qualify the command-scoped response control without weakening the human gate"
+            } else {
+                "select and qualify the decision-packet reader, then compose the command-scoped response control"
+            }.into(),
             route: "navigate.moira.deliberation".into(),
         });
     }
@@ -1389,6 +1411,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             moira,
             moira_participation: None,
             moira_deliberation: None,
+            moira_decision_packet: None,
             moira_participation_control: None,
             moira_agent_worker: None,
             moira_control_socket: None,
@@ -1417,6 +1440,7 @@ pub struct OperationalPeers {
     pub moira: Option<moira_tui::Component>,
     pub moira_participation: Option<moira_tui::ParticipationComponent>,
     pub moira_deliberation: Option<moira_tui::DeliberationComponent>,
+    pub moira_decision_packet: Option<MoiraDecisionPacketComponent>,
     pub moira_participation_control: Option<(
         PathBuf,
         moira_protocol::agent_participation::ParticipationIdV1,
@@ -1438,6 +1462,193 @@ pub struct OperationalPeers {
     pub tellus: Option<tellus::Component>,
     pub vellum_control: Option<VellumControlConfig>,
     pub vellum_allow_add_file: bool,
+}
+
+enum DecisionPacketObservation {
+    Current {
+        reference: HumanGateMaterialRefV1,
+        text: String,
+    },
+    Refused {
+        reference: HumanGateMaterialRefV1,
+        detail: String,
+    },
+}
+
+pub struct MoiraDecisionPacketComponent {
+    requests: SyncSender<HumanGateMaterialRefV1>,
+    replies: Receiver<DecisionPacketObservation>,
+    pending: bool,
+    reference: Option<HumanGateMaterialRefV1>,
+    view: Option<HumanGatePacketView>,
+    last_offer: Option<Instant>,
+}
+
+impl MoiraDecisionPacketComponent {
+    pub fn new_with_factory<F, P>(
+        factory: F,
+        routes: BTreeMap<ExternalDocumentRefV1, DocumentRouteV1>,
+        max_packet_bytes: usize,
+    ) -> Self
+    where
+        F: FnMut() -> Result<P, String> + Send + 'static,
+        P: ServicePort + 'static,
+    {
+        let (request_tx, request_rx) = sync_channel(1);
+        let (reply_tx, reply_rx) = sync_channel(1);
+        std::thread::spawn(move || {
+            let mut factory = factory;
+            let mut adapter = None;
+            while let Ok(reference) = request_rx.recv() {
+                if adapter.is_none() {
+                    match factory().and_then(|port| {
+                        DecisionPacketAdapter::connect(port, routes.clone(), max_packet_bytes)
+                            .map_err(|error| {
+                                format!("Vellum decision-packet reader refused: {error:?}")
+                            })
+                    }) {
+                        Ok(connected) => adapter = Some(connected),
+                        Err(detail) => {
+                            if reply_tx
+                                .send(DecisionPacketObservation::Refused { reference, detail })
+                                .is_err()
+                            {
+                                break;
+                            }
+                            continue;
+                        }
+                    }
+                }
+                let observation = match adapter.as_mut() {
+                    Some(adapter) => match adapter.read(reference) {
+                        Ok(packet) => DecisionPacketObservation::Current {
+                            reference: packet.reference,
+                            text: packet.text,
+                        },
+                        Err(error) => DecisionPacketObservation::Refused {
+                            reference,
+                            detail: decision_packet_error(error),
+                        },
+                    },
+                    None => unreachable!("packet adapter was connected above"),
+                };
+                if matches!(observation, DecisionPacketObservation::Refused { .. }) {
+                    adapter = None;
+                }
+                if reply_tx.send(observation).is_err() {
+                    break;
+                }
+            }
+        });
+        Self {
+            requests: request_tx,
+            replies: reply_rx,
+            pending: false,
+            reference: None,
+            view: None,
+            last_offer: None,
+        }
+    }
+
+    fn sync(&mut self, request: Option<HumanGateRequestV1>) {
+        self.poll();
+        let Some(request) = request else {
+            self.pending = false;
+            self.reference = None;
+            self.view = None;
+            self.last_offer = None;
+            return;
+        };
+        let reference = request.decision_packet;
+        if self.reference.is_some_and(|current| current != reference) {
+            self.reference = None;
+            self.view = None;
+        }
+        let due = self.reference != Some(reference)
+            || self
+                .last_offer
+                .is_none_or(|instant| instant.elapsed() >= Duration::from_secs(1));
+        if !self.pending && due {
+            match self.requests.try_send(reference) {
+                Ok(()) => {
+                    self.pending = true;
+                    self.last_offer = Some(Instant::now());
+                }
+                Err(TrySendError::Full(_)) => self.pending = true,
+                Err(TrySendError::Disconnected(_)) => {
+                    self.admit_refusal(reference, "packet-reader worker unavailable".into());
+                }
+            }
+        }
+    }
+
+    fn poll(&mut self) {
+        loop {
+            match self.replies.try_recv() {
+                Ok(DecisionPacketObservation::Current { reference, text }) => {
+                    self.pending = false;
+                    self.reference = Some(reference);
+                    self.view = Some(packet_view(
+                        reference,
+                        true,
+                        text,
+                        "Exact Vellum revision and SHA-256 verified; response authority remains unavailable",
+                    ));
+                }
+                Ok(DecisionPacketObservation::Refused { reference, detail }) => {
+                    self.pending = false;
+                    self.admit_refusal(reference, detail);
+                }
+                Err(TryRecvError::Empty) => break,
+                Err(TryRecvError::Disconnected) => {
+                    self.pending = false;
+                    if let Some(reference) = self.reference {
+                        self.admit_refusal(reference, "packet-reader worker unavailable".into());
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    fn admit_refusal(&mut self, reference: HumanGateMaterialRefV1, detail: String) {
+        self.reference = Some(reference);
+        self.view = Some(packet_view(reference, false, String::new(), &detail));
+    }
+
+    fn view(&self) -> Option<&HumanGatePacketView> {
+        self.view.as_ref()
+    }
+
+    fn current_for(&self, request: HumanGateRequestV1) -> bool {
+        self.reference == Some(request.decision_packet)
+            && self.view.as_ref().is_some_and(|view| view.current)
+    }
+}
+
+fn packet_view(
+    reference: HumanGateMaterialRefV1,
+    current: bool,
+    text: String,
+    notice: &str,
+) -> HumanGatePacketView {
+    HumanGatePacketView {
+        current,
+        owner_route: agenda_identity(reference.owner_route),
+        artifact_route: agenda_identity(reference.artifact_route),
+        revision: reference.expected_revision,
+        sha256: reference
+            .expected_sha256
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
+        text,
+        notice: notice.into(),
+    }
+}
+
+fn decision_packet_error(error: DecisionPacketErrorV1) -> String {
+    format!("Exact decision packet refused: {error:?}; refresh or repair the selected route")
 }
 
 #[derive(Clone, Debug)]
@@ -7896,6 +8107,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         mut moira,
         mut moira_participation,
         mut moira_deliberation,
+        mut moira_decision_packet,
         moira_participation_control,
         moira_agent_worker: moira_agent_worker_config,
         moira_control_socket,
@@ -8922,6 +9134,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             if let Some(deliberation) = &mut moira_deliberation {
                 deliberation.poll();
             }
+            if let Some(packet) = &mut moira_decision_packet {
+                let request = moira_deliberation
+                    .as_ref()
+                    .and_then(moira_tui::DeliberationComponent::operator_agenda_observation)
+                    .map(|observation| observation.request);
+                packet.sync(request);
+            }
             if let Some(control) = &mut moira_open {
                 control.poll();
                 let current = control.notice();
@@ -9854,6 +10073,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 chronos.as_ref(),
                 moira_participation.as_ref(),
                 moira_deliberation.as_ref(),
+                moira_decision_packet.as_ref(),
             );
             let render_started = Instant::now();
             terminal.draw(|frame| {
@@ -9883,6 +10103,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         moira_deliberation: (moira_pane == MoiraPane::Deliberation)
                             .then_some(moira_deliberation.as_ref())
                             .flatten(),
+                        moira_decision_packet: (moira_pane == MoiraPane::Deliberation)
+                            .then_some(moira_decision_packet.as_ref())
+                            .flatten()
+                            .and_then(MoiraDecisionPacketComponent::view),
                         moira_open: moira_open.as_ref(),
                         moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),

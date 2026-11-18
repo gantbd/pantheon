@@ -1203,6 +1203,12 @@ mature stakeholder ensemble.
   hashing unretained text or asking a human to approve opaque digests is not
   acceptable evidence. Prefer a selected Vellum/Hestia owner adapter over
   importing document semantics into Moira.
+- [x] Compose the selected decision-packet reader through Pantheon in headless
+  and interactive modes. A trusted workspace-profile route maps one opaque
+  Moira owner/artifact identity to one exact Vellum workspace/document, the
+  reader continuously verifies revision, SHA-256 and size, and the Moira pane
+  presents the human-readable packet or an actionable refusal without gaining
+  edit or response authority.
 - [ ] Compose a separately selected, command-scoped human-response control with
   review/arm/confirm, four distinct dispositions, Aegis authorization, exact
   success/refusal evidence and lost-reply recovery. Do not expose the control
@@ -1229,10 +1235,17 @@ Vellum document semantics or granting decision authority. Deliberation
 checkpoint bytes advance explicitly to v5; legacy v3 without gate state
 migrates, while v4 is refused rather than reinterpreted. `moira-tui` exposes the
 references in headless JSON and the reusable pane. Pantheon's pending agenda
-entry consequently advances from `blocked` for missing references to
-`inspect_only`: a selected packet reader and Aegis-authorized response control
-are still absent. `tests/live/moira_deliberation.sh` proves the exact references,
-settled and pending presentation, headless/TUI parity and durable reopen.
+initially advanced from `blocked` for missing references to `inspect_only`. The
+selected reader is now composed through the workspace profile: headless
+observation and the interactive Moira pane reuse the same `moira-vellum`
+adapter semantics, expose verified human-readable text, and distinguish an
+unresolved or stale packet from current evidence. The item remains
+`inspect_only` because the separately authorized response control is still
+absent. `tests/live/moira_deliberation.sh` now has Pantheon host Vellum, author
+and save the packet through the TUI, discover its exact opaque
+workspace/document and evidence headlessly, admit that evidence through the
+real Moira fixture, then prove packet text and agenda parity in headless and
+tmux-driven interactive modes.
 - [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and

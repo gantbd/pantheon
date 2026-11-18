@@ -902,6 +902,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moira-vellum"
+version = "0.1.0"
+dependencies = [
+ "moira-protocol",
+ "sha2",
+ "vellum-client",
+ "vellum-protocol",
+]
+
+[[package]]
 name = "moira-wire"
 version = "0.1.0"
 dependencies = [
@@ -1050,6 +1060,7 @@ dependencies = [
  "moira-reconciliation-command",
  "moira-tui",
  "moira-tui-local-client",
+ "moira-vellum",
  "nix",
  "pantheon",
  "ratatui",
@@ -1062,6 +1073,7 @@ dependencies = [
  "vellum-adapter-local-fs",
  "vellum-daemon",
  "vellum-host",
+ "vellum-protocol",
  "vellum-sdk-client",
  "vellum-tui",
  "vellum-workspace",

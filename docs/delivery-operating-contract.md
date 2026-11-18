@@ -33,6 +33,27 @@ After every meaningful delivery turn:
 6. Announce completed work, remaining dependencies, surprises, friction, and
    the next meaningful action.
 
+## Verification economics and asynchronous assurance
+
+Testing depth follows change risk rather than habit. Iteration runs exact
+affected tests; contract or persistence changes add the owning codec, reopen,
+migration and immediate-consumer checks; strict lint covers touched workspaces
+before commit. A broad suite is reserved for genuinely cross-cutting
+integration or release checkpoints. Every delivery report names what ran, why
+it was sufficient, and what intentionally did not run.
+
+A built revision may hand off asynchronously to a persistent verifier so the
+builder can continue without weakening the quality gate. Chronos binds the
+verification lease and result to the exact commit plus dirty-state digest;
+Vellum supplies the bounded diff/context; Daimon enforces allow-listed
+commands, isolation and resource budgets; Oculus retains events, logs, metrics
+and traces; Agora carries attributable findings. The verifier classifies
+product, test, harness, environment and inconclusive outcomes, never retries
+silently into green, and cannot waive required evidence or human rollout
+approval. A local model may select from the governed test catalog, interpret
+failures and propose follow-up; the harness owns execution and evidence
+admission.
+
 ## Product and dogfood requirements
 
 - Use Vellum for working context and editable delivery artifacts, Chronos for

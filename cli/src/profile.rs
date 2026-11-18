@@ -123,12 +123,26 @@ pub struct MoiraProfile {
     /// endpoint. The saga host does not implicitly serve this protocol.
     pub deliberation_socket: Option<PathBuf>,
     pub deliberation: Option<String>,
+    /// Trusted composition from one opaque Moira material route to one exact
+    /// Vellum document. This grants read access only; it is not human-gate
+    /// response authority.
+    pub decision_packet_reader: Option<MoiraDecisionPacketReaderProfile>,
     /// Optional one-step owner worker. Pantheon treats the configuration as
     /// opaque and accepts only an exact participation-bound process receipt.
     pub agent_worker: Option<MoiraAgentWorkerProfile>,
     pub host: Option<MoiraHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct MoiraDecisionPacketReaderProfile {
+    pub owner_route: String,
+    pub artifact_route: String,
+    pub vellum_workspace: u64,
+    pub vellum_document: u64,
+    pub max_packet_bytes: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -662,6 +676,28 @@ impl WorkspaceProfile {
                     return Err(
                         "Moira deliberation socket and deliberation identifier must be configured together",
                     );
+                }
+            }
+            if let Some(reader) = &moira.decision_packet_reader {
+                if moira.deliberation.is_none() {
+                    return Err(
+                        "Moira decision-packet reader requires an exact selected deliberation",
+                    );
+                }
+                if self.vellum.is_none() {
+                    return Err("Moira decision-packet reader requires Vellum configuration");
+                }
+                validate_lower_hex(&reader.owner_route, 32, "Moira decision-packet owner route")?;
+                validate_lower_hex(
+                    &reader.artifact_route,
+                    32,
+                    "Moira decision-packet artifact route",
+                )?;
+                if reader.vellum_workspace == 0 || reader.vellum_document == 0 {
+                    return Err("Moira decision-packet Vellum identities must be non-zero");
+                }
+                if !(1..=65_536).contains(&reader.max_packet_bytes) {
+                    return Err("Moira decision-packet byte limit must be between 1 and 65536");
                 }
             }
             if let Some(worker) = &moira.agent_worker {
@@ -1586,6 +1622,51 @@ mod tests {
             "deliberation":"not-an-exact-id"}
         }"#;
         assert!(WorkspaceProfile::parse(malformed_id, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn moira_decision_packet_reader_requires_exact_bounded_vellum_route() {
+        let valid = br#"{
+          "version":1,"name":"Moira packet","surfaces":["moira","vellum"],
+          "moira":{"deliberation_socket":"deliberation.sock",
+            "deliberation":"0102030405060708090a0b0c0d0e0f10",
+            "decision_packet_reader":{
+              "owner_route":"11111111111111111111111111111111",
+              "artifact_route":"22222222222222222222222222222222",
+              "vellum_workspace":7,"vellum_document":9,"max_packet_bytes":4096}},
+          "vellum":{"socket":"vellum.sock","credential":null}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let reader = profile
+            .moira
+            .unwrap()
+            .decision_packet_reader
+            .expect("selected packet reader");
+        assert_eq!(reader.vellum_workspace, 7);
+        assert_eq!(reader.vellum_document, 9);
+        assert_eq!(reader.max_packet_bytes, 4096);
+
+        let missing_vellum = br#"{
+          "version":1,"name":"Moira packet","surfaces":["moira"],
+          "moira":{"deliberation_socket":"deliberation.sock",
+            "deliberation":"0102030405060708090a0b0c0d0e0f10",
+            "decision_packet_reader":{
+              "owner_route":"11111111111111111111111111111111",
+              "artifact_route":"22222222222222222222222222222222",
+              "vellum_workspace":7,"vellum_document":9,"max_packet_bytes":4096}}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_vellum, Path::new(".")).is_err());
+
+        let oversized = valid
+            .windows(b"4096".len())
+            .position(|window| window == b"4096")
+            .map(|offset| {
+                let mut bytes = valid.to_vec();
+                bytes.splice(offset..offset + 4, b"65537".iter().copied());
+                bytes
+            })
+            .unwrap();
+        assert!(WorkspaceProfile::parse(&oversized, Path::new(".")).is_err());
     }
 
     #[test]

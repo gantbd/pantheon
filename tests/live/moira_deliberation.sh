@@ -5,12 +5,14 @@ root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd -P)
 workspace=$(CDPATH= cd -- "$root/.." && pwd -P)
 scratch=$(mktemp -d "/private/tmp/pmd.XXXXXX")
 fixture_pid=
+vellum_tmux_socket="$scratch/vellum-tmux.sock"
 
 cleanup() {
   if [ -n "$fixture_pid" ] && kill -0 "$fixture_pid" 2>/dev/null; then
     kill "$fixture_pid" 2>/dev/null || true
     wait "$fixture_pid" 2>/dev/null || true
   fi
+  tmux -S "$vellum_tmux_socket" kill-server >/dev/null 2>&1 || true
   rm -rf "$scratch"
 }
 trap cleanup EXIT HUP INT TERM
@@ -139,7 +141,90 @@ kill "$fixture_pid"
 wait "$fixture_pid" 2>/dev/null || true
 fixture_pid=
 
-"$fixture" "$scratch/pending.sock" "$scratch/pending.db" pending \
+printf '%s' 'Approve the bounded Pantheon rollout after human review.' >"$scratch/decision-packet.txt"
+cat >"$scratch/vellum-profile.json" <<EOF
+{
+  "version": 1,
+  "name": "Decision packet authoring owner",
+  "surfaces": ["vellum"],
+  "vellum": {
+    "deployment": "hosted",
+    "socket": "$scratch/vellum.sock",
+    "credential": null,
+    "roots": ["$scratch/decision-packet.txt"],
+    "requires": ["workspace.inventory.v1", "workspace.edit.v1", "workspace.save.v1"]
+  }
+}
+EOF
+python3 - "$scratch" "$workbench" <<'PYTHON'
+from pathlib import Path
+import shlex, subprocess, sys, time
+
+scratch, binary = sys.argv[1:]
+tmux_socket = str(Path(scratch) / "vellum-tmux.sock")
+profile = str(Path(scratch) / "vellum-profile.json")
+session = "decision-packet-authoring"
+command = shlex.join([
+    binary, "interactive", "--workspace-profile", profile,
+    "--vellum-allow-edit", "--vellum-allow-save",
+])
+error_log = str(Path(scratch) / "vellum-pantheon.err")
+command += " 2>" + shlex.quote(error_log) + \
+    " || { status=$?; echo PANTHEON_EXIT:$status; cat " + shlex.quote(error_log) + \
+    "; sleep 60; exit $status; }"
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", tmux_socket, "-f", "/dev/null", *args],
+        capture_output=True, text=True, check=check, timeout=5,
+    )
+
+def expect(marker, timeout=30):
+    deadline = time.monotonic() + timeout
+    visible = ""
+    while time.monotonic() < deadline:
+        result = tmux("capture-pane", "-p", "-t", session, check=False)
+        visible = result.stdout
+        if result.returncode == 0 and marker in visible:
+            return
+        time.sleep(0.025)
+    detail = Path(error_log).read_text(errors="replace") if Path(error_log).exists() else ""
+    raise AssertionError(f"missing {marker!r}:\n{visible}\n{detail}")
+
+tmux("new-session", "-d", "-x", "180", "-y", "32", "-s", session, command)
+expect("Approve the bounded Pantheon rollout", timeout=40)
+tmux("send-keys", "-t", session, "Tab")
+tmux("send-keys", "-t", session, "!")
+expect("Service Current / Dirty")
+tmux("send-keys", "-t", session, "C-s")
+expect("Service Current / Clean")
+PYTHON
+cat >"$scratch/vellum-reader-profile.json" <<EOF
+{
+  "version": 1,
+  "name": "Decision packet reader",
+  "surfaces": ["vellum"],
+  "vellum": {"socket": "$scratch/vellum.sock", "credential": null}
+}
+EOF
+"$workbench" headless --workspace-profile "$scratch/vellum-reader-profile.json" \
+  --operation-id decision-packet-route >"$scratch/vellum-headless.json"
+packet_route=$(python3 - "$scratch/vellum-headless.json" <<'PYTHON'
+import json, sys
+value = json.load(open(sys.argv[1]))
+peer = next(item for item in value["peers"] if item["peer"] == "vellum")
+context = peer["context_manifest"][0]
+print(context["workspace"], context["document"], context["revision"], context["sha256"].removeprefix("sha256:"))
+PYTHON
+)
+set -- $packet_route
+packet_workspace=$1
+packet_document=$2
+packet_revision=$3
+packet_sha256=$4
+
+"$fixture" "$scratch/pending.sock" "$scratch/pending.db" \
+  pending-packet "$packet_revision" "$packet_sha256" \
   >"$scratch/pending-fixture.out" 2>"$scratch/pending-fixture.err" &
 fixture_pid=$!
 attempt=0
@@ -165,20 +250,47 @@ cat >"$scratch/pending-profile.json" <<EOF
 }
 EOF
 
-"$workbench" headless --workspace-profile "$scratch/pending-profile.json" \
+cat >"$scratch/pending-reader-profile.json" <<EOF
+{
+  "version": 1,
+  "name": "Moira pending human gate with selected packet reader",
+  "surfaces": ["agenda", "moira", "vellum"],
+  "moira": {
+    "deliberation_socket": "$scratch/pending.sock",
+    "deliberation": "01010101010101010101010101010101",
+    "decision_packet_reader": {
+      "owner_route": "3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c",
+      "artifact_route": "3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d",
+      "vellum_workspace": $packet_workspace,
+      "vellum_document": $packet_document,
+      "max_packet_bytes": 4096
+    },
+    "requires": ["deliberation.inspect.v1"]
+  },
+  "vellum": {"socket": "$scratch/vellum.sock", "credential": null}
+}
+EOF
+
+"$workbench" headless --workspace-profile "$scratch/pending-reader-profile.json" \
   --operation-id moira-pending-gate-live >"$scratch/pending-headless.json"
-python3 - "$scratch/pending-headless.json" <<'PYTHON'
+python3 - "$scratch/pending-headless.json" "$scratch/decision-packet.txt" <<'PYTHON'
 import json, sys
 value = json.load(open(sys.argv[1]))
 peer = next(item for item in value["peers"] if item["peer"] == "moira-deliberation")
 assert peer["registry_revision"] == 4
 assert peer["deliberation"]["human_gate"]["status"] == "pending"
+reader = peer["decision_packet_reader"]
+assert reader["status"] == "current"
+assert reader["text"] == open(sys.argv[2]).read()
+assert "Approve the bounded Pantheon rollout" in reader["text"]
+assert "response authority remains unavailable" in reader["boundary"]
 entries = value["operator_agenda"]["entries"]
 assert len(entries) == 1
 entry = entries[0]
 assert entry["kind"] == "human_gate"
 assert entry["actionability"] == "inspect_only"
-assert "no selected packet reader" in entry["blocker"]
+assert "verified the exact decision packet" in entry["blocker"]
+assert "response remains unavailable" in entry["requested_action"]
 assert "grants none" in entry["authority"]
 PYTHON
 
@@ -188,7 +300,7 @@ import shlex, subprocess, sys, time
 
 scratch, binary = sys.argv[1:]
 tmux_socket = str(Path(scratch) / "pending-tmux.sock")
-profile = str(Path(scratch) / "pending-profile.json")
+profile = str(Path(scratch) / "pending-reader-profile.json")
 session = "moira-pending-gate"
 command = shlex.join([binary, "interactive", "--workspace-profile", profile]) + \
     " 2>" + shlex.quote(str(Path(scratch) / "pending-pantheon.err"))
@@ -222,11 +334,32 @@ try:
         "AGENDA",
         "Named-human deliberation gate",
         "inspect only",
-        "blocked by: Moira publishes an exact decision-packet reference",
+        "blocked by: Pantheon verified the exact decision packet",
         "agenda presence grants no authority",
+    )
+    tmux("send-keys", "-t", session, "C-p", "C-u")
+    tmux("send-keys", "-t", session, "-l", "open moira deliberation")
+    expect("Open Moira deliberation")
+    tmux("send-keys", "-t", session, "Enter")
+    expect(
+        "HUMAN GATE · DECISION PACKET",
+        "VERIFIED",
+        "Approve the bounded Pantheon rollout",
+        "response authority remains unavailable",
     )
 finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo "qualified: Pantheon presents exact packet/rationale references and keeps pending gates inspect-only until a selected reader and response control exist"
+tmux -S "$vellum_tmux_socket" send-keys -t decision-packet-authoring C-q
+attempt=0
+while tmux -S "$vellum_tmux_socket" has-session -t decision-packet-authoring 2>/dev/null; do
+  if [ "$attempt" -eq 400 ]; then
+    echo "decision-packet authoring owner did not shut down" >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+echo "qualified: Pantheon verifies an exact Vellum decision packet headlessly and keeps pending gates inspect-only until the Aegis response control exists"

@@ -5,7 +5,7 @@ use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServic
 use chronos_tui::{Hub, Workstream};
 use pantheon::{DaimonModelView, Shell};
 use pantheon_cli::{
-    AgoraControlConfig, OperationalPeers,
+    AgoraControlConfig, MoiraDecisionPacketComponent, OperationalPeers,
     capabilities::{self, ChronosFeatures, Mode},
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     management::LocalManagementSnapshot,
@@ -21,6 +21,7 @@ use pantheon_cli::{
     run_terminal_with_all_peers_managed_configuration,
 };
 use std::{
+    collections::BTreeMap,
     io::{BufRead, Write},
     os::unix::process::CommandExt,
     path::PathBuf,
@@ -3367,6 +3368,47 @@ fn interactive(
         (None, None) => None,
         _ => unreachable!("workspace profile validates the deliberation pair"),
     };
+    let moira_decision_packet = if let Some(reader) = options
+        .workspace_profile
+        .as_ref()
+        .and_then(|profile| profile.moira.as_ref())
+        .and_then(|moira| moira.decision_packet_reader.as_ref())
+    {
+        let socket = options
+            .vellum_socket
+            .clone()
+            .expect("workspace profile validates packet-reader Vellum configuration");
+        let credential = options.vellum_credential.clone();
+        let workspace = vellum_protocol::WorkspaceIdV1::new(reader.vellum_workspace)
+            .ok_or("Vellum packet-reader workspace identity refused")?;
+        let document =
+            vellum_protocol::WorkspaceDocumentIdV1::new(workspace, reader.vellum_document)
+                .ok_or("Vellum packet-reader document identity refused")?;
+        let target = moira_vellum::ExternalDocumentRefV1 {
+            workspace: parse_fixed_hex(&reader.owner_route)?,
+            document: parse_fixed_hex(&reader.artifact_route)?,
+        };
+        let mut routes = BTreeMap::new();
+        routes.insert(
+            target,
+            moira_vellum::DocumentRouteV1 {
+                workspace,
+                document,
+            },
+        );
+        Some(MoiraDecisionPacketComponent::new_with_factory(
+            move || {
+                let connector = vellum_connector(socket.clone(), credential.as_ref())
+                    .map_err(|error| format!("Vellum packet-reader connector refused: {error}"))?;
+                RemoteTransport::new(connector, TransportLimits::reference())
+                    .map_err(|error| format!("Vellum packet-reader transport refused: {error:?}"))
+            },
+            routes,
+            reader.max_packet_bytes,
+        ))
+    } else {
+        None
+    };
     let daimon = if let Some(socket) = options.daimon_socket {
         let (session, port) = daimon_client::unix::connect(
             socket,
@@ -3530,6 +3572,7 @@ fn interactive(
             moira,
             moira_participation,
             moira_deliberation,
+            moira_decision_packet,
             moira_participation_control,
             moira_agent_worker,
             moira_control_socket,
@@ -4022,6 +4065,11 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         moira_participation: options.moira_participation,
         moira_deliberation_socket: options.moira_deliberation_socket.clone(),
         moira_deliberation: options.moira_deliberation,
+        moira_decision_packet_reader: options
+            .workspace_profile
+            .as_ref()
+            .and_then(|profile| profile.moira.as_ref())
+            .and_then(|moira| moira.decision_packet_reader.clone()),
         moira_hosted: options.moira_host.is_some(),
         daimon_socket: options.daimon_socket.clone(),
         daimon_model_socket: options.daimon_model_socket.clone(),

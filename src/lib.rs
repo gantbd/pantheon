@@ -133,6 +133,7 @@ pub fn draw_shell(
             moira: None,
             moira_participation: None,
             moira_deliberation: None,
+            moira_decision_packet: None,
             moira_open: None,
             moira_reconciliation: None,
             daimon: None,
@@ -173,6 +174,7 @@ pub struct PeerViews<'a> {
     pub moira: Option<&'a moira_tui::Component>,
     pub moira_participation: Option<&'a moira_tui::ParticipationComponent>,
     pub moira_deliberation: Option<&'a moira_tui::DeliberationComponent>,
+    pub moira_decision_packet: Option<&'a HumanGatePacketView>,
     pub moira_open: Option<&'a moira_tui::OpenControlComponent>,
     pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
@@ -202,6 +204,17 @@ pub struct PeerViews<'a> {
 pub struct DaimonModelView {
     pub status: String,
     pub boundary: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct HumanGatePacketView {
+    pub current: bool,
+    pub owner_route: String,
+    pub artifact_route: String,
+    pub revision: u64,
+    pub sha256: String,
+    pub text: String,
+    pub notice: String,
 }
 
 impl DaimonModelView {
@@ -275,6 +288,7 @@ pub fn draw_shell_with_moira(
         moira,
         moira_participation,
         moira_deliberation,
+        moira_decision_packet,
         moira_open,
         moira_reconciliation,
         daimon,
@@ -488,9 +502,20 @@ pub fn draw_shell_with_moira(
                 .draw_in(frame, body, true);
         }
         Surface::Moira if moira_deliberation.is_some() => {
-            moira_deliberation
-                .expect("matched above")
-                .draw_in(frame, body, true);
+            if let Some(packet) = moira_decision_packet {
+                let [deliberation, material] =
+                    Layout::vertical([Constraint::Percentage(58), Constraint::Percentage(42)])
+                        .spacing(1)
+                        .areas(body);
+                moira_deliberation
+                    .expect("matched above")
+                    .draw_in(frame, deliberation, true);
+                draw_human_gate_packet(frame, material, packet);
+            } else {
+                moira_deliberation
+                    .expect("matched above")
+                    .draw_in(frame, body, true);
+            }
         }
         Surface::Moira if moira.is_some() && moira_participation.is_some() => {
             let [sagas, participation] =
@@ -620,6 +645,55 @@ pub fn draw_shell_with_moira(
             draw_unconfigured_surface(frame, body, surface);
         }
     }
+}
+
+fn draw_human_gate_packet(frame: &mut Frame<'_>, area: Rect, packet: &HumanGatePacketView) {
+    let state = if packet.current {
+        "VERIFIED"
+    } else {
+        "REFUSED"
+    };
+    let accent = if packet.current {
+        theme::GREEN
+    } else {
+        theme::YELLOW
+    };
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(
+                format!(" {state} "),
+                Style::default()
+                    .fg(theme::VOID)
+                    .bg(accent)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("  exact revision {}", packet.revision),
+                theme::muted(),
+            ),
+        ]),
+        Line::from(format!(
+            "route  {} / {}",
+            packet.owner_route, packet.artifact_route
+        )),
+        Line::from(format!("sha256 {}", packet.sha256)),
+        Line::from(Span::styled(packet.notice.as_str(), theme::muted())),
+        Line::from(""),
+    ];
+    if packet.current {
+        lines.extend(packet.text.lines().map(Line::from));
+    } else {
+        lines.push(Line::from(
+            "Decision material is unavailable. No disposition is offered.",
+        ));
+    }
+    frame.render_widget(
+        Paragraph::new(lines)
+            .style(theme::panel())
+            .wrap(Wrap { trim: false })
+            .block(theme::card(" HUMAN GATE · DECISION PACKET ", accent)),
+        area,
+    );
 }
 
 /// Resolves a click in the two-row surface rail using the same title geometry
@@ -2214,6 +2288,7 @@ mod tests {
                             moira: Some(&moira),
                             moira_participation: None,
                             moira_deliberation: None,
+                            moira_decision_packet: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
@@ -2285,6 +2360,7 @@ mod tests {
                             moira: None,
                             moira_participation: Some(&participation),
                             moira_deliberation: None,
+                            moira_decision_packet: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
@@ -2354,6 +2430,7 @@ mod tests {
                             moira: None,
                             moira_participation: None,
                             moira_deliberation: None,
+                            moira_decision_packet: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: Some(&daimon),
@@ -2422,6 +2499,7 @@ mod tests {
                             moira: None,
                             moira_participation: None,
                             moira_deliberation: None,
+                            moira_decision_packet: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
