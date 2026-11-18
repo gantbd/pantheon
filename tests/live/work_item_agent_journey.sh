@@ -25,21 +25,33 @@ cargo build --manifest-path "$workspace/daimon-tui/Cargo.toml" \
 cargo build --manifest-path "$root/Cargo.toml" \
   --package pantheon-cli --bin pantheon --locked --offline
 
-fixture="$workspace/daimon-tui/target/debug/examples/agent_set_fixture"
 workbench="$root/target/debug/pantheon"
+catalog_owner="$root/tests/support/provider_catalog_owner.sh"
 
-"$fixture" "$scratch/daimon.sock" "$scratch/receipts" prompt-lens \
-  >"$scratch/fixture.out" 2>"$scratch/fixture.err" &
-fixture_pid=$!
-attempt=0
-while [ ! -S "$scratch/daimon.sock" ]; do
-  attempt=$((attempt + 1))
-  if ! kill -0 "$fixture_pid" 2>/dev/null || [ "$attempt" -ge 200 ]; then
-    sed -n '1,160p' "$scratch/fixture.err" >&2
-    exit 1
-  fi
-  sleep 0.025
-done
+cat >"$scratch/provider-catalog.json" <<'EOF'
+{
+  "version": 1,
+  "owner": "daimon-local-agent",
+  "document_digest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+  "providers": [{
+    "provider_id": "22222222222222222222222222222222",
+    "harness_profile_id": "11111111111111111111111111111111",
+    "profile_document_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "policy_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "transport": "acp",
+    "isolation": "direct",
+    "executable_available": true,
+    "argument_count": 0,
+    "inherited_environment_name_count": 0,
+    "authentication_method_configured": false
+  }],
+  "task_bindings": [{
+    "external_task_key": "14141414141414141414141414141414",
+    "chronos_task_id": "local-agent-task"
+  }],
+  "contexts": []
+}
+EOF
 
 cat >"$scratch/profile.json" <<EOF
 {
@@ -55,6 +67,7 @@ cat >"$scratch/profile.json" <<EOF
     "planning": null
   },
   "daimon": {
+    "deployment": "hosted",
     "agent_socket": "$scratch/daimon.sock",
     "agent_sessions": ["07070707070707070707070707070707"],
     "execution": {
@@ -71,6 +84,10 @@ cat >"$scratch/profile.json" <<EOF
         "max_context_bytes": 1048576,
         "max_output_bytes": 1048576
       }
+    },
+    "host": {
+      "executable": "$catalog_owner",
+      "config": "$scratch/provider-catalog.json"
     },
     "requires": ["agents.session-set.inspect.v1", "agents.session-set.prompt.v1"]
   }
@@ -146,7 +163,9 @@ def expect(*markers, timeout=15):
         if all(marker in visible for marker in markers):
             return visible
         time.sleep(0.025)
-    raise AssertionError(f"Missing {markers!r} in:\n{visible}")
+    error = Path(scratch, "pantheon.err").read_text(errors="replace")
+    fixture_error = Path(scratch, "fixture.err").read_text(errors="replace") if Path(scratch, "fixture.err").exists() else ""
+    raise AssertionError(f"Missing {markers!r} in:\n{visible}\nPantheon stderr:\n{error}\nFixture stderr:\n{fixture_error}")
 
 def keys(*values):
     tmux("send-keys", "-t", session, *values)
@@ -162,19 +181,16 @@ try:
     expect("Create task with product owner agent lens")
     keys("Enter")
     expect("Task batch")
-    literal("inspect")
-    keys("Tab")
-    literal("report drift")
+    literal("local-agent-task")
     keys("Enter")
-    expect("Review 2 exact task(s)")
+    expect("Review 1 exact task(s)")
     keys("Enter")
     expect(
         "DAIMON",
         "Compose Daimon prompt",
         "product-owner collaboration lens",
         "not a human identity",
-        "inspect",
-        "report drift",
+        "local-agent-task",
         timeout=20,
     )
     keys("Tab", "c", "Enter")
@@ -188,7 +204,7 @@ try:
     literal("return to the kanban board")
     expect("Return to the Kanban board")
     keys("Enter")
-    expect("CHRONOS", "Board", "inspect", "report drift", timeout=20)
+    expect("CHRONOS", "Board", "local-agent-task", timeout=20)
     keys("C-q")
     deadline = time.monotonic() + 10
     while tmux("has-session", "-t", session, check=False).returncode == 0:
@@ -199,10 +215,7 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-kill "$fixture_pid" 2>/dev/null || true
-wait "$fixture_pid" 2>/dev/null || true
-fixture_pid=
 test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 1
 grep 'session 1 prompted' "$scratch/receipts" >/dev/null
 
-echo 'PASS: Chronos task -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board'
+echo 'PASS: Chronos task -> exact owner binding -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board'

@@ -2113,9 +2113,11 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "Local-agent turn accepted",
         "product-owner collaboration lens",
         "not a human identity",
+        "local-agent-task",
+        "provider_catalog_owner.sh",
         "return to the kanban board",
         "agent_set_fixture",
-        "PASS: Chronos task -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board",
+        "PASS: Chronos task -> exact owner binding -> guarded product-owner-lensed local-agent prompt -> refreshed Kanban board",
     ] {
         assert!(
             journey.contains(required),

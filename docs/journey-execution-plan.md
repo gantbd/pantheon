@@ -391,9 +391,14 @@ principal, harness, context/tool counts and budgets; every absent
 role/delegation/accountability/
 authority fact remains visibly `not_published`. The work-item and three
 session-set tmux gates enforce the exact envelope in the Daimon fixture. This is
-P0 relationship truth, not J1 completion: the current slice still cannot prove
-that the preselected opaque key maps to the Chronos task it just admitted, and
-therefore cannot honestly open a new task-bound session.
+P0 relationship truth, not J1 completion. The follow-on owner-binding gate now
+limits the composed journey to one exact Chronos task ID, waits for its applied
+receipt, asynchronously inspects Daimon's validated owner catalogue, and
+requires that task's published external key to equal the frozen execution key.
+Missing, ambiguous, wrong-owner or mismatched evidence stops before prompt
+preparation and tells the operator that the task exists but no agent was
+invoked. This proves the mapping to an already selected session; it still does
+not create a new task-bound session or a dynamic attempt.
 
 The earlier observation-only profile copy was a presentation-boundary leak.
 The aggregate headless observer now validates requirements against the complete
@@ -455,7 +460,9 @@ Shared principal/profile identity is `correlated`, while distinct identities
 remain `not_established` rather than becoming an independence claim. Provider,
 model, organizational and training-lineage correlation remain explicit gaps.
 
-- [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
+- [x] Admit one exact Chronos task and prove its owner-published binding to the
+  already selected agent-assisted execution profile before prompt preparation.
+  Dynamic profile selection and attempt creation remain open.
 - [ ] From the selected task, choose a qualified local provider, declared work
   mode/persona, bounded delegation, grounding depth, tools and budgets through a
   reviewable Pantheon form; show the effective owner-backed configuration before

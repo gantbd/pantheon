@@ -418,7 +418,9 @@ enum WorkItemAgentJourney {
     AwaitingTaskReceipt {
         draft: String,
         lens: Option<AgentCollaborationLens>,
+        task_id: String,
     },
+    AwaitingTaskBinding,
     ReviewingPrompt,
     Invoking,
     ConversationReady,
@@ -451,9 +453,39 @@ impl WorkItemAgentJourney {
 
     fn task_submitted(&mut self) {
         if let Self::EditingTask { draft, lens } = std::mem::take(self) {
-            *self = Self::AwaitingTaskReceipt { draft, lens };
+            let task_id = single_work_item_task_id(&draft)
+                .expect("the behavior facade admits exactly one task before dispatch")
+                .to_owned();
+            *self = Self::AwaitingTaskReceipt {
+                draft,
+                lens,
+                task_id,
+            };
         }
     }
+
+    fn task_id_for_submission(&self) -> Result<&str, &'static str> {
+        let Self::EditingTask { draft, .. } = self else {
+            return Ok("");
+        };
+        single_work_item_task_id(draft)
+    }
+}
+
+fn single_work_item_task_id(draft: &str) -> Result<&str, &'static str> {
+    let mut ids = draft.split('\n');
+    let Some(id) = ids.next().filter(|id| !id.is_empty()) else {
+        return Err("enter one Chronos task ID before continuing");
+    };
+    if ids.next().is_some() {
+        return Err(
+            "this journey accepts one task; use ordinary Chronos batch creation for several tasks",
+        );
+    }
+    if id.len() > 256 {
+        return Err("the Chronos task ID exceeds the 256-byte owner bound");
+    }
+    Ok(id)
 }
 
 fn work_item_agent_prompt(draft: &str, lens: Option<AgentCollaborationLens>) -> String {
@@ -3849,6 +3881,21 @@ struct ProviderInspection {
     started: Instant,
 }
 
+struct WorkItemBindingInspection {
+    result: Receiver<Result<WorkItemBindingEvidence, String>>,
+    started: Instant,
+    draft: String,
+    lens: Option<AgentCollaborationLens>,
+}
+
+#[derive(Debug)]
+struct WorkItemBindingEvidence {
+    task_id: String,
+    external_task_key: String,
+    owner: String,
+    document_digest: String,
+}
+
 const PROVIDER_EDIT_FIELDS: [&str; 11] = [
     "provider ID",
     "harness profile ID",
@@ -4356,6 +4403,25 @@ fn spawn_provider_inspection(
     }
 }
 
+fn spawn_work_item_binding_inspection(
+    profile: Option<WorkspaceProfile>,
+    task_id: String,
+    draft: String,
+    lens: Option<AgentCollaborationLens>,
+) -> WorkItemBindingInspection {
+    let (sender, result) = sync_channel(1);
+    std::thread::spawn(move || {
+        let inspected = inspect_work_item_binding(profile.as_ref(), &task_id);
+        let _ = sender.send(inspected);
+    });
+    WorkItemBindingInspection {
+        result,
+        started: Instant::now(),
+        draft,
+        lens,
+    }
+}
+
 #[derive(Deserialize)]
 struct ProviderCatalogProjection {
     version: u8,
@@ -4372,6 +4438,59 @@ struct ProviderCatalogProjection {
 struct TaskBindingCatalogProjection {
     external_task_key: String,
     chronos_task_id: String,
+}
+
+fn inspect_work_item_binding(
+    profile: Option<&WorkspaceProfile>,
+    task_id: &str,
+) -> Result<WorkItemBindingEvidence, String> {
+    let daimon = profile
+        .and_then(|profile| profile.daimon.as_ref())
+        .ok_or_else(|| "no Daimon profile is selected".to_owned())?;
+    let host = daimon.host.as_ref().ok_or_else(|| {
+        "the selected Daimon profile does not publish its owner executable/config".to_owned()
+    })?;
+    let execution = daimon.execution.as_ref().ok_or_else(|| {
+        "the selected Daimon profile does not publish a frozen execution task key".to_owned()
+    })?;
+    let catalog = provider_catalog(&host.executable, &host.config)?;
+    validate_work_item_binding(&catalog, task_id, &execution.task_attempt.task_key)
+}
+
+fn validate_work_item_binding(
+    catalog: &ProviderCatalogProjection,
+    task_id: &str,
+    configured_task_key: &str,
+) -> Result<WorkItemBindingEvidence, String> {
+    if catalog.owner != "daimon-local-agent" {
+        return Err("the selected owner catalogue is not a Daimon local-agent catalogue".into());
+    }
+    let mut matching = catalog
+        .task_bindings
+        .iter()
+        .filter(|binding| binding.chronos_task_id == task_id);
+    let binding = matching.next().ok_or_else(|| {
+        "the owner catalogue has no exact binding for the created Chronos task".to_owned()
+    })?;
+    if matching.next().is_some() {
+        return Err(
+            "the owner catalogue returned ambiguous bindings for the created Chronos task".into(),
+        );
+    }
+    if !binding
+        .external_task_key
+        .eq_ignore_ascii_case(configured_task_key)
+    {
+        return Err(
+            "the owner-bound task key does not match the selected Daimon execution profile".into(),
+        );
+    }
+    Ok(WorkItemBindingEvidence {
+        task_id: task_id.to_owned(),
+        external_task_key: binding.external_task_key.clone(),
+        owner: catalog.owner.clone(),
+        document_digest: catalog.document_digest.clone(),
+    })
 }
 
 #[derive(Clone, Deserialize)]
@@ -5119,6 +5238,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         "Run M-x Inspect local provider configuration to request a fresh redacted owner projection.".into(),
     ];
     let mut provider_inspection: Option<ProviderInspection> = None;
+    let mut work_item_binding_inspection: Option<WorkItemBindingInspection> = None;
     let mut provider_edit: Option<ProviderEditWorkflow> = None;
     let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
     let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
@@ -5222,6 +5342,104 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     }
                 }
             }
+            let work_item_binding_settlement =
+                work_item_binding_inspection
+                    .as_ref()
+                    .and_then(|inspection| match inspection.result.try_recv() {
+                        Ok(result) => Some(result),
+                        Err(TryRecvError::Disconnected) => Some(Err(
+                            "the Daimon owner-inspection worker ended without evidence".into(),
+                        )),
+                        Err(TryRecvError::Empty) => None,
+                    });
+            if let Some(settlement) = work_item_binding_settlement {
+                let inspection = work_item_binding_inspection
+                    .take()
+                    .expect("binding settlement requires an active inspection");
+                match settlement {
+                    Ok(evidence) => {
+                        instrumentation.record(
+                            "workitem.agent.binding.result",
+                            "daimon",
+                            ActivityLevel::Success,
+                            inspection.started.elapsed(),
+                        );
+                        activity.push(
+                            ActivityLevel::Success,
+                            "work-item",
+                            format!(
+                                "Daimon owner {} mapped Chronos task {} to configured task key {} under catalogue {}",
+                                evidence.owner,
+                                evidence.task_id,
+                                evidence.external_task_key,
+                                evidence.document_digest
+                            ),
+                        );
+                        let prompt = work_item_agent_prompt(&inspection.draft, inspection.lens);
+                        let observations = daimon_agent
+                            .as_ref()
+                            .map(daimon_tui::AgentSetComponent::selected_observations)
+                            .unwrap_or_default();
+                        let readiness = if observations.is_empty() {
+                            Some(
+                                "No current selected Daimon session; refresh the configured local agent first"
+                                    .to_owned(),
+                            )
+                        } else {
+                            daimon_workset_error(
+                                &observations,
+                                "Ready with no active turn",
+                                |view| {
+                                    view.phase == AgentSessionPhaseV1::Ready
+                                        && view.active_turn.is_none()
+                                },
+                            )
+                        };
+                        if let Some(reason) = readiness {
+                            work_item_agent = WorkItemAgentJourney::Failed;
+                            notice = command_feedback(
+                                "workitem.agent.new",
+                                ActivityLevel::Warning,
+                                &format!(
+                                    "Chronos created the task and its Daimon mapping was proven, but the local agent prompt could not open: {reason}"
+                                ),
+                            );
+                            activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                        } else {
+                            let mut composer = daimon_tui::AgentPromptComposer::new(
+                                observations.len(),
+                            )
+                            .expect("a bounded nonempty selected session set was validated");
+                            composer.insert_text(&prompt);
+                            daimon_prompt_composer = Some(composer);
+                            daimon_permission_composer = None;
+                            daimon_control = None;
+                            let _ = shell.activate(Surface::Daimon);
+                            work_item_agent = WorkItemAgentJourney::ReviewingPrompt;
+                            notice = "READY · Chronos task created, exact Daimon owner binding proven, and local-agent prompt prepared · Next: review the carried work text, Tab to review, c to arm, then Enter once"
+                                .into();
+                            activity.push(ActivityLevel::Success, "work-item", notice.clone());
+                        }
+                    }
+                    Err(reason) => {
+                        instrumentation.record(
+                            "workitem.agent.binding.result",
+                            "daimon",
+                            ActivityLevel::Warning,
+                            inspection.started.elapsed(),
+                        );
+                        work_item_agent = WorkItemAgentJourney::Failed;
+                        notice = command_feedback(
+                            "workitem.agent.new",
+                            ActivityLevel::Warning,
+                            &format!(
+                                "Chronos created the task, but Daimon owner mapping was not proven: {reason}; the local agent was not invoked"
+                            ),
+                        );
+                        activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                    }
+                }
+            }
             if let Some((level, shutdown)) = operations.poll() {
                 settle_drain_operations(
                     &mut drain_operations,
@@ -5276,8 +5494,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     instrumentation.mark_peer_stage(operation, "peer_receipt", level);
                     instrumentation.settle_peer_operation(operation, level);
                     activity.push(level, "chronos", message);
-                    if let WorkItemAgentJourney::AwaitingTaskReceipt { draft, lens } =
-                        &work_item_agent
+                    if let WorkItemAgentJourney::AwaitingTaskReceipt {
+                        draft,
+                        lens,
+                        task_id,
+                    } = &work_item_agent
                     {
                         if level != ActivityLevel::Success {
                             work_item_agent = WorkItemAgentJourney::Failed;
@@ -5288,52 +5509,17 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             );
                             activity.push(level, "work-item", notice.clone());
                         } else {
-                            let prompt = work_item_agent_prompt(draft, *lens);
-                            let observations = daimon_agent
-                                .as_ref()
-                                .map(daimon_tui::AgentSetComponent::selected_observations)
-                                .unwrap_or_default();
-                            let readiness = if observations.is_empty() {
-                                Some(
-                                    "No current selected Daimon session; refresh the configured local agent first"
-                                        .to_owned(),
-                                )
-                            } else {
-                                daimon_workset_error(
-                                    &observations,
-                                    "Ready with no active turn",
-                                    |view| {
-                                        view.phase == AgentSessionPhaseV1::Ready
-                                            && view.active_turn.is_none()
-                                    },
-                                )
-                            };
-                            if let Some(reason) = readiness {
-                                work_item_agent = WorkItemAgentJourney::Failed;
-                                notice = command_feedback(
-                                    "workitem.agent.new",
-                                    ActivityLevel::Warning,
-                                    &format!(
-                                        "Chronos created the task, but the local agent prompt could not open: {reason}"
-                                    ),
-                                );
-                                activity.push(ActivityLevel::Warning, "work-item", notice.clone());
-                            } else {
-                                let mut composer =
-                                    daimon_tui::AgentPromptComposer::new(observations.len())
-                                        .expect(
-                                            "a bounded nonempty selected session set was validated",
-                                        );
-                                composer.insert_text(&prompt);
-                                daimon_prompt_composer = Some(composer);
-                                daimon_permission_composer = None;
-                                daimon_control = None;
-                                let _ = shell.activate(Surface::Daimon);
-                                work_item_agent = WorkItemAgentJourney::ReviewingPrompt;
-                                notice = "READY · Chronos task created and local-agent prompt prepared · Next: review the carried work text, Tab to review, c to arm, then Enter once"
-                                    .into();
-                                activity.push(ActivityLevel::Success, "work-item", notice.clone());
-                            }
+                            work_item_binding_inspection =
+                                Some(spawn_work_item_binding_inspection(
+                                    current_profile.clone(),
+                                    task_id.clone(),
+                                    draft.clone(),
+                                    *lens,
+                                ));
+                            work_item_agent = WorkItemAgentJourney::AwaitingTaskBinding;
+                            notice = "WORKING · Chronos task created · Verifying the exact owner-published Daimon task binding before preparing any prompt"
+                                .into();
+                            activity.push(ActivityLevel::Info, "work-item", notice.clone());
                         }
                     }
                 } else if let Some(operation) = refresh_operations.chronos.take() {
@@ -8299,6 +8485,17 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 && is_key(input, KeyCode::Char('y'), KeyModifiers::NONE);
                             let confirming_eligibility_batch =
                                 chronos.confirming_eligibility_batch();
+                            if submitting_task_batch
+                                && let Err(reason) = work_item_agent.task_id_for_submission()
+                            {
+                                notice = command_feedback(
+                                    "workitem.agent.new",
+                                    ActivityLevel::Warning,
+                                    reason,
+                                );
+                                activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                                continue;
+                            }
                             if chronos.composing_task_batch() {
                                 work_item_agent.capture_task_key(input);
                             }
@@ -8575,7 +8772,7 @@ mod tests {
     fn provider_catalog_projection_is_bounded_redacted_and_owner_oriented() {
         let catalog = ProviderCatalogProjection {
             version: 1,
-            owner: "daimon-local-model".into(),
+            owner: "daimon-local-agent".into(),
             document_digest: format!("sha256:{}", "11".repeat(32)),
             providers: vec![ProviderCatalogEntryProjection {
                 provider_id: "22".repeat(16),
@@ -8613,6 +8810,21 @@ mod tests {
             }],
         };
         validate_provider_catalog(&catalog).unwrap();
+        let binding =
+            validate_work_item_binding(&catalog, "review-headless-boundary", &"55".repeat(16))
+                .unwrap();
+        assert_eq!(binding.task_id, "review-headless-boundary");
+        assert_eq!(binding.external_task_key, "55".repeat(16));
+        assert!(
+            validate_work_item_binding(&catalog, "unbound-task", &"55".repeat(16))
+                .unwrap_err()
+                .contains("no exact binding")
+        );
+        assert!(
+            validate_work_item_binding(&catalog, "review-headless-boundary", &"77".repeat(16))
+                .unwrap_err()
+                .contains("does not match")
+        );
         let lines = provider_catalog_lines(catalog).join("\n");
         assert!(lines.contains("Daimon validated"));
         assert!(lines.contains("qwen/qwen3-coder-next"));
@@ -8785,16 +8997,26 @@ mod tests {
         };
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('R'), KeyModifiers::SHIFT));
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
-        journey.capture_task_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE));
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL));
         journey.task_submitted();
-        let WorkItemAgentJourney::AwaitingTaskReceipt { draft, lens } = journey else {
+        let WorkItemAgentJourney::AwaitingTaskReceipt {
+            draft,
+            lens,
+            task_id,
+        } = journey
+        else {
             panic!("task submission should advance the journey");
         };
-        assert_eq!(draft, "Re\n");
+        assert_eq!(draft, "Re");
+        assert_eq!(task_id, "Re");
         assert!(lens.is_none());
         let prompt = work_item_agent_prompt(&draft, lens);
         assert_eq!(prompt, "Re");
+        assert!(
+            single_work_item_task_id("one\ntwo")
+                .unwrap_err()
+                .contains("accepts one task")
+        );
     }
 
     #[test]
