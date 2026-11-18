@@ -16,9 +16,9 @@ use vellum_sdk_client::{
     workspace::WorkspaceClientV1,
 };
 
-use crate::capabilities::{self, Mode};
+use crate::capabilities::RequirementDisposition;
 use crate::management::PeerRuntime;
-use crate::profile::{AgoraProfile, AgoraTransportProfile};
+use crate::profile::{AgoraProfile, AgoraTransportProfile, DaimonExecutionPolicyProfile};
 
 pub struct HeadlessRequest {
     pub operation_id: String,
@@ -28,31 +28,26 @@ pub struct HeadlessRequest {
     pub moira_socket: Option<PathBuf>,
     pub moira_participation_socket: Option<PathBuf>,
     pub moira_participation: Option<participation::ParticipationIdV1>,
-    pub moira_requires: Vec<String>,
     pub moira_hosted: bool,
     pub daimon_socket: Option<PathBuf>,
     pub daimon_agent_socket: Option<PathBuf>,
     pub daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
-    pub daimon_requires: Vec<String>,
+    pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
     pub daimon_hosted: bool,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
     pub hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
-    pub hermes_requires: Vec<String>,
     pub hermes_hosted: bool,
     pub aegis_socket: Option<PathBuf>,
-    pub aegis_requires: Vec<String>,
     pub aegis_hosted: bool,
     pub grounding_endpoint: Option<SocketAddr>,
     pub grounding_token: Option<PathBuf>,
-    pub grounding_requires: Vec<String>,
     pub chronos: Vec<Workstream>,
-    pub chronos_requires: Vec<String>,
     pub chronos_hosted: bool,
     pub vellum_socket: Option<PathBuf>,
     pub vellum_credential: Option<PathBuf>,
-    pub vellum_requires: Vec<String>,
     pub vellum_hosted: bool,
+    pub not_exercised_profile_requirements: Vec<RequirementDisposition>,
 }
 
 #[derive(Debug)]
@@ -62,79 +57,13 @@ pub struct HeadlessObservation {
     pub complete: bool,
     pub peers: Vec<serde_json::Value>,
     pub management: Vec<PeerRuntime>,
+    pub not_exercised_profile_requirements: Vec<RequirementDisposition>,
 }
 
 /// Observes every configured peer through its ordinary public client without
 /// constructing presentation state. Healthy peer evidence remains present when
 /// another peer refuses or has an uncertain transport outcome.
 pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> {
-    if let Some(profile) = &request.agora {
-        capabilities::negotiate(
-            "agora",
-            Mode::Headless,
-            &profile.requires,
-            &capabilities::agora(Mode::Headless, request.agora_hosted),
-        )?;
-    }
-    capabilities::negotiate(
-        "moira",
-        Mode::Headless,
-        &request.moira_requires,
-        &capabilities::moira(
-            Mode::Headless,
-            request.moira_hosted,
-            request.moira_participation.is_some(),
-        ),
-    )?;
-    capabilities::negotiate(
-        "daimon",
-        Mode::Headless,
-        &request.daimon_requires,
-        &capabilities::daimon(
-            Mode::Headless,
-            request.daimon_hosted,
-            request.daimon_socket.is_some(),
-            request.daimon_agent_socket.is_some() && request.daimon_agent_session.is_some(),
-        ),
-    )?;
-    capabilities::negotiate(
-        "hermes",
-        Mode::Headless,
-        &request.hermes_requires,
-        &capabilities::hermes(
-            Mode::Headless,
-            request.hermes_hosted,
-            request.hermes_consumer.is_some(),
-        ),
-    )?;
-    capabilities::negotiate(
-        "aegis",
-        Mode::Headless,
-        &request.aegis_requires,
-        &capabilities::aegis(request.aegis_hosted),
-    )?;
-    capabilities::negotiate(
-        "grounding",
-        Mode::Headless,
-        &request.grounding_requires,
-        &capabilities::grounding(),
-    )?;
-    capabilities::negotiate(
-        "chronos",
-        Mode::Headless,
-        &request.chronos_requires,
-        &capabilities::chronos(
-            Mode::Headless,
-            request.chronos_hosted,
-            capabilities::ChronosFeatures::default(),
-        ),
-    )?;
-    capabilities::negotiate(
-        "vellum",
-        Mode::Headless,
-        &request.vellum_requires,
-        &capabilities::vellum(Mode::Headless, request.vellum_hosted, false),
-    )?;
     let mut peers = Vec::new();
     let mut management = Vec::new();
     let mut complete = true;
@@ -180,6 +109,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             request.daimon_socket,
             request.daimon_agent_socket,
             request.daimon_agent_session,
+            request.daimon_execution_policy.as_ref(),
         );
         record_observation(
             &mut peers,
@@ -255,6 +185,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         complete,
         peers,
         management,
+        not_exercised_profile_requirements: request.not_exercised_profile_requirements,
     })
 }
 
@@ -465,6 +396,7 @@ fn observe_daimon(
     socket: Option<PathBuf>,
     agent_socket: Option<PathBuf>,
     agent_session: Option<daimon_protocol::AgentSessionIdV1>,
+    execution_policy: Option<&DaimonExecutionPolicyProfile>,
 ) -> (serde_json::Value, bool) {
     use daimon_client::ReadOnlyClient;
     use daimon_client::unix::ClientErrorV1;
@@ -487,6 +419,7 @@ fn observe_daimon(
                 "capabilities": ["agents.session.inspect.v1"],
                 "status": if current { "current" } else { "partial" },
                 "configured_agent_session": agent,
+                "configured_execution_profile": daimon_execution_projection(execution_policy),
             }),
             current,
         );
@@ -536,6 +469,7 @@ fn observe_daimon(
                     "stale": entries.len().saturating_sub(current),
                     "truncated": truncated,
                     "configured_agent_session": agent,
+                    "configured_execution_profile": daimon_execution_projection(execution_policy),
                 }),
                 agent_current,
             )
@@ -560,6 +494,40 @@ fn observe_daimon(
             )
         }
     }
+}
+
+fn daimon_execution_projection(policy: Option<&DaimonExecutionPolicyProfile>) -> serde_json::Value {
+    let Some(policy) = policy else {
+        return serde_json::Value::Null;
+    };
+    serde_json::json!({
+        "status": "selected",
+        "principal": policy.principal,
+        "principal_type": "not_published",
+        "harness_profile": policy.profile,
+        "task_attempt": {
+            "task_key": policy.task_attempt.task_key,
+            "task_incarnation": policy.task_attempt.task_incarnation,
+            "attempt_number": policy.task_attempt.attempt_number,
+        },
+        "context_count": policy.context.len(),
+        "tool_count": policy.tools.len(),
+        "budget": {
+            "max_elapsed_millis": policy.budget.max_elapsed_millis,
+            "max_input_tokens": policy.budget.max_input_tokens,
+            "max_output_tokens": policy.budget.max_output_tokens,
+            "max_tool_calls": policy.budget.max_tool_calls,
+            "max_context_bytes": policy.budget.max_context_bytes,
+            "max_output_bytes": policy.budget.max_output_bytes,
+        },
+        "role_work_mode": "not_published",
+        "delegation": "not_published",
+        "accountable_owner": "not_published",
+        "authority_reference": "not_published",
+        "policy_epoch": "not_published",
+        "expiry": "not_published",
+        "boundary": "configuration selection is not role activation, delegation, authority, or owner receipt",
+    })
 }
 
 fn observe_daimon_agent(
@@ -1154,8 +1122,46 @@ mod tests {
     use super::*;
 
     #[test]
-    fn requirements_are_refused_before_any_peer_connection() {
-        let failure = observe(HeadlessRequest {
+    fn daimon_execution_projection_preserves_task_and_bounds_without_inventing_participation() {
+        let policy = DaimonExecutionPolicyProfile {
+            principal: "10".repeat(16),
+            profile: "11".repeat(16),
+            task_attempt: crate::profile::DaimonTaskAttemptProfile {
+                task_key: "14".repeat(16),
+                task_incarnation: 4,
+                attempt_number: 2,
+            },
+            context: vec!["12".repeat(16)],
+            tools: vec!["13".repeat(16)],
+            budget: crate::profile::DaimonExecutionBudgetProfile {
+                max_elapsed_millis: 60_000,
+                max_input_tokens: 4_096,
+                max_output_tokens: 8_192,
+                max_tool_calls: 32,
+                max_context_bytes: 1_048_576,
+                max_output_bytes: 1_048_576,
+            },
+        };
+        let projection = daimon_execution_projection(Some(&policy));
+        assert_eq!(projection["task_attempt"]["task_key"], "14".repeat(16));
+        assert_eq!(projection["task_attempt"]["task_incarnation"], 4);
+        assert_eq!(projection["task_attempt"]["attempt_number"], 2);
+        assert_eq!(projection["budget"]["max_tool_calls"], 32);
+        assert_eq!(projection["role_work_mode"], "not_published");
+        assert_eq!(projection["delegation"], "not_published");
+        assert_eq!(projection["accountable_owner"], "not_published");
+        assert!(
+            projection["boundary"]
+                .as_str()
+                .unwrap()
+                .contains("not role activation")
+        );
+        assert!(daimon_execution_projection(None).is_null());
+    }
+
+    #[test]
+    fn observation_preserves_unexercised_requirement_dispositions() {
+        let observation = observe(HeadlessRequest {
             operation_id: "test-gate".into(),
             workspace: "gate".into(),
             agora: Some(AgoraProfile {
@@ -1170,36 +1176,35 @@ mod tests {
             moira_socket: None,
             moira_participation_socket: None,
             moira_participation: None,
-            moira_requires: Vec::new(),
             moira_hosted: false,
             daimon_socket: None,
             daimon_agent_socket: None,
             daimon_agent_session: None,
-            daimon_requires: Vec::new(),
+            daimon_execution_policy: None,
             daimon_hosted: false,
             hermes_socket: None,
             hermes_stream: None,
             hermes_consumer: None,
-            hermes_requires: Vec::new(),
             hermes_hosted: false,
             aegis_socket: None,
-            aegis_requires: Vec::new(),
             aegis_hosted: false,
             grounding_endpoint: None,
             grounding_token: None,
-            grounding_requires: Vec::new(),
             chronos: Vec::new(),
-            chronos_requires: Vec::new(),
             chronos_hosted: false,
             vellum_socket: None,
             vellum_credential: None,
-            vellum_requires: Vec::new(),
             vellum_hosted: false,
+            not_exercised_profile_requirements: vec![RequirementDisposition::not_exercised(
+                "agora",
+                "messages.read.v2".to_owned(),
+            )],
         })
-        .unwrap_err();
+        .unwrap();
+        assert!(!observation.complete);
         assert_eq!(
-            failure,
-            "agora does not deliver required headless route capability messages.read.v2"
+            observation.not_exercised_profile_requirements[0].capability,
+            "messages.read.v2"
         );
     }
 }

@@ -63,31 +63,24 @@ struct Options {
     moira_socket: Option<PathBuf>,
     moira_participation_socket: Option<PathBuf>,
     moira_participation: Option<moira_protocol::agent_participation::ParticipationIdV1>,
-    moira_requires: Vec<String>,
     moira_host: Option<MoiraProcessOptions>,
     daimon_socket: Option<PathBuf>,
     daimon_agent_socket: Option<PathBuf>,
     daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     daimon_agent_sessions: Vec<daimon_protocol::AgentSessionIdV1>,
     daimon_execution_policy: Option<pantheon_cli::profile::DaimonExecutionPolicyProfile>,
-    daimon_requires: Vec<String>,
     daimon_host: Option<DaimonProcessOptions>,
     hermes_socket: Option<PathBuf>,
     hermes_stream: Option<hermes_protocol::StreamIdV1>,
     hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
-    hermes_requires: Vec<String>,
     hermes_host: Option<HermesProcessOptions>,
     aegis_socket: Option<PathBuf>,
-    aegis_requires: Vec<String>,
     aegis_host: Option<AegisProcessOptions>,
     grounding_endpoint: Option<std::net::SocketAddr>,
     grounding_token: Option<PathBuf>,
-    grounding_requires: Vec<String>,
     chronos_streams: Vec<Workstream>,
-    chronos_requires: Vec<String>,
     vellum_socket: Option<PathBuf>,
     vellum_credential: Option<PathBuf>,
-    vellum_requires: Vec<String>,
     chronos_writes: bool,
     headless: bool,
     management: bool,
@@ -105,6 +98,7 @@ struct Options {
     daimon_bindings: Vec<(String, PathBuf)>,
     check_profile: bool,
     capability_plan: Vec<(&'static str, Vec<capabilities::Capability>)>,
+    not_exercised_profile_requirements: Vec<capabilities::RequirementDisposition>,
 }
 
 fn required_arg(
@@ -534,19 +528,95 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         },
     );
     let vellum_capabilities = capabilities::vellum(mode, host_vellum, vellum_credential.is_some());
-    negotiate_capabilities("agora", mode, &agora_requires, &agora_capabilities)?;
-    negotiate_capabilities("moira", mode, &moira_requires, &moira_capabilities)?;
-    negotiate_capabilities("daimon", mode, &daimon_requires, &daimon_capabilities)?;
-    negotiate_capabilities("hermes", mode, &hermes_requires, &hermes_capabilities)?;
-    negotiate_capabilities("aegis", mode, &aegis_requires, &aegis_capabilities)?;
-    negotiate_capabilities(
+    let configured_chronos_features = ChronosFeatures {
+        writes: chronos_writes,
+        scheduling: chronos_scheduling,
+        watch: chronos_watch,
+        planning: chronos_planning.is_some(),
+        cancel_receipts: chronos_cancel_receipts,
+        moira_attempts: !moira_bindings.is_empty(),
+        daimon_attempts: !daimon_bindings.is_empty(),
+    };
+    let mut not_exercised_profile_requirements = Vec::new();
+    let mut negotiate_selected_route = |peer: &'static str,
+                                        required: &[String],
+                                        observed: &[capabilities::Capability],
+                                        configured: Vec<capabilities::Capability>|
+     -> Result<(), Box<dyn std::error::Error>> {
+        if mode == Mode::Headless {
+            for capability in
+                capabilities::negotiate_observation(peer, required, observed, &configured)?
+            {
+                not_exercised_profile_requirements.push(
+                    capabilities::RequirementDisposition::not_exercised(peer, capability),
+                );
+            }
+            Ok(())
+        } else {
+            negotiate_capabilities(peer, mode, required, observed)
+        }
+    };
+    negotiate_selected_route(
+        "agora",
+        &agora_requires,
+        &agora_capabilities,
+        capabilities::agora(Mode::Interactive, agora_host.is_some()),
+    )?;
+    negotiate_selected_route(
+        "moira",
+        &moira_requires,
+        &moira_capabilities,
+        capabilities::moira(
+            Mode::Interactive,
+            moira_host.is_some(),
+            moira_participation.is_some(),
+        ),
+    )?;
+    negotiate_selected_route(
+        "daimon",
+        &daimon_requires,
+        &daimon_capabilities,
+        capabilities::daimon(
+            Mode::Interactive,
+            daimon_host.is_some(),
+            daimon_socket.is_some(),
+            daimon_agent_socket.is_some() && !daimon_agent_sessions.is_empty(),
+        ),
+    )?;
+    negotiate_selected_route(
+        "hermes",
+        &hermes_requires,
+        &hermes_capabilities,
+        capabilities::hermes(
+            Mode::Interactive,
+            hermes_host.is_some(),
+            hermes_consumer.is_some(),
+        ),
+    )?;
+    negotiate_selected_route(
+        "aegis",
+        &aegis_requires,
+        &aegis_capabilities,
+        capabilities::aegis(aegis_host.is_some()),
+    )?;
+    negotiate_selected_route(
         "grounding",
-        mode,
         &grounding_requires,
         &grounding_capabilities,
+        capabilities::grounding(),
     )?;
-    negotiate_capabilities("chronos", mode, &chronos_requires, &chronos_capabilities)?;
-    negotiate_capabilities("vellum", mode, &vellum_requires, &vellum_capabilities)?;
+    negotiate_selected_route(
+        "chronos",
+        &chronos_requires,
+        &chronos_capabilities,
+        capabilities::chronos(Mode::Interactive, host_chronos, configured_chronos_features),
+    )?;
+    negotiate_selected_route(
+        "vellum",
+        &vellum_requires,
+        &vellum_capabilities,
+        capabilities::vellum(Mode::Interactive, host_vellum, vellum_credential.is_some()),
+    )?;
     let mut capability_plan = Vec::new();
     if agora.is_some() {
         capability_plan.push(("agora", agora_capabilities));
@@ -582,31 +652,24 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_socket,
         moira_participation_socket,
         moira_participation,
-        moira_requires,
         moira_host,
         daimon_socket,
         daimon_agent_socket,
         daimon_agent_session,
         daimon_agent_sessions,
         daimon_execution_policy,
-        daimon_requires,
         daimon_host,
         hermes_socket,
         hermes_stream,
         hermes_consumer,
-        hermes_requires,
         hermes_host,
         aegis_socket,
-        aegis_requires,
         aegis_host,
         grounding_endpoint,
         grounding_token,
-        grounding_requires,
         chronos_streams,
-        chronos_requires,
         vellum_socket,
         vellum_credential,
-        vellum_requires,
         chronos_writes,
         headless,
         management,
@@ -624,6 +687,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         daimon_bindings,
         check_profile,
         capability_plan,
+        not_exercised_profile_requirements,
     })
 }
 
@@ -870,6 +934,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             options.shell.surfaces().len()
         );
         print_capability_plan(&options.capability_plan);
+        for requirement in &options.not_exercised_profile_requirements {
+            println!(
+                "{}: not_exercised_by_observe={}",
+                requirement.peer, requirement.capability
+            );
+        }
         return Ok(());
     }
     let mut native_host = match start_native_host(&options) {
@@ -2967,6 +3037,8 @@ fn finish_headless(
             "complete": complete,
             "peers": observation.peers,
             "management": management,
+            "not_exercised_profile_requirements": observation.not_exercised_profile_requirements,
+            "requirement_boundary": "These configured workspace capabilities were not exercised by the finite aggregate observation. Their presence is not a control receipt, and their omission is not a claim of headless control parity.",
             "hosted_shutdown": shutdown_report,
         }))?
     );
@@ -3724,24 +3796,20 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         moira_socket: options.moira_socket.clone(),
         moira_participation_socket: options.moira_participation_socket.clone(),
         moira_participation: options.moira_participation,
-        moira_requires: options.moira_requires.clone(),
         moira_hosted: options.moira_host.is_some(),
         daimon_socket: options.daimon_socket.clone(),
         daimon_agent_socket: options.daimon_agent_socket.clone(),
         daimon_agent_session: options.daimon_agent_session,
-        daimon_requires: options.daimon_requires.clone(),
+        daimon_execution_policy: options.daimon_execution_policy.clone(),
         daimon_hosted: options.daimon_host.is_some(),
         hermes_socket: options.hermes_socket.clone(),
         hermes_stream: options.hermes_stream,
         hermes_consumer: options.hermes_consumer,
-        hermes_requires: options.hermes_requires.clone(),
         hermes_hosted: options.hermes_host.is_some(),
         aegis_socket: options.aegis_socket.clone(),
-        aegis_requires: options.aegis_requires.clone(),
         aegis_hosted: options.aegis_host.is_some(),
         grounding_endpoint: options.grounding_endpoint,
         grounding_token: options.grounding_token.clone(),
-        grounding_requires: options.grounding_requires.clone(),
         chronos: options
             .chronos_streams
             .iter()
@@ -3750,12 +3818,11 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
                 directory: stream.directory.clone(),
             })
             .collect(),
-        chronos_requires: options.chronos_requires.clone(),
         chronos_hosted: options.host_chronos,
         vellum_socket: options.vellum_socket.clone(),
         vellum_credential: options.vellum_credential.clone(),
-        vellum_requires: options.vellum_requires.clone(),
         vellum_hosted: options.host_vellum,
+        not_exercised_profile_requirements: options.not_exercised_profile_requirements.clone(),
     }
 }
 

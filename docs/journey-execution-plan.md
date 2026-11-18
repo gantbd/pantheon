@@ -320,6 +320,44 @@ gates before invocation; the resulting task, session, room and owner receipts
 must share durable correlation identities so the operator can return to
 Chronos and see evidence-backed status or comment proposals.
 
+The selected execution profile no longer fabricates a fresh task attempt for
+each control. It now requires one explicit task key/incarnation/attempt and
+retains it across prompt, permission and reattach while keeping execution and
+idempotency identities fresh per exact request. The Configuration inspector and
+the same workspace profile's headless observation project the same task,
+principal, harness, context/tool counts and budgets; every absent
+role/delegation/accountability/
+authority fact remains visibly `not_published`. The work-item and three
+session-set tmux gates enforce the exact envelope in the Daimon fixture. This is
+P0 relationship truth, not J1 completion: the current slice still cannot prove
+that the preselected opaque key maps to the Chronos task it just admitted, and
+therefore cannot honestly open a new task-bound session.
+
+The earlier observation-only profile copy was a presentation-boundary leak.
+The aggregate headless observer now validates requirements against the complete
+configured workspace route, exercises only its actual observation catalogue,
+and emits every other valid profile requirement as `not_exercised`. Unknown
+requirements still refuse. This makes one profile observable across adapters
+without claiming that session-set control ran or that control parity is closed;
+bounded session-set machine commands with owner challenges, per-child receipts,
+uncertainty stops and explicit unsent-child recovery remain required.
+
+On 2026-11-17 the implementation review itself was delegated to the running LM
+Studio `qwen/qwen3-coder-next` model through Daimon's bounded OpenAI-compatible
+provider gate. Daimon verified nonempty attributed output, provider-reported
+input/output usage, the frozen provider-document digest and the evidence digest.
+The accountable integrator accepted the “boundary leak plus missing behavior”
+diagnosis but rejected a redundant access-type layer (Pantheon already publishes
+capability planes), configuration-based control whitelisting, a synthetic
+`--attest` authority flag, and a generic SQLite receipt queue. The run therefore
+proved useful reviewed contribution, not autonomous approval or delivery.
+
+It also exposed a material dogfood gap: Pantheon can configure/drive interactive
+ACP sessions, while its governed terminal-model path is not yet operationally
+reachable from a task. The developer had to enter through Daimon's qualification
+seam, and the model received a curated prompt rather than bounded repository
+exploration, iterative challenge, or a typed proposal schema.
+
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
 - [ ] From the selected task, choose a qualified local provider, declared work
   mode/persona, bounded delegation, grounding depth, tools and budgets through a
@@ -333,6 +371,14 @@ Chronos and see evidence-backed status or comment proposals.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
 - [ ] Create or bind an exact Agora task room.
 - [ ] Open a per-task Daimon session bound to the exact Chronos attempt.
+- [ ] Expose a governed terminal-model invocation from the selected task so a
+  configured LM Studio/Ollama provider can contribute without a test harness or
+  raw HTTP; retain exact task/execution/profile/context/tool/budget identities,
+  usage, evidence, refusal and uncertainty recovery.
+- [ ] Qualify coding delegation with bounded read-only repository exploration,
+  explicit context lineage, iterative reviewer challenge and a typed proposal;
+  keep integration, authority and acceptance with the accountable human/agent
+  ensemble rather than the provider response.
 - [ ] Allow an explicit participation transition between dogfood modes without
   silently changing principal identity, authority, accountability, tool grants,
   budgets or approval rights. Each switch retains the prior activation,

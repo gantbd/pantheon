@@ -574,16 +574,13 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
             "headless composition omits {peer_observer}"
         );
     }
-    for peer_route in [
-        "capabilities::agora",
-        "capabilities::chronos",
-        "capabilities::vellum",
-    ] {
-        assert!(
-            headless.contains(peer_route),
-            "headless composition does not negotiate {peer_route}"
-        );
-    }
+    assert!(cli_entry.contains("capabilities::negotiate_observation"));
+    assert!(cli_entry.contains("not_exercised_profile_requirements"));
+    assert!(headless.contains("not_exercised_profile_requirements"));
+    assert!(
+        !headless.contains("capabilities::negotiate("),
+        "observer must not independently redefine already validated workspace requirements"
+    );
     for peer_route in [
         "capabilities::agora",
         "capabilities::chronos",

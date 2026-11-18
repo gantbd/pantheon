@@ -77,7 +77,7 @@ fn digest_bound_replacement_refuses_profile_bytes_changed_after_preflight() {
 }
 
 #[test]
-fn profile_capabilities_are_negotiated_for_the_selected_mode() {
+fn profile_capabilities_are_validated_against_workspace_and_projected_per_adapter() {
     let path = std::env::temp_dir().join(format!(
         "workbench-capabilities-{}.json",
         std::process::id()
@@ -102,17 +102,11 @@ fn profile_capabilities_are_negotiated_for_the_selected_mode() {
         .arg("--check-profile")
         .output()
         .unwrap();
-    assert!(!headless.status.success());
-    let refusal: serde_json::Value = serde_json::from_slice(&headless.stdout).unwrap();
-    assert_eq!(refusal["version"], 1);
-    assert_eq!(refusal["mode"], "headless");
-    assert_eq!(refusal["complete"], false);
-    assert_eq!(refusal["status"], "configuration_refused");
-    assert_eq!(refusal["peers"], serde_json::json!([]));
-    assert!(
-        String::from_utf8_lossy(&headless.stderr)
-            .contains("agora does not deliver required headless route capability messages.read.v2")
-    );
+    assert!(headless.status.success());
+    let report = String::from_utf8(headless.stdout).unwrap();
+    assert!(report.contains("agora: observation=rooms.read.v2"));
+    assert!(report.contains("agora: not_exercised_by_observe=messages.read.v2"));
+    assert!(headless.stderr.is_empty());
 
     fs::remove_file(path).unwrap();
 }

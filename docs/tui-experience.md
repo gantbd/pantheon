@@ -206,6 +206,12 @@ bounded text typed into the Chronos form, waits for the task receipt, prepares
 the selected local Daimon session's prompt, and stops on refusal or uncertainty.
 Agent dispatch retains the ordinary review/arm/confirm guard. Returning to the
 board requests a fresh Chronos projection rather than showing optimistic state.
+The execution profile freezes one explicit task key/incarnation/attempt across
+prompt, permission and reattach; each actual operation still receives fresh
+execution and idempotency identities. Configuration shows that task envelope,
+harness profile, context/tool counts and budgets, while observation-only
+headless output projects the same facts and names unpublished participation
+fields instead of inferring them.
 The Daimon event timeline is the current conversation surface. A genuinely new
 per-task session and comments embedded in a Chronos ticket remain explicit
 contract gaps: Pantheon will not infer Daimon's dynamic task binding or invent

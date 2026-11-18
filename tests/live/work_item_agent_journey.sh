@@ -60,6 +60,7 @@ cat >"$scratch/profile.json" <<EOF
     "execution": {
       "principal": "10101010101010101010101010101010",
       "profile": "11111111111111111111111111111111",
+      "task_attempt": {"task_key": "14141414141414141414141414141414", "task_incarnation": 1, "attempt_number": 1},
       "context": ["12121212121212121212121212121212"],
       "tools": [],
       "budget": {
@@ -75,6 +76,41 @@ cat >"$scratch/profile.json" <<EOF
   }
 }
 EOF
+
+headless=$("$workbench" headless --workspace-profile "$scratch/profile.json")
+printf '%s' "$headless" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+daimon = next(peer for peer in report["peers"] if peer["peer"] == "daimon")
+execution = daimon["configured_execution_profile"]
+assert execution["status"] == "selected"
+assert execution["task_attempt"] == {
+    "task_key": "14141414141414141414141414141414",
+    "task_incarnation": 1,
+    "attempt_number": 1,
+}
+assert execution["harness_profile"] == "11111111111111111111111111111111"
+assert execution["context_count"] == 1 and execution["tool_count"] == 0
+assert execution["budget"]["max_tool_calls"] == 32
+for field in ("principal_type", "role_work_mode", "delegation", "accountable_owner", "authority_reference", "policy_epoch", "expiry"):
+    assert execution[field] == "not_published"
+assert "not role activation" in execution["boundary"]
+assert report["not_exercised_profile_requirements"] == [
+    {
+        "peer": "daimon",
+        "capability": "agents.session-set.inspect.v1",
+        "disposition": "not_exercised",
+        "reason": "aggregate_observation_only",
+    },
+    {
+        "peer": "daimon",
+        "capability": "agents.session-set.prompt.v1",
+        "disposition": "not_exercised",
+        "reason": "aggregate_observation_only",
+    },
+]
+assert "not a control receipt" in report["requirement_boundary"]
+'
 
 python3 - "$scratch" "$workbench" <<'PYTHON'
 from pathlib import Path

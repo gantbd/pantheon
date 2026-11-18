@@ -94,8 +94,9 @@ pub struct DaimonProfile {
     /// so interactive fan-out remains inspectable.
     #[serde(default)]
     pub agent_sessions: Vec<String>,
-    /// Credential-free execution policy used to build fresh per-session
-    /// envelopes for interactive prompt, permission, and reattach work.
+    /// Credential-free execution policy with one frozen task attempt. Each
+    /// interactive prompt, permission, or reattach still receives fresh
+    /// execution and idempotency identities.
     pub execution: Option<DaimonExecutionPolicyProfile>,
     pub host: Option<DaimonHostProfile>,
     #[serde(default)]
@@ -107,11 +108,20 @@ pub struct DaimonProfile {
 pub struct DaimonExecutionPolicyProfile {
     pub principal: String,
     pub profile: String,
+    pub task_attempt: DaimonTaskAttemptProfile,
     #[serde(default)]
     pub context: Vec<String>,
     #[serde(default)]
     pub tools: Vec<String>,
     pub budget: DaimonExecutionBudgetProfile,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct DaimonTaskAttemptProfile {
+    pub task_key: String,
+    pub task_incarnation: u64,
+    pub attempt_number: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -492,6 +502,13 @@ impl WorkspaceProfile {
                 }
                 validate_hex_identifier(&execution.principal, "Daimon execution principal")?;
                 validate_hex_identifier(&execution.profile, "Daimon execution profile")?;
+                validate_hex_identifier(
+                    &execution.task_attempt.task_key,
+                    "Daimon execution task key",
+                )?;
+                if execution.task_attempt.attempt_number == 0 {
+                    return Err("Daimon execution attempt number must be non-zero");
+                }
                 if execution.context.len() > daimon_agent_command::MAX_CONTEXT_REFERENCES {
                     return Err("Daimon execution context exceeds the 64-reference bound");
                 }
@@ -727,6 +744,9 @@ fn validate_hex_identifier(value: &str, label: &'static str) -> Result<(), &'sta
                 "Daimon execution principal must be 32 hexadecimal digits"
             }
             "Daimon execution profile" => "Daimon execution profile must be 32 hexadecimal digits",
+            "Daimon execution task key" => {
+                "Daimon execution task key must be 32 hexadecimal digits"
+            }
             "Daimon execution context reference" => {
                 "Daimon execution context references must be 32 hexadecimal digits"
             }
@@ -991,6 +1011,8 @@ mod tests {
             "execution":{
               "principal":"10101010101010101010101010101010",
               "profile":"11111111111111111111111111111111",
+              "task_attempt":{"task_key":"14141414141414141414141414141414",
+                "task_incarnation":1,"attempt_number":1},
               "context":["12121212121212121212121212121212"],
               "tools":["13131313131313131313131313131313"],
               "budget":{"max_elapsed_millis":60000,"max_input_tokens":4096,
@@ -1003,6 +1025,7 @@ mod tests {
         assert_eq!(execution.context.len(), 1);
         assert_eq!(execution.tools.len(), 1);
         assert_eq!(execution.budget.max_tool_calls, 32);
+        assert_eq!(execution.task_attempt.task_incarnation, 1);
 
         let invalid_identity = String::from_utf8(valid.to_vec())
             .unwrap()

@@ -45,6 +45,25 @@ pub struct Capability {
     pub plane: Plane,
 }
 
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct RequirementDisposition {
+    pub peer: &'static str,
+    pub capability: String,
+    pub disposition: &'static str,
+    pub reason: &'static str,
+}
+
+impl RequirementDisposition {
+    pub fn not_exercised(peer: &'static str, capability: String) -> Self {
+        Self {
+            peer,
+            capability,
+            disposition: "not_exercised",
+            reason: "aggregate_observation_only",
+        }
+    }
+}
+
 const fn capability(id: &'static str, plane: Plane) -> Capability {
     Capability { id, plane }
 }
@@ -224,6 +243,35 @@ pub fn negotiate(
     Ok(())
 }
 
+/// Validates a profile against the complete configured workspace route while
+/// returning requirements that the finite aggregate observation does not
+/// exercise. This keeps an observation adapter from redefining workspace
+/// capability truth without pretending that unexercised controls ran.
+pub fn negotiate_observation(
+    peer: &str,
+    required: &[String],
+    observed: &[Capability],
+    configured: &[Capability],
+) -> Result<Vec<String>, String> {
+    let mut not_exercised = Vec::new();
+    for required in required {
+        if observed.iter().any(|capability| capability.id == required) {
+            continue;
+        }
+        if configured
+            .iter()
+            .any(|capability| capability.id == required)
+        {
+            not_exercised.push(required.clone());
+            continue;
+        }
+        return Err(format!(
+            "{peer} does not deliver required configured workspace capability {required}"
+        ));
+    }
+    Ok(not_exercised)
+}
+
 /// Guarded control capabilities. Most remain distinct CLI routes; capabilities
 /// composed into an interactive workbench still retain their own confirmation,
 /// connection, and authority contract.
@@ -395,6 +443,30 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn observation_negotiation_preserves_but_does_not_exercise_workspace_controls() {
+        let observed = daimon(Mode::Headless, false, true, true);
+        let configured = daimon(Mode::Interactive, false, true, true);
+        let required = vec![
+            "agents.session.inspect.v1".to_owned(),
+            "agents.session-set.prompt.v1".to_owned(),
+        ];
+        assert_eq!(
+            negotiate_observation("daimon", &required, &observed, &configured).unwrap(),
+            ["agents.session-set.prompt.v1"]
+        );
+        assert_eq!(
+            negotiate_observation(
+                "daimon",
+                &["agents.session-set.unknown.v1".to_owned()],
+                &observed,
+                &configured,
+            )
+            .unwrap_err(),
+            "daimon does not deliver required configured workspace capability agents.session-set.unknown.v1"
+        );
+    }
 
     #[test]
     fn moira_aggregate_does_not_claim_separate_agent_or_control_routes() {

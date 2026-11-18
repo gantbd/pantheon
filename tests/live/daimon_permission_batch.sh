@@ -52,6 +52,7 @@ cat >"$scratch/profile.json" <<EOF
     "execution": {
       "principal": "10101010101010101010101010101010",
       "profile": "11111111111111111111111111111111",
+      "task_attempt": {"task_key": "14141414141414141414141414141414", "task_incarnation": 1, "attempt_number": 1},
       "context": [],
       "tools": ["13131313131313131313131313131313"],
       "budget": {
@@ -136,7 +137,8 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-wait "$fixture_pid"
+kill "$fixture_pid" 2>/dev/null || true
+wait "$fixture_pid" 2>/dev/null || true
 fixture_pid=
 test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 3
 grep 'session 1 permission AllowOnce' "$scratch/receipts" >/dev/null

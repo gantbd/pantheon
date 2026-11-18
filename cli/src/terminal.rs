@@ -1442,9 +1442,9 @@ fn daimon_execution_request(
     Ok(ExecuteRequestV1 {
         execution_id: ExecutionIdV1::new(fresh_identity()?),
         task_attempt: TaskAttemptRefV1 {
-            task_key: fresh_identity()?,
-            task_incarnation: 1,
-            attempt_number: 1,
+            task_key: parse_hex_identity(&policy.task_attempt.task_key)?,
+            task_incarnation: policy.task_attempt.task_incarnation,
+            attempt_number: policy.task_attempt.attempt_number,
         },
         principal,
         profile,
@@ -4747,13 +4747,39 @@ fn acp_session_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> 
                     daimon.execution.is_some(),
                 )
             });
-    vec![
+    let mut lines = vec![
         format!("current              {sessions} exact ACP/Daimon session selector(s)"),
         format!(
             "execution policy     {}",
             if execution { "selected" } else { "not selected" }
         ),
         "owner                Daimon creates, resumes, authenticates, and durably records ACP sessions".into(),
+    ];
+    if let Some(execution) = profile
+        .and_then(|profile| profile.daimon.as_ref())
+        .and_then(|daimon| daimon.execution.as_ref())
+    {
+        lines.extend([
+            format!("task key            {}", execution.task_attempt.task_key),
+            format!(
+                "task attempt        incarnation {} · attempt {}",
+                execution.task_attempt.task_incarnation,
+                execution.task_attempt.attempt_number
+            ),
+            format!("harness profile      {}", execution.profile),
+            format!(
+                "execution bounds    {} context · {} tools · {} ms · input {} · output {} · tool calls {}",
+                execution.context.len(),
+                execution.tools.len(),
+                execution.budget.max_elapsed_millis,
+                execution.budget.max_input_tokens,
+                execution.budget.max_output_tokens,
+                execution.budget.max_tool_calls
+            ),
+            "boundary             every prompt/permission/reattach uses this frozen task attempt; operation and idempotency identities remain fresh".into(),
+        ]);
+    }
+    lines.extend([
         String::new(),
         "1  Start or recover the session through the selected Daimon provider owner.".into(),
         "2  Put its exact 32-hex session ID in daimon.agent_sessions (1–16) and select agent_socket.".into(),
@@ -4762,7 +4788,8 @@ fn acp_session_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> 
         "5  Open Daimon, refresh the set, and use Space to choose the bounded workset.".into(),
         String::new(),
         "Failure orientation: unavailable sessions stay explicit; provider liveness never fabricates workflow completion.".into(),
-    ]
+    ]);
+    lines
 }
 
 fn agora_room_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> {
@@ -9095,6 +9122,11 @@ mod tests {
         let policy = DaimonExecutionPolicyProfile {
             principal: "10101010101010101010101010101010".into(),
             profile: "11111111111111111111111111111111".into(),
+            task_attempt: crate::profile::DaimonTaskAttemptProfile {
+                task_key: "14141414141414141414141414141414".into(),
+                task_incarnation: 4,
+                attempt_number: 2,
+            },
             context: vec!["12121212121212121212121212121212".into()],
             tools: vec!["13131313131313131313131313131313".into()],
             budget: crate::profile::DaimonExecutionBudgetProfile {
@@ -9131,6 +9163,18 @@ mod tests {
         assert_ne!(
             prompts[0].execution.idempotency_key,
             prompts[1].execution.idempotency_key
+        );
+        assert_eq!(
+            prompts[0].execution.task_attempt,
+            TaskAttemptRefV1 {
+                task_key: [0x14; 16],
+                task_incarnation: 4,
+                attempt_number: 2,
+            }
+        );
+        assert_eq!(
+            prompts[0].execution.task_attempt,
+            prompts[1].execution.task_attempt
         );
         assert_eq!(prompts[0].execution.context.len(), 1);
         assert_eq!(prompts[0].execution.tools.len(), 1);
@@ -9184,6 +9228,11 @@ mod tests {
         let policy = DaimonExecutionPolicyProfile {
             principal: "10101010101010101010101010101010".into(),
             profile: "11111111111111111111111111111111".into(),
+            task_attempt: crate::profile::DaimonTaskAttemptProfile {
+                task_key: "14141414141414141414141414141414".into(),
+                task_incarnation: 4,
+                attempt_number: 2,
+            },
             context: vec!["12121212121212121212121212121212".into()],
             tools: vec!["13131313131313131313131313131313".into()],
             budget: crate::profile::DaimonExecutionBudgetProfile {
@@ -9285,6 +9334,11 @@ mod tests {
         let policy = DaimonExecutionPolicyProfile {
             principal: "10101010101010101010101010101010".into(),
             profile: "11111111111111111111111111111111".into(),
+            task_attempt: crate::profile::DaimonTaskAttemptProfile {
+                task_key: "14141414141414141414141414141414".into(),
+                task_incarnation: 4,
+                attempt_number: 2,
+            },
             context: Vec::new(),
             tools: vec!["13131313131313131313131313131313".into()],
             budget: crate::profile::DaimonExecutionBudgetProfile {

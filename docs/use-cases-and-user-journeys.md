@@ -874,6 +874,15 @@ controls remain interactive-only or separate one-shot commands. Configuration
 selects attachments at process launch, and normal TUI exit drains peers Pantheon
 explicitly hosts.
 
+One workspace profile now crosses interactive and aggregate-observation
+adapters without a reduced profile copy. The headless observation validates
+requirements against the complete configured route, exercises only the
+capabilities it actually implements, and returns valid but unexercised
+requirements with an explicit `not_exercised` disposition. This is an adapter
+boundary repair, not control parity: a disposition is neither a control receipt
+nor permission to ignore an unknown capability, and missing bounded session-set
+machine controls remain missing behavior.
+
 Required future work is dynamic authorized attach/detach, resumable watch
 cursors, session/resource catalogues, full headless control/query/analysis/SME
 parity, presentation handoff, and supervisor-backed “leave hosted work running.”
@@ -1899,8 +1908,18 @@ receipt, prepares the exact text in Daimon's ordinary review/arm/confirm flow,
 opens the selected-session conversation, and offers a refresh-backed return to
 the Kanban board. The tmux-driven evidence is
 [`tests/live/work_item_agent_journey.sh`](../tests/live/work_item_agent_journey.sh).
+The selected execution profile now freezes an explicit opaque task key,
+incarnation and attempt alongside principal, harness profile, context/tools and
+budgets; prompt, permission and reattach operations retain that exact attempt
+while receiving fresh execution/idempotency identities. TUI and observation-
+only headless projections show the same credential-free facts and explicitly
+mark role/work mode, principal type, delegation, accountable owner, authority,
+policy epoch and expiry as `not_published`. The live fixture rejects any
+different task envelope.
 Refusal or uncertainty stops the chain. This slice does **not** claim a new
-per-task Daimon session, dynamic exact task-attempt binding, Moira workflow,
+per-task Daimon session, a proven mapping between the newly admitted Chronos
+task and the preselected opaque task key, dynamic exact task-attempt binding,
+Moira workflow,
 Agora room, durable typed journey link, or Chronos ticket comments; those remain
 Required below and need owner-published contracts rather than presentation-side
 inference.
