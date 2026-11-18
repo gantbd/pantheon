@@ -1171,6 +1171,20 @@ mature stakeholder ensemble.
   disposition on `no` and escalate rather than average away `contested`.
 - [ ] Retain independent first passes, correlation, dissent, material findings
   and owner dispositions.
+- [ ] Make an Agora room a durable shared-context venue for an equitable
+  stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
+  the concrete operations dispute in which an SRE agent links recurring-issue
+  evidence and its Chronos work, a project-management agent proposes
+  deprioritization, and either participant can convene the right stakeholders
+  to make the case. Preserve participant standing, independent positions,
+  evidence links, dissent, addressed turns and the exact task/decision scope;
+  room speech alone must not change Chronos priority. Route the resulting
+  recommendation or unresolved conflict through Moira to the named owner or
+  human gate, then project the attributable disposition back into both the room
+  and linked work without claiming consensus that did not occur. The existing
+  `agora_shared_agent_context` live gate is fixture evidence for the opening
+  exchange only; it does not yet prove durable multi-turn deliberation,
+  adjudication, or owner-applied priority disposition.
 - [ ] Publish `HumanGateRequestV1` and exact presentation/response receipts.
 - [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
