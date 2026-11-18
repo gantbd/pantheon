@@ -1000,6 +1000,9 @@ fn vellum_atomic_replace_gate_proves_one_real_n_document_publication_and_trace()
     for required in [
         "three.txt",
         "3 Vellum document(s) selected for bounded work",
+        "literal-that-is-not-present",
+        "no literal matches across 3 marked document(s)",
+        "edit the query or close this sheet",
         "4 matches across 3 exact documents",
         "published atomically across 3 changed documents",
         "owner_atomic_receipt",

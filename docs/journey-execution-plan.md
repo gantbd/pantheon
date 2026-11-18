@@ -269,13 +269,16 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   The unchanged schema-1 baseline and the new schema-2 human/agent cohort both
   pass the full hosted TUI, clean shutdown, refused shutdown, abrupt loss,
   outcome-unknown and exact residue-recovery gate.
-- Vellum admitted and rendered this 59,869-byte plan in an isolated Pantheon
-  session, but its atomic-replace owner refused both long and 54-byte literals
-  as generic `InputLimit`. The long-lived workspace also disagreed about whether
-  one or two documents were selected. Neither surface named the measured
-  workset, applicable ceiling, offending resource or recovery action. Chronos
-  retains `vellum-atomic-workset-limit-orientation`; this update therefore used
-  a repository patch after exercising and preserving the owner refusal.
+- Vellum admitted and rendered this plan in an isolated Pantheon session. An
+  exact query targeted text that a repository patch had already removed while
+  the live owner refreshed underneath the session. Vellum-TUI incorrectly
+  collapsed the resulting zero-match preparation into generic `InputLimit`,
+  which prompted an initially wrong workset-limit diagnosis. The presentation
+  facade now distinguishes invalid query, zero matches and genuine owner/service
+  refusal; the real tmux gate proves the complete recovery message before one
+  successful three-document atomic edit and durable save. This paragraph was
+  itself corrected and saved through Pantheon's guarded Vellum path. The
+  misclassified Chronos item was cancelled rather than retained as false work.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 

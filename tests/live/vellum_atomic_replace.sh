@@ -102,7 +102,7 @@ def palette(query, expected):
     keys("Enter")
 
 try:
-    tmux("new-session", "-d", "-x", "170", "-y", "32", "-s", "vellum-atomic", command)
+    tmux("new-session", "-d", "-x", "240", "-y", "32", "-s", "vellum-atomic", command)
     expect("alpha alpha one", "1/3", timeout=40)
     palette("toggle current vellum document selection", "Toggle current Vellum document selection")
     keys("F6")
@@ -112,6 +112,23 @@ try:
     expect("three alpha", "3/3")
     palette("toggle current vellum document selection", "Toggle current Vellum document selection")
     expect("3 Vellum document(s) selected for bounded work")
+
+    palette(
+        "replace text atomically across selected vellum documents",
+        "Replace text atomically across selected Vellum documents",
+    )
+    literal("literal-that-is-not-present")
+    keys("Tab")
+    literal("replacement")
+    keys("Enter")
+    expect(
+        "no literal matches across 3 marked document(s)",
+        "edit the query or close this sheet",
+    )
+    keys("Escape")
+    expect("Edit query/replacement; Enter rebuilds exact preview")
+    keys("Escape")
+    expect("three alpha", "3/3")
 
     palette(
         "replace text atomically across selected vellum documents",
