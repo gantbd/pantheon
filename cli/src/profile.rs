@@ -27,6 +27,8 @@ pub struct WorkspaceProfile {
     pub task_conversation: Option<TaskConversationProfile>,
     pub moira: Option<MoiraProfile>,
     pub daimon: Option<DaimonProfile>,
+    #[serde(default)]
+    pub hestia: Option<HestiaProfile>,
     pub hermes: Option<HermesProfile>,
     pub aegis: Option<AegisProfile>,
     pub tellus: Option<TellusProfile>,
@@ -211,6 +213,23 @@ pub struct DaimonAgentSessionBudgetProfile {
 pub struct DaimonHostProfile {
     pub executable: PathBuf,
     pub config: PathBuf,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct HestiaProfile {
+    pub socket: PathBuf,
+    #[serde(default)]
+    pub runtime_bindings: Vec<HestiaRuntimeBindingProfile>,
+}
+
+/// Explicit cross-owner composition only. Hestia does not learn Daimon
+/// provider identity and Daimon does not gain Hestia lifecycle authority.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct HestiaRuntimeBindingProfile {
+    pub provider_id: String,
+    pub runtime_id: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -425,6 +444,9 @@ impl WorkspaceProfile {
                 host.executable = resolve(base, &host.executable);
                 host.config = resolve(base, &host.config);
             }
+        }
+        if let Some(hestia) = &mut profile.hestia {
+            hestia.socket = resolve(base, &hestia.socket);
         }
         if let Some(hermes) = &mut profile.hermes {
             hermes.socket = resolve(base, &hermes.socket);
@@ -707,6 +729,30 @@ impl WorkspaceProfile {
                 (DeploymentMode::Attach, None) => {}
             }
             validate_required_capabilities(&daimon.requires)?;
+        }
+        if let Some(hestia) = &self.hestia {
+            if self
+                .daimon
+                .as_ref()
+                .and_then(|profile| profile.model_socket.as_ref())
+                .is_none()
+            {
+                return Err("Hestia runtime correlation requires a selected Daimon model endpoint");
+            }
+            validate_path(&hestia.socket)?;
+            if hestia.runtime_bindings.is_empty() || hestia.runtime_bindings.len() > 16 {
+                return Err("Hestia requires 1–16 explicit runtime bindings");
+            }
+            for (index, binding) in hestia.runtime_bindings.iter().enumerate() {
+                validate_hex_identifier(&binding.provider_id, "Hestia provider binding")?;
+                validate_hex_identifier(&binding.runtime_id, "Hestia runtime binding")?;
+                if hestia.runtime_bindings[..index].iter().any(|prior| {
+                    prior.provider_id == binding.provider_id
+                        || prior.runtime_id == binding.runtime_id
+                }) {
+                    return Err("Hestia provider and runtime bindings must be one-to-one");
+                }
+            }
         }
         if let Some(hermes) = &self.hermes {
             if !self.surfaces.contains(&Surface::Hermes) {
@@ -1201,6 +1247,38 @@ mod tests {
             "host":{"executable":"daimon-local-agent","config":"agent.json"}}
         }"#;
         assert!(WorkspaceProfile::parse(attached_owner, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hestia_runtime_bindings_are_explicit_one_to_one_and_model_scoped() {
+        let valid = br#"{
+          "version":1,"name":"Hestia correlation","surfaces":["daimon"],
+          "daimon":{"model_socket":"model.sock"},
+          "hestia":{"socket":"hestia.sock","runtime_bindings":[{
+            "provider_id":"04040404040404040404040404040404",
+            "runtime_id":"08080808080808080808080808080808"}]}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let hestia = profile.hestia.unwrap();
+        assert_eq!(hestia.socket, Path::new("/tmp/workbench/hestia.sock"));
+        assert_eq!(hestia.runtime_bindings.len(), 1);
+
+        let duplicate = br#"{
+          "version":1,"name":"Hestia correlation","surfaces":["daimon"],
+          "daimon":{"model_socket":"model.sock"},
+          "hestia":{"socket":"hestia.sock","runtime_bindings":[
+            {"provider_id":"04040404040404040404040404040404","runtime_id":"08080808080808080808080808080808"},
+            {"provider_id":"04040404040404040404040404040404","runtime_id":"09090909090909090909090909090909"}]}
+        }"#;
+        assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
+
+        let unbound = br#"{
+          "version":1,"name":"Hestia correlation","surfaces":["daimon"],
+          "hestia":{"socket":"hestia.sock","runtime_bindings":[{
+            "provider_id":"04040404040404040404040404040404",
+            "runtime_id":"08080808080808080808080808080808"}]}
+        }"#;
+        assert!(WorkspaceProfile::parse(unbound, Path::new(".")).is_err());
     }
 
     #[test]

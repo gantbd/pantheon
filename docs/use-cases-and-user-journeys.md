@@ -1727,11 +1727,17 @@ and readiness configuration never enters the public protocol. TCP accept is an
 explicit readiness basis—not model-loaded, provider-conformant,
 inference-success or task-completion evidence. Crashed and still-running
 readiness-timeout outcomes stay distinct; timeout fences the runtime as
-`OutcomeUnknown`. Persistence across abrupt daemon loss, orphan reconciliation,
-artifact/executable digest verification, enforced resource/sandbox preflight,
-Pantheon presentation and Daimon correlation remain required before this is an
-operational hosting product. Filesystem permissions are the current local
-deployment boundary, not an Aegis-backed authorization claim.
+`OutcomeUnknown`. Pantheon now explicitly binds a Daimon provider identity to a
+Hestia runtime identity and presents Hestia lifecycle/readiness/incarnation,
+model, resource and control evidence beside Daimon qualification at the human
+invocation gate and in headless observation. Configured missing, mismatched,
+fenced or non-Ready evidence refuses before arming. `hestiactl` supplies bounded
+ordinary observe/start/drain/shutdown access to the same owner. Persistence
+across abrupt daemon loss, orphan reconciliation, artifact/executable digest
+verification, enforced resource/sandbox preflight, a dedicated Pantheon Hestia
+surface and guarded lifecycle workflows remain required before this is a
+complete operational hosting product. Filesystem permissions are the current
+local deployment boundary, not an Aegis-backed authorization claim.
 
 #### Individual use cases
 

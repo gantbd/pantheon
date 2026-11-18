@@ -74,6 +74,32 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   `vellum-find-selection-edit-semantics` was admitted through the live TUI at
   owner revision 30; selection replacement and an orienting success/failure
   presentation remain required before that path is editor-faithful.
+- Pantheon now consumes Hestia's ordinary client through an explicit one-to-one
+  provider/runtime binding. Headless observation and the guarded local-model
+  invocation review preserve Hestia authority, runtime, revision, incarnation,
+  lifecycle, readiness basis/time, endpoint reference, model identity, resource
+  expectations, control posture and fence state beside—never merged into—
+  Daimon's qualification and execution evidence. A configured runtime that is
+  missing, mismatched, fenced or not Ready refuses before the invocation review
+  can arm. The real tmux gate starts the provider under Hestia, observes it in
+  headless mode, drains and restarts it as incarnation 2 after a provider
+  change, shows the correlated evidence at the human gate, invokes through
+  Daimon, and cleanly drains both owners. The gate also exposed and corrected a
+  fixture crash on Hestia's probe-only TCP connection, reinforcing that
+  TCP-accept readiness is not provider conformance.
+- Hestia commit `ece6dba` now also ships a bounded ordinary `hestiactl` client for observe,
+  start, drain and clean shutdown. It emits one versioned JSON result and reads
+  bounded absolute request documents; lifecycle decisions remain daemon-owned.
+  Pantheon's dedicated Hestia tab and guarded lifecycle mutation presentation,
+  restart persistence/orphan reconciliation, stronger artifact/resource/control
+  enforcement and Aegis authority remain open.
+- Keystone is directionally appropriate for a small semantic-neutral input
+  mechanism—bounded chords, prefix state, profiles and conflict detection—but
+  not for component commands, behavior facades or Ratatui state. Live Pantheon
+  dogfood admitted priority-4 Ready work
+  `keystone-keybinding-mechanism-extraction` as Chronos incarnation 25. This is
+  deliberately behind operational Hestia work and requires at least two real
+  TUI consumers before any general Keystone qualification claim.
 
 ### 2026-11-18 — owner-work admission and contribution delivery
 

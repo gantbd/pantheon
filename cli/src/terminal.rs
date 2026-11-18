@@ -38,6 +38,7 @@ use vellum_tui::{
 };
 
 use crate::capabilities::GUARDED_CONTROL_ROUTES;
+use crate::hestia::{RuntimeEvidenceProjection, observe_provider_runtime};
 use crate::native_host::NativeHost;
 use crate::profile::{
     AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile, KeybindingProfile,
@@ -4929,6 +4930,7 @@ struct ModelWorkItemBindingEvidence {
     model: String,
     qualification: ProviderQualificationProjection,
     execution: ModelTaskExecutionProjection,
+    runtime: Option<RuntimeEvidenceProjection>,
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
@@ -5193,6 +5195,7 @@ struct ModelTaskInvocationPlan {
     model: String,
     qualification: ProviderQualificationProjection,
     execution: ModelTaskExecutionProjection,
+    runtime: Option<RuntimeEvidenceProjection>,
     request_now: u64,
 }
 
@@ -5251,6 +5254,7 @@ impl ModelTaskInvocationWorkflow {
                 model: model.model,
                 qualification: model.qualification,
                 execution: model.execution,
+                runtime: model.runtime,
                 request_now: current_unix_time()?,
             },
             armed: false,
@@ -5419,6 +5423,19 @@ impl ModelTaskInvocationWorkflow {
             .evidence_digest
             .as_deref()
             .unwrap_or("not published");
+        let runtime_summary = self.plan.runtime.as_ref().map_or_else(
+            || "not configured · endpoint liveness is not readiness or task success".to_owned(),
+            |runtime| {
+                format!(
+                    "{} · readiness {} ({}) · incarnation {} @ revision {}",
+                    runtime.lifecycle,
+                    runtime.readiness,
+                    runtime.readiness_basis.unwrap_or("basis unavailable"),
+                    runtime.incarnation,
+                    runtime.revision
+                )
+            },
+        );
         let mut lines = vec![
             format!(
                 "phase                {}",
@@ -5488,7 +5505,7 @@ impl ModelTaskInvocationWorkflow {
                 qualification.completion,
                 qualification.host_observed_at_unix_ms
             ),
-            "runtime health         not published · endpoint liveness is not readiness or task success".into(),
+            format!("runtime health         {runtime_summary}"),
             format!(
                 "tool continuation     {}",
                 qualification.tool_continuation
@@ -5517,6 +5534,39 @@ impl ModelTaskInvocationWorkflow {
             "next safe action      bounded completion only; review any proposal separately because tool continuation is not implied".into(),
             String::new(),
         ]);
+        if let Some(runtime) = &self.plan.runtime {
+            lines.extend([
+                "HESTIA RUNTIME EVIDENCE".into(),
+                format!("runtime identity       {}", runtime.runtime_id),
+                format!("hosting profile        {}", runtime.hosting_profile),
+                format!(
+                    "model binding          {} · matches Daimon {}",
+                    runtime.model_identity, runtime.model_matches_provider
+                ),
+                format!(
+                    "readiness observed     {} · endpoint {} ({})",
+                    runtime
+                        .observed_at_unix_ms
+                        .map_or_else(|| "not published".into(), |value| value.to_string()),
+                    runtime.endpoint_reference.as_deref().unwrap_or("not published"),
+                    runtime.endpoint_scope.unwrap_or("not published")
+                ),
+                format!(
+                    "resources              {} bytes · {} · {} threads · concurrency {} · context {}",
+                    runtime.memory_bytes,
+                    runtime.accelerator,
+                    runtime.threads,
+                    runtime.concurrency,
+                    runtime.context_tokens
+                ),
+                format!(
+                    "controls               sandbox {} · egress {} · fenced {}",
+                    runtime.sandbox, runtime.egress, runtime.fenced
+                ),
+                "runtime boundary        lifecycle/readiness is Hestia-owned; qualification/execution remains Daimon-owned".into(),
+                String::new(),
+            ]);
+        }
         lines.push("Boundary: this is one governed terminal-model attempt, not an Agora room, durable chat session, Chronos comment/status transition, tool continuation, delegation completion, approval, or authority.".into());
         lines.push(
             match self.phase {
@@ -6720,7 +6770,24 @@ fn inspect_work_item_binding(
                     .to_owned()
             })?,
     };
-    validate_work_item_binding(&catalog, task_id, configured_task_key, target)
+    let mut evidence = validate_work_item_binding(&catalog, task_id, configured_task_key, target)?;
+    if let Some(model) = &mut evidence.model
+        && let Some(hestia) = profile.and_then(|profile| profile.hestia.as_ref())
+    {
+        let runtime = observe_provider_runtime(hestia, &model.provider_id, &model.model)?;
+        if !runtime.invocation_eligible {
+            return Err(format!(
+                "Hestia runtime {} is not invocation-eligible: lifecycle {}, readiness {}, model match {}, fenced {}",
+                runtime.runtime_id,
+                runtime.lifecycle,
+                runtime.readiness,
+                runtime.model_matches_provider,
+                runtime.fenced
+            ));
+        }
+        model.runtime = Some(runtime);
+    }
+    Ok(evidence)
 }
 
 fn validate_work_item_binding(
@@ -6791,6 +6858,7 @@ fn validate_work_item_binding(
                 .ok_or_else(|| "the local-model owner omitted the selected model".to_owned())?,
             qualification: qualification.clone(),
             execution: execution.clone(),
+            runtime: None,
         })
     } else {
         None
@@ -12465,10 +12533,37 @@ mod tests {
             WorkItemExecutionTarget::Model,
         )
         .unwrap();
-        let model = evidence.model.unwrap();
+        let mut model = evidence.model.unwrap();
         assert_eq!(model.execution.attempt_number, 3);
         assert_eq!(model.qualification.host_observed_at_unix_ms, 1);
         assert_eq!(model.qualification.tool_continuation, "not_exercised");
+        model.runtime = Some(RuntimeEvidenceProjection {
+            owner: "hestia",
+            provider_id: model.provider_id.clone(),
+            runtime_id: "ab".repeat(16),
+            authority_id: "cd".repeat(16),
+            revision: 6,
+            incarnation: 2,
+            lifecycle: "ready",
+            readiness: "ready",
+            readiness_basis: Some("tcp_accept"),
+            observed_at_unix_ms: Some(2),
+            endpoint_reference: Some("local-model-loopback".into()),
+            endpoint_scope: Some("loopback"),
+            hosting_profile: "local-model".into(),
+            model_identity: model.model.clone(),
+            model_matches_provider: true,
+            context_tokens: 32_768,
+            memory_bytes: 1_073_741_824,
+            accelerator: "cpu".into(),
+            threads: 4,
+            concurrency: 1,
+            sandbox: "inherited",
+            egress: "inherited",
+            fenced: false,
+            invocation_eligible: true,
+            boundary: "Hestia lifecycle/readiness evidence only; Daimon owns provider qualification and execution",
+        });
         let workflow = ModelTaskInvocationWorkflow {
             phase: ModelTaskInvocationPhase::Reviewing,
             plan: ModelTaskInvocationPlan {
@@ -12484,6 +12579,7 @@ mod tests {
                 model: model.model,
                 qualification: model.qualification,
                 execution: model.execution,
+                runtime: model.runtime,
                 request_now: 2,
             },
             armed: false,
@@ -12493,7 +12589,10 @@ mod tests {
         };
         let lines = workflow.lines().join("\n");
         assert!(lines.contains("qualified_completion · completion true"));
-        assert!(lines.contains("runtime health         not published"));
+        assert!(lines.contains("runtime health         ready · readiness ready (tcp_accept)"));
+        assert!(lines.contains("HESTIA RUNTIME EVIDENCE"));
+        assert!(lines.contains("qwen/qwen3-coder-next · matches Daimon true"));
+        assert!(lines.contains("sandbox inherited · egress inherited · fenced false"));
         assert!(lines.contains("observed 1 unix ms"));
         assert!(lines.contains("tool continuation     not_exercised"));
         assert!(lines.contains("tool_continuation_not_exercised"));
@@ -13034,6 +13133,7 @@ mod tests {
             task_conversation: None,
             moira: None,
             daimon: None,
+            hestia: None,
             hermes: None,
             aegis: None,
             tellus: None,

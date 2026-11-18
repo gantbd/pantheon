@@ -3993,6 +3993,10 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
             .and_then(|profile| profile.daimon.as_ref())
             .and_then(|daimon| daimon.host.clone()),
         daimon_hosted: options.daimon_host.is_some(),
+        hestia: options
+            .workspace_profile
+            .as_ref()
+            .and_then(|profile| profile.hestia.clone()),
         hermes_socket: options.hermes_socket.clone(),
         hermes_stream: options.hermes_stream,
         hermes_consumer: options.hermes_consumer,

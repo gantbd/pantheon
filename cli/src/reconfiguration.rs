@@ -117,6 +117,7 @@ mod tests {
             task_conversation: None,
             moira: None,
             daimon: None,
+            hestia: None,
             hermes: None,
             aegis: None,
             tellus: None,

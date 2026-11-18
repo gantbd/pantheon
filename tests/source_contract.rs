@@ -1812,6 +1812,11 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
         .expect("hosted local-model gate");
     for required in [
         "daimon-local-model",
+        "hestia-daemon",
+        "hestiactl",
+        "Hestia-owned local runtime",
+        "HESTIA RUNTIME EVIDENCE",
+        "Hestia-correlated human gate",
         "model_socket",
         "models.endpoint.attach.v1",
         "MODEL ENDPOINT ATTACHED",
@@ -1837,6 +1842,7 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
     assert!(profile.contains("exactly one model endpoint or exact agent selection"));
     let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
     assert!(headless.contains("connect_model"));
+    assert!(headless.contains("observe_hestia"));
     assert!(headless.contains("no execution, provider health, qualification, or authority"));
     let provider =
         fs::read_to_string(root.join("cli/src/provider.rs")).expect("provider facade source");
@@ -1855,6 +1861,8 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
     assert!(terminal.contains("models.task.invoke.result"));
     assert!(terminal.contains("review → arm → confirm"));
     assert!(terminal.contains("tool-continuation conformance"));
+    assert!(terminal.contains("observe_provider_runtime"));
+    assert!(terminal.contains("lifecycle/readiness is Hestia-owned"));
     let live = fs::read_to_string(root.join("tests/live/daimon_model_lmstudio.sh"))
         .expect("LM Studio live gate");
     for required in [

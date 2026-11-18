@@ -7,10 +7,10 @@ workspace=$(CDPATH= cd -- "$root/.." && pwd -P)
 scratch=$(mktemp -d "/private/tmp/pdmh.XXXXXX")
 aegis_pid=
 chronos_pid=
-provider_pid=
+hestia_pid=
 
 cleanup() {
-  for pid in "$provider_pid" "$chronos_pid" "$aegis_pid"; do
+  for pid in "$hestia_pid" "$chronos_pid" "$aegis_pid"; do
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
       wait "$pid" 2>/dev/null || true
@@ -28,31 +28,71 @@ cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
 cargo build --manifest-path "$workspace/daimon/Cargo.toml" \
   --package daimon-local-model --bin daimon-local-model \
   --package daimon-local-agent --example qualification_chronos --locked --offline
+cargo build --manifest-path "$workspace/hestia/Cargo.toml" \
+  --package hestia-daemon --bin hestia-daemon \
+  --package hestiactl --bin hestiactl --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
   --package pantheon-cli --bin pantheon --locked --offline
 
 aegis="$workspace/aegis/target/debug/aegis-daemon"
 model="$workspace/daimon/target/debug/daimon-local-model"
 chronos="$workspace/daimon/target/debug/examples/qualification_chronos"
+hestia="$workspace/hestia/target/debug/hestia-daemon"
+hestiactl="$workspace/hestia/target/debug/hestiactl"
 workbench="$root/target/debug/pantheon"
 uid=$(id -u)
 gid=$(id -g)
 
-python3 "$root/tests/fixtures/openai_qualification_server.py" \
-  "$scratch/provider.port" "$scratch/provider.count" \
-  >"$scratch/provider.out" 2>"$scratch/provider.err" &
-provider_pid=$!
+provider_port=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()')
+python=$(command -v python3)
+
+printf '%s\n' \
+  '{' \
+  '  "version": 1,' \
+  "  \"socket\": \"$scratch/hestia.sock\"," \
+  '  "authority": [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9],' \
+  '  "max_runtimes": 1,' \
+  '  "profiles": [{' \
+  '    "id": "local-model",' \
+  '    "endpoint_reference": "daimon-local-model-loopback",' \
+  "    \"executable\": \"$python\"," \
+  "    \"arguments\": [\"$root/tests/fixtures/openai_qualification_server.py\", \"$scratch/provider.port\", \"$scratch/provider.count\", \"$provider_port\"]," \
+  '    "environment": [],' \
+  "    \"readiness_address\": \"127.0.0.1:$provider_port\"," \
+  '    "startup_timeout_ms": 5000,' \
+  '    "probe_interval_ms": 10,' \
+  '    "drain_timeout_ms": 1000' \
+  '  }]' \
+  '}' >"$scratch/hestia.json"
+chmod 600 "$scratch/hestia.json"
+"$hestia" "$scratch/hestia.json" >"$scratch/hestia.out" 2>"$scratch/hestia.err" &
+hestia_pid=$!
 attempt=0
-while [ ! -s "$scratch/provider.port" ]; do
+while [ ! -S "$scratch/hestia.sock" ]; do
   attempt=$((attempt + 1))
-  if ! kill -0 "$provider_pid" 2>/dev/null || [ "$attempt" -ge 100 ]; then
-    sed -n '1,160p' "$scratch/provider.err" >&2
-    echo 'FAIL: local provider fixture did not become ready' >&2
+  if ! kill -0 "$hestia_pid" 2>/dev/null || [ "$attempt" -ge 100 ]; then
+    sed -n '1,160p' "$scratch/hestia.err" >&2
+    echo 'FAIL: Hestia owner did not become ready' >&2
     exit 1
   fi
   sleep 0.025
 done
-provider_port=$(cat "$scratch/provider.port")
+
+printf '%s\n' \
+  '{' \
+  '  "authority": [9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9],' \
+  '  "runtime": [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],' \
+  '  "operation": [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],' \
+  '  "expected_revision": 0,' \
+  '  "expected_incarnation": 0,' \
+  '  "hosting_profile": "local-model",' \
+  '  "model": {"identity":"qwen/qwen3-coder-next-staged","digest":null,"quantization":null,"context_tokens":32768},' \
+  '  "resources": {"memory_bytes":1073741824,"accelerator":"cpu","threads":4,"concurrency":1},' \
+  '  "sandbox": "Inherited",' \
+  '  "egress": "Inherited"' \
+  '}' >"$scratch/hestia-start-staged.json"
+"$hestiactl" start "$scratch/hestia.sock" "$scratch/hestia-start-staged.json" >"$scratch/hestia-start.out"
+grep -q '"Ready"' "$scratch/hestia-start.out"
 
 "$aegis" create "$scratch/authority" "$scratch/aegis.sock" \
   01010101010101010101010101010101 "$uid" "$gid" \
@@ -147,6 +187,13 @@ printf '%s\n' \
   "      \"executable\": \"$model\"," \
   "      \"config\": \"$scratch/model.json\"" \
   '    }' \
+  '  },' \
+  '  "hestia": {' \
+  "    \"socket\": \"$scratch/hestia.sock\"," \
+  '    "runtime_bindings": [{' \
+  '      "provider_id": "04040404040404040404040404040404",' \
+  '      "runtime_id": "08080808080808080808080808080808"' \
+  '    }]' \
   '  }' \
   '}' >"$scratch/profile.json"
 
@@ -179,6 +226,15 @@ assert provider["endpoint_scope"] == "loopback" and provider["endpoint_port"] > 
 assert not provider["structured_output"] and provider["structured_tools"]
 assert provider.get("qualification") is None
 assert "address" not in provider and "path" not in provider and "bearer_token_env" not in provider
+hestia = next(peer for peer in report["peers"] if peer["peer"] == "hestia")
+assert hestia["status"] == "current"
+runtime = hestia["runtimes"][0]["evidence"]
+assert runtime["lifecycle"] == "ready" and runtime["readiness"] == "ready"
+assert runtime["readiness_basis"] == "tcp_accept"
+assert runtime["model_identity"] == "qwen/qwen3-coder-next-staged"
+assert runtime["model_matches_provider"] and runtime["invocation_eligible"]
+assert runtime["incarnation"] == 1 and runtime["revision"] == 2
+assert runtime["boundary"].startswith("Hestia lifecycle/readiness evidence only")
 assert report["hosted_shutdown"]["status"] == "clean"
 assert report["hosted_shutdown"]["receipts"] == [
     {"peer": "daimon", "instance": None, "disposition": "clean"},
@@ -187,11 +243,11 @@ assert report["hosted_shutdown"]["receipts"] == [
 '
 [ ! -e "$scratch/model.sock" ]
 
-python3 - "$scratch" "$workbench" <<'PYTHON'
+python3 - "$scratch" "$workbench" "$hestiactl" <<'PYTHON'
 from pathlib import Path
-import shlex, subprocess, sys, time
+import json, shlex, subprocess, sys, time
 
-scratch, binary = sys.argv[1:]
+scratch, binary, hestiactl = sys.argv[1:]
 tmux_socket = str(Path(scratch) / "tmux.sock")
 profile = str(Path(scratch) / "profile.json")
 command = shlex.join([binary, "interactive", "--workspace-profile", profile, "--chronos-allow-writes"])
@@ -221,7 +277,7 @@ def expect(*markers, timeout=10):
     raise AssertionError(f"Missing {markers!r}:\n{screen}\n" + "\n".join(diagnostics))
 
 try:
-    tmux("new-session", "-d", "-x", "200", "-y", "32", "-s", "model", command)
+    tmux("new-session", "-d", "-x", "200", "-y", "48", "-s", "model", command)
     expect("CHRONOS", "Model work", "revision 0", timeout=20)
     tmux("send-keys", "-t", "model", "C-p")
     tmux("send-keys", "-t", "model", "-l", "go to daimon")
@@ -276,7 +332,52 @@ try:
         if time.monotonic() >= deadline:
             raise AssertionError("Pantheon did not drain after provider replacement")
         time.sleep(0.025)
-    tmux("new-session", "-d", "-x", "200", "-y", "32", "-s", "model", command)
+
+    def hestia(command, operand):
+        completed = subprocess.run(
+            [hestiactl, command, str(Path(scratch) / "hestia.sock"), str(operand)],
+            capture_output=True, text=True, check=True, timeout=10,
+        )
+        return json.loads(completed.stdout)["result"]
+
+    ready = hestia("observe", "08080808080808080808080808080808")
+    drain_path = Path(scratch) / "hestia-drain.json"
+    drain_path.write_text(json.dumps({
+        "authority": [9] * 16,
+        "runtime": [8] * 16,
+        "operation": [6] * 16,
+        "expected_revision": ready["revision"],
+        "expected_incarnation": ready["incarnation"],
+    }))
+    stopped = hestia("drain", drain_path)["Applied"]
+    start_path = Path(scratch) / "hestia-start-final.json"
+    start_path.write_text(json.dumps({
+        "authority": [9] * 16,
+        "runtime": [8] * 16,
+        "operation": [5] * 16,
+        "expected_revision": stopped["revision"],
+        "expected_incarnation": stopped["incarnation"],
+        "hosting_profile": "local-model",
+        "model": {
+            "identity": "qwen/qwen3-coder-next",
+            "digest": None,
+            "quantization": None,
+            "context_tokens": 32768,
+        },
+        "resources": {
+            "memory_bytes": 1073741824,
+            "accelerator": "cpu",
+            "threads": 4,
+            "concurrency": 1,
+        },
+        "sandbox": "Inherited",
+        "egress": "Inherited",
+    }))
+    restarted = hestia("start", start_path)["Applied"]
+    assert restarted["lifecycle"] == "Ready"
+    assert restarted["incarnation"] == 2
+
+    tmux("new-session", "-d", "-x", "200", "-y", "48", "-s", "model", command)
     expect("CHRONOS", "Model work", "revision 0", timeout=20)
     tmux("send-keys", "-t", "model", "C-p")
     tmux("send-keys", "-t", "model", "-l", "go to daimon")
@@ -316,7 +417,11 @@ try:
         "Invoke local model for Chronos task",
         "local-model-task",
         "provider posture      qualified_completion · completion true · observed",
-        "runtime health         not published",
+        "runtime health         ready · readiness ready (tcp_accept) · incarnation 2",
+        "HESTIA RUNTIME EVIDENCE",
+        "qwen/qwen3-coder-next · matches Daimon true",
+        "sandbox inherited · egress inherited · fenced false",
+        "lifecycle/readiness is Hestia-owned",
         "tool continuation     not_exercised",
         "qualification evidence sha256:",
         "known deviations      tool_continuation_not_exercised",
@@ -375,10 +480,48 @@ assert invocation["input_tokens"] == 17 and invocation["output_tokens"] == 4
 assert invocation["output_bytes"] == 30
 assert invocation["output_digest"].startswith("sha256:")
 assert "output" not in invocation
+hestia = next(peer for peer in report["peers"] if peer["peer"] == "hestia")
+runtime = hestia["runtimes"][0]["evidence"]
+assert hestia["status"] == "current"
+assert runtime["model_identity"] == "qwen/qwen3-coder-next"
+assert runtime["model_matches_provider"] and runtime["invocation_eligible"]
+assert runtime["incarnation"] == 2
 assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ "$(cat "$scratch/provider.count")" = 2 ]
 [ ! -e "$scratch/model.sock" ]
+
+python3 - "$scratch" "$hestiactl" <<'PYTHON'
+from pathlib import Path
+import json, subprocess, sys
+
+scratch, ctl = sys.argv[1:]
+socket = str(Path(scratch) / "hestia.sock")
+runtime = "08080808080808080808080808080808"
+observed = json.loads(subprocess.run(
+    [ctl, "observe", socket, runtime], capture_output=True, text=True, check=True,
+).stdout)["result"]
+request = Path(scratch) / "hestia-final-drain.json"
+request.write_text(json.dumps({
+    "authority": [9] * 16,
+    "runtime": [8] * 16,
+    "operation": [4] * 16,
+    "expected_revision": observed["revision"],
+    "expected_incarnation": observed["incarnation"],
+}))
+drained = json.loads(subprocess.run(
+    [ctl, "drain", socket, str(request)], capture_output=True, text=True, check=True,
+).stdout)["result"]["Applied"]
+assert drained["lifecycle"] == "Stopped"
+shutdown = json.loads(subprocess.run(
+    [ctl, "shutdown", socket, "09090909090909090909090909090909"],
+    capture_output=True, text=True, check=True,
+).stdout)["result"]
+assert shutdown == "Clean"
+PYTHON
+wait "$hestia_pid"
+hestia_pid=
+[ ! -e "$scratch/hestia.sock" ]
 
 if kill -0 "$chronos_pid" 2>/dev/null; then
   kill -TERM "$chronos_pid"
@@ -388,8 +531,4 @@ chronos_pid=
 kill -TERM "$aegis_pid"
 wait "$aegis_pid"
 aegis_pid=
-kill -TERM "$provider_pid"
-wait "$provider_pid" || true
-provider_pid=
-
-echo 'PASS: hosted local-model Daimon -> guarded exact-field edit/apply -> owner-retained qualification -> Chronos task -> reviewed replay-fenced invocation -> headless/TUI receipt parity -> two provider calls -> clean drain'
+echo 'PASS: Hestia-owned local runtime -> guarded exact-field edit/apply -> owner-retained qualification -> Chronos task -> Hestia-correlated human gate -> reviewed replay-fenced invocation -> headless/TUI receipt parity -> two provider calls -> clean dual-owner drain'

@@ -18,10 +18,11 @@ use vellum_sdk_client::{
 };
 
 use crate::capabilities::RequirementDisposition;
+use crate::hestia::observe_provider_runtime;
 use crate::management::PeerRuntime;
 use crate::profile::{
     AgoraProfile, AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
-    DaimonHostProfile,
+    DaimonHostProfile, HestiaProfile,
 };
 use crate::provider::provider_catalog;
 use pantheon::{AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
@@ -44,6 +45,7 @@ pub struct HeadlessRequest {
     pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
     pub daimon_provider_owner: Option<DaimonHostProfile>,
     pub daimon_hosted: bool,
+    pub hestia: Option<HestiaProfile>,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
     pub hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
@@ -79,7 +81,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
     let mut peers = Vec::new();
     let mut management = Vec::new();
     let mut complete = true;
-    let provider_configuration = request.daimon_provider_owner.map(|owner| {
+    let provider_configuration = request.daimon_provider_owner.as_ref().map(|owner| {
         match provider_catalog(&owner.executable, &owner.config) {
             Ok(catalog) => serde_json::json!({
                 "status": "current",
@@ -166,6 +168,17 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             request.daimon_hosted,
         );
     }
+    if let Some(hestia) = request.hestia {
+        let (observation, current) = observe_hestia(hestia, request.daimon_provider_owner.as_ref());
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            false,
+        );
+    }
     if let Some(socket) = request.hermes_socket {
         let (observation, current) =
             observe_hermes(socket, request.hermes_stream, request.hermes_consumer);
@@ -236,6 +249,91 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         management,
         not_exercised_profile_requirements: request.not_exercised_profile_requirements,
     })
+}
+
+fn observe_hestia(
+    profile: HestiaProfile,
+    daimon_owner: Option<&DaimonHostProfile>,
+) -> (serde_json::Value, bool) {
+    let Some(owner) = daimon_owner else {
+        return (
+            serde_json::json!({
+                "peer": "hestia",
+                "capability": "runtimes.observe.v1",
+                "status": "configuration_refused",
+                "next_action": "select the exact Daimon owner used by the Hestia provider bindings",
+            }),
+            false,
+        );
+    };
+    let catalog = match provider_catalog(&owner.executable, &owner.config) {
+        Ok(catalog) => catalog,
+        Err(detail) => {
+            return (
+                serde_json::json!({
+                    "peer": "hestia",
+                    "capability": "runtimes.observe.v1",
+                    "status": "provider_catalog_refused",
+                    "detail": detail,
+                }),
+                false,
+            );
+        }
+    };
+    let mut runtimes = Vec::new();
+    let mut current = true;
+    for binding in &profile.runtime_bindings {
+        let Some(provider) = catalog
+            .providers
+            .iter()
+            .find(|provider| provider.provider_id == binding.provider_id)
+        else {
+            current = false;
+            runtimes.push(serde_json::json!({
+                "provider_id": binding.provider_id,
+                "runtime_id": binding.runtime_id,
+                "status": "provider_missing",
+            }));
+            continue;
+        };
+        let Some(model) = provider.model.as_deref() else {
+            current = false;
+            runtimes.push(serde_json::json!({
+                "provider_id": binding.provider_id,
+                "runtime_id": binding.runtime_id,
+                "status": "model_missing",
+            }));
+            continue;
+        };
+        match observe_provider_runtime(&profile, &binding.provider_id, model) {
+            Ok(evidence) => {
+                current &= evidence.invocation_eligible;
+                runtimes.push(serde_json::json!({
+                    "status": if evidence.invocation_eligible { "ready" } else { "not_ready" },
+                    "evidence": evidence,
+                }));
+            }
+            Err(detail) => {
+                current = false;
+                runtimes.push(serde_json::json!({
+                    "provider_id": binding.provider_id,
+                    "runtime_id": binding.runtime_id,
+                    "status": "observation_refused",
+                    "detail": detail,
+                }));
+            }
+        }
+    }
+    (
+        serde_json::json!({
+            "peer": "hestia",
+            "capability": "runtimes.observe.v1",
+            "status": if current { "current" } else { "partial" },
+            "runtimes": runtimes,
+            "boundary": "Hestia publishes runtime lifecycle/readiness; Daimon separately publishes provider qualification/execution",
+        }),
+        current,
+    )
 }
 
 fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
@@ -1620,6 +1718,7 @@ mod tests {
             daimon_execution_policy: None,
             daimon_provider_owner: None,
             daimon_hosted: false,
+            hestia: None,
             hermes_socket: None,
             hermes_stream: None,
             hermes_consumer: None,

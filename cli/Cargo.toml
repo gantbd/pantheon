@@ -62,6 +62,8 @@ aegis-client = { version = "=0.1.0", path = "../../aegis/crates/aegis-client" }
 aegis-wire = { version = "=0.1.0", path = "../../aegis/crates/aegis-wire" }
 tellus = { version = "=0.1.0", path = "../../tellus" }
 tellus-local-client = { version = "=0.1.0", path = "../../tellus/local-client" }
+hestia-local-client = { version = "=0.1.0", path = "../../hestia/crates/hestia-local-client" }
+hestia-protocol = { version = "=0.1.0", path = "../../hestia/crates/hestia-protocol" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }

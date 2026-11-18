@@ -3,6 +3,7 @@
 
 pub mod capabilities;
 pub mod headless;
+pub mod hestia;
 mod hosted;
 pub mod management;
 pub mod native_host;
