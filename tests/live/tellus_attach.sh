@@ -3,7 +3,7 @@ set -eu
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd -P)
 workspace=$(CDPATH= cd -- "$repo/.." && pwd -P)
-scratch=$(mktemp -d /tmp/wb-grounding.XXXXXX)
+scratch=$(mktemp -d /tmp/wb-tellus.XXXXXX)
 chmod 700 "$scratch"
 target="$scratch/target"
 workbench=${WORKBENCH_BIN:-"$target/debug/pantheon"}
@@ -27,15 +27,15 @@ if [ -z "${WORKBENCH_BIN:-}" ]; then
 fi
 
 (cd "$workspace/dendrite" && \
-  DENDRITE_GROUNDING_PORT_FILE="$scratch/port" MIX_ENV=test \
-  mix run scripts/grounding_fixture.exs) >"$scratch/dendrite.log" 2>&1 &
+  DENDRITE_TELLUS_PORT_FILE="$scratch/port" MIX_ENV=test \
+  mix run scripts/tellus_fixture.exs) >"$scratch/dendrite.log" 2>&1 &
 pid=$!
 attempt=0
 while [ ! -s "$scratch/port" ]; do
   attempt=$((attempt + 1))
   if ! kill -0 "$pid" 2>/dev/null || [ "$attempt" -eq 200 ]; then
     sed -n '1,160p' "$scratch/dendrite.log" >&2
-    echo 'FAIL: Dendrite Grounding fixture did not become ready' >&2
+    echo 'FAIL: Dendrite Tellus fixture did not become ready' >&2
     exit 1
   fi
   sleep 0.025
@@ -45,9 +45,9 @@ endpoint="127.0.0.1:$(cat "$scratch/port")"
 printf '%s\n' \
   '{' \
   '  "version": 1,' \
-  '  "name": "Grounding attach qualification",' \
-  '  "surfaces": ["overview", "grounding"],' \
-  "  \"grounding\": {\"endpoint\": \"$endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
+  '  "name": "Tellus attach qualification",' \
+  '  "surfaces": ["overview", "tellus"],' \
+  "  \"tellus\": {\"endpoint\": \"$endpoint\", \"token\": null, \"requires\": [\"tellus.observe.v1\"]}" \
   '}' >"$profile"
 
 snapshot=$("$workbench" headless --workspace-profile "$profile")
@@ -57,17 +57,17 @@ report = json.load(sys.stdin)
 assert report["version"] == 1 and report["mode"] == "headless" and report["complete"]
 assert len(report["peers"]) == 1
 peer = report["peers"][0]
-assert peer["peer"] == "grounding" and peer["capability"] == "grounding.observe.v1"
+assert peer["peer"] == "tellus" and peer["capability"] == "tellus.observe.v1"
 assert peer["status"] == "current" and peer["entries"][0]["load_id"] == "fixture/sample"
 '
 
 printf '%s\n' \
   '{' \
   '  "version": 1,' \
-  '  "name": "Grounding partial-failure qualification",' \
-  '  "surfaces": ["overview", "aegis", "grounding"],' \
+  '  "name": "Tellus partial-failure qualification",' \
+  '  "surfaces": ["overview", "aegis", "tellus"],' \
   "  \"aegis\": {\"socket\": \"$scratch/missing-aegis.sock\", \"requires\": [\"authority.observe.v1\"]}," \
-  "  \"grounding\": {\"endpoint\": \"$endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
+  "  \"tellus\": {\"endpoint\": \"$endpoint\", \"token\": null, \"requires\": [\"tellus.observe.v1\"]}" \
   '}' >"$mixed_profile"
 
 set +e
@@ -85,7 +85,7 @@ assert report["version"] == 1 and report["mode"] == "headless"
 assert not report["complete"]
 assert [(peer["peer"], peer["status"]) for peer in report["peers"]] == [
     ("aegis", "connect_refused"),
-    ("grounding", "current"),
+    ("tellus", "current"),
 ]
 assert report["peers"][1]["entries"][0]["load_id"] == "fixture/sample"
 '
@@ -111,9 +111,9 @@ def expect(*markers):
 
 try:
     tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "workbench", command)
-    expect("grounding", "current")
+    expect("tellus", "current")
     tmux("send-keys", "-t", "workbench", "M-6")
-    expect("Grounding", "fixture/sample", "current")
+    expect("Tellus", "fixture/sample", "current")
     tmux("send-keys", "-t", "workbench", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "workbench", check=False).returncode == 0:
@@ -123,5 +123,5 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo 'PASS: typed Dendrite Grounding endpoint -> Pantheon headless and interactive attach; healthy Grounding evidence survives failed Aegis peer'
+echo 'PASS: typed Dendrite Tellus endpoint -> Pantheon headless and interactive attach; healthy Tellus evidence survives failed Aegis peer'
 

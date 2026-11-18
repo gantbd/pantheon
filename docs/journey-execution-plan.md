@@ -316,6 +316,35 @@ owner.
   though `make run` and the qualification targets exist. That discoverability
   gap is retained as user friction for Chronos triage; it does not weaken or
   delay the sponsored-review acceptance requirement.
+- The cyclic review contract now also requires evidence-grounded inventory of
+  underused capabilities, observability and presentation gaps, abstraction and
+  leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
+  Chronos and Hermes. Hermes remains an uninterpreting ordered domain-event
+  ledger; Keystone receives only repeated, semantically identical mechanisms
+  with independent consumers and cross-consumer qualification, never Pantheon
+  policy or owner semantics.
+- Engram and Pies are now standing prior-art inputs under a fractal review that
+  moves across breadth/depth, up/down, in/out and lifecycle time. The linked
+  transfer map distinguishes direct reuse, owner-preserving adaptation,
+  presentation inspiration and rejection; each accepted lesson must name its
+  Pantheon journey, sovereign owner, invariants, qualification and learning
+  flow through Dendrite, Moira, Chronos and Vellum.
+- The meta-goal now names an epistemic center for each material review: identify
+  the smallest load-bearing truth, adversarially drive decidable `maybe` claims
+  down to scoped Boolean evidence, and escalate genuinely value-laden,
+  plural/under-specified questions to explicit mu and named-human judgment.
+  Operational uncertainty remains an owner fact and cannot be relabeled mu.
+- Rune now supplies the executable discipline for that review rather than only
+  prior-art prose. Real `scry`, `machine_path_check`, `smith` and Dendrite MCP
+  runs validated the audit, gap-analysis, ensemble, instrumented-BDD and UADD
+  structures, loss-checked the audit-cycle Mermaid projection, and retrieved
+  exact user-experience guidance. Pantheon's canonical delivery-governance flow
+  validates and projects to Mermaid/RDF/SHACL while keeping the unselected
+  review-definition owner visibly unresolved. Dogfood also exposed two retained
+  ecosystem gaps: local Dendrite startup orientation around required secrets,
+  and legacy groundings that refuse modern bounded surface depths and require
+  exact `describe` fallback. Structural proof remains distinct from semantic
+  truth, workflow execution and named-human acceptance.
 
 ## Milestone 0 — stabilize the product contract
 
@@ -582,6 +611,28 @@ model, organizational and training-lineage correlation remain explicit gaps.
 
 Exit evidence: J1 plus acceptance cases 1–30 and the owner-specific recovery
 cases implicated by the selected profile.
+
+### Tellus identity and dogfood findings — 2026-11-18
+
+- [x] Make Tellus the single component identity across Pantheon surfaces,
+  behavior commands, profiles, capability manifests, headless reports, Dendrite
+  routes, fixtures, source qualification and live gates. `grounding` remains a
+  domain term for Rune inputs/digests only; there is no legacy component alias.
+- [x] Qualify Dendrite `/tellus/v1/observe` → Tellus typed client → Pantheon
+  headless and tmux TUI, including partial-peer failure without loss of healthy
+  Tellus evidence.
+- [x] Dogfood Vellum through Pantheon: admit a second project document with
+  Ctrl-O and retain `vellum-workspace-limit-diagnostics` as a real Chronos task.
+- [ ] Replace Vellum's opaque `Workspace(Session(Adapter(Limit))` startup
+  refusal with the violated bound, observed value, configurable owner setting,
+  and safe next action. The current whole-file seed rejected `terminal.rs`.
+- [ ] Select and qualify a bounded whole-workspace/context-index profile for
+  Vellum. Progressive file admission works, but it is not IDE-like project
+  context or cross-file symbol resolution.
+- [x] Correct the dual-service dogfood journey to use semantic behavior-facade
+  routes from Vellum (`M-1`/`M-2`/`M-3`); bracket keys remain document input.
+  The gate now deliberately proves one edit and dirty-exit protection rather
+  than relying on an accidental navigation-key edit.
 
 ### J1 dogfood participation matrix
 

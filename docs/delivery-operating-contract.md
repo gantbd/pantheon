@@ -84,6 +84,61 @@ conversational narration.
 - Review completion requires an inspectable sign-off or refusal. Silence,
   timeout, relabeling, and agent impersonation cannot satisfy a human gate.
 
+## Cyclic capability, boundary and learning review
+
+Every meaningful turn reconciliation, MBR and QBR includes a productive
+introspection/reflexion pass. It must improve the delivery system as well as the
+current deliverable without turning Pantheon into a universal semantic owner.
+The required fractal review geometry, Engram/Pies prior-art transfer protocol,
+standards anchors, initial transfer map and placement refusals are maintained in
+[`fractal-capability-review.md`](fractal-capability-review.md).
+
+- Inventory existing peer and host capabilities before proposing new code.
+  Record capabilities that are unused, duplicated, difficult to discover,
+  incompletely composed, or missing TUI/headless qualification.
+- Review legitimate surface gaps across owner events, diagnostic logs, metrics,
+  traces, profiles, alerts, domain receipts, user feedback and UI
+  instrumentation. Preserve source, schema, population, sampling, cardinality,
+  retention, gaps, time quality and semantic limits; telemetry may orient work
+  but cannot prove authority, a durable effect or journey completion.
+- Ground recommendations in current owner contracts, live dogfood evidence,
+  applicable standards and established domain practice. State where precedent
+  does not fit Pantheon's bounded ownership model instead of copying it blindly.
+- Apply reuse and leakage tests: one semantic fact has one sovereign owner;
+  projections retain owner identity and revision; common presentation does not
+  imply common authority; and host convenience cannot become a shadow protocol.
+- Consider promotion into Keystone only for a small mechanism or law that has
+  repeated independent consumers, identical semantics, bounded failure modes
+  and cross-consumer qualification. Domain events, decisions, routing, retry,
+  reconciliation, UI behavior and Pantheon composition policy remain outside
+  Keystone.
+- Treat Hermes as ordered domain-event delivery, not a generic log, metric,
+  trace or audit store. Correlation may link Hermes cursors to other signals,
+  but must not reinterpret their evidence or disclosure policy.
+- Flow reusable lessons deliberately: Vellum retains the review artifact;
+  Dendrite grounds standards, precedents and reusable expertise; Moira retains
+  bounded deliberation, dissent and finding disposition; Chronos owns accepted
+  follow-up work; Hermes carries owner-published domain events; Moira
+  observations and the selected telemetry owners expose content-safe operating
+  evidence.
+- For each material finding, record reuse/remediation/defer/reject disposition,
+  rationale, accountable owner, evidence, next review trigger and whether a
+  named human or executive decision is required.
+- Apply the review across breadth, depth, up, down, in, out and lifecycle time.
+  Bound recursion by materiality, novelty, risk and evidence. Prior art is
+  classified as direct reuse, owner-preserving adaptation, presentation
+  inspiration or rejected warning before any transfer into Pantheon.
+- Run the review through Rune's existing audit, gap-analysis, prior-art,
+  ensemble, instrumented-BDD and user-acceptance machines where applicable.
+  Use `scry`, `machine_path_check`, `smith` and Dendrite for the structural and
+  corpus claims they actually prove; disclose semantic, runtime and human-gate
+  gaps rather than promoting a structurally valid machine to delivery evidence.
+- Find and state the smallest load-bearing truth at the center of each material
+  review. Drive `maybe` toward scoped Boolean proof/refutation when the claim is
+  decidable, or toward explicit mu/named-human judgment when meaning, values or
+  legitimate plurality cannot be reduced honestly. Consensus, confidence and
+  telemetry never substitute for either.
+
 ## Overnight execution boundary
 
 Work proceeds in bounded, reviewable commits. Capability promotion requires

@@ -510,7 +510,7 @@ def main():
         "aegis-tui": args.aegis_tui or inputs["aegisTui"]["revision"],
         "dendrite": args.dendrite or inputs["dendrite"]["revision"],
         "keystone": inputs["keystone"]["revision"],
-        "tellus": args.tellus or inputs["groundingTui"]["revision"],
+        "tellus": args.tellus or inputs["tellusTui"]["revision"],
         "vellum": args.vellum or inputs["vellum"]["revision"],
         "vellum-tui": args.vellum_tui or inputs["vellumTui"]["revision"],
     }

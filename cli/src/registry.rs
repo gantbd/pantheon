@@ -13,7 +13,7 @@ pub enum HostedPeerId {
     Daimon,
     Hermes,
     Aegis,
-    Grounding,
+    Tellus,
     Chronos(String),
     Vellum,
 }

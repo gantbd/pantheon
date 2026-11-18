@@ -84,7 +84,7 @@ laws and never retries an uncertain effect. Chronos writes remain disabled
 unless explicitly enabled; Vellum authority remains entirely service-owned.
 
 The versioned workspace shell also names Overview, Chronos, Vellum, Agora,
-Moira, Daimon, Grounding, Aegis, Hermes, local-host Operations, and
+Moira, Daimon, Tellus, Aegis, Hermes, local-host Operations, and
 Configuration surfaces. Chronos and Vellum receive independent full-frame
 presentations; legacy profiles may still select the side-by-side `workspace`
 surface. Overview reports
@@ -96,8 +96,8 @@ the selected private Unix client by supplying its socket and participant claim;
 the daemon authenticates the connected OS peer and remains the authority owner.
 A trusted host can instead supply an independently constructed `agora-tui`
 component through `pantheon_cli::run_hosted_terminal_with_agora`. Moira,
-Daimon, Hermes, Aegis, and Grounding profiles attach their peer-owned read-only
-components. Grounding uses Dendrite's typed presentation endpoint rather than
+Daimon, Hermes, Aegis, and Tellus profiles attach their peer-owned read-only
+components. Tellus uses Dendrite's typed presentation endpoint rather than
 MCP tool envelopes or text. `[` and `]` switch
 surfaces; Tab switches focus only inside Workspace. See
 [the gap ledger](WORKSPACE_GAPS.md) and [delivery roadmap](ROADMAP.md).
@@ -264,7 +264,7 @@ present, and `tasks.cancel-receipt.v3` only for writable receipted cancellation.
 Watch, planning, and selected Moira/Daimon attempt projections are likewise
 conditional route capabilities. Headless Chronos remains observation-only.
 Use the explicit `headless` command for a bounded, versioned JSON observation of every configured
-Agora, Chronos, Vellum, Moira, Daimon, Hermes, Aegis, and Grounding peer. Each row names its peer-owned capability and
+Agora, Chronos, Vellum, Moira, Daimon, Hermes, Aegis, and Tellus peer. Each row names its peer-owned capability and
 truthful status. Healthy rows remain visible when another peer is unavailable,
 but the command refuses aggregate success. `--headless` and `--snapshot` remain
 compatibility aliases for invocations without an explicit command.
@@ -406,7 +406,7 @@ The machine source receipt records the clean committed local closure. Remote
 CI and release qualification remain deferred until those exact inputs are
 remotely reachable.
 
-The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Grounding, Hermes, Moira, and Vellum TUI
+The source receipt now pins the committed Aegis, Agora, Chronos, Daimon, Tellus, Hermes, Moira, and Vellum TUI
 boundaries used by this composition. Their reusable default presentations keep
 standalone CLI/application concerns outside Pantheon's dependency graph.
 It also pins Keystone as an explicit substrate source input because selected
@@ -568,9 +568,9 @@ socket removal and reopens the same authority. It links no Aegis
 engine/service/storage crate and treats none of those deployment facts as a
 grant.
 
-Run `sh tests/live/grounding_attach.sh` to qualify the independently packaged
-Grounding peer through Dendrite's typed authenticated observation endpoint in
-both Pantheon modes. This uses `grounding.observe.v1`, not Dendrite's agent-facing
+Run `sh tests/live/tellus_attach.sh` to qualify the independently packaged
+Tellus peer through Dendrite's typed authenticated observation endpoint in
+both Pantheon modes. This uses `tellus.observe.v1`, not Dendrite's agent-facing
 MCP boundary.
 
 Run `sh tests/live/moira_attach.sh` to qualify Moira's content-free census in
@@ -735,7 +735,7 @@ links no Hermes engine/service or Keystone crate and does not acquire or infer
 ledger authority.
 
 Run `sh tests/live/operational_attach.sh` to qualify the real Moira, Daimon,
-Hermes, and Aegis daemons plus Dendrite's typed Grounding service in one
+Hermes, and Aegis daemons plus Dendrite's typed Tellus service in one
 Pantheon headless invocation and one Ratatui session. The live Overview must
 render all six peer evidence channels—including Daimon's distinct presence and
 session/event channels—with explicit current or degraded evidence state. This

@@ -11,13 +11,13 @@ read-only input until that repository settles.
   current owners.
 - [x] Close Aegis interactive and headless Pantheon attachment qualification
   using the existing `authority.observe.v1` peer and real durable daemon.
-- [x] Qualify Moira, Daimon, Hermes, Aegis and Grounding real-service observation
+- [x] Qualify Moira, Daimon, Hermes, Aegis and Tellus real-service observation
   together in one Pantheon invocation, not only as isolated peer attachments.
 - [x] Keep the root repository inventory synchronized with all presentation
   peers and current source state.
 - [x] Move reusable Hermes, Agora, and Aegis Unix transport clients into their
   owner repositories; reduce TUI packages to compatibility re-exports and make
-  Pantheon consume the owner clients directly. Defer Moira and Grounding until
+  Pantheon consume the owner clients directly. Defer Moira and Tellus until
   their active owner boundaries settle.
 - [x] Keep Hermes hosting out of the mixed engine graph: Pantheon now owns the
   owner-supplied standalone daemon process and attaches the same public client,
@@ -55,23 +55,23 @@ read-only input until that repository settles.
   residue preservation, safe replacement readiness, exact incarnation rotation,
   and retained-room recovery. A bounded missing-receipt cut proves
   `outcome_unknown`, continued Aegis drain, and the same exact recovery.
-- [x] Define a typed Grounding presentation client over Dendrite's bounded
+- [x] Define a typed Tellus presentation client over Dendrite's bounded
   observation/provenance behavior, separate from MCP.
 - [x] Add `tellus` and its standalone interactive/headless application,
   then attach the same component to Pantheon.
-- [x] Keep Grounding observation-only for this program. Selected surface/read
+- [x] Keep Tellus observation-only for this program. Selected surface/read
   DTOs are deliberately unselected until Dendrite owns exact content
   disclosure, provenance, freshness and response bounds; the current typed
   observation and standalone/Pantheon attach contract is complete without
   importing its MCP authority.
 - [x] Add deployment-owned typed lifecycle factory seams for Moira, Daimon,
-  Hermes, Aegis, and Grounding while preserving separate state, authority,
+  Hermes, Aegis, and Tellus while preserving separate state, authority,
   recovery and shutdown receipts.
 - [x] Promote Moira through its owner-supplied sovereign `moira-saga-local`
   profile after explicit storage, Aegis authentication, recovery and shutdown
   composition passed the standalone and Pantheon real-process lifecycle
   qualification. Pantheon supervises the exact owner binary from an opaque
-  profile and cannot upgrade its reconciliation authority. Grounding remains
+  profile and cannot upgrade its reconciliation authority. Tellus remains
   attach-only by design: Dendrite retains its IDE/agent bridge lifecycle.
 - [x] Promote Daimon's production local-agent application to an explicit
   supervised profile factory after the owner supplied an opaque configuration,

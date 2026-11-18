@@ -23,7 +23,7 @@ printf '%s\n' \
   '  "daimon": null,' \
   '  "hermes": null,' \
   '  "aegis": null,' \
-  '  "grounding": null,' \
+  '  "tellus": null,' \
   '  "chronos": null,' \
   '  "vellum": null' \
   '}' >"$scratch/current.json"
@@ -38,7 +38,7 @@ printf '%s\n' \
   '  "daimon": null,' \
   '  "hermes": null,' \
   '  "aegis": null,' \
-  '  "grounding": null,' \
+  '  "tellus": null,' \
   '  "chronos": null,' \
   '  "vellum": null' \
   '}' >"$scratch/next.json"

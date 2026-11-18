@@ -20,6 +20,7 @@ use vellum_sdk_client::{
 use crate::capabilities::RequirementDisposition;
 use crate::management::PeerRuntime;
 use crate::profile::{AgoraProfile, AgoraTransportProfile, DaimonExecutionPolicyProfile};
+use pantheon::{AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
 
 pub struct HeadlessRequest {
     pub operation_id: String,
@@ -41,8 +42,8 @@ pub struct HeadlessRequest {
     pub hermes_hosted: bool,
     pub aegis_socket: Option<PathBuf>,
     pub aegis_hosted: bool,
-    pub grounding_endpoint: Option<SocketAddr>,
-    pub grounding_token: Option<PathBuf>,
+    pub tellus_endpoint: Option<SocketAddr>,
+    pub tellus_token: Option<PathBuf>,
     pub chronos: Vec<Workstream>,
     pub chronos_hosted: bool,
     pub vellum_socket: Option<PathBuf>,
@@ -57,6 +58,7 @@ pub struct HeadlessObservation {
     pub workspace: String,
     pub complete: bool,
     pub peers: Vec<serde_json::Value>,
+    pub operator_agenda: OperatorAgendaView,
     pub management: Vec<PeerRuntime>,
     pub not_exercised_profile_requirements: Vec<RequirementDisposition>,
 }
@@ -144,8 +146,8 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             request.aegis_hosted,
         );
     }
-    if let Some(endpoint) = request.grounding_endpoint {
-        let (observation, current) = observe_grounding(endpoint, request.grounding_token.as_ref());
+    if let Some(endpoint) = request.tellus_endpoint {
+        let (observation, current) = observe_tellus(endpoint, request.tellus_token.as_ref());
         record_observation(
             &mut peers,
             &mut management,
@@ -180,14 +182,112 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
     if peers.is_empty() {
         return Err("headless observation requires at least one configured peer".into());
     }
+    let operator_agenda = project_operator_agenda(&peers);
     Ok(HeadlessObservation {
         operation_id: request.operation_id,
         workspace: request.workspace,
         complete,
         peers,
+        operator_agenda,
         management,
         not_exercised_profile_requirements: request.not_exercised_profile_requirements,
     })
+}
+
+fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
+    let mut agenda = OperatorAgendaView::default();
+    for peer in peers {
+        let Some(name) = peer.get("peer").and_then(serde_json::Value::as_str) else {
+            continue;
+        };
+        let status = peer
+            .get("status")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("unknown");
+        if name == "chronos" {
+            let instance = peer
+                .get("instance")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown");
+            let source = format!("chronos/{instance}");
+            if status != "current" {
+                agenda.unavailable_sources.push(source);
+                continue;
+            }
+            let revision = peer
+                .get("revision")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown");
+            for task in peer
+                .get("agenda_items")
+                .and_then(serde_json::Value::as_array)
+                .into_iter()
+                .flatten()
+            {
+                let Some(task_id) = task.get("task").and_then(serde_json::Value::as_str) else {
+                    continue;
+                };
+                let incarnation = task
+                    .get("incarnation")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("unknown");
+                agenda.push(AgendaEntry {
+                    source_peer: "chronos".into(),
+                    source_instance: Some(instance.into()),
+                    source_revision: revision.into(),
+                    resource_identity: format!("{task_id}#{incarnation}"),
+                    kind: AgendaKind::OutcomeUnknown,
+                    urgency: AgendaUrgency::Blocking,
+                    title: format!("Uncertain Chronos task · {task_id}"),
+                    why_operator: "the owner fenced progress after an uncertain outcome".into(),
+                    authority: "agenda presence grants none; Chronos owns task state".into(),
+                    requested_action: "inspect owner evidence and choose a permitted recovery"
+                        .into(),
+                    consequence_of_waiting: "the task remains fenced; no blind retry is safe"
+                        .into(),
+                    next_owner_action: "open Chronos and inspect the exact task revision".into(),
+                    route: "navigate.chronos".into(),
+                });
+            }
+        } else if name == "moira-participation" && status == "current" {
+            let options = peer
+                .get("permission_option_count")
+                .and_then(serde_json::Value::as_u64);
+            if let Some(options) = options {
+                let revision = peer
+                    .get("revision")
+                    .map(serde_json::Value::to_string)
+                    .unwrap_or_else(|| "unknown".into());
+                let identity = peer
+                    .get("participation")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("unknown");
+                agenda.push(AgendaEntry {
+                    source_peer: "moira-participation".into(),
+                    source_instance: None,
+                    source_revision: revision,
+                    resource_identity: identity.into(),
+                    kind: AgendaKind::GovernedPermission,
+                    urgency: AgendaUrgency::Blocking,
+                    title: format!("Governed permission · {options} exact option(s)"),
+                    why_operator: "the governed participation is awaiting an attributable choice"
+                        .into(),
+                    authority: "only the Moira/Aegis owner contract can settle this request".into(),
+                    requested_action: "inspect the exact challenge and choose, refuse, or defer"
+                        .into(),
+                    consequence_of_waiting:
+                        "the participation remains paused at the permission gate".into(),
+                    next_owner_action: "open Moira; refresh before acting if the revision changed"
+                        .into(),
+                    route: "navigate.moira".into(),
+                });
+            }
+        } else if name == "moira-participation" && status != "current" {
+            agenda.unavailable_sources.push(name.into());
+        }
+    }
+    agenda.sort();
+    agenda
 }
 
 fn record_observation(
@@ -203,19 +303,16 @@ fn record_observation(
     *complete &= current;
 }
 
-fn observe_grounding(
-    endpoint: SocketAddr,
-    token_path: Option<&PathBuf>,
-) -> (serde_json::Value, bool) {
+fn observe_tellus(endpoint: SocketAddr, token_path: Option<&PathBuf>) -> (serde_json::Value, bool) {
     use std::time::Duration;
-    use tellus::GroundingPort;
+    use tellus::TellusPort;
 
     let capability = tellus::CAPABILITIES.headless[0];
     let token = match token_path.map(read_token).transpose() {
         Ok(token) => token,
         Err(error) => {
             return (
-                peer_failure("grounding", capability, "configuration_refused", error),
+                peer_failure("tellus", capability, "configuration_refused", error),
                 false,
             );
         }
@@ -226,7 +323,7 @@ fn observe_grounding(
             Err(error) => {
                 return (
                     peer_failure(
-                        "grounding",
+                        "tellus",
                         capability,
                         "configuration_refused",
                         format!("{error:?}"),
@@ -240,7 +337,7 @@ fn observe_grounding(
             let current = value.complete && value.status == "current";
             (
                 serde_json::json!({
-                    "peer": "grounding", "capability": capability,
+                    "peer": "tellus", "capability": capability,
                     "status": value.status, "complete": value.complete,
                     "entries": value.entries.iter().map(|entry| serde_json::json!({
                         "load_id": entry.load_id, "state": entry.state,
@@ -252,7 +349,7 @@ fn observe_grounding(
             )
         }
         Err(error) => (
-            peer_failure("grounding", capability, "unavailable", format!("{error:?}")),
+            peer_failure("tellus", capability, "unavailable", format!("{error:?}")),
             false,
         ),
     }
@@ -261,12 +358,12 @@ fn observe_grounding(
 fn read_token(path: &PathBuf) -> Result<String, String> {
     let metadata = std::fs::metadata(path).map_err(|error| error.to_string())?;
     if metadata.len() > 8 * 1024 {
-        return Err("Grounding token exceeds 8 KiB".into());
+        return Err("Tellus token exceeds 8 KiB".into());
     }
     let token = std::fs::read_to_string(path).map_err(|error| error.to_string())?;
     let token = token.trim_end().to_owned();
     if token.is_empty() {
-        return Err("Grounding token is empty".into());
+        return Err("Tellus token is empty".into());
     }
     Ok(token)
 }
@@ -807,6 +904,7 @@ fn observe_moira_participation(
                     "profile_document_digest": view.profile_document_digest.map(|digest| hex_bytes(&digest)),
                     "active_turn": view.active_turn.is_some(),
                     "pending_operation": view.pending.map(participation_operation_kind),
+                    "permission_option_count": view.permission.map(|value| value.option_count),
                     "capabilities": {
                         "load_session": view.capabilities.load_session,
                         "resume_session": view.capabilities.resume_session,
@@ -981,6 +1079,20 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
             let view = observer
                 .view()
                 .expect("successful refresh publishes a view");
+            let agenda_items = view
+                .entries
+                .iter()
+                .filter_map(|entry| {
+                    matches!(entry.snapshot.phase, chronos_protocol::Phase::Uncertain).then(|| {
+                        serde_json::json!({
+                            "task": entry.reference.task,
+                            "incarnation": entry.reference.incarnation,
+                            "phase": "uncertain",
+                            "priority": entry.snapshot.priority,
+                        })
+                    })
+                })
+                .collect::<Vec<_>>();
             (
                 serde_json::json!({
                     "peer": "chronos",
@@ -989,6 +1101,7 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
                     "status": "current",
                     "revision": format!("{:?}", view.revision),
                     "tasks": view.entries.len(),
+                    "agenda_items": agenda_items,
                     "truncated": false,
                 }),
                 true,
@@ -1311,8 +1424,8 @@ mod tests {
             hermes_hosted: false,
             aegis_socket: None,
             aegis_hosted: false,
-            grounding_endpoint: None,
-            grounding_token: None,
+            tellus_endpoint: None,
+            tellus_token: None,
             chronos: Vec::new(),
             chronos_hosted: false,
             vellum_socket: None,
@@ -1329,5 +1442,31 @@ mod tests {
             observation.not_exercised_profile_requirements[0].capability,
             "messages.read.v2"
         );
+    }
+
+    #[test]
+    fn operator_agenda_preserves_owner_identity_and_does_not_invent_review_owner() {
+        let peers = vec![serde_json::json!({
+            "peer": "chronos",
+            "instance": "delivery",
+            "status": "current",
+            "revision": "Finite(7)",
+            "agenda_items": [{
+                "task": "recover-effect",
+                "incarnation": "3",
+                "phase": "uncertain",
+                "priority": 8
+            }]
+        })];
+        let agenda = project_operator_agenda(&peers);
+        assert_eq!(agenda.entries.len(), 1);
+        assert_eq!(agenda.entries[0].source_peer, "chronos");
+        assert_eq!(
+            agenda.entries[0].source_instance.as_deref(),
+            Some("delivery")
+        );
+        assert_eq!(agenda.entries[0].source_revision, "Finite(7)");
+        assert_eq!(agenda.entries[0].resource_identity, "recover-effect#3");
+        assert!(!agenda.operating_reviews.owner_configured);
     }
 }

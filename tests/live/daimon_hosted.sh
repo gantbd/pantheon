@@ -198,7 +198,7 @@ assert entry == {
     "kind": "vellum_document",
     "source_digest": "sha256:d0726d2d048d7c9ecb8d80f31dbded527ccde6e144141ddc4d215391e149e346",
     "content_bytes": 21,
-    "grounding": None,
+    "tellus": None,
 }
 assert context["content_disclosure"] == "not_published"
 vellum = next(peer for peer in report["peers"] if peer["peer"] == "vellum")

@@ -20,7 +20,7 @@ if [ "$#" -eq 0 ]; then
     moira_reconciliation \
     daimon_prompt \
     work_item_agent_journey \
-    grounding_attach \
+    tellus_attach \
     aegis_attach \
     hermes_attach
 fi

@@ -75,7 +75,7 @@ The current owner-contract audit constrains the next cross-process work:
 | Agora | Session-scoped client request sequence | Use for exact request settlement only; it is not a caller-selected distributed trace parent |
 | Moira | Workflow/saga identities and exact receipts | Retain as semantic evidence beneath the local span; do not replace workflow identity with a trace ID |
 | Daimon and Aegis | Exact idempotency, session, revision, epoch, and receipt identities | Preserve for safety and replay; never repurpose them as telemetry |
-| Vellum and Grounding | No uniform Pantheon-selected trace field on the composed public path | Measure through the public-client terminal projection and record deeper correlation as unavailable |
+| Vellum and Tellus | No uniform Pantheon-selected trace field on the composed path | Measure through the client terminal projection and record deeper correlation as unavailable |
 
 The initial single-machine budgets are deliberately concrete:
 
@@ -91,7 +91,7 @@ CI runs the reference workload through the same instrumentation and fails on a
 budget violation. Component and live tests must additionally exercise accepted,
 refused, failed, and outcome-unknown paths; recovery is a new explicit attempt,
 never an invisible continuation. Agora, Moira, Daimon, Hermes, Aegis, and
-Grounding now publish a minimal peer-owned read-settlement signal, allowing
+Tellus now publishes a minimal peer-owned read-settlement signal, allowing
 Pantheon to correlate palette and direct-key requests through a current or
 failed projection without parsing presentation text. Chronos publishes changed
 projection settlement through its hub; Vellum's synchronous service and poll
@@ -259,7 +259,7 @@ owns the representation that best matches its work and evidence.
 | Daimon | Selected-session transcript/evidence, current turn/challenge, and explicit guarded-control sheet | Mixing presence monitoring with provider-control authority |
 | Aegis | Authority ledger, grant ancestry/scope, decisions, epochs, and an isolated administration session | Rendering authority as ordinary editable settings |
 | Hermes | Stream/cursor timeline, retention window, disclosure, acknowledgement, and compaction boundaries | Losing ordering or exact cursor evidence in generic pagination |
-| Grounding | Provenance, source graph, digest/freshness, and disclosure state | Inventing controls before a peer-owned contract exists |
+| Tellus | Provenance, source graph, digest/freshness, and disclosure state | Inventing controls before an owner-selected contract exists |
 | Operations | Topology and lifecycle state, dependency/start order, health/freshness, drain/restart receipts | Reusing a document or conversation metaphor for process control |
 
 The design test for every surface is therefore two-part: it should feel native
@@ -272,7 +272,7 @@ that explicitly select `workspace` retain the qualified side-by-side legacy
 composition, but new profiles should select `chronos` and `vellum` separately.
 Configuration is likewise a persistent surface rather than a palette-only
 sheet; `Alt-,` opens its bounded redacted launch facts from anywhere.
-Agora, Moira, Daimon, Grounding, Aegis, and Hermes also retain distinct
+Agora, Moira, Daimon, Tellus, Aegis, and Hermes also retain distinct
 operational landing layers when disconnected: each describes its real
 workflows, exact profile connection contract, and discovery path instead of
 collapsing into a generic empty-state card. Once attached, the same tab hands
@@ -290,7 +290,7 @@ its body to the peer-owned renderer.
 | Aegis | Bounded authority/grant/decision observation; exact-current-epoch global revocation; and one private bounded managed session for 1–16-scope issue/attenuate, retained ancestry review, and authorization. Exact owner confirmations, arm/confirm, one attempt, uncertainty fencing, redacted facts, instrumentation, and live durable-daemon qualification keep handles inside the owner component | Add owner-defined bulk grant import/reconciliation only if Aegis publishes such a contract |
 | Hermes | Ledger, selected stream and cursor observation; 1–16 event disclosure with bounded per-event previews and list/detail navigation; exact selectable acknowledgement and compaction ranges with fine/coarse/bounds movement, owner re-observation, arm/confirm, uncertainty fencing, receipt-to-refreshed-projection traces, and exit protection | Add protocol-derived consumer-safety evidence for compaction without inferring it from aggregate backlog |
 | Agora | Conversation-shaped room sidebar and message timeline; bounded revision-bound room creation; multiline message composition with a canonical 0–64 recipient set, owner revision/sequence receipts, one in-flight request, uncertainty fencing, and exact replay | Add member administration and reply/thread workflows only through peer-owned contracts |
-| Grounding | Provenance and freshness observation | Remain observation-only until Dendrite selects a disclosure/control contract |
+| Tellus | Provenance and freshness observation | Remain observation-only until Dendrite selects a disclosure/control contract |
 | Configuration | Profile validated before startup; redacted live sheet shows selected surfaces, attached peers, and launch-time Chronos authority; bounded local profile-path editor reuses the typed parser and exact diff planner; explicit arm/confirm preserves current authority flags across process replacement; SHA-256 binds confirmation and replacement startup to the exact preflighted bytes | Add saved/recent profile discovery without scanning the machine or exposing credential paths |
 | Operations | Live local-host lifecycle and hosted-peer census; guarded two-step reverse-order topology drain on a worker; retained exact per-peer receipts; pending/outcome-unknown and dirty/indeterminate exit fencing; preflighted restart disconnects peer clients, requires a clean owned-topology drain, then replaces the process and proves the replacement configuration | Add per-peer restart selection only where the typed host transaction can return replacement clients to the running terminal safely |
 | Instrumentation | Bounded human activity/receipt stream; content-free action and frame metrics; explicit in-flight/overdue and budget-violation state; bounded operation-stage ledger; shared parent correlation for multi-subsystem work; correlated guarded round trips and reads across all asynchronous peer surfaces; timed Chronos projection and Vellum service paths; instrumented reference performance gate | Add owner-published cross-process correlation where peer protocols support it, protocol-derived projection-age budgets, export, and live full-suite performance qualification |
@@ -314,7 +314,7 @@ claim of authority or completion.
    Aegis, Hermes, then Agora. **In progress:** Moira's first exact
    reconciliation disposition and Daimon's exact-state advance/cancel/close
    controls are composed and preserve uncertain-outcome fencing. Keep
-   Grounding observation-only.
+   Tellus observation-only.
 4. Add configuration inspection, diff/preflight, and local lifecycle operations
    using the already-qualified management substrate. **Implemented:** the
    interactive workbench validates a bounded next-profile path, renders the
@@ -330,4 +330,4 @@ claim of authority or completion.
    **Breadth complete:** tmux qualification now drives the real binary across
    every first-class surface and global presentation keybinding; the
    operational gate separately mounts the real Moira, Daimon, Hermes, Aegis,
-   and Grounding peers.
+   and Tellus peers.

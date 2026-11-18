@@ -42,11 +42,12 @@ use crate::profile::{AgoraTransportProfile, DaimonExecutionPolicyProfile, Worksp
 use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
 use pantheon::{
-    ActivityLevel, ActivityLog, CommandKind, CommandPalette, CommandSpec, ExitDecision, Focus,
-    Instrumentation, OperationsReceiptView, OperationsView, PaletteOutcome, PeerHealthState,
-    PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView, Surface,
-    decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
-    draw_shell_with_moira, route_key, shell_input, surface_tab_at,
+    ActivityLevel, ActivityLog, AgendaEntry, AgendaKind, AgendaUrgency, CommandKind,
+    CommandPalette, CommandSpec, ExitDecision, Focus, Instrumentation, OperationsReceiptView,
+    OperationsView, OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews,
+    RoutedInput, Shell, ShellInput, SuiteHealthView, Surface, decide_exit, draw_activity,
+    draw_command_palette, draw_help, draw_inspector, draw_shell_with_moira, route_key, shell_input,
+    surface_tab_at,
 };
 
 struct InputCapture {
@@ -181,7 +182,7 @@ impl BehaviorFacade {
         } else if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE)
             && matches!(
                 surface,
-                Surface::Overview | Surface::Operations | Surface::Configuration
+                Surface::Overview | Surface::Agenda | Surface::Operations | Surface::Configuration
             )
         {
             KeyBehavior::ExecuteCommand("view.refresh")
@@ -224,13 +225,14 @@ impl BehaviorFacade {
     const fn surface_command(surface: Surface) -> &'static str {
         match surface {
             Surface::Overview => "navigate.overview",
+            Surface::Agenda => "navigate.agenda",
             Surface::Chronos => "navigate.chronos",
             Surface::Vellum => "navigate.vellum",
             Surface::Workspace => "navigate.workspace",
             Surface::Agora => "navigate.agora",
             Surface::Moira => "navigate.moira",
             Surface::Daimon => "navigate.daimon",
-            Surface::Grounding => "navigate.grounding",
+            Surface::Tellus => "navigate.tellus",
             Surface::Aegis => "navigate.aegis",
             Surface::Hermes => "navigate.hermes",
             Surface::Operations => "navigate.operations",
@@ -580,7 +582,7 @@ struct RefreshOperations {
     daimon: Option<u64>,
     hermes: Option<u64>,
     aegis: Option<u64>,
-    grounding: Option<u64>,
+    tellus: Option<u64>,
 }
 
 struct HealthChannel {
@@ -850,6 +852,67 @@ impl OperationsRuntime {
     }
 }
 
+fn operator_agenda_view(
+    chronos: Option<&Hub>,
+    moira_participation: Option<&moira_tui::ParticipationComponent>,
+) -> OperatorAgendaView {
+    let mut agenda = OperatorAgendaView::default();
+    if let Some(chronos) = chronos {
+        for observation in chronos.operator_agenda_observations() {
+            let source = format!("chronos/{}", observation.workstream);
+            if !observation.current {
+                agenda.unavailable_sources.push(source);
+                continue;
+            }
+            if observation.truncated {
+                agenda.truncated_sources.push(source);
+            }
+            for task in observation.tasks {
+                agenda.push(AgendaEntry {
+                    source_peer: "chronos".into(),
+                    source_instance: Some(observation.workstream.clone()),
+                    source_revision: observation.revision.clone(),
+                    resource_identity: format!("{}#{}", task.task, task.incarnation),
+                    kind: AgendaKind::OutcomeUnknown,
+                    urgency: AgendaUrgency::Blocking,
+                    title: format!("Uncertain Chronos task · {}", task.task),
+                    why_operator: "the owner fenced progress after an uncertain outcome".into(),
+                    authority: "agenda presence grants none; Chronos owns task state".into(),
+                    requested_action: "inspect owner evidence and choose a permitted recovery"
+                        .into(),
+                    consequence_of_waiting: "the task remains fenced; no blind retry is safe"
+                        .into(),
+                    next_owner_action: "open Chronos and inspect the exact task revision".into(),
+                    route: "navigate.chronos".into(),
+                });
+            }
+        }
+    }
+    if let Some(observation) =
+        moira_participation.and_then(moira_tui::ParticipationComponent::operator_agenda_observation)
+        && let Some(options) = observation.permission_option_count
+    {
+        agenda.push(AgendaEntry {
+            source_peer: "moira-participation".into(),
+            source_instance: None,
+            source_revision: observation.revision.to_string(),
+            resource_identity: "selected-participation".into(),
+            kind: AgendaKind::GovernedPermission,
+            urgency: AgendaUrgency::Blocking,
+            title: format!("Governed permission · {options} exact option(s)"),
+            why_operator: "the governed participation is awaiting an attributable choice".into(),
+            authority: "only the Moira/Aegis owner contract can settle this request".into(),
+            requested_action: "inspect the exact challenge and choose, refuse, or defer".into(),
+            consequence_of_waiting: "the participation remains paused at the permission gate"
+                .into(),
+            next_owner_action: "open Moira; refresh before acting if the revision changed".into(),
+            route: "navigate.moira".into(),
+        });
+    }
+    agenda.sort();
+    agenda
+}
+
 const fn registry_lifecycle_label(lifecycle: RegistryLifecycle) -> &'static str {
     match lifecycle {
         RegistryLifecycle::Assembling => "local_host_assembling",
@@ -867,7 +930,7 @@ fn hosted_peer_label(peer: &HostedPeerId) -> String {
         HostedPeerId::Daimon => "daimon".into(),
         HostedPeerId::Hermes => "hermes".into(),
         HostedPeerId::Aegis => "aegis".into(),
-        HostedPeerId::Grounding => "grounding".into(),
+        HostedPeerId::Tellus => "tellus".into(),
         HostedPeerId::Chronos(instance) => format!("chronos/{instance}"),
         HostedPeerId::Vellum => "vellum".into(),
     }
@@ -880,7 +943,7 @@ const fn hosted_peer_metric_label(peer: &HostedPeerId) -> &'static str {
         HostedPeerId::Daimon => "daimon",
         HostedPeerId::Hermes => "hermes",
         HostedPeerId::Aegis => "aegis",
-        HostedPeerId::Grounding => "grounding",
+        HostedPeerId::Tellus => "tellus",
         HostedPeerId::Chronos(_) => "chronos",
         HostedPeerId::Vellum => "vellum",
     }
@@ -1112,7 +1175,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             hermes_control_socket: None,
             aegis: None,
             aegis_control_socket: None,
-            grounding: None,
+            tellus: None,
             vellum_control: None,
             vellum_allow_add_file: false,
         },
@@ -1140,7 +1203,7 @@ pub struct OperationalPeers {
     pub hermes_control_socket: Option<PathBuf>,
     pub aegis: Option<aegis_tui::Component>,
     pub aegis_control_socket: Option<PathBuf>,
-    pub grounding: Option<tellus::Component>,
+    pub tellus: Option<tellus::Component>,
     pub vellum_control: Option<VellumControlConfig>,
     pub vellum_allow_add_file: bool,
 }
@@ -1859,7 +1922,7 @@ fn workbench_commands(
     hermes_control: bool,
     aegis: bool,
     aegis_control: bool,
-    grounding: bool,
+    tellus: bool,
     operations_hosted: bool,
     profile_configured: bool,
 ) -> Vec<CommandSpec> {
@@ -1873,6 +1936,14 @@ fn workbench_commands(
                 "See availability and status across the complete configured suite.",
                 "Pantheon",
                 Some("Ctrl-0"),
+                CommandKind::Navigate,
+            ),
+            Surface::Agenda => CommandSpec::available(
+                "navigate.agenda",
+                "Go to operator agenda",
+                "Inspect owner-native attention items and operating-review readiness without granting authority.",
+                "Pantheon",
+                Some("Alt-R"),
                 CommandKind::Navigate,
             ),
             Surface::Chronos => CommandSpec::available(
@@ -1923,11 +1994,11 @@ fn workbench_commands(
                 Some("Ctrl-5"),
                 CommandKind::Navigate,
             ),
-            Surface::Grounding => CommandSpec::available(
-                "navigate.grounding",
-                "Go to Grounding",
+            Surface::Tellus => CommandSpec::available(
+                "navigate.tellus",
+                "Go to Tellus",
                 "Inspect provenance and freshness of grounding loads.",
-                "Grounding",
+                "Tellus",
                 Some("Ctrl-6"),
                 CommandKind::Navigate,
             ),
@@ -1965,7 +2036,7 @@ fn workbench_commands(
             ),
         })
         .collect::<Vec<_>>();
-    let any_peer = chronos || vellum || agora || moira || daimon || hermes || aegis || grounding;
+    let any_peer = chronos || vellum || agora || moira || daimon || hermes || aegis || tellus;
     let refresh = CommandSpec::available(
         "view.refresh",
         "Refresh current view",
@@ -2799,18 +2870,19 @@ fn execute_workbench_action<T: ServicePort>(
     aegis_control_socket: Option<&Path>,
     aegis_revoke: &mut Option<aegis_tui::RevokeEpochComponent>,
     aegis_managed: &mut Option<aegis_tui::ManagedAuthorityComponent>,
-    grounding: &mut Option<tellus::Component>,
+    tellus: &mut Option<tellus::Component>,
     operations: &mut OperationsRuntime,
 ) -> (ActivityLevel, &'static str, String) {
     let destination = match action {
         "navigate.overview" => Some(Surface::Overview),
+        "navigate.agenda" => Some(Surface::Agenda),
         "navigate.chronos" => Some(Surface::Chronos),
         "navigate.vellum" => Some(Surface::Vellum),
         "navigate.workspace" => Some(Surface::Workspace),
         "navigate.agora" => Some(Surface::Agora),
         "navigate.moira" => Some(Surface::Moira),
         "navigate.daimon" => Some(Surface::Daimon),
-        "navigate.grounding" => Some(Surface::Grounding),
+        "navigate.tellus" => Some(Surface::Tellus),
         "navigate.aegis" => Some(Surface::Aegis),
         "navigate.hermes" => Some(Surface::Hermes),
         "navigate.operations" => Some(Surface::Operations),
@@ -3736,7 +3808,7 @@ fn execute_workbench_action<T: ServicePort>(
             daimon_agent,
             hermes,
             aegis,
-            grounding,
+            tellus,
         ),
         "view.refresh" => refresh_current(
             shell.active(),
@@ -3750,7 +3822,7 @@ fn execute_workbench_action<T: ServicePort>(
             daimon_agent,
             hermes,
             aegis,
-            grounding,
+            tellus,
         ),
         _ => (
             ActivityLevel::Warning,
@@ -3877,7 +3949,7 @@ fn refresh_current<T: ServicePort>(
     daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
     hermes: &mut Option<hermes_tui::Component>,
     aegis: &mut Option<aegis_tui::Component>,
-    grounding: &mut Option<tellus::Component>,
+    tellus: &mut Option<tellus::Component>,
 ) -> (ActivityLevel, &'static str, String) {
     let refresh_key = crossterm::event::KeyEvent::new(KeyCode::Char('r'), KeyModifiers::NONE);
     match surface {
@@ -3911,7 +3983,7 @@ fn refresh_current<T: ServicePort>(
             if let Some(component) = aegis {
                 component.update(aegis_tui::Input::Refresh, true);
             }
-            if let Some(component) = grounding {
+            if let Some(component) = tellus {
                 component.update(tellus::Input::Refresh, true);
             }
             (
@@ -3920,6 +3992,20 @@ fn refresh_current<T: ServicePort>(
                 "Fresh observations queued across configured peers".into(),
             )
         }
+        Surface::Agenda => refresh_current(
+            Surface::Overview,
+            focus,
+            chronos,
+            vellum,
+            agora,
+            moira,
+            moira_participation,
+            daimon,
+            daimon_agent,
+            hermes,
+            aegis,
+            tellus,
+        ),
         Surface::Chronos => {
             if let Some(component) = chronos {
                 component.update(refresh_key);
@@ -3981,7 +4067,7 @@ fn refresh_current<T: ServicePort>(
         }
         Surface::Hermes => refresh_peer(hermes.as_mut(), hermes_tui::Input::Refresh, "hermes"),
         Surface::Aegis => refresh_peer(aegis.as_mut(), aegis_tui::Input::Refresh, "aegis"),
-        Surface::Grounding => refresh_peer(grounding.as_mut(), tellus::Input::Refresh, "grounding"),
+        Surface::Tellus => refresh_peer(tellus.as_mut(), tellus::Input::Refresh, "tellus"),
         Surface::Operations => (
             ActivityLevel::Info,
             "operations",
@@ -4071,7 +4157,7 @@ fn session_configuration(
     hermes_control: bool,
     aegis: bool,
     aegis_control: bool,
-    grounding: bool,
+    tellus: bool,
 ) -> Vec<String> {
     let surfaces = shell
         .surfaces()
@@ -4153,7 +4239,7 @@ fn session_configuration(
             disposition(aegis),
             if aegis_control { "selected" } else { "absent" }
         ),
-        format!("Grounding          {}", disposition(grounding)),
+        format!("Tellus             {}", disposition(tellus)),
         String::new(),
         "Credentials, grant handles, and provider locators are intentionally omitted.".into(),
     ]
@@ -5411,7 +5497,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         hermes_control_socket,
         mut aegis,
         aegis_control_socket,
-        mut grounding,
+        mut tellus,
         vellum_control,
         vellum_allow_add_file,
     } = peers;
@@ -5489,7 +5575,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         hermes_control_socket.is_some(),
         aegis.is_some(),
         aegis_control_socket.is_some(),
-        grounding.is_some(),
+        tellus.is_some(),
         operations_hosted,
         profile_configured,
     );
@@ -5526,7 +5612,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         hermes_control_socket.is_some(),
         aegis.is_some(),
         aegis_control_socket.is_some(),
-        grounding.is_some(),
+        tellus.is_some(),
     );
     let mut provider_configuration_lines = vec![
         "Provider configuration has not been inspected in this session.".into(),
@@ -5547,7 +5633,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         ("daimon", "sessions/events", daimon_agent.is_some()),
         ("hermes", "ledger/cursors", hermes.is_some()),
         ("aegis", "authority", aegis.is_some()),
-        ("grounding", "provenance", grounding.is_some()),
+        ("tellus", "provenance", tellus.is_some()),
     ]
     .into_iter()
     .filter_map(|(peer, channel, configured)| configured.then_some((peer, channel)));
@@ -6380,13 +6466,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     last_aegis_managed_notice = current.into();
                 }
             }
-            if let Some(grounding) = &mut grounding {
-                let settlement = grounding.poll_settlement();
-                health.settle("grounding", "provenance", settlement);
+            if let Some(tellus) = &mut tellus {
+                let settlement = tellus.poll_settlement();
+                health.settle("tellus", "provenance", settlement);
                 settle_refresh(
-                    &mut refresh_operations.grounding,
+                    &mut refresh_operations.tellus,
                     settlement,
-                    "grounding",
+                    "tellus",
                     &mut instrumentation,
                     &mut activity,
                 );
@@ -6522,9 +6608,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     .is_some_and(aegis_tui::Component::request_pending),
             );
             health.observing(
-                "grounding",
+                "tellus",
                 "provenance",
-                grounding
+                tellus
                     .as_ref()
                     .is_some_and(tellus::Component::request_pending),
             );
@@ -6595,7 +6681,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             control.disposition() == aegis_tui::ManagedAuthorityDisposition::Pending
                         })
                 }
-                "grounding" => grounding
+                "tellus" => tellus
                     .as_ref()
                     .is_some_and(tellus::Component::request_pending),
                 _ => false,
@@ -6646,13 +6732,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         control.disposition() == aegis_tui::ManagedAuthorityDisposition::Fenced
                     })
                 }
-                "grounding" => false,
+                "tellus" => false,
                 _ => false,
             };
             let health_view = health.view(peer_busy, peer_uncertain);
             let height = terminal.size()?.height.saturating_sub(4);
             let vellum_frame = vellum.as_ref().and_then(|editor| editor.frame(height));
             let operations_view = operations.view();
+            let agenda_view = operator_agenda_view(chronos.as_ref(), moira_participation.as_ref());
             let render_started = Instant::now();
             terminal.draw(|frame| {
                 let prompt_notice = vellum_open_prompt.as_ref().map(|prompt| {
@@ -6685,7 +6772,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         aegis: aegis.as_ref(),
                         aegis_managed: aegis_managed.as_ref(),
                         aegis_revoke: aegis_revoke.as_ref(),
-                        grounding: grounding.as_ref(),
+                        tellus: tellus.as_ref(),
+                        agenda: Some(&agenda_view),
                         operations: Some(&operations_view),
                         health: Some(&health_view),
                         configuration: Some(&configuration),
@@ -7036,9 +7124,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         },
                         hermes.as_ref().is_some_and(|value| value.request_pending()),
                         aegis.as_ref().is_some_and(|value| value.request_pending()),
-                        grounding
-                            .as_ref()
-                            .is_some_and(|value| value.request_pending()),
+                        tellus.as_ref().is_some_and(|value| value.request_pending()),
                     );
                     let started = Instant::now();
                     let (level, source, message) = execute_workbench_action(
@@ -7080,7 +7166,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         aegis_control_socket.as_deref(),
                         &mut aegis_revoke,
                         &mut aegis_managed,
-                        &mut grounding,
+                        &mut tellus,
                         &mut operations,
                     );
                     if action == "workitem.agent.new"
@@ -7205,14 +7291,12 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             Some(refresh_correlation),
                         );
                         correlated_refresh |= begin_refresh_correlated(
-                            current(Surface::Grounding)
+                            current(Surface::Tellus)
                                 && !refresh_pending_before.5
-                                && grounding
-                                    .as_ref()
-                                    .is_some_and(|value| value.request_pending()),
+                                && tellus.as_ref().is_some_and(|value| value.request_pending()),
                             action,
-                            "grounding",
-                            &mut refresh_operations.grounding,
+                            "tellus",
+                            &mut refresh_operations.tellus,
                             &mut instrumentation,
                             started,
                             Some(refresh_correlation),
@@ -8576,31 +8660,31 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     }
                 }
                 Event::Key(key)
-                    if shell.active() == Surface::Grounding
+                    if shell.active() == Surface::Tellus
                         && key_behavior != Some(KeyBehavior::SafeExit) =>
                 {
-                    if let Some(grounding) = &mut grounding {
+                    if let Some(tellus) = &mut tellus {
                         if let Some(input) = tellus::translate_key(key) {
                             let started = Instant::now();
-                            let pending_before = grounding.request_pending();
-                            if grounding.update(input, true) == tellus::Lifecycle::CloseRequested {
+                            let pending_before = tellus.request_pending();
+                            if tellus.update(input, true) == tellus::Lifecycle::CloseRequested {
                                 notice = "Use Ctrl-Q to exit the complete workbench".into();
                             }
                             begin_refresh(
                                 input == tellus::Input::Refresh
                                     && !pending_before
-                                    && grounding.request_pending(),
+                                    && tellus.request_pending(),
                                 "view.refresh",
-                                "grounding",
-                                &mut refresh_operations.grounding,
+                                "tellus",
+                                &mut refresh_operations.tellus,
                                 &mut instrumentation,
                                 started,
                             );
                         }
                     } else {
-                        notice = Surface::Grounding
+                        notice = Surface::Tellus
                             .gap()
-                            .unwrap_or("Grounding presentation is unavailable")
+                            .unwrap_or("Tellus grounding presentation is unavailable")
                             .into();
                     }
                 }
@@ -9131,6 +9215,15 @@ mod tests {
             KeyBehavior::ExecuteCommand("navigate.agora")
         );
         assert_eq!(
+            BehaviorFacade::key(
+                KeyEvent::new(KeyCode::Char('r'), KeyModifiers::ALT),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::ExecuteCommand("navigate.agenda")
+        );
+        assert_eq!(
             BehaviorFacade::key(plain('o'), WorkbenchOverlay::None, Surface::Vellum, true),
             KeyBehavior::SurfaceLocal
         );
@@ -9537,7 +9630,7 @@ mod tests {
             daimon: None,
             hermes: None,
             aegis: None,
-            grounding: None,
+            tellus: None,
             chronos: None,
             vellum: None,
         }
@@ -9565,7 +9658,7 @@ mod tests {
                 "daimon": null,
                 "hermes": null,
                 "aegis": null,
-                "grounding": null,
+                "tellus": null,
                 "chronos": null,
                 "vellum": null
             }"#,

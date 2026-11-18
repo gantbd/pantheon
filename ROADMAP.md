@@ -136,7 +136,7 @@ does not merge the Chronos and Agora Cargo source graphs or require an
 architecture-driven Keystone convergence.
 
 The registry also exposes explicit deployment-owned factory seams for Moira,
-Daimon, Hermes, Aegis, and Grounding. Each returns its concrete typed client and
+Daimon, Hermes, Aegis, and Tellus. Each returns its concrete typed client and
 contributes only an operational shutdown callback; Pantheon does not construct
 their stores, provider policy, retention policy, grants, trusted time, or MCP
 semantics. These seams are not standalone profile factories and do not close the
@@ -413,7 +413,7 @@ storage or authentication implementations into Pantheon. Long-lived grant
 management remains an Aegis-owned application contract, not hosting authority.
 
 The combined Moira, Daimon, Hermes, and Aegis real-daemon attachment gate is in
-place for one headless Pantheon invocation and now also observes Grounding
+place for one headless Pantheon invocation and now also observes Tellus
 through Dendrite's typed endpoint. The current qualification passes against all
 five real services, including Hermes's configured-stream and Moira's fenced-saga
 census. Moira's selected evidence and operator receipt are additionally
@@ -422,8 +422,8 @@ remains local working-tree evidence;
 it does not imply native hosting, immutable source closure, or shared mutation
 authority.
 
-Grounding now has a typed authenticated Dendrite presentation endpoint,
-independent reusable TUI and standalone CLI, `grounding.observe.v1` provenance
+Tellus now has a typed authenticated Dendrite presentation endpoint,
+independent reusable TUI and standalone CLI, `tellus.observe.v1` provenance
 and freshness observation, and Pantheon attachment qualified against a real
 Dendrite fixture in interactive and headless modes. MCP remains an agent-facing
 surface and is not Pantheon's internal protocol. Selected content navigation

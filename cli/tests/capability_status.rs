@@ -90,7 +90,7 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
         }
     }
     for mode in [Mode::Interactive, Mode::Headless] {
-        assert_route(&status, "grounding", mode, capabilities::grounding());
+        assert_route(&status, "tellus", mode, capabilities::tellus());
     }
 }
 
@@ -178,7 +178,7 @@ fn every_peer_presentation_capability_has_an_explicit_pantheon_disposition() {
             daimon_tui::CAPABILITIES.headless,
         ),
         (
-            "grounding",
+            "tellus",
             tellus::CAPABILITIES.interactive,
             tellus::CAPABILITIES.headless,
         ),

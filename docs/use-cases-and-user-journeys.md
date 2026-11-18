@@ -875,7 +875,7 @@ same owner observations, challenges, commands, receipts and recovery states.
 | Chronos | Workstream/task/attempt/feed and revision/cursor | Task state, scheduling and existing leases not owned by this attachment | Claim/release, pause, cancel, reschedule, complete, retire |
 | Moira | Saga/participation/effect frontier and evidence cursor | Workflow progress, uncertainty fences, timers and peer-effect identities | Advance, reconcile, compensate, cancel, terminal disposition |
 | Daimon | Exact agent session/turn/event cursor | Session checkpoint, active/waiting work, budget and retained events | Prompt, permission decision, advance, cancel, provider reattach, close |
-| Grounding / Dendrite | Load/corpus/fold/SME/query reference | Corpus identity and queryable service; finite query needs no durable attachment | Reload/publish corpus in owner tools; long search/index jobs only if separately modeled |
+| Tellus / Dendrite | Load/corpus/fold/SME/query reference | Corpus identity and queryable service; finite query needs no durable attachment | Reload/publish corpus in owner tools; long search/index jobs only if separately modeled |
 | Vellum | Workspace/document/revision and optional collaboration cursor | Source state, saved state and other collaborators; local unpublished draft policy is explicit | Edit, save, discard draft, release lock/lease, close workspace, rebind destination |
 | Hermes | Stream/consumer and disclosed event frontier | Stream and consumer cursor; observation must not acknowledge delivery | Acknowledge, reset/retire consumer, compact, redrive |
 | Aegis | Authority namespace/epoch or managed admin session | Durable authority state; ordinary observation can reconnect | Issue, attenuate, authorize, revoke; managed session disconnect deliberately abandons its session-local grant names/handles rather than reattaching them |
@@ -1062,7 +1062,7 @@ active-active mutation for every domain.
 | Deployment | An operated collection of sites, trust relationships, component instances, routing policy and governance |
 | Trust domain | One administrative identity root and policy boundary; it need not equal a DNS domain or organization |
 | Site / failure domain | A host, cluster, zone, region, device or organization boundary whose correlated failure matters |
-| Component kind | Agora, Chronos, Moira, Daimon, Grounding, Vellum, Hermes, Aegis or another sovereign protocol family |
+| Component kind | Agora, Chronos, Moira, Daimon, Tellus, Vellum, Hermes, Aegis or another sovereign protocol family |
 | Logical authority | The named owner of a resource namespace and its mutation order, independent of the process currently serving it |
 | Instance | One concurrently running service member with a unique, observable identity |
 | Incarnation | One lifetime of an instance or authority home; restart/replacement changes it and fences stale sessions |
@@ -1111,7 +1111,7 @@ arbitrary tasks, grants, workflows or effects.
 | Chronos | Workstream homes, graph shards, scheduler/claim replicas, remote intake | One authority orders each task graph and lease epoch; global fairness or ordering is not inferred across workstreams | Attributable remote admission, cross-authority dependencies, resource brokerage, lease fencing, rehome of quiesced work and federated portfolio projection |
 | Moira | Saga homes, workflow shards, standby/consensus replicas, remote peer routers | One saga authority orders its decision/effect frontier; peer effects remain remote owner receipts | Durable remote-effect outbox/inbox, route pinning, reconciliation across partitions, coordinator recovery and controlled saga-home transfer |
 | Daimon | Provider gateways, regional worker pools, session homes, checkpoint replicas | One exact execution attempt has one admitted owner even if compute is replaceable; duplicate providers do not imply duplicate permission | Capability/attestation-aware placement, session reattachment, checkpoint portability, data/egress locality, result deduplication and worker-loss fencing |
-| Grounding | Source-local indexes, read replicas, federated query brokers | Source identity, version, provenance and disclosure remain authoritative at their named owner; broker ranking is derived | Bounded fan-out, per-source freshness/completeness, query budget, result provenance, cache invalidation and no-result versus unreachable distinction |
+| Tellus | Source-local indexes, read replicas, federated query brokers | Source identity, version, provenance and disclosure remain authoritative at their named owner; broker ranking is derived | Bounded fan-out, per-source freshness/completeness, query budget, result provenance, cache invalidation and no-result versus unreachable distinction |
 | Vellum | Workspace homes, read replicas, remote editors, selected collaborative replicas | First profile retains one authoritative workspace home; replicas cannot allocate revisions or persist edits | Disclosure-bound replication, source-revision gap repair, remote edit admission, explicit collaboration/merge profile and controlled workspace transfer |
 | Hermes | Stream homes, partitions, consumer groups, selected replicated logs | Ordering is per declared stream/partition unless a stronger profile proves otherwise; acknowledgement remains consumer progress | Producer routing, replicated retention, consumer rebalance, cross-site relay with loop prevention, schema/disclosure negotiation and gap/lag posture |
 | Aegis | Trust-domain authorities, policy decision replicas, attenuating delegation bridges | Authentication, trust and authorization stay distinct; a foreign identity or grant is not locally authoritative without an explicit relationship | Trust-bundle lifecycle, policy/claim mapping, epoch/revocation propagation, constrained delegation, cross-domain audit and fail-closed stale-policy behavior |
@@ -1212,7 +1212,7 @@ Pantheon's present profile remains local attach/host.
 | Chronos | What work is admitted, eligible, leased, paused, cancelled, or terminal? | Tickets, dependency graphs, scheduling, capacity, attempt attribution | Agent executor, chat system, workflow coordinator, or document owner |
 | Moira | What durable multi-step workflow decision and effect frontier is known? | Sagas, compensation, reconciliation, deliberation, accountable selection | Distributed transaction manager, scheduler, model runtime, or owner of peer effects |
 | Daimon | What happened in an already-authorized, budgeted agent/model/tool execution? | Sessions, prompts, permissions, progress, cancellation, reattachment, evidence | Work selector, retry scheduler, room, editor, or authorization policy |
-| Grounding (Dendrite/Tellus) | Which authored method, surface, fold, source, and freshness evidence is available? | Provenance inspection, method discovery, context validation, stale-grounding warnings | Workflow runtime, semantic proof by routing, or mutation authority |
+| Tellus (Dendrite-backed) | Which authored method, surface, fold, source, and freshness evidence is available? | Provenance inspection, method discovery, context validation, stale-grounding warnings | Workflow runtime, semantic proof by routing, or mutation authority |
 | Vellum | What source/document state, history, edit, and persistence evidence exists? | Reading, editing, save, durable operation recovery, semantic proposals | Git authority, task completion, workflow state, or agent transcript |
 | Hermes | What event is retained on a stream and where is a consumer cursor? | Durable delivery, replay, disclosure, acknowledgement, retention operations | Conversation history, workflow completion, telemetry, or downstream-effect proof |
 | Aegis | Does explicit current authority permit this action on this resource? | Issue, attenuate, authorize, inspect, revoke, audit redacted decisions | Authentication provider, credential vault, UI confirmation, or durable workflow |
@@ -1252,7 +1252,7 @@ references and link types, never copied peer state or bearer authority.
 | `task-conversation` | Chronos/Moira adapter | Agora | This room/thread is the selected interaction venue for this task/attempt | Room activity is not task progress |
 | `task-workflow` | Chronos/Moira | Moira | This exact task attempt participates in this saga | Saga completion is not task acceptance unless Chronos records it |
 | `workflow-execution` | Moira | Daimon | This effect requested this execution | Provider output is not peer-effect completion |
-| `execution-grounding` | Daimon/Dendrite adapter | Grounding | This execution consumed the identified grounding digest | The digest is not proof that generated claims are true |
+| `execution-grounding` | Daimon/Dendrite adapter | Tellus | This execution consumed the identified grounding digest | The digest is not proof that generated claims are true |
 | `workflow-document` | Moira/Vellum adapter | Vellum | This effect targets this scoped document/revision | A proposal is not an edit; an edit is not a durable save |
 | `workflow-publication` | Moira/Agora adapter | Agora | This effect targets this actor-bound publication | Prepared or dispatched is not accepted |
 | `peer-event` | producer adapter | Hermes | This peer occurrence produced this minimized event | Event acknowledgement is not peer-effect completion |
@@ -1332,7 +1332,7 @@ remains reachable, current and outside the candidate's failure domain.
 
 | Foundation | Consequence for Pantheon |
 | --- | --- |
-| W3C [PROV-DM](https://www.w3.org/TR/prov-dm/) distinguishes entities, activities, agents, usage, generation, derivation, attribution, association, and delegation | Grounding and artifacts need exact entity/activity/agent lineage; mere co-occurrence is not derivation |
+| W3C [PROV-DM](https://www.w3.org/TR/prov-dm/) distinguishes entities, activities, agents, usage, generation, derivation, attribution, association, and delegation | Grounding artifacts need exact entity/activity/agent lineage; mere co-occurrence is not derivation |
 | The original [RAG paper](https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945df7481e5-Abstract.html) identifies provenance and updating knowledge as open problems | Retrieved context must carry source identity, version/freshness, extent, and use evidence; a cited answer still needs claim-to-source support checking |
 | [in-toto](https://in-toto.io/docs/getting-started/) verifies planned steps, authorized functionaries, and signed link metadata | Agent-produced software artifacts should carry an attestable chain from plan through tools/tests/review, while Pantheon only presents the evidence |
 | [Belnap's four-valued logic](https://doi.org/10.1007/978-94-010-1161-7_2) contains both missing and contradictory information without explosion | Moira's `Maybe` must preserve true-only, false-only, both, and neither; disagreement is not flattened into confidence |
@@ -1693,7 +1693,7 @@ following universal requirements:
 - Provider prose is never a tool receipt or factual proof.
 - A permission UI approval is never sufficient without the owner/Aegis decision.
 
-### Grounding — Dendrite and Tellus
+### Tellus — grounded methods, context, and provenance
 
 #### Individual use cases
 
@@ -1727,7 +1727,7 @@ following universal requirements:
 | Cross-corpus narrative search | Known Dendrite gap | Keep `search_narrative` visibly unavailable until structured citation indexing supplies real answer content; no model-fabricated substitute |
 | Source/surface/fold detail disclosure | Required | Explicit authorization, size bounds, source revision, extent, freshness, completeness |
 | Claim-to-evidence map | Required | Each material claim links to supporting/contradicting extents; unsupported remains visible |
-| Grounding diff | Required | Compare two digests/generations and show added, removed, superseded, unresolved inputs |
+| Tellus diff | Required | Compare two digests/generations and show added, removed, superseded, unresolved inputs |
 | Corpus lifecycle | Required in owner tools | Ingest/validate/index/retire/rebuild with provenance and safe activation; Pantheon observes |
 | Quality evaluation | Required | Retrieval recall/precision on named suites, attribution fidelity, stale/conflict/abstention tests |
 
@@ -1747,7 +1747,7 @@ following universal requirements:
 
 - Routing, retrieval score, freshness, model citation, or fold membership alone
   does not prove a claim.
-- Grounding never grants tool, edit, conversation, task, or workflow authority.
+- Tellus never grants tool, edit, conversation, task, or workflow authority.
 
 ### Vellum — documents and editing
 

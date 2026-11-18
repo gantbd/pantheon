@@ -35,7 +35,7 @@ Primary evidence is in the workspace's `axon/arch/ARCHITECTURE.md`,
 | Provider/model settings and rosters | Daimon provider profiles, Aegis identities/authority and Pantheon secret-free deployment profiles | Credentials remain deployment inputs and never enter serialized Pantheon profiles. |
 | Headless one-shot invocation | Each standalone peer shell and Pantheon headless aggregation | Deterministic exit and versioned output are retained without fabricating UI state. |
 | Crash recovery and supervised long-lived sessions | Owning services and application shells | Recovery resumes only from durable peer evidence, not a generic Pantheon process record. |
-| Grounded development and skill/FSM discovery | Dendrite typed presentation client and Grounding peer | MCP remains an agent projection; human presentation gets a bounded typed client. |
+| Grounded development and skill/FSM discovery | Dendrite typed presentation client and Tellus peer | MCP remains one agent adapter; human presentation gets the same bounded typed contract. |
 
 Primary evidence is in the workspace's
 `engram/docs/grounded-roadmap-tasks.md` and

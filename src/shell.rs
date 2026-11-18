@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "kebab-case")]
 pub enum Surface {
     Overview,
+    Agenda,
     Chronos,
     Vellum,
     /// Legacy side-by-side composition retained for version-one profiles.
@@ -15,7 +16,7 @@ pub enum Surface {
     Agora,
     Moira,
     Daimon,
-    Grounding,
+    Tellus,
     Aegis,
     Hermes,
     Operations,
@@ -29,12 +30,13 @@ impl Surface {
     pub const fn direct_key(self) -> &'static str {
         match self {
             Self::Overview => "0",
+            Self::Agenda => "R",
             Self::Chronos => "1",
             Self::Vellum => "2",
             Self::Agora => "3",
             Self::Moira => "4",
             Self::Daimon => "5",
-            Self::Grounding => "6",
+            Self::Tellus => "6",
             Self::Aegis => "7",
             Self::Hermes => "8",
             Self::Operations => "9",
@@ -46,13 +48,14 @@ impl Surface {
     pub const fn label(self) -> &'static str {
         match self {
             Self::Overview => "Overview",
+            Self::Agenda => "Agenda",
             Self::Chronos => "Chronos",
             Self::Vellum => "Vellum",
             Self::Workspace => "Workspace",
             Self::Agora => "Agora",
             Self::Moira => "Moira",
             Self::Daimon => "Daimon",
-            Self::Grounding => "Grounding",
+            Self::Tellus => "Tellus",
             Self::Aegis => "Aegis",
             Self::Hermes => "Hermes",
             Self::Operations => "Operations",
@@ -63,13 +66,14 @@ impl Surface {
     pub const fn glyph(self) -> &'static str {
         match self {
             Self::Overview => "◈",
+            Self::Agenda => "☷",
             Self::Chronos => "◷",
             Self::Vellum => "✦",
             Self::Workspace => "⌘",
             Self::Agora => "◌",
             Self::Moira => "◇",
             Self::Daimon => "◆",
-            Self::Grounding => "⌁",
+            Self::Tellus => "⌁",
             Self::Aegis => "⬡",
             Self::Hermes => "≋",
             Self::Operations => "⚙",
@@ -80,13 +84,14 @@ impl Surface {
     pub const fn tagline(self) -> &'static str {
         match self {
             Self::Overview => "the whole constellation, at a glance",
+            Self::Agenda => "what needs a human—and why",
             Self::Chronos => "plans, workstreams, and temporal truth",
             Self::Vellum => "documents, selection, and deliberate craft",
             Self::Workspace => "plan with Chronos · shape with Vellum",
             Self::Agora => "rooms, conversation, and composition",
             Self::Moira => "sagas, decisions, and recovery",
             Self::Daimon => "agents, presence, and exact control",
-            Self::Grounding => "evidence with its feet on the ground",
+            Self::Tellus => "grounded methods, context, and provenance",
             Self::Aegis => "authority, grants, and deliberate trust",
             Self::Hermes => "streams, cursors, and durable motion",
             Self::Operations => "topology, lifecycle, and clean exits",
@@ -97,6 +102,7 @@ impl Surface {
     pub const fn gap(self) -> Option<&'static str> {
         match self {
             Self::Overview
+            | Self::Agenda
             | Self::Chronos
             | Self::Vellum
             | Self::Workspace
@@ -105,7 +111,7 @@ impl Surface {
             Self::Agora => Some("Agora has no composable Ratatui presentation peer"),
             Self::Moira => Some("Moira workflow presentation is not configured"),
             Self::Daimon => Some("Daimon operations presentation is not configured"),
-            Self::Grounding => Some("Grounding presentation is not configured"),
+            Self::Tellus => Some("Tellus grounding presentation is not configured"),
             Self::Aegis => Some("Aegis authority presentation is not configured"),
             Self::Hermes => Some("Hermes ledger presentation is not configured"),
         }
@@ -140,12 +146,13 @@ impl Shell {
     pub fn workbench() -> Self {
         Self::new(vec![
             Surface::Overview,
+            Surface::Agenda,
             Surface::Chronos,
             Surface::Vellum,
             Surface::Agora,
             Surface::Moira,
             Surface::Daimon,
-            Surface::Grounding,
+            Surface::Tellus,
             Surface::Aegis,
             Surface::Hermes,
             Surface::Operations,
@@ -219,12 +226,13 @@ pub fn shell_input(key: KeyEvent) -> Option<ShellInput> {
     if matches!(key.modifiers, KeyModifiers::ALT | KeyModifiers::CONTROL) {
         let direct = match key.code {
             KeyCode::Char('0') => Some(Surface::Overview),
+            KeyCode::Char('r') => Some(Surface::Agenda),
             KeyCode::Char('1') => Some(Surface::Chronos),
             KeyCode::Char('2') => Some(Surface::Vellum),
             KeyCode::Char('3') => Some(Surface::Agora),
             KeyCode::Char('4') => Some(Surface::Moira),
             KeyCode::Char('5') => Some(Surface::Daimon),
-            KeyCode::Char('6') => Some(Surface::Grounding),
+            KeyCode::Char('6') => Some(Surface::Tellus),
             KeyCode::Char('7') => Some(Surface::Aegis),
             KeyCode::Char('8') => Some(Surface::Hermes),
             KeyCode::Char('9') => Some(Surface::Operations),
@@ -238,12 +246,13 @@ pub fn shell_input(key: KeyEvent) -> Option<ShellInput> {
     if key.modifiers == KeyModifiers::ALT {
         let surface = match key.code {
             KeyCode::Char('h') => Surface::Overview,
+            KeyCode::Char('r') => Surface::Agenda,
             KeyCode::Char('c') => Surface::Chronos,
             KeyCode::Char('v') => Surface::Vellum,
             KeyCode::Char('a') => Surface::Agora,
             KeyCode::Char('m') => Surface::Moira,
             KeyCode::Char('d') => Surface::Daimon,
-            KeyCode::Char('g') => Surface::Grounding,
+            KeyCode::Char('g') => Surface::Tellus,
             KeyCode::Char('e') => Surface::Aegis,
             KeyCode::Char('l') => Surface::Hermes,
             KeyCode::Char('o') => Surface::Operations,
@@ -301,6 +310,10 @@ mod tests {
         assert_eq!(
             shell_input(KeyEvent::new(KeyCode::Char(','), KeyModifiers::ALT)),
             Some(ShellInput::ActivateSurface(Surface::Configuration))
+        );
+        assert_eq!(
+            shell_input(KeyEvent::new(KeyCode::Char('r'), KeyModifiers::ALT)),
+            Some(ShellInput::ActivateSurface(Surface::Agenda))
         );
     }
 }

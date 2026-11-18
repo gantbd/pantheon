@@ -22,13 +22,14 @@ pub const RED: Color = Color::Rgb(255, 112, 112);
 pub const fn surface_accent(surface: Surface) -> Color {
     match surface {
         Surface::Overview => CYAN,
+        Surface::Agenda => PINK,
         Surface::Chronos => BLUE,
         Surface::Vellum => VIOLET,
         Surface::Workspace => BLUE,
         Surface::Agora => VIOLET,
         Surface::Moira => PINK,
         Surface::Daimon => GREEN,
-        Surface::Grounding => YELLOW,
+        Surface::Tellus => YELLOW,
         Surface::Aegis => Color::Rgb(255, 150, 92),
         Surface::Hermes => Color::Rgb(99, 200, 255),
         Surface::Operations => Color::Rgb(183, 195, 214),

@@ -162,7 +162,7 @@ fn peer_identity(peer: &HostedPeerId) -> (&'static str, Option<String>) {
         HostedPeerId::Daimon => ("daimon", None),
         HostedPeerId::Hermes => ("hermes", None),
         HostedPeerId::Aegis => ("aegis", None),
-        HostedPeerId::Grounding => ("grounding", None),
+        HostedPeerId::Tellus => ("tellus", None),
         HostedPeerId::Chronos(instance) => ("chronos", Some(instance.clone())),
         HostedPeerId::Vellum => ("vellum", None),
     }

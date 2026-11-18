@@ -55,8 +55,8 @@ hermes_pid=$!
   "$scratch/aegis-authority" "$scratch/aegis.sock" >"$scratch/aegis.log" 2>&1 &
 aegis_pid=$!
 (cd "$workspace/dendrite" && \
-  DENDRITE_GROUNDING_PORT_FILE="$scratch/grounding.port" MIX_ENV=test \
-  mix run scripts/grounding_fixture.exs) >"$scratch/dendrite.log" 2>&1 &
+  DENDRITE_TELLUS_PORT_FILE="$scratch/tellus.port" MIX_ENV=test \
+  mix run scripts/tellus_fixture.exs) >"$scratch/dendrite.log" 2>&1 &
 dendrite_pid=$!
 
 for peer in moira daimon hermes aegis; do
@@ -73,27 +73,27 @@ for peer in moira daimon hermes aegis; do
 done
 
 attempt=0
-while [ ! -s "$scratch/grounding.port" ]; do
+while [ ! -s "$scratch/tellus.port" ]; do
   attempt=$((attempt + 1))
   if ! kill -0 "$dendrite_pid" 2>/dev/null || [ "$attempt" -ge 200 ]; then
     sed -n '1,160p' "$scratch/dendrite.log" >&2
-    echo "FAIL: Grounding fixture did not become ready" >&2
+    echo "FAIL: Tellus fixture did not become ready" >&2
     exit 1
   fi
   sleep 0.05
 done
-grounding_endpoint="127.0.0.1:$(cat "$scratch/grounding.port")"
+tellus_endpoint="127.0.0.1:$(cat "$scratch/tellus.port")"
 
 printf '%s\n' \
   '{' \
   '  "version": 1,' \
   '  "name": "Operational peer coexistence qualification",' \
-  '  "surfaces": ["overview", "moira", "daimon", "hermes", "aegis", "grounding"],' \
+  '  "surfaces": ["overview", "moira", "daimon", "hermes", "aegis", "tellus"],' \
   "  \"moira\": {\"socket\": \"$scratch/moira.sock\", \"requires\": [\"sagas.inspect.v1\"]}," \
   "  \"daimon\": {\"socket\": \"$scratch/daimon.sock\", \"requires\": [\"agents.presence.v1\"]}," \
   "  \"hermes\": {\"socket\": \"$scratch/hermes.sock\", \"stream\": \"05050505050505050505050505050505\", \"consumer\": \"06060606060606060606060606060606\", \"requires\": [\"ledger.observe.v1\", \"ledger.cursor.observe.v1\"]}," \
   "  \"aegis\": {\"socket\": \"$scratch/aegis.sock\", \"requires\": [\"authority.observe.v1\"]}," \
-  "  \"grounding\": {\"endpoint\": \"$grounding_endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
+  "  \"tellus\": {\"endpoint\": \"$tellus_endpoint\", \"token\": null, \"requires\": [\"tellus.observe.v1\"]}" \
   '}' >"$scratch/workspace.json"
 
 report=$("$root/target/debug/pantheon" \
@@ -120,7 +120,7 @@ expected = [
     ("daimon", "agents.presence.v1"),
     ("hermes", "ledger.observe.v1"),
     ("aegis", "authority.observe.v1"),
-    ("grounding", "grounding.observe.v1"),
+    ("tellus", "tellus.observe.v1"),
 ]
 actual = [(peer["peer"], peer["capability"]) for peer in report["peers"]]
 assert actual == expected, actual
@@ -152,8 +152,8 @@ hermes_pid=$!
   "$scratch/aegis-interactive-authority" "$scratch/aegis-interactive.sock" >"$scratch/aegis-interactive.log" 2>&1 &
 aegis_pid=$!
 (cd "$workspace/dendrite" && \
-  DENDRITE_GROUNDING_PORT_FILE="$scratch/grounding-interactive.port" MIX_ENV=test \
-  mix run scripts/grounding_fixture.exs) >"$scratch/dendrite-interactive.log" 2>&1 &
+  DENDRITE_TELLUS_PORT_FILE="$scratch/tellus-interactive.port" MIX_ENV=test \
+  mix run scripts/tellus_fixture.exs) >"$scratch/dendrite-interactive.log" 2>&1 &
 dendrite_pid=$!
 
 for peer in moira daimon hermes aegis; do
@@ -181,27 +181,27 @@ while [ ! -S "$scratch/agent.sock" ]; do
 done
 
 attempt=0
-while [ ! -s "$scratch/grounding-interactive.port" ]; do
+while [ ! -s "$scratch/tellus-interactive.port" ]; do
   attempt=$((attempt + 1))
   if ! kill -0 "$dendrite_pid" 2>/dev/null || [ "$attempt" -ge 200 ]; then
     sed -n '1,160p' "$scratch/dendrite-interactive.log" >&2
-    echo "FAIL: interactive Grounding fixture did not become ready" >&2
+    echo "FAIL: interactive Tellus fixture did not become ready" >&2
     exit 1
   fi
   sleep 0.05
 done
-grounding_endpoint="127.0.0.1:$(cat "$scratch/grounding-interactive.port")"
+tellus_endpoint="127.0.0.1:$(cat "$scratch/tellus-interactive.port")"
 
 printf '%s\n' \
   '{' \
   '  "version": 1,' \
   '  "name": "Operational peer Overview qualification",' \
-  '  "surfaces": ["overview", "moira", "daimon", "hermes", "aegis", "grounding"],' \
+  '  "surfaces": ["overview", "moira", "daimon", "hermes", "aegis", "tellus"],' \
   "  \"moira\": {\"socket\": \"$scratch/moira-interactive.sock\", \"requires\": [\"sagas.inspect.v1\"]}," \
   "  \"daimon\": {\"socket\": \"$scratch/daimon-interactive.sock\", \"agent_socket\": \"$scratch/agent.sock\", \"agent_session\": \"07070707070707070707070707070707\", \"requires\": [\"agents.presence.v1\", \"agents.session.inspect.v1\"]}," \
   "  \"hermes\": {\"socket\": \"$scratch/hermes-interactive.sock\", \"stream\": \"05050505050505050505050505050505\", \"consumer\": \"06060606060606060606060606060606\", \"requires\": [\"ledger.observe.v1\", \"ledger.cursor.observe.v1\"]}," \
   "  \"aegis\": {\"socket\": \"$scratch/aegis-interactive.sock\", \"requires\": [\"authority.observe.v1\"]}," \
-  "  \"grounding\": {\"endpoint\": \"$grounding_endpoint\", \"token\": null, \"requires\": [\"grounding.observe.v1\"]}" \
+  "  \"tellus\": {\"endpoint\": \"$tellus_endpoint\", \"token\": null, \"requires\": [\"tellus.observe.v1\"]}" \
   '}' >"$scratch/interactive-workspace.json"
 
 python3 - "$scratch" "$root/target/debug/pantheon" <<'PYTHON'
@@ -233,7 +233,7 @@ try:
         "daimon                sessions/events",
         "hermes                ledger/cursors",
         "aegis                 authority",
-        "grounding             provenance",
+        "tellus                provenance",
     ]
     deadline = time.monotonic() + 8
     while time.monotonic() < deadline:
@@ -301,4 +301,4 @@ kill "$dendrite_pid"
 wait "$dendrite_pid" 2>/dev/null || true
 dendrite_pid=
 
-echo 'PASS: Moira + Daimon + Hermes + Aegis + Grounding real services -> headless composition and evidence-backed Ratatui Overview'
+echo 'PASS: Moira + Daimon + Hermes + Aegis + Tellus real services -> headless composition and evidence-backed Ratatui Overview'

@@ -26,7 +26,7 @@ pub struct WorkspaceProfile {
     pub daimon: Option<DaimonProfile>,
     pub hermes: Option<HermesProfile>,
     pub aegis: Option<AegisProfile>,
-    pub grounding: Option<GroundingProfile>,
+    pub tellus: Option<TellusProfile>,
     pub chronos: Option<ChronosProfile>,
     pub vellum: Option<VellumProfile>,
 }
@@ -233,7 +233,7 @@ pub enum AegisRole {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
-pub struct GroundingProfile {
+pub struct TellusProfile {
     pub endpoint: SocketAddr,
     pub token: Option<PathBuf>,
     #[serde(default)]
@@ -373,8 +373,8 @@ impl WorkspaceProfile {
                 host.directory = resolve(base, &host.directory);
             }
         }
-        if let Some(grounding) = &mut profile.grounding
-            && let Some(token) = &mut grounding.token
+        if let Some(tellus) = &mut profile.tellus
+            && let Some(token) = &mut tellus.token
         {
             *token = resolve(base, token);
         }
@@ -651,17 +651,17 @@ impl WorkspaceProfile {
             }
             validate_required_capabilities(&aegis.requires)?;
         }
-        if let Some(grounding) = &self.grounding {
-            if !self.surfaces.contains(&Surface::Grounding) {
-                return Err("Grounding configuration requires the Grounding surface");
+        if let Some(tellus) = &self.tellus {
+            if !self.surfaces.contains(&Surface::Tellus) {
+                return Err("Tellus configuration requires the Tellus surface");
             }
-            if !grounding.endpoint.ip().is_loopback() {
-                return Err("Grounding endpoint must be loopback");
+            if !tellus.endpoint.ip().is_loopback() {
+                return Err("Tellus endpoint must be loopback");
             }
-            if let Some(token) = &grounding.token {
+            if let Some(token) = &tellus.token {
                 validate_path(token)?;
             }
-            validate_required_capabilities(&grounding.requires)?;
+            validate_required_capabilities(&tellus.requires)?;
         }
         if self.surfaces.contains(&Surface::Workspace)
             && self.chronos.is_none()

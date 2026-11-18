@@ -46,12 +46,7 @@ pub fn plan(
     classify_peer("daimon", &current.daimon, &next.daimon, &mut changes);
     classify_peer("hermes", &current.hermes, &next.hermes, &mut changes);
     classify_peer("aegis", &current.aegis, &next.aegis, &mut changes);
-    classify_peer(
-        "grounding",
-        &current.grounding,
-        &next.grounding,
-        &mut changes,
-    );
+    classify_peer("tellus", &current.tellus, &next.tellus, &mut changes);
     classify_peer("chronos", &current.chronos, &next.chronos, &mut changes);
     classify_peer("vellum", &current.vellum, &next.vellum, &mut changes);
     ReconfigurationPlan {
@@ -115,7 +110,7 @@ mod tests {
             daimon: None,
             hermes: None,
             aegis: None,
-            grounding: None,
+            tellus: None,
             chronos: None,
             vellum: None,
         }
@@ -137,14 +132,14 @@ mod tests {
         let shell_plan = plan("compare-2".into(), &current, &shell);
         assert_eq!(shell_plan.minimum_action, "shell_restart");
 
-        shell.grounding = Some(crate::profile::GroundingProfile {
+        shell.tellus = Some(crate::profile::TellusProfile {
             endpoint: "127.0.0.1:4499".parse().unwrap(),
             token: None,
-            requires: vec!["grounding.observe.v1".into()],
+            requires: vec!["tellus.observe.v1".into()],
         });
         let peer_plan = plan("compare-3".into(), &current, &shell);
         assert_eq!(peer_plan.minimum_action, "full_local_topology_restart");
-        assert_eq!(peer_plan.changes[1].target, "grounding");
+        assert_eq!(peer_plan.changes[1].target, "tellus");
         assert_eq!(peer_plan.changes[1].change, "added");
     }
 }

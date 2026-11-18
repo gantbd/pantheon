@@ -108,14 +108,7 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
     assert_eq!(
         peers.keys().map(String::as_str).collect::<BTreeSet<_>>(),
         BTreeSet::from([
-            "aegis",
-            "agora",
-            "chronos",
-            "daimon",
-            "grounding",
-            "hermes",
-            "moira",
-            "vellum",
+            "aegis", "agora", "chronos", "daimon", "tellus", "hermes", "moira", "vellum",
         ])
     );
     for peer in peers.values() {
@@ -298,14 +291,14 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
         ("chronos", chronos_tui::CAPABILITIES.headless[0]),
         ("daimon", daimon_tui::CAPABILITIES.headless[0]),
         ("hermes", hermes_tui::CAPABILITIES.headless[0]),
-        ("grounding", tellus::CAPABILITIES.headless[0]),
+        ("tellus", tellus::CAPABILITIES.headless[0]),
         ("moira", moira_tui::CAPABILITIES.headless[0]),
         ("vellum", vellum_tui::CAPABILITIES.headless[0]),
     ];
     for (peer, capability) in capabilities {
         assert_eq!(peers[peer]["readCapability"], capability);
     }
-    assert_eq!(peers["grounding"]["presentation"], "tellus");
+    assert_eq!(peers["tellus"]["presentation"], "tellus");
 }
 
 #[test]
@@ -381,14 +374,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     assert_eq!(
         source["components"],
         serde_json::json!([
-            "agora",
-            "chronos",
-            "vellum",
-            "moira",
-            "daimon",
-            "hermes",
-            "aegis",
-            "grounding"
+            "agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis", "tellus"
         ])
     );
     assert_eq!(
@@ -397,7 +383,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["chronosTui"]["revision"],
-        "52b7a664ed1caf89eea0c94a7a3a480aa721455d"
+        "76cf8cf2a45361b065adf262cdffe78933edb7c7"
     );
     assert_eq!(
         source["inputs"]["chronos"]["revision"],
@@ -409,7 +395,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["moiraTui"]["revision"],
-        "2b43c913a93960ee02b4b70dcdb7d6d4c495513f"
+        "335ca2f1bbd2002fdb7b538062bb28b717accd54"
     );
     assert_eq!(
         source["inputs"]["daimonTui"]["revision"],
@@ -441,7 +427,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
     );
     assert_eq!(
         source["inputs"]["dendrite"]["revision"],
-        "5e9c73f646b824ff2db31612084496c7e2b0c3b2"
+        "0600534410aaf6b6ed7d6b441a9c02ccae224496"
     );
     assert_eq!(
         source["inputs"]["vellum"]["revision"],
@@ -452,8 +438,8 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "9ab9e0f2c467c3b6501e08c44f10f679b8ed6cd8"
     );
     assert_eq!(
-        source["inputs"]["groundingTui"]["revision"],
-        "209b15077680ee19f9f20a3620f4b92343ca5e60"
+        source["inputs"]["tellusTui"]["revision"],
+        "55e125c794c4037e355ab2781edca8ea5c34ff35"
     );
     assert_eq!(
         source["inputs"]["keystone"]["revision"],
@@ -474,7 +460,7 @@ fn composition_source_is_exact_unpublished_and_has_no_engine_implementation_depe
         "hermesTui",
         "aegisTui",
         "aegis",
-        "groundingTui",
+        "tellusTui",
         "keystone",
         "keystoneGit",
         "vellum",
@@ -1130,25 +1116,22 @@ fn aegis_live_gate_reuses_the_real_daemon_in_both_workbench_modes() {
 }
 
 #[test]
-fn grounding_live_gate_uses_typed_dendrite_boundary_in_both_workbench_modes() {
+fn tellus_live_gate_uses_typed_dendrite_boundary_in_both_workbench_modes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let gate = fs::read_to_string(root.join("tests/live/grounding_attach.sh"))
-        .expect("Grounding attach gate");
+    let gate =
+        fs::read_to_string(root.join("tests/live/tellus_attach.sh")).expect("Tellus attach gate");
     for required in [
-        "grounding_fixture.exs",
-        "grounding.observe.v1",
+        "tellus_fixture.exs",
+        "tellus.observe.v1",
         "headless",
         "interactive",
         "fixture/sample",
-        "healthy Grounding evidence survives failed Aegis peer",
+        "healthy Tellus evidence survives failed Aegis peer",
         "connect_refused",
         "--locked",
         "--offline",
     ] {
-        assert!(
-            gate.contains(required),
-            "Grounding live gate omits {required}"
-        );
+        assert!(gate.contains(required), "Tellus live gate omits {required}");
     }
     for forbidden in [
         "tools/call",
@@ -1159,7 +1142,7 @@ fn grounding_live_gate_uses_typed_dendrite_boundary_in_both_workbench_modes() {
     ] {
         assert!(
             !gate.contains(forbidden),
-            "Grounding live gate performs {forbidden}"
+            "Tellus live gate performs {forbidden}"
         );
     }
 }
@@ -1988,13 +1971,13 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "daimon-tui-cli",
         "hermes-tui-cli",
         "aegis-tui-cli",
-        "grounding_fixture.exs",
+        "tellus_fixture.exs",
         "sagas.inspect.v1",
         "fenced",
         "agents.presence.v1",
         "ledger.observe.v1",
         "authority.observe.v1",
-        "grounding.observe.v1",
+        "tellus.observe.v1",
         "configured_stream",
         "configured_cursor",
         "05050505050505050505050505050505",
@@ -2002,7 +1985,7 @@ fn operational_live_gate_composes_all_read_only_peer_daemons() {
         "daimon                sessions/events",
         "hermes                ledger/cursors",
         "aegis                 authority",
-        "grounding             provenance",
+        "tellus                provenance",
         "events: 1 visible / 2 observed · filter usage",
         "observed windows 1/2 events visible · usage input=21 output=34",
         "0 in flight · 0 budget violations",
@@ -2034,7 +2017,7 @@ fn tui_breadth_gate_drives_every_first_class_surface_and_global_key() {
         "AGORA",
         "MOIRA",
         "DAIMON",
-        "GROUNDING",
+        "TELLUS",
         "AEGIS",
         "HERMES",
         "OPERATIONS",
@@ -2097,7 +2080,7 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "moira_reconciliation",
         "daimon_prompt",
         "work_item_agent_journey",
-        "grounding_attach",
+        "tellus_attach",
         "aegis_attach",
         "hermes_attach",
         "operational depth exercised every configured peer surface",

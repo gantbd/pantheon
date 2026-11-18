@@ -202,29 +202,29 @@
         "agents.session-set.reattach.v1": "qualified"
       }
     },
-    "grounding": {
+    "tellus": {
       "owner": "dendrite",
       "presentation": "tellus",
-      "readCapability": "grounding.observe.v1",
+      "readCapability": "tellus.observe.v1",
       "client": { "contract": "tellus", "connection": "tellus-local-client", "ownership": "presentation-deferred" },
-      "evidence": ["tellus/tests/live/real_dendrite.sh", "pantheon/tests/live/grounding_attach.sh"],
+      "evidence": ["tellus/tests/live/real_dendrite.sh", "pantheon/tests/live/tellus_attach.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "not-applicable", "headless": "not-applicable" },
       "pantheonRoutes": {
         "interactive": [
-          { "id": "grounding.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tellus.observe.v1", "plane": "observation", "state": "qualified" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
         ],
         "headless": [
-          { "id": "grounding.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tellus.observe.v1", "plane": "observation", "state": "qualified" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
         ]
       },
       "mutation": "not-applicable",
       "nonApplicable": {
-        "host": "Dendrite is an independently deployed IDE and agent bridge; Pantheon attaches only to its bounded typed Grounding endpoint.",
-        "mutation": "Grounding is a provenance and freshness observation peer, not an authority-bearing mutation surface."
+        "host": "Dendrite is an independently deployed IDE and agent bridge; Pantheon attaches only to its bounded typed Tellus endpoint.",
+        "mutation": "Tellus is a provenance and freshness observation peer, not an authority-bearing mutation surface."
       }
     },
     "hermes": {

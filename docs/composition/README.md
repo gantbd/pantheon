@@ -34,13 +34,13 @@ facade for source compatibility, but it must not retain framing, endpoint
 validation, certainty classification, authentication, or lifecycle policy.
 Standalone shells and Pantheon should consume the owner client directly when
 compatibility no longer requires the facade. Hermes, Agora, Aegis, and Moira
-currently enforce this shape. Grounding remains deferred while Dendrite's
+currently enforce this shape. Tellus remains deferred while Dendrite's
 owning typed boundary is active.
 
 The invariant is shared; the interaction is not. Vellum may be an editor,
 Agora a room/message surface, Chronos a task hub, Moira a reconciliation view,
 Daimon an execution inspector, Hermes a ledger view, Aegis an authority
-inspector and Grounding a provenance/freshness view. Capability identifiers,
+inspector and Tellus a provenance/freshness view. Capability identifiers,
 commands, confirmations, projections and failure vocabulary stay peer-owned.
 Pantheon separately owns the truth of composition: a profile requirement is
 accepted only when the exact selected route delivers it. A peer package's
@@ -82,7 +82,7 @@ implies production credential provenance.
 | Daimon | qualified redacted presence plus exact configured agent-session evidence and guarded advance/cancel/close/reattach/prompt/permission | qualified attach with the same stable bounded event projection and owner guards | qualified sovereign `daimon-local-agent` process in both modes with durable session reopen and clean drain | no selected-profile parity gap; broader provider/platform qualification remains owner-side |
 | Hermes | qualified content-free observation/cursor plus separate exact-confirmed bounded event disclosure | qualified attach and the same disclosure guard | qualified owner process in both modes | no presentation-parity gap; producer schemas stay in qualified Moira and Agora adapter profiles, and Agora minimized-wake delivery has a separate deployed local application/receipt endpoint; remote-provider profiles remain adapter-owned |
 | Aegis | qualified read-only authority observation, bounded pages, exact-confirmed epoch revocation and named managed authority session | qualified observation/navigation plus the same owner guards, managed session, disconnect abandonment and deliberate rebuild | qualified owner process in both modes | no selected-profile parity gap; durable replay/reconciliation are nonclaims |
-| Grounding/Dendrite | qualified typed observation | qualified typed attach | not applicable: Dendrite retains its IDE/agent bridge lifecycle | no selected-profile gap; surface/read DTOs are deliberately unselected until Dendrite owns their disclosure contract |
+| Tellus/Dendrite | qualified typed observation | qualified typed attach | not applicable: Dendrite retains its corpus/query lifecycle | no selected-profile gap; richer surface/read DTOs remain owner-selected |
 
 The detailed open-boundary ledger remains `WORKSPACE_GAPS.md`. The ordered
 delivery sequence is in `backlog.md`; Axon and Engram adoption decisions are in

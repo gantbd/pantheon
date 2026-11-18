@@ -614,18 +614,17 @@ impl NativeHost {
         })
     }
 
-    /// Starts a deployment-supplied Grounding/Dendrite owner. The returned
-    /// client remains the typed Grounding presentation boundary; this does not
+    /// Starts a deployment-supplied Tellus/Dendrite owner. The returned
+    /// client remains the typed Tellus presentation boundary; this does not
     /// turn MCP into a Pantheon lifecycle or semantic protocol.
-    pub fn start_grounding<C, S>(
+    pub fn start_tellus<C, S>(
         &mut self,
         start: impl FnOnce() -> Result<(C, S), String>,
     ) -> Result<C, StartupFailure<String>>
     where
         S: FnMut() -> ShutdownDisposition + Send + 'static,
     {
-        self.registry
-            .start_or_rollback(HostedPeerId::Grounding, start)
+        self.registry.start_or_rollback(HostedPeerId::Tellus, start)
     }
 
     pub fn seal(&mut self) -> Result<(), RegistryError> {
@@ -1023,22 +1022,18 @@ mod deployment_factory_tests {
         let aegis: u64 = host
             .start_aegis(factory(4_u64, "aegis", order.clone()))
             .unwrap();
-        let grounding: &'static str = host
-            .start_grounding(factory(
-                "typed-grounding-client",
-                "grounding",
-                order.clone(),
-            ))
+        let tellus: &'static str = host
+            .start_tellus(factory("typed-tellus-client", "tellus", order.clone()))
             .unwrap();
 
         assert_eq!((moira, daimon, hermes, aegis), (1, 2, 3, 4));
-        assert_eq!(grounding, "typed-grounding-client");
+        assert_eq!(tellus, "typed-tellus-client");
         host.seal().unwrap();
         let receipt = host.shutdown().unwrap();
         assert!(receipt.clean());
         assert_eq!(
             *order.lock().unwrap(),
-            ["grounding", "aegis", "hermes", "daimon", "moira"]
+            ["tellus", "aegis", "hermes", "daimon", "moira"]
         );
         assert_eq!(
             receipt
@@ -1047,7 +1042,7 @@ mod deployment_factory_tests {
                 .map(|receipt| &receipt.peer)
                 .collect::<Vec<_>>(),
             [
-                &HostedPeerId::Grounding,
+                &HostedPeerId::Tellus,
                 &HostedPeerId::Aegis,
                 &HostedPeerId::Hermes,
                 &HostedPeerId::Daimon,

@@ -77,8 +77,8 @@ struct Options {
     hermes_host: Option<HermesProcessOptions>,
     aegis_socket: Option<PathBuf>,
     aegis_host: Option<AegisProcessOptions>,
-    grounding_endpoint: Option<std::net::SocketAddr>,
-    grounding_token: Option<PathBuf>,
+    tellus_endpoint: Option<std::net::SocketAddr>,
+    tellus_token: Option<PathBuf>,
     chronos_streams: Vec<Workstream>,
     vellum_socket: Option<PathBuf>,
     vellum_credential: Option<PathBuf>,
@@ -188,9 +188,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut aegis_socket = None;
     let mut aegis_requires = Vec::new();
     let mut aegis_host = None;
-    let mut grounding_endpoint = None;
-    let mut grounding_token = None;
-    let mut grounding_requires = Vec::new();
+    let mut tellus_endpoint = None;
+    let mut tellus_token = None;
+    let mut tellus_requires = Vec::new();
     let mut vellum_socket = None;
     let mut vellum_credential = None;
     let mut moira_bindings = Vec::new();
@@ -340,10 +340,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             aegis_socket = Some(aegis.socket);
             aegis_requires = aegis.requires;
         }
-        if let Some(grounding) = profile.grounding {
-            grounding_endpoint = Some(grounding.endpoint);
-            grounding_token = grounding.token;
-            grounding_requires = grounding.requires;
+        if let Some(tellus) = profile.tellus {
+            tellus_endpoint = Some(tellus.endpoint);
+            tellus_token = tellus.token;
+            tellus_requires = tellus.requires;
         }
         if let Some(vellum) = profile.vellum {
             host_vellum = vellum.deployment == DeploymentMode::Hosted;
@@ -516,7 +516,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let hermes_capabilities =
         capabilities::hermes(mode, hermes_host.is_some(), hermes_consumer.is_some());
     let aegis_capabilities = capabilities::aegis(aegis_host.is_some());
-    let grounding_capabilities = capabilities::grounding();
+    let tellus_capabilities = capabilities::tellus();
     let chronos_capabilities = capabilities::chronos(
         mode,
         host_chronos,
@@ -603,10 +603,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         capabilities::aegis(aegis_host.is_some()),
     )?;
     negotiate_selected_route(
-        "grounding",
-        &grounding_requires,
-        &grounding_capabilities,
-        capabilities::grounding(),
+        "tellus",
+        &tellus_requires,
+        &tellus_capabilities,
+        capabilities::tellus(),
     )?;
     negotiate_selected_route(
         "chronos",
@@ -636,8 +636,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if aegis_socket.is_some() {
         capability_plan.push(("aegis", aegis_capabilities));
     }
-    if grounding_endpoint.is_some() {
-        capability_plan.push(("grounding", grounding_capabilities));
+    if tellus_endpoint.is_some() {
+        capability_plan.push(("tellus", tellus_capabilities));
     }
     if !chronos_streams.is_empty() {
         capability_plan.push(("chronos", chronos_capabilities));
@@ -669,8 +669,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         hermes_host,
         aegis_socket,
         aegis_host,
-        grounding_endpoint,
-        grounding_token,
+        tellus_endpoint,
+        tellus_token,
         chronos_streams,
         vellum_socket,
         vellum_credential,
@@ -3002,7 +3002,7 @@ fn finish_headless(
                         HostedPeerId::Daimon => ("daimon", None),
                         HostedPeerId::Hermes => ("hermes", None),
                         HostedPeerId::Aegis => ("aegis", None),
-                        HostedPeerId::Grounding => ("grounding", None),
+                        HostedPeerId::Tellus => ("tellus", None),
                         HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
                         HostedPeerId::Vellum => ("vellum", None),
                     };
@@ -3040,6 +3040,7 @@ fn finish_headless(
             "mode": "headless",
             "complete": complete,
             "peers": observation.peers,
+            "operator_agenda": observation.operator_agenda,
             "management": management,
             "not_exercised_profile_requirements": observation.not_exercised_profile_requirements,
             "requirement_boundary": "These configured workspace capabilities were not exercised by the finite aggregate observation. Their presence is not a control receipt, and their omission is not a claim of headless control parity.",
@@ -3259,15 +3260,15 @@ fn interactive(
     } else {
         None
     };
-    let grounding = if let Some(endpoint) = options.grounding_endpoint {
+    let tellus = if let Some(endpoint) = options.tellus_endpoint {
         let token = options
-            .grounding_token
+            .tellus_token
             .as_ref()
-            .map(read_grounding_token)
+            .map(read_tellus_token)
             .transpose()?;
         let port =
             tellus_local_client::LocalPort::new(endpoint, token, std::time::Duration::from_secs(5))
-                .map_err(|error| format!("Grounding service refused: {error:?}"))?;
+                .map_err(|error| format!("Tellus service refused: {error:?}"))?;
         Some(tellus::Component::new(port))
     } else {
         None
@@ -3345,7 +3346,7 @@ fn interactive(
             hermes_control_socket,
             aegis,
             aegis_control_socket,
-            grounding,
+            tellus,
             vellum_control,
             vellum_allow_add_file: options.vellum_allow_add_file,
         },
@@ -3734,7 +3735,7 @@ fn hosted_peer_identity(peer: &HostedPeerId) -> (&'static str, Option<&str>) {
         HostedPeerId::Daimon => ("daimon", None),
         HostedPeerId::Hermes => ("hermes", None),
         HostedPeerId::Aegis => ("aegis", None),
-        HostedPeerId::Grounding => ("grounding", None),
+        HostedPeerId::Tellus => ("tellus", None),
         HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
         HostedPeerId::Vellum => ("vellum", None),
     }
@@ -3828,8 +3829,8 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         hermes_hosted: options.hermes_host.is_some(),
         aegis_socket: options.aegis_socket.clone(),
         aegis_hosted: options.aegis_host.is_some(),
-        grounding_endpoint: options.grounding_endpoint,
-        grounding_token: options.grounding_token.clone(),
+        tellus_endpoint: options.tellus_endpoint,
+        tellus_token: options.tellus_token.clone(),
         chronos: options
             .chronos_streams
             .iter()
@@ -3846,14 +3847,14 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
     }
 }
 
-fn read_grounding_token(path: &std::path::PathBuf) -> Result<String, Box<dyn std::error::Error>> {
+fn read_tellus_token(path: &std::path::PathBuf) -> Result<String, Box<dyn std::error::Error>> {
     if std::fs::metadata(path)?.len() > 8 * 1024 {
-        return Err("Grounding token exceeds 8 KiB".into());
+        return Err("Tellus token exceeds 8 KiB".into());
     }
     let token = std::fs::read_to_string(path)?;
     let token = token.trim_end().to_owned();
     if token.is_empty() {
-        return Err("Grounding token is empty".into());
+        return Err("Tellus token is empty".into());
     }
     Ok(token)
 }

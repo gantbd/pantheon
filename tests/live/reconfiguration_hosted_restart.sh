@@ -23,7 +23,7 @@ printf '%s\n' \
   '  "daimon": null,' \
   '  "hermes": null,' \
   '  "aegis": null,' \
-  '  "grounding": null,' \
+  '  "tellus": null,' \
   '  "chronos": {' \
   '    "deployment": "hosted",' \
   '    "workstreams": [{"name": "Atlas", "directory": "chronos-a"}],' \
@@ -45,7 +45,7 @@ printf '%s\n' \
   '  "daimon": null,' \
   '  "hermes": null,' \
   '  "aegis": null,' \
-  '  "grounding": null,' \
+  '  "tellus": null,' \
   '  "chronos": {' \
   '    "deployment": "hosted",' \
   '    "workstreams": [{"name": "Borealis", "directory": "chronos-b"}],' \

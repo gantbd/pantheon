@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Closed the 50-item selected local composition program across standalone and
-  Pantheon presentations. Grounding surface/read DTOs, signed GUI
+  Pantheon presentations. Tellus surface/read DTOs, signed GUI
   distribution, remote delivery, and wider GUI/platform coverage are explicit
   future product decisions rather than incomplete claims of this release.
 - Added the selected unsigned local `aarch64-apple-darwin` release gate. It
@@ -45,7 +45,7 @@
 - Added a bounded versioned workspace profile with relative endpoints, exact
   Chronos peer bindings, explicit write enablement at launch, and a headless
   validation mode.
-- Added closed Overview, Workspace, Agora, Moira, Daimon, Grounding, Aegis and
+- Added closed Overview, Workspace, Agora, Moira, Daimon, Tellus, Aegis and
   Hermes navigation. Surfaces without a composable presentation peer expose an
   explicit gap and receive no input.
 - Qualified profile navigation, optional attachment, focus isolation and Agora

@@ -1,10 +1,14 @@
 //! Host-owned layout and focus routing for independent engine presentations.
 #![forbid(unsafe_code)]
 
+mod agenda;
 mod shell;
 mod theme;
 mod workbench;
 
+pub use agenda::{
+    AgendaEntry, AgendaKind, AgendaUrgency, OperatingReviewReadiness, OperatorAgendaView,
+};
 pub use shell::{Shell, ShellInput, Surface, shell_input};
 pub use workbench::{
     ActionMetric, ActivityEntry, ActivityLevel, ActivityLog, CommandKind, CommandPalette,
@@ -141,7 +145,8 @@ pub fn draw_shell(
             aegis: None,
             aegis_managed: None,
             aegis_revoke: None,
-            grounding: None,
+            tellus: None,
+            agenda: None,
             operations: None,
             health: None,
             configuration: None,
@@ -175,7 +180,8 @@ pub struct PeerViews<'a> {
     pub aegis: Option<&'a aegis_tui::Component>,
     pub aegis_managed: Option<&'a aegis_tui::ManagedAuthorityComponent>,
     pub aegis_revoke: Option<&'a aegis_tui::RevokeEpochComponent>,
-    pub grounding: Option<&'a tellus::Component>,
+    pub tellus: Option<&'a tellus::Component>,
+    pub agenda: Option<&'a OperatorAgendaView>,
     pub operations: Option<&'a OperationsView>,
     pub health: Option<&'a SuiteHealthView>,
     pub configuration: Option<&'a [String]>,
@@ -254,7 +260,8 @@ pub fn draw_shell_with_moira(
         aegis,
         aegis_managed,
         aegis_revoke,
-        grounding,
+        tellus,
+        agenda,
         operations,
         health,
         configuration,
@@ -334,6 +341,11 @@ pub fn draw_shell_with_moira(
     };
     draw_status_bar(frame, status, status_focus, notice);
     match shell.active() {
+        Surface::Agenda => draw_operator_agenda(
+            frame,
+            body,
+            agenda.unwrap_or(&OperatorAgendaView::default()),
+        ),
         Surface::Chronos => {
             if let Some(chronos) = chronos {
                 chronos.draw_in(frame, body);
@@ -412,7 +424,7 @@ pub fn draw_shell_with_moira(
                 daimon: daimon.is_some() || daimon_agent.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
-                grounding: grounding.is_some(),
+                tellus: tellus.is_some(),
             },
             health,
         ),
@@ -522,8 +534,8 @@ pub fn draw_shell_with_moira(
         Surface::Aegis if aegis.is_some() => {
             aegis.expect("matched above").draw_in(frame, body, true);
         }
-        Surface::Grounding if grounding.is_some() => {
-            grounding.expect("matched above").draw_in(frame, body, true);
+        Surface::Tellus if tellus.is_some() => {
+            tellus.expect("matched above").draw_in(frame, body, true);
         }
         Surface::Operations if operations.is_some() => {
             draw_operations(frame, body, operations.expect("matched above"));
@@ -700,14 +712,14 @@ fn draw_unconfigured_surface(frame: &mut Frame<'_>, area: Rect, surface: Surface
             ],
             r#"profile \"daimon\" · agent socket + selection"#,
         ),
-        Surface::Grounding => (
-            "evidence workbench",
+        Surface::Tellus => (
+            "grounded methods and evidence",
             [
                 "Inspect sources, claims, and provenance",
                 "Track freshness and bounded load state",
                 "Refresh through the typed presentation endpoint",
             ],
-            r#"profile \"grounding\" · endpoint (+ token)"#,
+            r#"profile \"tellus\" · endpoint (+ token)"#,
         ),
         Surface::Aegis => (
             "authority console",
@@ -955,6 +967,150 @@ fn draw_operations(frame: &mut Frame<'_>, area: ratatui::layout::Rect, view: &Op
     );
 }
 
+fn draw_operator_agenda(frame: &mut Frame<'_>, area: Rect, view: &OperatorAgendaView) {
+    let review_height = if area.height < 16 { 5 } else { 7 };
+    let [summary, items, reviews, footer] = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(5),
+        Constraint::Length(review_height),
+        Constraint::Length(1),
+    ])
+    .spacing(1)
+    .areas(area);
+    let blocking = view
+        .entries
+        .iter()
+        .filter(|entry| entry.urgency == AgendaUrgency::Blocking)
+        .count();
+    frame.render_widget(
+        Paragraph::new(Line::from(vec![
+            Span::styled(
+                format!("{} open", view.entries.len()),
+                Style::default()
+                    .fg(if blocking == 0 {
+                        theme::GREEN
+                    } else {
+                        theme::YELLOW
+                    })
+                    .bg(theme::PANEL)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(
+                format!("  ·  {blocking} blocking  ·  projection only"),
+                Style::default().fg(theme::MUTED).bg(theme::PANEL),
+            ),
+        ]))
+        .style(theme::panel())
+        .block(theme::card(" OPERATOR AGENDA ", theme::PINK)),
+        summary,
+    );
+
+    let lines = if view.entries.is_empty() {
+        vec![
+            Line::styled(
+                "No current owner-published attention items.",
+                theme::muted(),
+            ),
+            Line::styled(
+                "Absence here is not proof that no decision is pending.",
+                Style::default().fg(theme::YELLOW).bg(theme::PANEL),
+            ),
+        ]
+    } else {
+        view.entries
+            .iter()
+            .flat_map(|entry| {
+                let marker = if entry.urgency == AgendaUrgency::Blocking {
+                    "!"
+                } else {
+                    "•"
+                };
+                let source = entry.source_instance.as_ref().map_or_else(
+                    || entry.source_peer.clone(),
+                    |instance| format!("{}/{}", entry.source_peer, instance),
+                );
+                [
+                    Line::from(vec![
+                        Span::styled(
+                            format!("{marker} {}", entry.title),
+                            Style::default()
+                                .fg(if entry.urgency == AgendaUrgency::Blocking {
+                                    theme::YELLOW
+                                } else {
+                                    theme::TEXT
+                                })
+                                .bg(theme::PANEL)
+                                .add_modifier(Modifier::BOLD),
+                        ),
+                        Span::styled(
+                            format!("  {source} @ {}", entry.source_revision),
+                            theme::muted(),
+                        ),
+                    ]),
+                    Line::styled(
+                        format!(
+                            "  why: {} · ask: {} · next: {}",
+                            entry.why_operator, entry.requested_action, entry.next_owner_action
+                        ),
+                        theme::muted(),
+                    ),
+                ]
+            })
+            .collect()
+    };
+    frame.render_widget(
+        Paragraph::new(lines)
+            .style(theme::panel())
+            .wrap(Wrap { trim: false })
+            .block(theme::card(" OWNER-NATIVE ATTENTION ", theme::YELLOW)),
+        items,
+    );
+
+    let review = &view.operating_reviews;
+    let mut review_lines = vec![
+        Line::styled(
+            review.status.as_str(),
+            Style::default()
+                .fg(if review.owner_configured {
+                    theme::GREEN
+                } else {
+                    theme::YELLOW
+                })
+                .bg(theme::PANEL)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Line::styled(
+            format!("required owner: {}", review.required_owner),
+            theme::muted(),
+        ),
+        Line::styled(format!("next: {}", review.next_action), theme::muted()),
+    ];
+    if !view.unavailable_sources.is_empty() {
+        review_lines.push(Line::styled(
+            format!("unavailable: {}", view.unavailable_sources.join(", ")),
+            Style::default().fg(theme::RED).bg(theme::PANEL),
+        ));
+    }
+    if !view.truncated_sources.is_empty() {
+        review_lines.push(Line::styled(
+            format!("truncated: {}", view.truncated_sources.join(", ")),
+            Style::default().fg(theme::YELLOW).bg(theme::PANEL),
+        ));
+    }
+    frame.render_widget(
+        Paragraph::new(review_lines)
+            .style(theme::panel())
+            .wrap(Wrap { trim: false })
+            .block(theme::card(" MBR / QBR READINESS ", theme::VIOLET)),
+        reviews,
+    );
+    frame.render_widget(
+        Paragraph::new("Ctrl-P routes to owning surfaces · agenda presence grants no authority")
+            .style(theme::muted()),
+        footer,
+    );
+}
+
 #[derive(Clone, Copy)]
 struct PeerAvailability {
     chronos: bool,
@@ -964,7 +1120,7 @@ struct PeerAvailability {
     daimon: bool,
     hermes: bool,
     aegis: bool,
-    grounding: bool,
+    tellus: bool,
 }
 
 fn draw_overview(
@@ -982,8 +1138,9 @@ fn draw_overview(
             Surface::Daimon => peers.daimon,
             Surface::Hermes => peers.hermes,
             Surface::Aegis => peers.aegis,
-            Surface::Grounding => peers.grounding,
+            Surface::Tellus => peers.tellus,
             Surface::Overview
+            | Surface::Agenda
             | Surface::Chronos
             | Surface::Vellum
             | Surface::Workspace
@@ -1108,7 +1265,7 @@ fn draw_overview_compact(
             ("Daimon", peers.daimon),
             ("Hermes", peers.hermes),
             ("Aegis", peers.aegis),
-            ("Grounding", peers.grounding),
+            ("Tellus", peers.tellus),
         ] {
             lines.push(Line::styled(
                 format!(
@@ -1336,9 +1493,9 @@ fn draw_availability_detail(frame: &mut Frame<'_>, area: Rect, peers: PeerAvaila
         ("Hermes", "streams and cursors", peers.hermes, theme::CYAN),
         ("Aegis", "authority and grants", peers.aegis, theme::YELLOW),
         (
-            "Grounding",
-            "evidence and context",
-            peers.grounding,
+            "Tellus",
+            "grounded methods and context",
+            peers.tellus,
             theme::YELLOW,
         ),
     ];
@@ -1582,6 +1739,41 @@ mod tests {
     }
 
     #[test]
+    fn operator_agenda_renders_owner_revision_and_review_owner_gap() {
+        let mut agenda = OperatorAgendaView::default();
+        agenda.push(AgendaEntry {
+            source_peer: "chronos".into(),
+            source_instance: Some("delivery".into()),
+            source_revision: "Finite(7)".into(),
+            resource_identity: "recover-effect#3".into(),
+            kind: AgendaKind::OutcomeUnknown,
+            urgency: AgendaUrgency::Blocking,
+            title: "Uncertain Chronos task · recover-effect".into(),
+            why_operator: "owner fenced progress".into(),
+            authority: "none inferred".into(),
+            requested_action: "inspect".into(),
+            consequence_of_waiting: "remains fenced".into(),
+            next_owner_action: "open Chronos".into(),
+            route: "navigate.chronos".into(),
+        });
+        let mut terminal = Terminal::new(TestBackend::new(120, 24)).unwrap();
+        terminal
+            .draw(|frame| draw_operator_agenda(frame, frame.area(), &agenda))
+            .unwrap();
+        let rendered = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(rendered.contains("Uncertain Chronos task"));
+        assert!(rendered.contains("chronos/delivery @ Finite(7)"));
+        assert!(rendered.contains("no sovereign work-mode instance owner configured"));
+        assert!(rendered.contains("agenda presence grants no authority"));
+    }
+
+    #[test]
     fn shell_exposes_gaps_without_inventing_peer_state() {
         let shell = Shell::new(vec![Surface::Overview, Surface::Agora]).unwrap();
         let mut terminal = Terminal::new(TestBackend::new(100, 12)).unwrap();
@@ -1616,7 +1808,7 @@ mod tests {
             (Surface::Agora, "conversation workspace"),
             (Surface::Moira, "saga operations desk"),
             (Surface::Daimon, "agent control room"),
-            (Surface::Grounding, "evidence workbench"),
+            (Surface::Tellus, "grounded methods and evidence"),
             (Surface::Aegis, "authority console"),
             (Surface::Hermes, "ledger observatory"),
         ] {
@@ -1657,12 +1849,13 @@ mod tests {
     fn surface_rail_is_named_when_wide_and_compact_when_narrow() {
         let surfaces = vec![
             Surface::Overview,
+            Surface::Agenda,
             Surface::Chronos,
             Surface::Vellum,
             Surface::Agora,
             Surface::Moira,
             Surface::Daimon,
-            Surface::Grounding,
+            Surface::Tellus,
             Surface::Aegis,
             Surface::Hermes,
             Surface::Operations,
@@ -1723,7 +1916,11 @@ mod tests {
         assert!(rendered.contains("OVERVIEW"));
 
         assert_eq!(surface_tab_at(&shell, 80, 0, 1), Some(Surface::Overview));
-        assert_eq!(surface_tab_at(&shell, 80, 4, 1), Some(Surface::Chronos));
+        assert_eq!(surface_tab_at(&shell, 80, 4, 1), Some(Surface::Agenda));
+        assert!(
+            (0..80)
+                .any(|column| { surface_tab_at(&shell, 80, column, 1) == Some(Surface::Chronos) })
+        );
         assert_eq!(surface_tab_at(&shell, 80, 0, 3), None);
     }
 
@@ -1773,7 +1970,7 @@ mod tests {
                         daimon: true,
                         hermes: true,
                         aegis: false,
-                        grounding: false,
+                        tellus: false,
                     },
                     Some(&health),
                 );
@@ -1868,7 +2065,8 @@ mod tests {
                             aegis: None,
                             aegis_managed: None,
                             aegis_revoke: None,
-                            grounding: None,
+                            tellus: None,
+                            agenda: None,
                             operations: None,
                             health: None,
                             configuration: None,
@@ -1933,7 +2131,8 @@ mod tests {
                             aegis: None,
                             aegis_managed: None,
                             aegis_revoke: None,
-                            grounding: None,
+                            tellus: None,
+                            agenda: None,
                             operations: None,
                             health: None,
                             configuration: None,
@@ -1996,7 +2195,8 @@ mod tests {
                             aegis: None,
                             aegis_managed: None,
                             aegis_revoke: None,
-                            grounding: None,
+                            tellus: None,
+                            agenda: None,
                             operations: None,
                             health: None,
                             configuration: None,
@@ -2058,7 +2258,8 @@ mod tests {
                             aegis: Some(&aegis),
                             aegis_managed: None,
                             aegis_revoke: None,
-                            grounding: None,
+                            tellus: None,
+                            agenda: None,
                             operations: None,
                             health: None,
                             configuration: None,

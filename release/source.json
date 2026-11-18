@@ -1,7 +1,7 @@
 {
   "schema": 2,
   "package": "pantheon",
-  "components": ["agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis", "grounding"],
+  "components": ["agora", "chronos", "vellum", "moira", "daimon", "hermes", "aegis", "tellus"],
   "inputs": {
     "agora": {
       "repository": "https://github.com/gantbd/agora",
@@ -20,7 +20,7 @@
     },
     "chronosTui": {
       "repository": "https://github.com/gantbd/chronos-tui",
-      "revision": "52b7a664ed1caf89eea0c94a7a3a480aa721455d",
+      "revision": "76cf8cf2a45361b065adf262cdffe78933edb7c7",
       "workingTreeClean": true
     },
     "daimon": {
@@ -60,12 +60,12 @@
     },
     "dendrite": {
       "repository": "https://github.com/gantbd/dendrite",
-      "revision": "5e9c73f646b824ff2db31612084496c7e2b0c3b2",
+      "revision": "0600534410aaf6b6ed7d6b441a9c02ccae224496",
       "workingTreeClean": true
     },
-    "groundingTui": {
+    "tellusTui": {
       "repository": "https://github.com/gantbd/tellus",
-      "revision": "209b15077680ee19f9f20a3620f4b92343ca5e60",
+      "revision": "55e125c794c4037e355ab2781edca8ea5c34ff35",
       "workingTreeClean": true
     },
     "keystone": {
@@ -80,7 +80,7 @@
     },
     "moiraTui": {
       "repository": "https://github.com/gantbd/moira-tui",
-      "revision": "2b43c913a93960ee02b4b70dcdb7d6d4c495513f",
+      "revision": "335ca2f1bbd2002fdb7b538062bb28b717accd54",
       "workingTreeClean": true
     },
     "vellum": {

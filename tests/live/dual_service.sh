@@ -121,6 +121,12 @@ assert report["version"] == 1 and report["mode"] == "headless" and report["compl
 peers = {peer["peer"]: peer for peer in report["peers"]}
 assert peers["chronos"]["status"] == "current"
 assert peers["vellum"]["status"] == "current"
+agenda = report["operator_agenda"]
+assert agenda["entries"] == []
+assert agenda["truncated_sources"] == []
+assert agenda["unavailable_sources"] == []
+assert agenda["operating_reviews"]["owner_configured"] is False
+assert "no sovereign work-mode instance owner configured" in agenda["operating_reviews"]["status"]
 '
 
 profile="$scratch/chronos-profile.json"
@@ -140,6 +146,7 @@ assert not report["complete"]
 chronos = [peer for peer in report["peers"] if peer["peer"] == "chronos"]
 assert [peer["status"] for peer in chronos] == ["current", "not_sent"]
 assert next(peer for peer in report["peers"] if peer["peer"] == "vellum")["status"] == "current"
+assert report["operator_agenda"]["unavailable_sources"] == ["chronos/Offline"]
 '
 
 workspace_profile="$scratch/workspace-profile.json"
@@ -226,6 +233,11 @@ try:
     tmux("send-keys", "-t", "workbench", "C-p")
     expect("*Completions*", "MINIBUFFER", "M-x")
     tmux("send-keys", "-t", "workbench", "-l", "go to agora")
+    expect("M-x go to agora", "Go to Agora")
+    # Let enhanced-key reporting settle before the synthetic RET. A human key
+    # cadence naturally provides this boundary; without it tmux can enqueue RET
+    # while the final literal-key event is still being decoded by crossterm.
+    time.sleep(0.1)
     tmux("send-keys", "-t", "workbench", "Enter")
     expect("AGORA · rooms · revision 11", "Profile Room")
     tmux("send-keys", "-t", "workbench", "M-2")
@@ -238,13 +250,15 @@ try:
     expect("Vellum admitted and opened the file", "alpha")
     tmux("send-keys", "-t", "workbench", "Tab")
     expect("VELLUM", "alpha")
-    tmux("send-keys", "-t", "workbench", "]")
+    tmux("send-keys", "-t", "workbench", "M-3")
     expect("AGORA · rooms · revision 11", "Profile Room")
     tmux("send-keys", "-t", "workbench", "Enter")
     expect("Profile Agora transport is live")
-    tmux("send-keys", "-t", "workbench", "[")
+    tmux("send-keys", "-t", "workbench", "M-2")
     expect("VELLUM", "alpha")
-    tmux("send-keys", "-t", "workbench", "[")
+    tmux("send-keys", "-t", "workbench", "-l", "x")
+    expect("Service Current / Dirty", "xalpha")
+    tmux("send-keys", "-t", "workbench", "M-1")
     expect("CHRONOS", "Chronos  ·  revision")
     tmux("send-keys", "-t", "workbench", "C-q")
     expect("Unsaved Vellum edit; Ctrl-Q again discards")
@@ -316,7 +330,7 @@ try:
         time.sleep(0.025)
     else:
         raise AssertionError(f"Hosted Pantheon panes not ready:\n{screen}")
-    tmux("send-keys", "-t", "hosted", "]")
+    tmux("send-keys", "-t", "hosted", "M-2")
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "hosted").stdout
@@ -344,7 +358,7 @@ try:
         time.sleep(0.025)
     else:
         raise AssertionError(f"Hosted Vellum Ctrl-O admission did not settle:\n{screen}")
-    tmux("send-keys", "-t", "hosted", "]")
+    tmux("send-keys", "-t", "hosted", "M-3")
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "hosted").stdout

@@ -158,9 +158,9 @@ pub fn aegis(hosted: bool) -> Vec<Capability> {
     ]
 }
 
-pub fn grounding() -> Vec<Capability> {
+pub fn tellus() -> Vec<Capability> {
     vec![
-        capability("grounding.observe.v1", Plane::Observation),
+        capability("tellus.observe.v1", Plane::Observation),
         topology(false),
     ]
 }

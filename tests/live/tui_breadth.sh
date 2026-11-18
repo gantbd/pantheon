@@ -62,12 +62,13 @@ try:
     tmux("new-session", "-d", "-x", "180", "-y", "36", "-s", "breadth", command)
     expect(
         "OVERVIEW",
+        "Agenda",
         "Chronos",
         "Vellum",
         "Agora",
         "Moira",
         "Daimon",
-        "Grounding",
+        "Tellus",
         "Aegis",
         "Hermes",
         "Operations",
@@ -76,12 +77,13 @@ try:
     )
 
     direct = [
+        ("M-r", "AGENDA", "MBR / QBR READINESS"),
         ("M-c", "CHRONOS", "Observed 0 tasks"),
         ("M-v", "VELLUM", "Vellum service not configured"),
         ("M-a", "AGORA", "conversation workspace"),
         ("M-m", "MOIRA", "saga operations desk"),
         ("M-d", "DAIMON", "agent control room"),
-        ("M-g", "GROUNDING", "evidence workbench"),
+        ("M-g", "TELLUS", "grounded methods and evidence"),
         ("M-e", "AEGIS", "authority console"),
         ("M-l", "HERMES", "ledger observatory"),
         ("M-o", "OPERATIONS", "LOCAL TOPOLOGY"),
@@ -103,9 +105,18 @@ try:
     expect("OVERVIEW", "LIVE SIGNALS")
 
     # Inject one SGR left-click into the enabled mouse stream. At this width
-    # column 14 is the Chronos title in the host-owned rail.
+    # column 14 is the Agenda title in the host-owned rail.
     send_literal("\x1b[<0;14;2M")
-    expect("CHRONOS", "Observed 0 tasks")
+    expect(
+        "AGENDA",
+        "No current owner-published attention items",
+        "no sovereign work-mode instance owner configured",
+    )
+
+    send("C-p")
+    send_literal("go to operator agenda")
+    send("Enter")
+    expect("AGENDA", "agenda presence grants no authority")
 
     send_literal("\x1b[48;5u")
     expect("OVERVIEW", "LIVE SIGNALS")
@@ -158,6 +169,8 @@ try:
     send("Escape")
 
     send("]")
+    expect("AGENDA")
+    send("]")
     expect("CHRONOS")
     send("M-2")
     expect("VELLUM")
@@ -165,7 +178,7 @@ try:
     expect(
         "CONFIGURATION",
         "surfaces",
-        "Overview · Chronos · Vellum · Agora",
+        "Overview · Agenda · Chronos · Vellum · Agora",
         "Credentials, grant handles, and provider locators are intentionally omitted.",
     )
 
