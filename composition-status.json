@@ -178,6 +178,7 @@
           { "id": "agents.session-set.prompt.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
           { "id": "agents.session-set.permission.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
           { "id": "agents.session-set.reattach.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
+          { "id": "models.provider.configure.v1", "plane": "control", "state": "qualified", "when": "model-endpoint-selected" },
           { "id": "models.provider.qualify.v1", "plane": "control", "state": "qualified", "when": "model-endpoint-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
@@ -201,9 +202,15 @@
         "agents.session-set.prompt.v1": "qualified",
         "agents.session-set.permission.v1": "qualified",
         "agents.session-set.reattach.v1": "qualified",
+        "models.provider.configure.v1": "qualified",
         "models.provider.qualify.v1": "qualified"
       },
       "interactiveControlComposition": {
+        "models.provider.configure.v1": {
+          "state": "composed",
+          "when": "one exact hosted Daimon local-model owner is selected",
+          "evidence": ["daimon/apps/daimon-local-model/src/main.rs", "pantheon/cli/src/terminal.rs", "pantheon/tests/live/daimon_model_hosted.sh"]
+        },
         "models.provider.qualify.v1": {
           "state": "composed",
           "when": "one exact Daimon-owned local-model provider is selected",

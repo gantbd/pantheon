@@ -84,7 +84,7 @@ printf '%s\n' \
   '  "provider": {' \
   '    "provider_id": "04040404040404040404040404040404",' \
   '    "harness_profile_id": "05050505050505050505050505050505",' \
-  '    "model": "qwen/qwen3-coder-next",' \
+  '    "model": "qwen/qwen3-coder-next-staged",' \
   "    \"address\": \"127.0.0.1:$provider_port\"," \
   "    \"host_header\": \"localhost:$provider_port\"," \
   '    "path": "/v1/chat/completions",' \
@@ -119,7 +119,7 @@ printf '%s\n' \
   '  "daimon": {' \
   '    "deployment": "hosted",' \
   "    \"model_socket\": \"$scratch/model.sock\"," \
-  '    "requires": ["models.endpoint.attach.v1", "models.provider.qualify.v1"],' \
+  '    "requires": ["models.endpoint.attach.v1", "models.provider.configure.v1", "models.provider.qualify.v1"],' \
   '    "host": {' \
   "      \"executable\": \"$model\"," \
   "      \"config\": \"$scratch/model.json\"" \
@@ -150,7 +150,7 @@ assert configuration["status"] == "current"
 catalog = configuration["catalog"]
 assert catalog["owner"] == "daimon-local-model"
 provider = catalog["providers"][0]
-assert provider["model"] == "qwen/qwen3-coder-next"
+assert provider["model"] == "qwen/qwen3-coder-next-staged"
 assert provider["wire"] == "openai_chat_completions"
 assert provider["endpoint_scope"] == "loopback" and provider["endpoint_port"] > 0
 assert not provider["structured_output"] and provider["structured_tools"]
@@ -197,11 +197,38 @@ try:
     expect(
         "Local provider configuration",
         "daimon-local-model",
-        "qwen/qwen3-coder-next",
+        "qwen/qwen3-coder-next-staged",
         "openai_chat_completions",
         "loopback:",
         "commands, arguments, paths, credential names, and secrets remain redacted",
     )
+    tmux("send-keys", "-t", "model", "C-g")
+    tmux("send-keys", "-t", "model", "C-p")
+    tmux("send-keys", "-t", "model", "-l", "edit the selected local model provider")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect(
+        "Edit local model provider",
+        "EDITING",
+        "qwen/qwen3-coder-next-staged",
+        "remain unprojected",
+    )
+    tmux("send-keys", "-t", "model", "Tab")
+    tmux("send-keys", "-t", "model", "Tab")
+    tmux("send-keys", "-t", "model", "C-u")
+    tmux("send-keys", "-t", "model", "-l", "qwen/qwen3-coder-next")
+    for _ in range(11):
+        tmux("send-keys", "-t", "model", "Tab")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect(
+        "REVIEWING",
+        "changed fields      model",
+        "qualify after restart true",
+        "qwen/qwen3-coder-next",
+    )
+    tmux("send-keys", "-t", "model", "c")
+    expect("ARMED", "reviewed candidate digest")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect("APPLIED", "restart required", "restart/qualify the provider")
     tmux("send-keys", "-t", "model", "C-g")
     tmux("send-keys", "-t", "model", "C-p")
     tmux("send-keys", "-t", "model", "-l", "qualify selected local model provider")
@@ -265,4 +292,4 @@ kill -TERM "$provider_pid"
 wait "$provider_pid" || true
 provider_pid=
 
-echo 'PASS: hosted local-model Daimon -> guarded owner-retained qualification -> headless/TUI receipt parity -> one provider call -> clean drain'
+echo 'PASS: hosted local-model Daimon -> guarded exact-field edit/apply -> owner-retained qualification -> headless/TUI receipt parity -> one provider call -> clean drain'

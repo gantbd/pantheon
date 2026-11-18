@@ -1807,7 +1807,9 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
         "MODEL ENDPOINT ATTACHED",
         "qwen/qwen3-coder-next",
         "openai_chat_completions",
-        "guarded owner-retained qualification",
+        "models.provider.configure.v1",
+        "guarded exact-field edit/apply",
+        "owner-retained qualification",
         "headless/TUI receipt parity",
         "one provider call",
         "hosted_shutdown",
@@ -1830,6 +1832,10 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
     assert!(provider.contains("PROVIDER_QUALIFICATION_TIMEOUT"));
     assert!(provider.contains("validate_provider_qualification"));
     let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    assert!(terminal.contains("models.provider.configure.v1"));
+    assert!(terminal.contains("--describe-provider-edit"));
+    assert!(terminal.contains("secret values never projected"));
+    assert!(terminal.contains("qualification_required"));
     assert!(terminal.contains("models.provider.qualify.v1"));
     assert!(terminal.contains("review → arm → confirm"));
     assert!(terminal.contains("tool-continuation conformance"));

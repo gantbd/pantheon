@@ -104,9 +104,9 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   hosted Daimon/Vellum/tmux journey proves the headless catalogue before the
   guarded TUI edit and again after restart, including the changed owner digest,
   policy digest and redacted launch shape.
-- This does not complete onboarding: the local-model owner still lacks
-  edit/apply, endpoint and model discovery, health checks, and tool-continuation
-  conformance. The owner now does expose the same explicit
+- This does not complete onboarding: the local-model owner now has guarded
+  owner-backed edit/apply, while endpoint/model discovery, health checks, and
+  tool-continuation conformance remain open. The owner now does expose the same explicit
   one-byte supervised lifecycle as the interactive-agent application, and
   Pantheon now models its socket as a distinct model-protocol endpoint rather
   than leaking it through legacy agent-presence semantics. A hosted profile
@@ -117,8 +117,8 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   hosts `daimon-local-model`, observes the same redacted Qwen/OpenAI-compatible
   catalogue through headless and TUI, and proves clean drain without contacting
   the configured provider. Pantheon can therefore present a selected running
-  local-model owner, but configuration editing, discovery, full conformance and
-  task invocation remain owner-contract gaps—not reasons to mutate raw JSON or
+  local-model owner, but discovery, full conformance and task invocation remain
+  owner-contract gaps—not reasons to mutate raw JSON or
   call socket liveness “ready.”
 - The next bounded owner slice adds completion qualification without promoting
   it to full provider readiness. Pantheon asks the selected local-model owner
@@ -134,6 +134,16 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   loaded `qwen/qwen3-coder-next`. Both surfaces state that tool continuation
   remains `not_exercised` and that completion qualification is not task invocation,
   delegation, workflow completion or authority.
+- The owner-backed configuration slice closes the raw-file escape hatch for the selected
+  local-model provider. A guarded Pantheon form loads exact editable fields from
+  Daimon while never projecting credential values, and remains available to
+  repair a profile even when its referenced token is absent. Review, arm and
+  confirm bind an atomic, replay-safe owner-document replacement; restart and a
+  fresh qualification remain explicit next steps. Agent and model owners now
+  share bounded read, digest, process-scoped lock and durable replacement
+  mechanics instead of duplicating a crash-stale lock. The hermetic tmux gate
+  proves edit/apply, a changed owner-document digest, requalification, fresh
+  headless disclosure and one provider request.
 - Direct dogfooding then loaded this execution plan as Pantheon's hosted Vellum
   workset. The footer advertised `Ctrl-F`, but the key reached editing behavior,
   inserted the intended query into the document and marked it dirty instead of
@@ -640,8 +650,9 @@ model, organizational and training-lineage correlation remain explicit gaps.
 - [ ] Configure and qualify the selected local provider through an owner-backed
   Pantheon surface. Completion qualification now produces a replay-safe,
   owner-retained receipt through the guarded TUI and shared headless catalogue,
-  but the local-model profile itself still lacks owner-backed edit/apply and
-  endpoint/model discovery, and tool-continuation conformance is not exercised.
+  owner-backed edit/apply now loads exact non-secret fields and produces a
+  replay-safe atomic receipt, but endpoint/model discovery and tool-continuation
+  conformance are not exercised.
 - [ ] Present provider/model health, conformance, effective tool/context budget,
   known deviations, evidence time, and the next safe action without exposing
   credentials or treating endpoint liveness as session/workflow completion.

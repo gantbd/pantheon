@@ -417,7 +417,7 @@ fn single_line(value: &str, maximum: usize) -> String {
         .collect()
 }
 
-fn valid_projection_text(value: &str, maximum: usize) -> bool {
+pub(crate) fn valid_projection_text(value: &str, maximum: usize) -> bool {
     !value.is_empty()
         && value.len() <= maximum
         && value.chars().all(|character| !character.is_control())

@@ -14,6 +14,7 @@ use daimon_protocol::{
 };
 use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
 use serde::Deserialize;
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -44,7 +45,7 @@ use crate::provider::{
 use crate::provider::{
     ProviderCatalogEntryProjection, ProviderCatalogProjection, ProviderQualificationProjection,
     invoke_provider_owner, provider_catalog, qualify_provider, valid_digest, valid_id,
-    valid_provider_catalog_entry, validate_provider_qualification,
+    valid_projection_text, valid_provider_catalog_entry, validate_provider_qualification,
 };
 use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
@@ -2750,6 +2751,19 @@ fn workbench_commands(
     } else {
         drain.unavailable("No Pantheon-owned topology is attached to this terminal session")
     });
+    let configure_model = CommandSpec::available(
+        "models.provider.configure.v1",
+        "Edit the selected local model provider",
+        "Load exact non-secret fields from Daimon, edit them in Pantheon, review the redacted digest-bound plan, then arm one atomic owner-document replacement.",
+        "Configuration",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if daimon_model {
+        configure_model
+    } else {
+        configure_model.unavailable("No hosted Daimon local-model owner is selected")
+    });
     commands.extend([
         CommandSpec::available(
             "configuration.providers.local",
@@ -2846,6 +2860,7 @@ fn workbench_commands(
                         | "agents.session.prompt.v1"
                         | "agents.session.permission.v1"
                         | "agents.session.reattach.v1"
+                        | "models.provider.configure.v1"
                         | "models.provider.qualify.v1"
                         | "ledger.acknowledge.v1"
                         | "ledger.events.disclose.v1"
@@ -4299,8 +4314,8 @@ struct ProviderQualificationPlan {
 }
 
 enum ProviderQualificationWorkerResult {
-    Planned(ProviderQualificationPlan),
-    Qualified(ProviderQualificationProjection),
+    Planned(Box<ProviderQualificationPlan>),
+    Qualified(Box<ProviderQualificationProjection>),
 }
 
 struct ProviderQualificationWorker {
@@ -4367,13 +4382,13 @@ impl ProviderQualificationWorkflow {
                 {
                     return Err("selected owner returned an unsupported model profile".into());
                 }
-                Ok(ProviderQualificationWorkerResult::Planned(
+                Ok(ProviderQualificationWorkerResult::Planned(Box::new(
                     ProviderQualificationPlan {
                         owner: catalog.owner,
                         document_digest: catalog.document_digest,
                         provider,
                     },
-                ))
+                )))
             })();
             let _ = sender.send(result);
         });
@@ -4470,7 +4485,9 @@ impl ProviderQualificationWorkflow {
                         "owner qualification receipt does not bind the reviewed plan".into(),
                     );
                 }
-                Ok(ProviderQualificationWorkerResult::Qualified(receipt))
+                Ok(ProviderQualificationWorkerResult::Qualified(Box::new(
+                    receipt,
+                )))
             })();
             let _ = sender.send(result);
         });
@@ -4498,7 +4515,7 @@ impl ProviderQualificationWorkflow {
         match result {
             Ok(ProviderQualificationWorkerResult::Planned(plan)) => {
                 let retained = plan.provider.qualification.clone();
-                self.plan = Some(plan);
+                self.plan = Some(*plan);
                 self.receipt = retained;
                 self.phase = ProviderQualificationPhase::Reviewing;
                 self.notice = "READY · Review the exact redacted provider and bounded completion-only check; press c to arm."
@@ -4517,7 +4534,7 @@ impl ProviderQualificationWorkflow {
                     _ => "NONCONFORMANT · Daimon retained the failed completion check · Next: inspect deviations, correct the provider/profile, then press r for a fresh reviewed operation.",
                 }
                 .into();
-                self.receipt = Some(receipt);
+                self.receipt = Some(*receipt);
                 self.phase = ProviderQualificationPhase::Complete;
                 Some((level, elapsed))
             }
@@ -4625,7 +4642,7 @@ struct WorkItemBindingEvidence {
     document_digest: String,
 }
 
-const PROVIDER_EDIT_FIELDS: [&str; 11] = [
+const AGENT_PROVIDER_EDIT_FIELDS: [&str; 11] = [
     "provider ID",
     "harness profile ID",
     "policy digest",
@@ -4638,6 +4655,55 @@ const PROVIDER_EDIT_FIELDS: [&str; 11] = [
     "seatbelt policy digest (when selected)",
     "transport (acp or claude_stream_json)",
 ];
+
+const MODEL_PROVIDER_EDIT_FIELDS: [&str; 14] = [
+    "provider ID",
+    "harness profile ID",
+    "model",
+    "address (host:port)",
+    "HTTP Host header",
+    "chat-completions path",
+    "bearer-token environment name (optional; value never shown)",
+    "structured output (true or false)",
+    "structured tools (true or false)",
+    "sampling temperature milli",
+    "connect timeout ms",
+    "I/O timeout ms",
+    "maximum request bytes",
+    "maximum response bytes",
+];
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ProviderEditKind {
+    Agent,
+    Model,
+}
+
+impl ProviderEditKind {
+    fn owner(self) -> &'static str {
+        match self {
+            Self::Agent => "daimon-local-agent",
+            Self::Model => "daimon-local-model",
+        }
+    }
+
+    fn fields(self) -> &'static [&'static str] {
+        match self {
+            Self::Agent => &AGENT_PROVIDER_EDIT_FIELDS,
+            Self::Model => &MODEL_PROVIDER_EDIT_FIELDS,
+        }
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ModelProviderEditFormProjection {
+    version: u8,
+    owner: String,
+    document_digest: String,
+    provider: serde_json::Value,
+    secret_values_projected: bool,
+}
 
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -4653,6 +4719,8 @@ struct ProviderEditPlanProjection {
     provider: ProviderCatalogEntryProjection,
     changed_fields: Vec<String>,
     restart_required: bool,
+    #[serde(default)]
+    qualification_required: bool,
 }
 
 #[derive(Deserialize)]
@@ -4667,9 +4735,12 @@ struct ProviderEditReceiptProjection {
     document_digest: String,
     provider_id: String,
     restart_required: bool,
+    #[serde(default)]
+    qualification_required: bool,
 }
 
 enum ProviderEditWorkerResult {
+    LoadedModel(ModelProviderEditFormProjection),
     Planned {
         plan: Box<ProviderEditPlanProjection>,
         provider: serde_json::Value,
@@ -4684,6 +4755,7 @@ struct ProviderEditWorker {
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum ProviderEditPhase {
+    Loading,
     Editing,
     Planning,
     Reviewing,
@@ -4692,7 +4764,9 @@ enum ProviderEditPhase {
 }
 
 struct ProviderEditWorkflow {
-    values: [String; 11],
+    kind: ProviderEditKind,
+    values: Vec<String>,
+    expected_document_digest: Option<String>,
     selected: usize,
     phase: ProviderEditPhase,
     plan: Option<ProviderEditPlanProjection>,
@@ -4703,20 +4777,22 @@ struct ProviderEditWorkflow {
 }
 
 impl ProviderEditWorkflow {
-    fn new() -> Self {
+    fn new_agent() -> Self {
         let identity = fresh_identity()
             .map(|bytes| bytes.iter().map(|byte| format!("{byte:02x}")).collect())
             .unwrap_or_default();
         let harness = fresh_identity()
             .map(|bytes| bytes.iter().map(|byte| format!("{byte:02x}")).collect())
             .unwrap_or_default();
-        let mut values: [String; 11] = std::array::from_fn(|_| String::new());
+        let mut values = vec![String::new(); AGENT_PROVIDER_EDIT_FIELDS.len()];
         values[0] = identity;
         values[1] = harness;
         values[7] = "direct".into();
         values[10] = "acp".into();
         Self {
+            kind: ProviderEditKind::Agent,
             values,
+            expected_document_digest: None,
             selected: 0,
             phase: ProviderEditPhase::Editing,
             plan: None,
@@ -4726,6 +4802,57 @@ impl ProviderEditWorkflow {
                 .into(),
             worker: None,
         }
+    }
+
+    fn new_model(profile: Option<WorkspaceProfile>) -> Self {
+        let mut workflow = Self {
+            kind: ProviderEditKind::Model,
+            values: vec![String::new(); MODEL_PROVIDER_EDIT_FIELDS.len()],
+            expected_document_digest: None,
+            selected: 0,
+            phase: ProviderEditPhase::Loading,
+            plan: None,
+            provider: None,
+            armed: false,
+            notice: "LOADING · Asking the selected Daimon owner for exact non-secret editable fields; no configuration effect has occurred."
+                .into(),
+            worker: None,
+        };
+        workflow.begin_model_load(profile);
+        workflow
+    }
+
+    fn begin_model_load(&mut self, profile: Option<WorkspaceProfile>) {
+        let Some(host) = profile
+            .and_then(|profile| profile.daimon)
+            .filter(|daimon| daimon.model_socket.is_some())
+            .and_then(|daimon| daimon.host)
+        else {
+            self.phase = ProviderEditPhase::Editing;
+            self.notice = "REFUSED · No hosted Daimon local-model owner is selected · Next: configure and preflight one owner, restart once, then retry."
+                .into();
+            return;
+        };
+        let (sender, updates) = sync_channel(1);
+        std::thread::spawn(move || {
+            let result = (|| {
+                let bytes = invoke_provider_owner(
+                    &host.executable,
+                    &host.config,
+                    "--describe-provider-edit",
+                    None,
+                )?;
+                let form: ModelProviderEditFormProjection = serde_json::from_slice(&bytes)
+                    .map_err(|_| "owner returned an invalid model-provider edit form")?;
+                validate_model_provider_edit_form(&form)?;
+                Ok(ProviderEditWorkerResult::LoadedModel(form))
+            })();
+            let _ = sender.send(result);
+        });
+        self.worker = Some(ProviderEditWorker {
+            updates,
+            started: Instant::now(),
+        });
     }
 
     fn key(&mut self, key: KeyEvent, profile: Option<WorkspaceProfile>) {
@@ -4798,10 +4925,15 @@ impl ProviderEditWorkflow {
             },
             ProviderEditPhase::Complete => {
                 if is_key(key, KeyCode::Char('n'), KeyModifiers::NONE) {
-                    *self = Self::new();
+                    *self = match self.kind {
+                        ProviderEditKind::Agent => Self::new_agent(),
+                        ProviderEditKind::Model => Self::new_model(profile),
+                    };
                 }
             }
-            ProviderEditPhase::Planning | ProviderEditPhase::Applying => {}
+            ProviderEditPhase::Loading
+            | ProviderEditPhase::Planning
+            | ProviderEditPhase::Applying => {}
         }
     }
 
@@ -4810,9 +4942,12 @@ impl ProviderEditWorkflow {
             return;
         }
         let available = 16_384usize.saturating_sub(self.values[self.selected].len());
+        let allow_newline = self.kind == ProviderEditKind::Agent && matches!(self.selected, 4 | 5);
         self.values[self.selected].extend(
             text.chars()
-                .filter(|character| !character.is_control() || *character == '\n')
+                .filter(|character| {
+                    !character.is_control() || (allow_newline && *character == '\n')
+                })
                 .take(available),
         );
     }
@@ -4820,6 +4955,7 @@ impl ProviderEditWorkflow {
     fn begin_plan(&mut self, profile: Option<WorkspaceProfile>) {
         let Some(host) = profile
             .and_then(|profile| profile.daimon)
+            .filter(|daimon| self.kind == ProviderEditKind::Agent || daimon.model_socket.is_some())
             .and_then(|daimon| daimon.host)
         else {
             self.notice = "REFUSED · No hosted Daimon owner is selected · Next: select and preflight a hosted interactive-agent owner, restart once, then retry."
@@ -4843,19 +4979,31 @@ impl ProviderEditWorkflow {
                 return;
             }
         };
+        let kind = self.kind;
+        let loaded_document_digest = self.expected_document_digest.clone();
         let (sender, receiver) = sync_channel(1);
         std::thread::spawn(move || {
             let result = (|| {
-                let catalog = provider_catalog(&host.executable, &host.config)?;
-                if catalog.owner != "daimon-local-agent" {
-                    return Err(
-                        "selected owner does not publish interactive-agent provider edits".into(),
-                    );
-                }
+                let document_digest = match kind {
+                    ProviderEditKind::Agent => {
+                        let catalog = provider_catalog(&host.executable, &host.config)?;
+                        if catalog.owner != kind.owner() {
+                            return Err(
+                                "selected owner does not publish interactive-agent provider edits"
+                                    .into(),
+                            );
+                        }
+                        catalog.document_digest
+                    }
+                    ProviderEditKind::Model => loaded_document_digest.ok_or_else(|| {
+                        "exact owner edit-form digest is unavailable; close and reopen the form"
+                            .to_owned()
+                    })?,
+                };
                 let request = serde_json::json!({
                     "version": 1,
                     "operation_id": operation_id,
-                    "expected_document_digest": catalog.document_digest,
+                    "expected_document_digest": document_digest,
                     "provider": provider
                 });
                 let bytes = invoke_provider_owner(
@@ -4870,9 +5018,10 @@ impl ProviderEditWorkflow {
                 let plan: ProviderEditPlanProjection = serde_json::from_slice(&bytes)
                     .map_err(|_| "owner returned an invalid provider edit plan")?;
                 validate_provider_edit_plan(
+                    kind,
                     &plan,
                     &operation_id,
-                    &catalog.document_digest,
+                    &document_digest,
                     &provider,
                 )?;
                 Ok(ProviderEditWorkerResult::Planned {
@@ -4894,6 +5043,7 @@ impl ProviderEditWorkflow {
     fn begin_apply(&mut self, profile: Option<WorkspaceProfile>) {
         let Some(host) = profile
             .and_then(|profile| profile.daimon)
+            .filter(|daimon| self.kind == ProviderEditKind::Agent || daimon.model_socket.is_some())
             .and_then(|daimon| daimon.host)
         else {
             self.notice =
@@ -4908,6 +5058,7 @@ impl ProviderEditWorkflow {
             self.armed = false;
             return;
         };
+        let kind = self.kind;
         let (sender, receiver) = sync_channel(1);
         std::thread::spawn(move || {
             let result = (|| {
@@ -4930,7 +5081,7 @@ impl ProviderEditWorkflow {
                 )?;
                 let receipt: ProviderEditReceiptProjection = serde_json::from_slice(&bytes)
                     .map_err(|_| "owner returned an invalid provider edit receipt")?;
-                validate_provider_edit_receipt(&receipt, &plan)?;
+                validate_provider_edit_receipt(kind, &receipt, &plan)?;
                 Ok(ProviderEditWorkerResult::Applied(receipt))
             })();
             let _ = sender.send(result);
@@ -4946,6 +5097,13 @@ impl ProviderEditWorkflow {
     }
 
     fn provider_value(&self) -> Result<serde_json::Value, String> {
+        match self.kind {
+            ProviderEditKind::Agent => self.agent_provider_value(),
+            ProviderEditKind::Model => self.model_provider_value(),
+        }
+    }
+
+    fn agent_provider_value(&self) -> Result<serde_json::Value, String> {
         if !valid_id(self.values[0].trim()) {
             return Err("provider ID must be exactly 32 hexadecimal characters · Next: correct the selected field".into());
         }
@@ -5006,6 +5164,123 @@ impl ProviderEditWorkflow {
         }))
     }
 
+    fn model_provider_value(&self) -> Result<serde_json::Value, String> {
+        if !valid_id(self.values[0].trim()) || !valid_id(self.values[1].trim()) {
+            return Err("provider and harness profile IDs must each be exactly 32 hexadecimal characters · Next: correct the selected identity field".into());
+        }
+        if !valid_projection_text(self.values[2].trim(), 1_024)
+            || !valid_projection_text(self.values[3].trim(), 512)
+            || !valid_projection_text(self.values[4].trim(), 512)
+            || !valid_projection_text(self.values[5].trim(), 2_048)
+            || !self.values[5].starts_with('/')
+        {
+            return Err("model, address, Host header, and absolute HTTP path are required · Next: correct the selected endpoint field".into());
+        }
+        if self.values[3]
+            .trim()
+            .parse::<std::net::SocketAddr>()
+            .is_err()
+        {
+            return Err("address must be a numeric IP and port such as 127.0.0.1:1234 · Next: correct the selected endpoint field".into());
+        }
+        let credential_name = self.values[6].trim();
+        if !credential_name.is_empty()
+            && (credential_name.len() > 256
+                || !credential_name
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+                || credential_name.as_bytes()[0].is_ascii_digit())
+        {
+            return Err("bearer-token environment name must use letters, digits, or underscore and may not start with a digit · Next: correct the selected credential field".into());
+        }
+        let boolean = |index: usize| match self.values[index].trim() {
+            "true" => Ok(true),
+            "false" => Ok(false),
+            _ => Err(format!(
+                "{} must be true or false · Next: correct the selected field",
+                MODEL_PROVIDER_EDIT_FIELDS[index]
+            )),
+        };
+        let number = |index: usize| {
+            self.values[index].trim().parse::<u64>().map_err(|_| {
+                format!(
+                    "{} must be a non-negative integer · Next: correct the selected field",
+                    MODEL_PROVIDER_EDIT_FIELDS[index]
+                )
+            })
+        };
+        let sampling_temperature_milli = number(9)?;
+        let connect_timeout_ms = number(10)?;
+        let io_timeout_ms = number(11)?;
+        let max_request_bytes = number(12)?;
+        let max_response_bytes = number(13)?;
+        if sampling_temperature_milli > u64::from(u16::MAX)
+            || connect_timeout_ms == 0
+            || io_timeout_ms == 0
+            || max_request_bytes == 0
+            || max_response_bytes == 0
+        {
+            return Err("temperature must fit u16 and timeout/byte limits must be nonzero · Next: correct the selected numeric field".into());
+        }
+        Ok(serde_json::json!({
+            "provider_id": self.values[0].trim(),
+            "harness_profile_id": self.values[1].trim(),
+            "model": self.values[2].trim(),
+            "address": self.values[3].trim(),
+            "host_header": self.values[4].trim(),
+            "path": self.values[5].trim(),
+            "bearer_token_env": (!self.values[6].trim().is_empty()).then(|| self.values[6].trim()),
+            "structured_output": boolean(7)?,
+            "structured_tools": boolean(8)?,
+            "sampling_temperature_milli": sampling_temperature_milli,
+            "connect_timeout_ms": connect_timeout_ms,
+            "io_timeout_ms": io_timeout_ms,
+            "max_request_bytes": max_request_bytes,
+            "max_response_bytes": max_response_bytes
+        }))
+    }
+
+    fn load_model_values(&mut self, provider: &serde_json::Value) -> Result<(), String> {
+        let text = |name: &str| {
+            provider[name]
+                .as_str()
+                .map(str::to_owned)
+                .ok_or_else(|| format!("owner edit form omitted {name}"))
+        };
+        let boolean = |name: &str| {
+            provider[name]
+                .as_bool()
+                .map(|value| value.to_string())
+                .ok_or_else(|| format!("owner edit form omitted {name}"))
+        };
+        let number = |name: &str| {
+            provider[name]
+                .as_u64()
+                .map(|value| value.to_string())
+                .ok_or_else(|| format!("owner edit form omitted {name}"))
+        };
+        self.values = vec![
+            text("provider_id")?,
+            text("harness_profile_id")?,
+            text("model")?,
+            text("address")?,
+            text("host_header")?,
+            text("path")?,
+            provider["bearer_token_env"]
+                .as_str()
+                .unwrap_or_default()
+                .to_owned(),
+            boolean("structured_output")?,
+            boolean("structured_tools")?,
+            number("sampling_temperature_milli")?,
+            number("connect_timeout_ms")?,
+            number("io_timeout_ms")?,
+            number("max_request_bytes")?,
+            number("max_response_bytes")?,
+        ];
+        self.provider_value().map(|_| ())
+    }
+
     fn settle(&mut self) -> Option<(ActivityLevel, Duration)> {
         let settlement =
             self.worker
@@ -5024,6 +5299,22 @@ impl ProviderEditWorkflow {
             .started
             .elapsed();
         match settlement {
+            Ok(ProviderEditWorkerResult::LoadedModel(form)) => {
+                if let Err(reason) = self.load_model_values(&form.provider) {
+                    self.phase = ProviderEditPhase::Editing;
+                    self.notice = format!(
+                        "REFUSED · {reason} · Next: inspect the owner document and retry; no configuration effect occurred"
+                    );
+                    return Some((ActivityLevel::Warning, elapsed));
+                }
+                self.expected_document_digest = Some(form.document_digest.clone());
+                self.phase = ProviderEditPhase::Editing;
+                self.notice = format!(
+                    "EDITING · Loaded exact non-secret fields from owner document {} · credential values remain unprojected · Next: change only the intended fields",
+                    form.document_digest
+                );
+                Some((ActivityLevel::Success, elapsed))
+            }
             Ok(ProviderEditWorkerResult::Planned { plan, provider }) => {
                 self.plan = Some(*plan);
                 self.provider = Some(provider);
@@ -5063,15 +5354,21 @@ impl ProviderEditWorkflow {
 
     fn lines(&self) -> Vec<String> {
         let mut lines = vec![
-            "scope               one Daimon interactive-agent owner document".into(),
-            "boundary            configuration only · no qualification, task binding, delegation, persona activation, or invocation".into(),
+            format!(
+                "scope               one Daimon {} owner document",
+                match self.kind {
+                    ProviderEditKind::Agent => "interactive-agent",
+                    ProviderEditKind::Model => "local-model",
+                }
+            ),
+            "boundary            configuration only · secret values never projected · no qualification, task binding, delegation, persona activation, or invocation".into(),
             String::new(),
         ];
         if matches!(
             self.phase,
             ProviderEditPhase::Editing | ProviderEditPhase::Planning
         ) {
-            for (index, label) in PROVIDER_EDIT_FIELDS.iter().enumerate() {
+            for (index, label) in self.kind.fields().iter().enumerate() {
                 let value = self.values[index].replace('\n', " ↵ ");
                 lines.push(format!(
                     "{} {:<47} {}",
@@ -5089,13 +5386,16 @@ impl ProviderEditWorkflow {
                 format!("confirmation plan   {}", plan.plan_digest),
                 format!("changed fields      {}", plan.changed_fields.join(", ")),
                 format!("restart required    {}", plan.restart_required),
+                format!("qualify after restart {}", plan.qualification_required),
                 format!("provider            {}", plan.provider.provider_id),
                 format!("harness profile     {}", plan.provider.harness_profile_id),
                 format!(
                     "profile document    {}",
                     plan.provider.profile_document_digest
                 ),
-                format!(
+            ]);
+            if self.kind == ProviderEditKind::Agent {
+                lines.push(format!(
                     "launch shape        {} · {} · {} argument(s) · {} environment name(s)",
                     plan.provider.transport.as_deref().unwrap_or("unknown"),
                     plan.provider.isolation.as_deref().unwrap_or("unknown"),
@@ -5103,12 +5403,36 @@ impl ProviderEditWorkflow {
                     plan.provider
                         .inherited_environment_name_count
                         .unwrap_or_default()
-                ),
-            ]);
+                ));
+            }
+            if self.kind == ProviderEditKind::Model {
+                lines.extend([
+                    format!(
+                        "model               {}",
+                        plan.provider.model.as_deref().unwrap_or("unknown")
+                    ),
+                    format!(
+                        "endpoint            {}:{} · {}",
+                        plan.provider.endpoint_scope.as_deref().unwrap_or("unknown"),
+                        plan.provider.endpoint_port.unwrap_or_default(),
+                        plan.provider.wire.as_deref().unwrap_or("unknown")
+                    ),
+                    format!(
+                        "model policy        structured output {} · structured tools {} · temperature milli {}",
+                        plan.provider.structured_output.unwrap_or(false),
+                        plan.provider.structured_tools.unwrap_or(false),
+                        plan.provider.sampling_temperature_milli.unwrap_or_default()
+                    ),
+                ]);
+            }
         }
         lines.extend([String::new(), self.notice.clone(), match self.phase {
-            ProviderEditPhase::Editing => "Tab/Enter next field · Shift-Tab previous · Ctrl-U clears field · Ctrl-J newline in list fields · Enter on transport plans · Esc closes",
-            ProviderEditPhase::Planning | ProviderEditPhase::Applying => "Owner operation in progress · Ctrl-Q requests safe exit after the worker settles",
+            ProviderEditPhase::Editing => if self.kind == ProviderEditKind::Agent {
+                "Tab/Enter next field · Shift-Tab previous · Ctrl-U clears field · Ctrl-J newline in list fields · Enter on transport plans · Esc closes"
+            } else {
+                "Tab/Enter next field · Shift-Tab previous · Ctrl-U clears field · Enter on maximum response bytes plans · Esc closes"
+            },
+            ProviderEditPhase::Loading | ProviderEditPhase::Planning | ProviderEditPhase::Applying => "Owner operation in progress · Ctrl-Q requests safe exit after the worker settles",
             ProviderEditPhase::Reviewing => "e edits/discards plan · c arms/disarms · Enter confirms only while armed · Esc closes",
             ProviderEditPhase::Complete => "n starts another provider form · Esc closes",
         }.into()]);
@@ -5230,70 +5554,125 @@ fn local_provider_configuration(profile: Option<&WorkspaceProfile>) -> Vec<Strin
 }
 
 fn validate_provider_edit_plan(
+    kind: ProviderEditKind,
     plan: &ProviderEditPlanProjection,
     operation_id: &str,
     document_digest: &str,
     expected_provider: &serde_json::Value,
 ) -> Result<(), String> {
-    let expected_arguments = expected_provider["arguments"]
-        .as_array()
-        .ok_or_else(|| "provider plan request lost its argument facts".to_owned())?;
-    let expected_environment = expected_provider["inherited_environment_names"]
-        .as_array()
-        .ok_or_else(|| "provider plan request lost its environment facts".to_owned())?;
-    let expected_isolation = expected_provider["isolation"]["kind"]
-        .as_str()
-        .ok_or_else(|| "provider plan request lost its isolation fact".to_owned())?;
     if plan.version != 1
-        || plan.owner != "daimon-local-agent"
+        || plan.owner != kind.owner()
         || plan.operation_id != operation_id
-        || !matches!(plan.action.as_str(), "add" | "replace")
+        || !matches!(
+            (kind, plan.action.as_str()),
+            (ProviderEditKind::Agent, "add" | "replace") | (ProviderEditKind::Model, "replace")
+        )
         || plan.expected_document_digest != document_digest
         || plan.current_document_digest != document_digest
         || !valid_digest(&plan.candidate_document_digest)
         || !valid_digest(&plan.plan_digest)
         || plan.changed_fields.is_empty()
-        || plan.changed_fields.len() > 8
+        || plan.changed_fields.len() > kind.fields().len()
         || !plan.restart_required
         || !valid_provider_catalog_entry(&plan.provider)
         || plan.provider.provider_id != expected_provider["provider_id"]
         || plan.provider.harness_profile_id != expected_provider["harness_profile_id"]
-        || plan.provider.policy_digest.as_deref() != expected_provider["policy_digest"].as_str()
-        || plan.provider.transport.as_deref() != expected_provider["transport"].as_str()
-        || plan.provider.isolation.as_deref() != Some(expected_isolation)
-        || plan.provider.argument_count != Some(expected_arguments.len())
-        || plan.provider.inherited_environment_name_count != Some(expected_environment.len())
-        || plan.provider.authentication_method_configured
-            != Some(!expected_provider["acp_agent_authentication_method"].is_null())
-        || plan.provider.executable_available.is_none()
     {
         return Err("owner returned unsupported or mismatched provider plan facts".into());
     }
-    if plan.changed_fields.iter().any(|field| {
-        !matches!(
-            field.as_str(),
-            "provider_added"
-                | "harness_profile_id"
-                | "policy_digest"
-                | "program"
-                | "arguments"
-                | "inherited_environment_names"
-                | "authentication_method"
-                | "isolation"
-                | "transport"
-        )
-    }) {
-        return Err("owner returned an unknown provider change field".into());
+    match kind {
+        ProviderEditKind::Agent => {
+            let expected_arguments = expected_provider["arguments"]
+                .as_array()
+                .ok_or_else(|| "provider plan request lost its argument facts".to_owned())?;
+            let expected_environment = expected_provider["inherited_environment_names"]
+                .as_array()
+                .ok_or_else(|| "provider plan request lost its environment facts".to_owned())?;
+            let expected_isolation = expected_provider["isolation"]["kind"]
+                .as_str()
+                .ok_or_else(|| "provider plan request lost its isolation fact".to_owned())?;
+            if plan.qualification_required
+                || plan.provider.policy_digest.as_deref()
+                    != expected_provider["policy_digest"].as_str()
+                || plan.provider.transport.as_deref() != expected_provider["transport"].as_str()
+                || plan.provider.isolation.as_deref() != Some(expected_isolation)
+                || plan.provider.argument_count != Some(expected_arguments.len())
+                || plan.provider.inherited_environment_name_count
+                    != Some(expected_environment.len())
+                || plan.provider.authentication_method_configured
+                    != Some(!expected_provider["acp_agent_authentication_method"].is_null())
+                || plan.provider.executable_available.is_none()
+                || plan.changed_fields.iter().any(|field| {
+                    !matches!(
+                        field.as_str(),
+                        "provider_added"
+                            | "harness_profile_id"
+                            | "policy_digest"
+                            | "program"
+                            | "arguments"
+                            | "inherited_environment_names"
+                            | "authentication_method"
+                            | "isolation"
+                            | "transport"
+                    )
+                })
+            {
+                return Err(
+                    "owner returned unsupported or mismatched agent-provider plan facts".into(),
+                );
+            }
+        }
+        ProviderEditKind::Model => {
+            if !plan.qualification_required
+                || plan.provider.model.as_deref() != expected_provider["model"].as_str()
+                || plan.provider.wire.as_deref() != Some("openai_chat_completions")
+                || plan.provider.endpoint_scope.is_none()
+                || plan.provider.endpoint_port.is_none()
+                || plan.provider.structured_output
+                    != expected_provider["structured_output"].as_bool()
+                || plan.provider.structured_tools != expected_provider["structured_tools"].as_bool()
+                || plan.provider.sampling_temperature_milli
+                    != expected_provider["sampling_temperature_milli"]
+                        .as_u64()
+                        .and_then(|value| u16::try_from(value).ok())
+                || plan.provider.bearer_token_configured
+                    != Some(!expected_provider["bearer_token_env"].is_null())
+                || plan.changed_fields.iter().any(|field| {
+                    !matches!(
+                        field.as_str(),
+                        "provider_id"
+                            | "harness_profile_id"
+                            | "model"
+                            | "address"
+                            | "host_header"
+                            | "path"
+                            | "bearer_token_environment"
+                            | "structured_output"
+                            | "structured_tools"
+                            | "sampling_temperature_milli"
+                            | "connect_timeout_ms"
+                            | "io_timeout_ms"
+                            | "max_request_bytes"
+                            | "max_response_bytes"
+                    )
+                })
+            {
+                return Err(
+                    "owner returned unsupported or mismatched model-provider plan facts".into(),
+                );
+            }
+        }
     }
     Ok(())
 }
 
 fn validate_provider_edit_receipt(
+    kind: ProviderEditKind,
     receipt: &ProviderEditReceiptProjection,
     plan: &ProviderEditPlanProjection,
 ) -> Result<(), String> {
     if receipt.version != 1
-        || receipt.owner != "daimon-local-agent"
+        || receipt.owner != kind.owner()
         || receipt.operation_id != plan.operation_id
         || !matches!(receipt.disposition.as_str(), "applied" | "already_applied")
         || !receipt.applied
@@ -5301,8 +5680,82 @@ fn validate_provider_edit_receipt(
         || receipt.document_digest != plan.candidate_document_digest
         || receipt.provider_id != plan.provider.provider_id
         || !receipt.restart_required
+        || receipt.qualification_required != (kind == ProviderEditKind::Model)
     {
         return Err("owner returned unsupported or mismatched provider receipt facts".into());
+    }
+    Ok(())
+}
+
+fn validate_model_provider_edit_form(form: &ModelProviderEditFormProjection) -> Result<(), String> {
+    let Some(provider) = form.provider.as_object() else {
+        return Err("owner model-provider edit form is not an object".into());
+    };
+    let allowed = [
+        "provider_id",
+        "harness_profile_id",
+        "model",
+        "address",
+        "host_header",
+        "path",
+        "bearer_token_env",
+        "structured_output",
+        "structured_tools",
+        "sampling_temperature_milli",
+        "connect_timeout_ms",
+        "io_timeout_ms",
+        "max_request_bytes",
+        "max_response_bytes",
+    ]
+    .into_iter()
+    .collect::<BTreeSet<_>>();
+    let actual = provider.keys().map(String::as_str).collect::<BTreeSet<_>>();
+    let bounded_text = |name: &str, maximum: usize| {
+        provider[name]
+            .as_str()
+            .is_some_and(|value| valid_projection_text(value, maximum))
+    };
+    if form.version != 1
+        || form.owner != "daimon-local-model"
+        || !valid_digest(&form.document_digest)
+        || form.secret_values_projected
+        || actual != allowed
+        || provider["provider_id"]
+            .as_str()
+            .is_none_or(|value| !valid_id(value))
+        || provider["harness_profile_id"]
+            .as_str()
+            .is_none_or(|value| !valid_id(value))
+        || !bounded_text("model", 1_024)
+        || !bounded_text("address", 512)
+        || !bounded_text("host_header", 512)
+        || !bounded_text("path", 2_048)
+        || provider["bearer_token_env"].as_str().is_some_and(|value| {
+            value.is_empty()
+                || value.len() > 256
+                || !value
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+                || value.as_bytes()[0].is_ascii_digit()
+        })
+        || (!provider["bearer_token_env"].is_null() && !provider["bearer_token_env"].is_string())
+        || !provider["structured_output"].is_boolean()
+        || !provider["structured_tools"].is_boolean()
+        || provider["sampling_temperature_milli"].as_u64().is_none()
+        || provider["connect_timeout_ms"]
+            .as_u64()
+            .is_none_or(|value| value == 0)
+        || provider["io_timeout_ms"]
+            .as_u64()
+            .is_none_or(|value| value == 0)
+        || provider["max_request_bytes"]
+            .as_u64()
+            .is_none_or(|value| value == 0)
+        || provider["max_response_bytes"]
+            .as_u64()
+            .is_none_or(|value| value == 0)
+    {
+        return Err("owner returned malformed or overbroad model-provider edit fields".into());
     }
     Ok(())
 }
@@ -6909,7 +7362,12 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         if let Some(workflow) = &provider_edit {
                             draw_inspector(
                                 frame,
-                                "Add or replace local agent provider",
+                                match workflow.kind {
+                                    ProviderEditKind::Agent => {
+                                        "Add or replace local agent provider"
+                                    }
+                                    ProviderEditKind::Model => "Edit local model provider",
+                                },
                                 &workflow.lines(),
                             );
                         }
@@ -7045,8 +7503,28 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             overlay = WorkbenchOverlay::ProviderEdit;
                             continue;
                         }
-                        provider_edit = Some(ProviderEditWorkflow::new());
+                        provider_edit = Some(ProviderEditWorkflow::new_agent());
                         notice = "OPENED · Guarded local agent provider form · Next: complete the bounded fields and review Daimon's exact redacted plan"
+                            .into();
+                        activity.push(ActivityLevel::Info, "configuration", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::ProviderEdit;
+                        continue;
+                    }
+                    if action == "models.provider.configure.v1" {
+                        if provider_edit
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some())
+                        {
+                            notice = "QUEUED · A guarded provider owner operation is already running · Next: wait for its exact form, plan, or receipt"
+                                .into();
+                            overlay = WorkbenchOverlay::ProviderEdit;
+                            continue;
+                        }
+                        provider_edit =
+                            Some(ProviderEditWorkflow::new_model(current_profile.clone()));
+                        notice = "OPENED · Guarded local-model provider form · Next: wait for Daimon’s exact non-secret fields, edit, and review its redacted plan"
                             .into();
                         activity.push(ActivityLevel::Info, "configuration", notice.clone());
                         pending_ui_feedback =
@@ -8944,10 +9422,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         )
                     {
                         Some(AtomicReplaceInput::Close)
-                    } else if let Some(character) = bounded_text_character(key) {
-                        Some(AtomicReplaceInput::Character(character))
                     } else {
-                        None
+                        bounded_text_character(key).map(AtomicReplaceInput::Character)
                     };
                     if let Some(input) = input {
                         let started = Instant::now();
@@ -9650,7 +10126,7 @@ mod tests {
 
     #[test]
     fn provider_edit_form_builds_a_complete_owner_request_without_claiming_delegation() {
-        let mut workflow = ProviderEditWorkflow::new();
+        let mut workflow = ProviderEditWorkflow::new_agent();
         workflow.values[0] = "22".repeat(16);
         workflow.values[1] = "33".repeat(16);
         workflow.values[2] = format!("sha256:{}", "44".repeat(32));
@@ -9674,6 +10150,60 @@ mod tests {
         assert!(lines.contains("no qualification"));
         assert!(lines.contains("delegation"));
         assert!(lines.contains("invocation"));
+    }
+
+    #[test]
+    fn model_provider_edit_form_loads_exact_non_secret_fields() {
+        let provider = serde_json::json!({
+            "provider_id": "22".repeat(16),
+            "harness_profile_id": "33".repeat(16),
+            "model": "qwen/qwen3-coder-next",
+            "address": "127.0.0.1:1234",
+            "host_header": "localhost:1234",
+            "path": "/v1/chat/completions",
+            "bearer_token_env": "LM_STUDIO_TOKEN",
+            "structured_output": false,
+            "structured_tools": true,
+            "sampling_temperature_milli": 0,
+            "connect_timeout_ms": 1000,
+            "io_timeout_ms": 300000,
+            "max_request_bytes": 65536,
+            "max_response_bytes": 1048576
+        });
+        let form = ModelProviderEditFormProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            document_digest: format!("sha256:{}", "44".repeat(32)),
+            provider: provider.clone(),
+            secret_values_projected: false,
+        };
+        validate_model_provider_edit_form(&form).unwrap();
+        let mut workflow = ProviderEditWorkflow {
+            kind: ProviderEditKind::Model,
+            values: vec![String::new(); MODEL_PROVIDER_EDIT_FIELDS.len()],
+            expected_document_digest: None,
+            selected: 0,
+            phase: ProviderEditPhase::Editing,
+            plan: None,
+            provider: None,
+            armed: false,
+            notice: "EDITING".into(),
+            worker: None,
+        };
+        workflow.load_model_values(&provider).unwrap();
+        assert_eq!(workflow.provider_value().unwrap(), provider);
+        workflow.selected = 3;
+        workflow.values[3].clear();
+        workflow.paste("127.0.0.1:1234\nterminal-control");
+        assert!(!workflow.values[3].contains('\n'));
+        let lines = workflow.lines().join("\n");
+        assert!(lines.contains("qwen/qwen3-coder-next"));
+        assert!(lines.contains("LM_STUDIO_TOKEN"));
+        assert!(lines.contains("secret values never projected"));
+        assert!(!lines.contains("actual-token-value"));
+        let mut unsafe_form = form;
+        unsafe_form.provider["model"] = serde_json::json!("model\nterminal-control");
+        assert!(validate_model_provider_edit_form(&unsafe_form).is_err());
     }
 
     #[test]
@@ -9713,6 +10243,7 @@ mod tests {
             },
             changed_fields: vec!["policy_digest".into()],
             restart_required: true,
+            qualification_required: false,
         };
         let expected_provider = serde_json::json!({
             "provider_id": "55".repeat(16),
@@ -9725,8 +10256,14 @@ mod tests {
             "isolation": {"kind": "direct"},
             "transport": "acp"
         });
-        validate_provider_edit_plan(&plan, &operation_id, &document_digest, &expected_provider)
-            .unwrap();
+        validate_provider_edit_plan(
+            ProviderEditKind::Agent,
+            &plan,
+            &operation_id,
+            &document_digest,
+            &expected_provider,
+        )
+        .unwrap();
         let receipt = ProviderEditReceiptProjection {
             version: 1,
             owner: "daimon-local-agent".into(),
@@ -9737,8 +10274,87 @@ mod tests {
             document_digest: candidate_digest,
             provider_id: plan.provider.provider_id.clone(),
             restart_required: true,
+            qualification_required: false,
         };
-        validate_provider_edit_receipt(&receipt, &plan).unwrap();
+        validate_provider_edit_receipt(ProviderEditKind::Agent, &receipt, &plan).unwrap();
+    }
+
+    #[test]
+    fn model_provider_edit_plan_requires_requalification_and_exact_projection() {
+        let operation_id = "11".repeat(16);
+        let document_digest = format!("sha256:{}", "22".repeat(32));
+        let candidate_digest = format!("sha256:{}", "33".repeat(32));
+        let plan = ProviderEditPlanProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            operation_id: operation_id.clone(),
+            action: "replace".into(),
+            expected_document_digest: document_digest.clone(),
+            current_document_digest: document_digest.clone(),
+            candidate_document_digest: candidate_digest.clone(),
+            plan_digest: format!("sha256:{}", "44".repeat(32)),
+            provider: ProviderCatalogEntryProjection {
+                provider_id: "55".repeat(16),
+                harness_profile_id: "66".repeat(16),
+                profile_document_digest: format!("sha256:{}", "77".repeat(32)),
+                policy_digest: None,
+                transport: None,
+                isolation: None,
+                executable_available: None,
+                argument_count: None,
+                inherited_environment_name_count: None,
+                authentication_method_configured: None,
+                wire: Some("openai_chat_completions".into()),
+                model: Some("qwen/qwen3-coder-next".into()),
+                endpoint_scope: Some("loopback".into()),
+                endpoint_port: Some(1234),
+                structured_output: Some(false),
+                structured_tools: Some(true),
+                sampling_temperature_milli: Some(0),
+                bearer_token_configured: Some(false),
+                qualification: None,
+            },
+            changed_fields: vec!["model".into()],
+            restart_required: true,
+            qualification_required: true,
+        };
+        let expected_provider = serde_json::json!({
+            "provider_id": "55".repeat(16),
+            "harness_profile_id": "66".repeat(16),
+            "model": "qwen/qwen3-coder-next",
+            "address": "127.0.0.1:1234",
+            "host_header": "localhost:1234",
+            "path": "/v1/chat/completions",
+            "bearer_token_env": null,
+            "structured_output": false,
+            "structured_tools": true,
+            "sampling_temperature_milli": 0,
+            "connect_timeout_ms": 1000,
+            "io_timeout_ms": 300000,
+            "max_request_bytes": 65536,
+            "max_response_bytes": 1048576
+        });
+        validate_provider_edit_plan(
+            ProviderEditKind::Model,
+            &plan,
+            &operation_id,
+            &document_digest,
+            &expected_provider,
+        )
+        .unwrap();
+        let receipt = ProviderEditReceiptProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            operation_id,
+            disposition: "applied".into(),
+            applied: true,
+            replayed: false,
+            document_digest: candidate_digest,
+            provider_id: plan.provider.provider_id.clone(),
+            restart_required: true,
+            qualification_required: true,
+        };
+        validate_provider_edit_receipt(ProviderEditKind::Model, &receipt, &plan).unwrap();
     }
 
     #[test]
@@ -10100,6 +10716,7 @@ mod tests {
             "moira.reconciliation.admit-succeeded",
             "moira.reconciliation.retry",
             "daimon.session.prompt",
+            "models.provider.configure.v1",
             "models.provider.qualify.v1",
             "daimon.session.permission",
             "daimon.session.reattach",
@@ -10132,6 +10749,7 @@ mod tests {
                     | "agents.session.prompt.v1"
                     | "agents.session.permission.v1"
                     | "agents.session.reattach.v1"
+                    | "models.provider.configure.v1"
                     | "models.provider.qualify.v1"
                     | "ledger.acknowledge.v1"
                     | "ledger.events.disclose.v1"
@@ -10144,6 +10762,7 @@ mod tests {
                     "agents.session.prompt.v1" => "daimon.session.prompt",
                     "agents.session.permission.v1" => "daimon.session.permission",
                     "agents.session.reattach.v1" => "daimon.session.reattach",
+                    "models.provider.configure.v1" => "models.provider.configure.v1",
                     "models.provider.qualify.v1" => "models.provider.qualify.v1",
                     _ => route.capability,
                 };

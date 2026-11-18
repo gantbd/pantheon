@@ -1167,14 +1167,13 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
             let agenda_items = view
                 .entries
                 .iter()
-                .filter_map(|entry| {
-                    matches!(entry.snapshot.phase, chronos_protocol::Phase::Uncertain).then(|| {
-                        serde_json::json!({
-                            "task": entry.reference.task,
-                            "incarnation": entry.reference.incarnation,
-                            "phase": "uncertain",
-                            "priority": entry.snapshot.priority,
-                        })
+                .filter(|entry| matches!(entry.snapshot.phase, chronos_protocol::Phase::Uncertain))
+                .map(|entry| {
+                    serde_json::json!({
+                        "task": entry.reference.task,
+                        "incarnation": entry.reference.incarnation,
+                        "phase": "uncertain",
+                        "priority": entry.snapshot.priority,
                     })
                 })
                 .collect::<Vec<_>>();
