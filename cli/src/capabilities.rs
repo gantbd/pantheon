@@ -147,6 +147,7 @@ pub fn daimon(
             capability("models.endpoint.attach.v1", Plane::Operator),
             capability("models.provider.configure.v1", Plane::Control),
             capability("models.provider.qualify.v1", Plane::Control),
+            capability("models.task.invoke.v1", Plane::Control),
         ]);
     }
     capabilities.push(topology(hosted));
@@ -316,6 +317,7 @@ pub const GUARDED_CONTROL_CAPABILITIES: &[(&str, &[&str])] = &[
             "agents.session.permission.v1",
             "models.provider.configure.v1",
             "models.provider.qualify.v1",
+            "models.task.invoke.v1",
         ],
     ),
     (
@@ -428,6 +430,11 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
     GuardedControlRoute {
         peer: "daimon",
         capability: "models.provider.qualify.v1",
+        command: "workbench",
+    },
+    GuardedControlRoute {
+        peer: "daimon",
+        capability: "models.task.invoke.v1",
         command: "workbench",
     },
     GuardedControlRoute {
@@ -622,6 +629,21 @@ mod tests {
                 .iter()
                 .any(|capability| capability.id == "agents.presence.v1")
         );
+    }
+
+    #[test]
+    fn local_model_interactive_reports_the_governed_task_invocation_control() {
+        let selected = daimon(Mode::Interactive, true, false, true, false);
+        assert!(
+            selected
+                .iter()
+                .any(|capability| capability.id == "models.task.invoke.v1")
+        );
+        assert!(GUARDED_CONTROL_ROUTES.iter().any(|route| {
+            route.peer == "daimon"
+                && route.capability == "models.task.invoke.v1"
+                && route.command == "workbench"
+        }));
     }
 
     #[test]

@@ -40,12 +40,15 @@ use crate::native_host::NativeHost;
 use crate::profile::{AgoraTransportProfile, DaimonExecutionPolicyProfile, WorkspaceProfile};
 #[cfg(test)]
 use crate::provider::{
-    ContextCatalogProjection, TaskBindingCatalogProjection, validate_provider_catalog,
+    ContextCatalogProjection, ModelTaskBudgetProjection, TaskBindingCatalogProjection,
+    validate_provider_catalog,
 };
 use crate::provider::{
+    ModelTaskExecutionProjection, ModelTaskInvocationReceiptProjection,
     ProviderCatalogEntryProjection, ProviderCatalogProjection, ProviderQualificationProjection,
-    invoke_provider_owner, provider_catalog, qualify_provider, valid_digest, valid_id,
-    valid_projection_text, valid_provider_catalog_entry, validate_provider_qualification,
+    invoke_model_task, invoke_provider_owner, provider_catalog, qualify_provider, valid_digest,
+    valid_id, valid_projection_text, valid_provider_catalog_entry,
+    validate_model_task_invocation_receipt, validate_provider_qualification,
 };
 use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
@@ -102,6 +105,7 @@ enum WorkbenchOverlay {
     LocalProviders,
     ProviderEdit,
     ProviderQualification,
+    ModelTaskInvocation,
     AcpSessions,
     AgoraRooms,
     Reconfiguration,
@@ -116,6 +120,7 @@ enum KeyBehavior {
     CommandPaletteInput,
     ProviderEditInput,
     ProviderQualificationInput,
+    ModelTaskInvocationInput,
     ReconfigurationInput,
     DismissOverlay,
     Suppress,
@@ -159,6 +164,16 @@ impl BehaviorFacade {
                     KeyBehavior::DismissOverlay
                 } else {
                     KeyBehavior::ProviderQualificationInput
+                };
+            }
+            WorkbenchOverlay::ModelTaskInvocation => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::ModelTaskInvocationInput
                 };
             }
             WorkbenchOverlay::LocalProviders
@@ -436,10 +451,12 @@ enum WorkItemAgentJourney {
     EditingTask {
         draft: String,
         lens: Option<AgentCollaborationLens>,
+        target: WorkItemExecutionTarget,
     },
     AwaitingTaskReceipt {
         draft: String,
         lens: Option<AgentCollaborationLens>,
+        target: WorkItemExecutionTarget,
         task_id: String,
     },
     AwaitingTaskBinding,
@@ -474,13 +491,19 @@ impl WorkItemAgentJourney {
     }
 
     fn task_submitted(&mut self) {
-        if let Self::EditingTask { draft, lens } = std::mem::take(self) {
+        if let Self::EditingTask {
+            draft,
+            lens,
+            target,
+        } = std::mem::take(self)
+        {
             let task_id = single_work_item_task_id(&draft)
                 .expect("the behavior facade admits exactly one task before dispatch")
                 .to_owned();
             *self = Self::AwaitingTaskReceipt {
                 draft,
                 lens,
+                target,
                 task_id,
             };
         }
@@ -492,6 +515,13 @@ impl WorkItemAgentJourney {
         };
         single_work_item_task_id(draft)
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum WorkItemExecutionTarget {
+    #[default]
+    Agent,
+    Model,
 }
 
 fn single_work_item_task_id(draft: &str) -> Result<&str, &'static str> {
@@ -2210,6 +2240,27 @@ fn workbench_commands(
             "A selected local Daimon agent session is not configured"
         })
     });
+    let model_work_item = CommandSpec::available(
+        "workitem.model.new",
+        "Create task with local model",
+        "Create one Chronos work item, prove its exact Daimon local-model execution binding, then review and confirm one replay-fenced model attempt.",
+        "Work item journey",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if chronos_writes && daimon_model {
+        model_work_item
+    } else {
+        model_work_item.unavailable(if !chronos_writes {
+            if chronos {
+                "Chronos writes are disabled for this session"
+            } else {
+                "Chronos is not configured"
+            }
+        } else {
+            "A selected local Daimon model endpoint is not configured"
+        })
+    });
     for lens in AGENT_COLLABORATION_LENSES {
         let new_task_command = CommandSpec::available(
             lens.new_task_action,
@@ -2862,6 +2913,7 @@ fn workbench_commands(
                         | "agents.session.reattach.v1"
                         | "models.provider.configure.v1"
                         | "models.provider.qualify.v1"
+                        | "models.task.invoke.v1"
                         | "ledger.acknowledge.v1"
                         | "ledger.events.disclose.v1"
                         | "ledger.compact.v1"
@@ -3117,7 +3169,7 @@ fn execute_workbench_action<T: ServicePort>(
                 "Atomic replace opened for the marked 1–16 document workset".into(),
             )
         }
-        "chronos.task.new" | "workitem.agent.new" => {
+        "chronos.task.new" | "workitem.agent.new" | "workitem.model.new" => {
             invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::NewTask)
         }
         "workitem.agent.return" => {
@@ -4632,6 +4684,7 @@ struct WorkItemBindingInspection {
     started: Instant,
     draft: String,
     lens: Option<AgentCollaborationLens>,
+    target: WorkItemExecutionTarget,
 }
 
 #[derive(Debug)]
@@ -4640,6 +4693,343 @@ struct WorkItemBindingEvidence {
     external_task_key: String,
     owner: String,
     document_digest: String,
+    model: Option<ModelWorkItemBindingEvidence>,
+}
+
+#[derive(Debug)]
+struct ModelWorkItemBindingEvidence {
+    provider_id: String,
+    harness_profile_id: String,
+    model: String,
+    qualification_operation_id: String,
+    execution: ModelTaskExecutionProjection,
+}
+
+struct ModelTaskInvocationPlan {
+    executable: PathBuf,
+    config: PathBuf,
+    operation_id: String,
+    document_digest: String,
+    qualification_operation_id: String,
+    task_id: String,
+    task_key: String,
+    provider_id: String,
+    harness_profile_id: String,
+    model: String,
+    execution: ModelTaskExecutionProjection,
+    request_now: u64,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ModelTaskInvocationPhase {
+    Reviewing,
+    Invoking,
+    Complete,
+}
+
+struct ModelTaskInvocationWorker {
+    result: Receiver<Result<ModelTaskInvocationReceiptProjection, String>>,
+    started: Instant,
+}
+
+struct ModelTaskInvocationWorkflow {
+    phase: ModelTaskInvocationPhase,
+    plan: ModelTaskInvocationPlan,
+    armed: bool,
+    notice: String,
+    receipt: Option<ModelTaskInvocationReceiptProjection>,
+    worker: Option<ModelTaskInvocationWorker>,
+}
+
+impl ModelTaskInvocationWorkflow {
+    fn new(
+        profile: Option<WorkspaceProfile>,
+        evidence: WorkItemBindingEvidence,
+    ) -> Result<Self, String> {
+        let host = profile
+            .as_ref()
+            .and_then(|profile| profile.daimon.as_ref())
+            .and_then(|daimon| daimon.host.as_ref())
+            .ok_or_else(|| {
+                "the selected local-model owner executable/config is unavailable".to_owned()
+            })?;
+        let model = evidence
+            .model
+            .ok_or_else(|| "the owner binding omitted model execution facts".to_owned())?;
+        let operation_id = fresh_identity()?
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect();
+        Ok(Self {
+            phase: ModelTaskInvocationPhase::Reviewing,
+            plan: ModelTaskInvocationPlan {
+                executable: host.executable.clone(),
+                config: host.config.clone(),
+                operation_id,
+                document_digest: evidence.document_digest,
+                qualification_operation_id: model.qualification_operation_id,
+                task_id: evidence.task_id,
+                task_key: evidence.external_task_key,
+                provider_id: model.provider_id,
+                harness_profile_id: model.harness_profile_id,
+                model: model.model,
+                execution: model.execution,
+                request_now: current_unix_time()?,
+            },
+            armed: false,
+            notice: "READY · Review the exact owner task/provider/context/tool/budget envelope; press c to arm."
+                .into(),
+            receipt: None,
+            worker: None,
+        })
+    }
+
+    fn input(&mut self, key: KeyEvent) {
+        match self.phase {
+            ModelTaskInvocationPhase::Reviewing
+                if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) =>
+            {
+                self.armed = !self.armed;
+                self.notice = if self.armed {
+                    "ARMED · Enter sends this exact operation once through Daimon's model service; Esc disarms/closes without dispatch."
+                } else {
+                    "READY · Invocation disarmed; review the exact envelope or press c to arm."
+                }
+                .into();
+            }
+            ModelTaskInvocationPhase::Reviewing
+                if is_key(key, KeyCode::Enter, KeyModifiers::NONE) && self.armed =>
+            {
+                self.start();
+            }
+            ModelTaskInvocationPhase::Reviewing
+                if is_key(key, KeyCode::Enter, KeyModifiers::NONE) =>
+            {
+                self.notice =
+                    "REFUSED · Invocation is not armed · Next: review the envelope and press c."
+                        .into();
+            }
+            ModelTaskInvocationPhase::Complete
+                if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) =>
+            {
+                self.start();
+            }
+            _ => {}
+        }
+    }
+
+    fn start(&mut self) {
+        if self.worker.is_some() {
+            return;
+        }
+        let request = serde_json::json!({
+            "version": 1,
+            "operation_id": self.plan.operation_id,
+            "expected_document_digest": self.plan.document_digest,
+            "qualification_operation_id": self.plan.qualification_operation_id,
+            "chronos_task_id": self.plan.task_id,
+            "now": self.plan.request_now,
+        });
+        let request = match serde_json::to_vec(&request) {
+            Ok(request) => request,
+            Err(_) => {
+                self.phase = ModelTaskInvocationPhase::Complete;
+                self.notice =
+                    "REFUSED · Pantheon could not encode the bounded owner request.".into();
+                return;
+            }
+        };
+        let executable = self.plan.executable.clone();
+        let config = self.plan.config.clone();
+        let (sender, result) = sync_channel(1);
+        std::thread::spawn(move || {
+            let outcome = invoke_model_task(&executable, &config, &request);
+            let _ = sender.send(outcome);
+        });
+        self.phase = ModelTaskInvocationPhase::Invoking;
+        self.armed = false;
+        self.notice = "INVOKING · Daimon retained the operation marker before one model-service request; Pantheon will not retry an uncertain outcome."
+            .into();
+        self.worker = Some(ModelTaskInvocationWorker {
+            result,
+            started: Instant::now(),
+        });
+    }
+
+    fn settle(&mut self) -> Option<(ActivityLevel, Duration)> {
+        let worker = self.worker.as_ref()?;
+        let result = match worker.result.try_recv() {
+            Ok(result) => result,
+            Err(TryRecvError::Empty) => return None,
+            Err(TryRecvError::Disconnected) => {
+                Err("model task-invocation worker ended without an owner receipt".into())
+            }
+        };
+        let elapsed = worker.started.elapsed();
+        self.worker = None;
+        self.phase = ModelTaskInvocationPhase::Complete;
+        match result {
+            Ok(receipt) => {
+                let validation = self.validate_receipt(&receipt);
+                if let Err(reason) = validation {
+                    self.notice = format!(
+                        "REFUSED · Owner receipt did not bind the reviewed invocation: {reason}"
+                    );
+                    return Some((ActivityLevel::Warning, elapsed));
+                }
+                let level = match receipt.disposition.as_str() {
+                    "completed" => ActivityLevel::Success,
+                    "outcome_unknown" => ActivityLevel::Uncertain,
+                    "awaiting_proposal_review" => ActivityLevel::Warning,
+                    _ => ActivityLevel::Warning,
+                };
+                self.notice = match receipt.disposition.as_str() {
+                    "completed" => "COMPLETED · Daimon retained attributed model output and usage for the exact task attempt · Next: inspect the response; Agora room and Chronos comment linkage remain open.",
+                    "awaiting_proposal_review" => "HUMAN REVIEW REQUIRED · Daimon retained provider proposals but did not execute tools/effects · Next: inspect the receipt and admit any continuation separately.",
+                    "outcome_unknown" => "OUTCOME UNKNOWN · This operation identity will not be redispatched · Next: inspect retained Daimon evidence before choosing a fresh operation.",
+                    "not_sent" => "NOT SENT · Daimon retained that the model-service request did not dispatch · Next: correct service availability, then create a fresh reviewed operation.",
+                    "refused" => "REFUSED · Daimon rejected the exact task attempt · Next: inspect deviations and owner state before a fresh operation.",
+                    _ => "NONCOMPLETING · Daimon retained the exact terminal disposition · Next: inspect deviations before any follow-up.",
+                }
+                .into();
+                self.receipt = Some(receipt);
+                Some((level, elapsed))
+            }
+            Err(reason) => {
+                self.notice = format!(
+                    "REFUSED · Local-model owner invocation failed: {reason} · Next: inspect owner/service state; do not call the provider directly"
+                );
+                Some((ActivityLevel::Warning, elapsed))
+            }
+        }
+    }
+
+    fn validate_receipt(
+        &self,
+        receipt: &ModelTaskInvocationReceiptProjection,
+    ) -> Result<(), String> {
+        validate_model_task_invocation_receipt(receipt)?;
+        if receipt.operation_id != self.plan.operation_id
+            || receipt.document_digest != self.plan.document_digest
+            || receipt.qualification_operation_id != self.plan.qualification_operation_id
+            || receipt.chronos_task_id != self.plan.task_id
+            || receipt.task_key != self.plan.task_key
+            || receipt.provider_id != self.plan.provider_id
+            || receipt.harness_profile_id != self.plan.harness_profile_id
+            || receipt.model != self.plan.model
+            || receipt.task_incarnation != self.plan.execution.task_incarnation
+            || receipt.attempt_number != self.plan.execution.attempt_number
+            || receipt.principal != self.plan.execution.principal
+            || receipt.context_references != self.plan.execution.context_references
+            || receipt.tool_capabilities != self.plan.execution.tool_capabilities
+            || receipt.request_now != self.plan.request_now
+        {
+            return Err("receipt identity or execution envelope mismatch".into());
+        }
+        Ok(())
+    }
+
+    fn lines(&self) -> Vec<String> {
+        let budget = self.plan.execution.budget;
+        let mut lines = vec![
+            format!(
+                "phase                {}",
+                match self.phase {
+                    ModelTaskInvocationPhase::Reviewing =>
+                        if self.armed {
+                            "ARMED"
+                        } else {
+                            "REVIEWING"
+                        },
+                    ModelTaskInvocationPhase::Invoking => "INVOKING",
+                    ModelTaskInvocationPhase::Complete => "COMPLETE",
+                }
+            ),
+            self.notice.clone(),
+            String::new(),
+        ];
+        if let Some(receipt) = &self.receipt {
+            lines.extend([
+                format!("disposition           {}", receipt.disposition),
+                format!(
+                    "usage                 {} input · {} output tokens",
+                    receipt.input_tokens, receipt.output_tokens
+                ),
+                format!(
+                    "output                {} bytes · {}",
+                    receipt.output_bytes,
+                    receipt
+                        .output_digest
+                        .as_deref()
+                        .unwrap_or("digest unavailable")
+                ),
+                format!("proposals             {}", receipt.proposal_count),
+                format!("replayed              {}", receipt.replayed),
+                String::new(),
+                "MODEL RESPONSE".into(),
+            ]);
+            let preview = receipt.output.chars().take(4_096).collect::<String>();
+            lines.extend(preview.lines().map(|line| format!("  {line}")));
+            if receipt.output.chars().count() > 4_096 {
+                lines.push("  … response preview truncated at 4096 characters".into());
+            }
+            for deviation in &receipt.known_deviations {
+                lines.push(format!("deviation             {deviation}"));
+            }
+            lines.push(String::new());
+        }
+        lines.extend([
+            format!("operation            {}", self.plan.operation_id),
+            format!("Chronos task          {}", self.plan.task_id),
+            format!("task key              {}", self.plan.task_key),
+            format!(
+                "attempt               incarnation {} · attempt {}",
+                self.plan.execution.task_incarnation, self.plan.execution.attempt_number
+            ),
+            format!("principal             {}", self.plan.execution.principal),
+            format!("provider              {}", self.plan.provider_id),
+            format!("harness profile       {}", self.plan.harness_profile_id),
+            format!("model                 {}", self.plan.model),
+            format!("owner document        {}", self.plan.document_digest),
+            format!(
+                "qualification         {}",
+                self.plan.qualification_operation_id
+            ),
+            format!(
+                "context/tools          {} exact / {} exact",
+                self.plan.execution.context_references.len(),
+                self.plan.execution.tool_capabilities.len()
+            ),
+            format!(
+                "budget                 {} ms · in {} · out {} · tools {} · context {} B · output {} B",
+                budget.max_elapsed_millis,
+                budget.max_input_tokens,
+                budget.max_output_tokens,
+                budget.max_tool_calls,
+                budget.max_context_bytes,
+                budget.max_output_bytes,
+            ),
+            "human gate            review → arm → confirm once".into(),
+            "authority             owner/Aegis decision; this screen grants none".into(),
+            String::new(),
+        ]);
+        lines.push("Boundary: this is one governed terminal-model attempt, not an Agora room, durable chat session, Chronos comment/status transition, tool continuation, delegation completion, approval, or authority.".into());
+        lines.push(
+            match self.phase {
+                ModelTaskInvocationPhase::Reviewing => {
+                    "c arm/disarm · Enter confirm only while armed · Esc close"
+                }
+                ModelTaskInvocationPhase::Invoking => {
+                    "Owner operation in progress · Ctrl-Q waits for the exact result"
+                }
+                ModelTaskInvocationPhase::Complete => {
+                    "r replay retained operation without provider redispatch · Esc close"
+                }
+            }
+            .into(),
+        );
+        lines
+    }
 }
 
 const AGENT_PROVIDER_EDIT_FIELDS: [&str; 11] = [
@@ -5461,10 +5851,11 @@ fn spawn_work_item_binding_inspection(
     task_id: String,
     draft: String,
     lens: Option<AgentCollaborationLens>,
+    target: WorkItemExecutionTarget,
 ) -> WorkItemBindingInspection {
     let (sender, result) = sync_channel(1);
     std::thread::spawn(move || {
-        let inspected = inspect_work_item_binding(profile.as_ref(), &task_id);
+        let inspected = inspect_work_item_binding(profile.as_ref(), &task_id, target);
         let _ = sender.send(inspected);
     });
     WorkItemBindingInspection {
@@ -5472,12 +5863,14 @@ fn spawn_work_item_binding_inspection(
         started: Instant::now(),
         draft,
         lens,
+        target,
     }
 }
 
 fn inspect_work_item_binding(
     profile: Option<&WorkspaceProfile>,
     task_id: &str,
+    target: WorkItemExecutionTarget,
 ) -> Result<WorkItemBindingEvidence, String> {
     let daimon = profile
         .and_then(|profile| profile.daimon.as_ref())
@@ -5485,20 +5878,43 @@ fn inspect_work_item_binding(
     let host = daimon.host.as_ref().ok_or_else(|| {
         "the selected Daimon profile does not publish its owner executable/config".to_owned()
     })?;
-    let execution = daimon.execution.as_ref().ok_or_else(|| {
-        "the selected Daimon profile does not publish a frozen execution task key".to_owned()
-    })?;
     let catalog = provider_catalog(&host.executable, &host.config)?;
-    validate_work_item_binding(&catalog, task_id, &execution.task_attempt.task_key)
+    let configured_task_key = match target {
+        WorkItemExecutionTarget::Agent => daimon
+            .execution
+            .as_ref()
+            .map(|execution| execution.task_attempt.task_key.as_str())
+            .ok_or_else(|| {
+                "the selected Daimon profile does not publish a frozen execution task key"
+                    .to_owned()
+            })?,
+        WorkItemExecutionTarget::Model => catalog
+            .task_bindings
+            .iter()
+            .find(|binding| binding.chronos_task_id == task_id)
+            .map(|binding| binding.external_task_key.as_str())
+            .ok_or_else(|| {
+                "the local-model owner catalogue has no exact binding for the created Chronos task"
+                    .to_owned()
+            })?,
+    };
+    validate_work_item_binding(&catalog, task_id, configured_task_key, target)
 }
 
 fn validate_work_item_binding(
     catalog: &ProviderCatalogProjection,
     task_id: &str,
     configured_task_key: &str,
+    target: WorkItemExecutionTarget,
 ) -> Result<WorkItemBindingEvidence, String> {
-    if catalog.owner != "daimon-local-agent" {
-        return Err("the selected owner catalogue is not a Daimon local-agent catalogue".into());
+    let expected_owner = match target {
+        WorkItemExecutionTarget::Agent => "daimon-local-agent",
+        WorkItemExecutionTarget::Model => "daimon-local-model",
+    };
+    if catalog.owner != expected_owner {
+        return Err(format!(
+            "the selected owner catalogue is not a {expected_owner} catalogue"
+        ));
     }
     let mut matching = catalog
         .task_bindings
@@ -5520,11 +5936,49 @@ fn validate_work_item_binding(
             "the owner-bound task key does not match the selected Daimon execution profile".into(),
         );
     }
+    let model = if target == WorkItemExecutionTarget::Model {
+        let execution = catalog.task_execution.as_ref().ok_or_else(|| {
+            "the local-model owner does not publish a task-execution policy".to_owned()
+        })?;
+        let provider = catalog
+            .providers
+            .iter()
+            .find(|provider| provider.harness_profile_id == execution.harness_profile_id)
+            .ok_or_else(|| {
+                "the local-model owner does not publish the execution policy's selected provider"
+                    .to_owned()
+            })?;
+        let qualification = provider.qualification.as_ref().ok_or_else(|| {
+            "the selected local-model provider has no current qualification".to_owned()
+        })?;
+        if !qualification.completion || qualification.disposition != "qualified_completion" {
+            return Err("the selected local-model provider is not completion-qualified".into());
+        }
+        if execution.harness_profile_id != provider.harness_profile_id {
+            return Err(
+                "the owner task-execution policy does not bind the qualified provider profile"
+                    .into(),
+            );
+        }
+        Some(ModelWorkItemBindingEvidence {
+            provider_id: provider.provider_id.clone(),
+            harness_profile_id: provider.harness_profile_id.clone(),
+            model: provider
+                .model
+                .clone()
+                .ok_or_else(|| "the local-model owner omitted the selected model".to_owned())?,
+            qualification_operation_id: qualification.operation_id.clone(),
+            execution: execution.clone(),
+        })
+    } else {
+        None
+    };
     Ok(WorkItemBindingEvidence {
         task_id: task_id.to_owned(),
         external_task_key: binding.external_task_key.clone(),
         owner: catalog.owner.clone(),
         document_digest: catalog.document_digest.clone(),
+        model,
     })
 }
 
@@ -6168,6 +6622,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut work_item_binding_inspection: Option<WorkItemBindingInspection> = None;
     let mut provider_edit: Option<ProviderEditWorkflow> = None;
     let mut provider_qualification: Option<ProviderQualificationWorkflow> = None;
+    let mut model_task_invocation: Option<ModelTaskInvocationWorkflow> = None;
+    let mut model_provider_restart_required = false;
     let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
     let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
     let mut reconfiguration = current_profile.clone().map(ReconfigurationWorkflow::new);
@@ -6195,6 +6651,17 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         let _input_capture = InputCapture::enable()?;
         loop {
+            if let Some((level, elapsed)) = model_task_invocation
+                .as_mut()
+                .and_then(ModelTaskInvocationWorkflow::settle)
+            {
+                let workflow = model_task_invocation
+                    .as_ref()
+                    .expect("settled model task invocation exists");
+                notice = workflow.notice.clone();
+                instrumentation.record("models.task.invoke.result", "daimon", level, elapsed);
+                activity.push(level, "work-item", notice.clone());
+            }
             if let Some((level, elapsed)) = provider_qualification
                 .as_mut()
                 .and_then(ProviderQualificationWorkflow::settle)
@@ -6213,6 +6680,12 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 let edit = provider_edit
                     .as_ref()
                     .expect("settled provider edit exists");
+                if level == ActivityLevel::Success
+                    && edit.kind == ProviderEditKind::Model
+                    && edit.phase == ProviderEditPhase::Complete
+                {
+                    model_provider_restart_required = true;
+                }
                 notice = edit.notice.clone();
                 instrumentation.record(
                     "configuration.providers.edit.result",
@@ -6314,6 +6787,41 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 evidence.document_digest
                             ),
                         );
+                        if inspection.target == WorkItemExecutionTarget::Model {
+                            match ModelTaskInvocationWorkflow::new(
+                                current_profile.clone(),
+                                evidence,
+                            ) {
+                                Ok(workflow) => {
+                                    model_task_invocation = Some(workflow);
+                                    overlay = WorkbenchOverlay::ModelTaskInvocation;
+                                    work_item_agent = WorkItemAgentJourney::Invoking;
+                                    notice = "READY · Chronos task created and exact Daimon local-model binding proven · Next: review the owner-derived execution envelope, press c to arm, then Enter once"
+                                        .into();
+                                    activity.push(
+                                        ActivityLevel::Success,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                                Err(reason) => {
+                                    work_item_agent = WorkItemAgentJourney::Failed;
+                                    notice = command_feedback(
+                                        "workitem.model.new",
+                                        ActivityLevel::Warning,
+                                        &format!(
+                                            "Chronos created the task and its model mapping was proven, but the invocation review could not open: {reason}"
+                                        ),
+                                    );
+                                    activity.push(
+                                        ActivityLevel::Warning,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                            }
+                            continue;
+                        }
                         let prompt = work_item_agent_prompt(&inspection.draft, inspection.lens);
                         let observations = daimon_agent
                             .as_ref()
@@ -6436,6 +6944,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     if let WorkItemAgentJourney::AwaitingTaskReceipt {
                         draft,
                         lens,
+                        target,
                         task_id,
                     } = &work_item_agent
                     {
@@ -6448,16 +6957,21 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             );
                             activity.push(level, "work-item", notice.clone());
                         } else {
+                            let binding_target = *target;
                             work_item_binding_inspection =
                                 Some(spawn_work_item_binding_inspection(
                                     current_profile.clone(),
                                     task_id.clone(),
                                     draft.clone(),
                                     *lens,
+                                    binding_target,
                                 ));
                             work_item_agent = WorkItemAgentJourney::AwaitingTaskBinding;
-                            notice = "WORKING · Chronos task created · Verifying the exact owner-published Daimon task binding before preparing any prompt"
-                                .into();
+                            notice = match binding_target {
+                                WorkItemExecutionTarget::Agent => "WORKING · Chronos task created · Verifying the exact owner-published Daimon task binding before preparing any prompt",
+                                WorkItemExecutionTarget::Model => "WORKING · Chronos task created · Verifying the exact owner-published Daimon task/provider/context/tool/budget binding before any model invocation",
+                            }
+                            .into();
                             activity.push(ActivityLevel::Info, "work-item", notice.clone());
                         }
                     }
@@ -7381,6 +7895,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             );
                         }
                     }
+                    WorkbenchOverlay::ModelTaskInvocation => {
+                        if let Some(workflow) = &model_task_invocation {
+                            draw_inspector(
+                                frame,
+                                "Invoke local model for Chronos task",
+                                &workflow.lines(),
+                            );
+                        }
+                    }
                     WorkbenchOverlay::AcpSessions => {
                         draw_inspector(
                             frame,
@@ -7533,6 +8056,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         continue;
                     }
                     if action == "models.provider.qualify.v1" {
+                        if model_provider_restart_required {
+                            notice = "REFUSED · Provider changed; running model profile is stale · Next: drain/restart, then qualify the relaunched provider"
+                                .into();
+                            activity.push(ActivityLevel::Warning, "daimon", notice.clone());
+                            pending_ui_feedback = ui_operation
+                                .map(|(operation, _)| (operation, ActivityLevel::Warning));
+                            overlay = WorkbenchOverlay::None;
+                            continue;
+                        }
                         if provider_qualification.as_ref().is_some_and(|workflow| {
                             workflow.worker.is_some()
                                 || workflow.phase == ProviderQualificationPhase::Qualifying
@@ -7550,6 +8082,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         pending_ui_feedback =
                             ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
                         overlay = WorkbenchOverlay::ProviderQualification;
+                        continue;
+                    }
+                    if action == "workitem.model.new" && model_provider_restart_required {
+                        notice = "REFUSED · Provider changed; running model profile is stale · Next: drain/restart, qualify, then create the model-backed task"
+                            .into();
+                        activity.push(ActivityLevel::Warning, "work-item", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Warning));
+                        overlay = WorkbenchOverlay::None;
                         continue;
                     }
                     let configuration_overlay = match action {
@@ -7789,12 +8330,18 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut operations,
                     );
                     if action == "workitem.agent.new"
+                        || action == "workitem.model.new"
                         || agent_task_collaboration_lens(action).is_some()
                     {
                         work_item_agent = if level == ActivityLevel::Info {
                             WorkItemAgentJourney::EditingTask {
                                 draft: String::new(),
                                 lens: agent_task_collaboration_lens(action),
+                                target: if action == "workitem.model.new" {
+                                    WorkItemExecutionTarget::Model
+                                } else {
+                                    WorkItemExecutionTarget::Agent
+                                },
                             }
                         } else {
                             WorkItemAgentJourney::Failed
@@ -7805,6 +8352,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             || matches!(
                                 action,
                                 "workitem.agent.new"
+                                    | "workitem.model.new"
                                     | "agora.room.create"
                                     | "agora.message.compose"
                                     | "moira.reconciliation.keep-uncertain"
@@ -8016,6 +8564,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         overlay = WorkbenchOverlay::None;
                     }
                 }
+                Event::Key(key) if key_behavior == Some(KeyBehavior::ModelTaskInvocationInput) => {
+                    if let Some(workflow) = &mut model_task_invocation {
+                        workflow.input(key);
+                        notice = workflow.notice.clone();
+                    } else {
+                        overlay = WorkbenchOverlay::None;
+                    }
+                }
                 Event::Key(key) if key_behavior == Some(KeyBehavior::ReconfigurationInput) => {
                     if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
                         overlay = WorkbenchOverlay::None;
@@ -8146,6 +8702,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         let provider_qualification_pending = provider_qualification
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some());
+                        let model_task_invocation_pending = model_task_invocation
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         let vellum_unresolved =
                             vellum_durable_save.as_ref().is_some_and(|control| {
                                 control.request_pending() || control.recovery_required()
@@ -8156,6 +8715,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             || provider_inspection_pending
                             || provider_edit_pending
                             || provider_qualification_pending
+                            || model_task_invocation_pending
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -9601,9 +10161,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         let provider_qualification_unresolved = provider_qualification
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some());
+                        let model_task_invocation_unresolved = model_task_invocation
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         if chronos_unresolved
                             || provider_edit_unresolved
                             || provider_qualification_unresolved
+                            || model_task_invocation_unresolved
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -10016,22 +10580,38 @@ mod tests {
                 document_ordinal: Some(2),
                 expected_revision: Some(3),
             }],
+            task_execution: None,
+            latest_task_invocation: None,
         };
         validate_provider_catalog(&catalog).unwrap();
-        let binding =
-            validate_work_item_binding(&catalog, "review-headless-boundary", &"55".repeat(16))
-                .unwrap();
+        let binding = validate_work_item_binding(
+            &catalog,
+            "review-headless-boundary",
+            &"55".repeat(16),
+            WorkItemExecutionTarget::Agent,
+        )
+        .unwrap();
         assert_eq!(binding.task_id, "review-headless-boundary");
         assert_eq!(binding.external_task_key, "55".repeat(16));
         assert!(
-            validate_work_item_binding(&catalog, "unbound-task", &"55".repeat(16))
-                .unwrap_err()
-                .contains("no exact binding")
+            validate_work_item_binding(
+                &catalog,
+                "unbound-task",
+                &"55".repeat(16),
+                WorkItemExecutionTarget::Agent,
+            )
+            .unwrap_err()
+            .contains("no exact binding")
         );
         assert!(
-            validate_work_item_binding(&catalog, "review-headless-boundary", &"77".repeat(16))
-                .unwrap_err()
-                .contains("does not match")
+            validate_work_item_binding(
+                &catalog,
+                "review-headless-boundary",
+                &"77".repeat(16),
+                WorkItemExecutionTarget::Agent,
+            )
+            .unwrap_err()
+            .contains("does not match")
         );
         let lines = provider_catalog_lines(catalog).join("\n");
         assert!(lines.contains("Daimon validated"));
@@ -10100,6 +10680,8 @@ mod tests {
                 chronos_task_id: "qualification-task".into(),
             }],
             contexts: Vec::new(),
+            task_execution: None,
+            latest_task_invocation: None,
         };
         validate_provider_catalog(&catalog).unwrap();
         catalog.document_digest = format!("sha256:{}", "88".repeat(32));
@@ -10122,6 +10704,108 @@ mod tests {
         assert!(lines.contains("tool continuation    not_exercised"));
         assert!(lines.contains("not task invocation"));
         assert!(!lines.contains("bounded qualification complete"));
+    }
+
+    #[test]
+    fn model_work_item_binding_requires_current_qualified_execution_facts() {
+        let qualification = ProviderQualificationProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            operation_id: "11".repeat(16),
+            document_digest: format!("sha256:{}", "22".repeat(32)),
+            profile_document_digest: format!("sha256:{}", "33".repeat(32)),
+            provider_id: "44".repeat(16),
+            harness_profile_id: "55".repeat(16),
+            model: "qwen/qwen3-coder-next".into(),
+            host_observed_at_unix_ms: 1,
+            disposition: "qualified_completion".into(),
+            completion: true,
+            tool_continuation: "not_exercised".into(),
+            input_tokens: 17,
+            output_tokens: 4,
+            output_bytes: 30,
+            evidence_digest: Some(format!("sha256:{}", "66".repeat(32))),
+            known_deviations: vec!["tool_continuation_not_exercised".into()],
+            replayed: false,
+        };
+        let execution = ModelTaskExecutionProjection {
+            principal: "77".repeat(16),
+            harness_profile_id: qualification.harness_profile_id.clone(),
+            task_incarnation: 2,
+            attempt_number: 3,
+            context_references: vec!["88".repeat(16)],
+            tool_capabilities: vec!["99".repeat(16)],
+            budget: ModelTaskBudgetProjection {
+                max_elapsed_millis: 5_000,
+                max_input_tokens: 4_096,
+                max_output_tokens: 1_024,
+                max_tool_calls: 4,
+                max_context_bytes: 65_536,
+                max_output_bytes: 65_536,
+            },
+        };
+        let mut catalog = ProviderCatalogProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            document_digest: qualification.document_digest.clone(),
+            providers: vec![ProviderCatalogEntryProjection {
+                provider_id: qualification.provider_id.clone(),
+                harness_profile_id: qualification.harness_profile_id.clone(),
+                profile_document_digest: qualification.profile_document_digest.clone(),
+                policy_digest: None,
+                transport: None,
+                isolation: None,
+                executable_available: None,
+                argument_count: None,
+                inherited_environment_name_count: None,
+                authentication_method_configured: None,
+                wire: Some("openai_chat_completions".into()),
+                model: Some(qualification.model.clone()),
+                endpoint_scope: Some("loopback".into()),
+                endpoint_port: Some(1234),
+                structured_output: Some(false),
+                structured_tools: Some(true),
+                sampling_temperature_milli: Some(0),
+                bearer_token_configured: Some(false),
+                qualification: Some(qualification),
+            }],
+            task_bindings: vec![TaskBindingCatalogProjection {
+                external_task_key: "aa".repeat(16),
+                chronos_task_id: "model-task".into(),
+            }],
+            task_execution: Some(execution.clone()),
+            contexts: vec![ContextCatalogProjection {
+                reference: "88".repeat(16),
+                kind: "chronos_work".into(),
+                resolution: None,
+                source_digest: Some(format!("sha256:{}", "bb".repeat(32))),
+                bytes: Some(12),
+                workspace_id: None,
+                document_ordinal: None,
+                expected_revision: None,
+            }],
+            latest_task_invocation: None,
+        };
+        validate_provider_catalog(&catalog).unwrap();
+        let evidence = validate_work_item_binding(
+            &catalog,
+            "model-task",
+            &"aa".repeat(16),
+            WorkItemExecutionTarget::Model,
+        )
+        .unwrap();
+        assert_eq!(evidence.model.unwrap().execution.attempt_number, 3);
+        catalog.providers[0].qualification = None;
+        assert!(
+            validate_work_item_binding(
+                &catalog,
+                "model-task",
+                &"aa".repeat(16),
+                WorkItemExecutionTarget::Model,
+            )
+            .unwrap_err()
+            .contains("no current qualification")
+        );
     }
 
     #[test]
@@ -10505,6 +11189,7 @@ mod tests {
         let mut journey = WorkItemAgentJourney::EditingTask {
             draft: String::new(),
             lens: None,
+            target: WorkItemExecutionTarget::Agent,
         };
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('R'), KeyModifiers::SHIFT));
         journey.capture_task_key(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::NONE));
@@ -10514,6 +11199,7 @@ mod tests {
             draft,
             lens,
             task_id,
+            target,
         } = journey
         else {
             panic!("task submission should advance the journey");
@@ -10521,6 +11207,7 @@ mod tests {
         assert_eq!(draft, "Re");
         assert_eq!(task_id, "Re");
         assert!(lens.is_none());
+        assert_eq!(target, WorkItemExecutionTarget::Agent);
         let prompt = work_item_agent_prompt(&draft, lens);
         assert_eq!(prompt, "Re");
         assert!(
@@ -10684,6 +11371,7 @@ mod tests {
             "vellum.save",
             "chronos.task.new",
             "workitem.agent.new",
+            "workitem.model.new",
             "workitem.agent.new.executive",
             "workitem.agent.new.product-owner",
             "workitem.agent.new.project-manager",
@@ -10751,6 +11439,7 @@ mod tests {
                     | "agents.session.reattach.v1"
                     | "models.provider.configure.v1"
                     | "models.provider.qualify.v1"
+                    | "models.task.invoke.v1"
                     | "ledger.acknowledge.v1"
                     | "ledger.events.disclose.v1"
                     | "ledger.compact.v1"
@@ -10764,6 +11453,7 @@ mod tests {
                     "agents.session.reattach.v1" => "daimon.session.reattach",
                     "models.provider.configure.v1" => "models.provider.configure.v1",
                     "models.provider.qualify.v1" => "models.provider.qualify.v1",
+                    "models.task.invoke.v1" => "workitem.model.new",
                     _ => route.capability,
                 };
                 assert!(commands.iter().any(|command| {

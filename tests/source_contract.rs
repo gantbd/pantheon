@@ -1808,10 +1808,12 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
         "qwen/qwen3-coder-next",
         "openai_chat_completions",
         "models.provider.configure.v1",
+        "models.task.invoke.v1",
         "guarded exact-field edit/apply",
         "owner-retained qualification",
+        "reviewed replay-fenced invocation",
         "headless/TUI receipt parity",
-        "one provider call",
+        "two provider calls",
         "hosted_shutdown",
         "disposition\": \"clean",
     ] {
@@ -1831,12 +1833,16 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
     assert!(provider.contains("--qualify-provider"));
     assert!(provider.contains("PROVIDER_QUALIFICATION_TIMEOUT"));
     assert!(provider.contains("validate_provider_qualification"));
+    assert!(provider.contains("--invoke-task"));
+    assert!(provider.contains("validate_model_task_invocation_receipt"));
     let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
     assert!(terminal.contains("models.provider.configure.v1"));
     assert!(terminal.contains("--describe-provider-edit"));
     assert!(terminal.contains("secret values never projected"));
     assert!(terminal.contains("qualification_required"));
     assert!(terminal.contains("models.provider.qualify.v1"));
+    assert!(terminal.contains("workitem.model.new"));
+    assert!(terminal.contains("models.task.invoke.result"));
     assert!(terminal.contains("review → arm → confirm"));
     assert!(terminal.contains("tool-continuation conformance"));
     let live = fs::read_to_string(root.join("tests/live/daimon_model_lmstudio.sh"))

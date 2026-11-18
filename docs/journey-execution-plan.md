@@ -174,6 +174,53 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   “awaiting peer state” after the projection was already clean; final
   settlement feedback should be reconciled when that path is addressed.
 
+### 2026-11-18 — governed local-model task invocation
+
+- The next J1 slice now carries one newly created Chronos task through an exact
+  `daimon-local-model` binding into a human-reviewed terminal-model attempt.
+  Pantheon validates the current owner document, completion qualification,
+  provider/profile, principal, task incarnation/attempt, context references,
+  tool capabilities and complete budget before it will open the arm/confirm
+  surface. The UI grants no authority and never calls LM Studio directly.
+- The Daimon owner now exposes a bounded `--invoke-task` contract. It commits a
+  private operation marker before contacting its already-running model service,
+  derives the exact execution envelope from owner configuration, retains the
+  attributed output/usage/evidence receipt, and never redispatches a replay or
+  an uncertain operation. Its redacted catalogue publishes only a content-free
+  latest-invocation summary, giving fresh headless observation parity without
+  leaking model output.
+- The hermetic depth gate now proves owner-backed provider edit, mandatory clean
+  topology drain/relaunch, completion qualification, TUI Chronos task creation,
+  exact binding inspection, review/arm/confirm, one successful model execution,
+  replay without provider redispatch, fresh headless receipt parity and clean
+  reverse drain. Exactly two provider calls occur: qualification and invocation.
+- The gate exposed a stale-profile boundary leak in its previous sequence:
+  qualifying an edited owner document did not update the already-running frozen
+  model service. The model fixture rejected the old model name and the operation
+  correctly settled `outcome_unknown`. The journey now enforces the UI-published
+  restart requirement before qualification; it does not conceal the defect with
+  a retry. This is a reusable rule for every owner-backed runtime configuration
+  change.
+- Result presentation initially placed the response and safe next action below
+  the inspector viewport. Dogfood moved disposition, usage, response, deviations
+  and orientation ahead of the full reviewed envelope so success and uncertainty
+  are immediately observable while the exact binding remains inspectable.
+- Vellum was used for the small Daimon CLI and selectable Chronos-fixture edits
+  and for this plan update through guarded atomic replace/save. It still refuses
+  the 520 KiB terminal source under its 64 KiB source contract with the generic
+  `EditorUnavailable` result, and runtime-admitted membership cannot yet reopen
+  the same persistent workspace cleanly. Chronos retains
+  `vellum-large-source-chunked-projection` and
+  `recover-vellum-runtime-membership-on-restart`; chunked/viewport projection
+  and actionable refusal detail are required for IDE-scale dogfooding.
+- This is deliberately not yet the complete requested conversation journey.
+  Agora room creation/linkage, durable chat history, Chronos status/comment
+  publication, tool continuation, delegated completion and approval remain
+  separate owner contracts. Task-execution policy is also still raw owner
+  configuration; provider/task/context/tool/budget selection must become a
+  discoverable guarded UI flow before this is ordinary-user operationally
+  complete.
+
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 
 - Daimon now retains a content-free receipt for the exact context admitted to

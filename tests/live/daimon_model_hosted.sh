@@ -3,7 +3,8 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd -P)
 workspace=$(CDPATH= cd -- "$root/.." && pwd -P)
-scratch=$(mktemp -d "${TMPDIR:-/tmp}/pantheon-daimon-model-hosted.XXXXXX")
+# Keep hosted Unix-domain endpoints under macOS's short socket-path ceiling.
+scratch=$(mktemp -d "/private/tmp/pdmh.XXXXXX")
 aegis_pid=
 chronos_pid=
 provider_pid=
@@ -19,6 +20,8 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 chmod 700 "$scratch"
+mkdir "$scratch/workstream"
+chmod 700 "$scratch/workstream"
 
 cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
   --package aegis-daemon --bin aegis-daemon --locked --offline
@@ -56,7 +59,7 @@ provider_port=$(cat "$scratch/provider.port")
   02020202020202020202020202020202 0303030303030303 administrator \
   >"$scratch/aegis.out" 2>"$scratch/aegis.err" &
 aegis_pid=$!
-"$chronos" "$scratch/chronos.sock" >"$scratch/chronos.out" 2>"$scratch/chronos.err" &
+"$chronos" "$scratch/chronos.sock" local-model-task >"$scratch/chronos.out" 2>"$scratch/chronos.err" &
 chronos_pid=$!
 
 attempt=0
@@ -77,7 +80,7 @@ printf '%s\n' \
   "  \"aegis_socket\": \"$scratch/aegis.sock\"," \
   '  "aegis_expected_epoch": 0,' \
   '  "aegis_grant_now": 1,' \
-  '  "aegis_grant_expires_at": 1000,' \
+  '  "aegis_grant_expires_at": 4000000000,' \
   "  \"chronos_socket\": \"$scratch/chronos.sock\"," \
   "  \"daimon_socket\": \"$scratch/model.sock\"," \
   "  \"store_directory\": \"$scratch/store\"," \
@@ -92,7 +95,7 @@ printf '%s\n' \
   '    "structured_tools": true,' \
   '    "sampling_temperature_milli": 0,' \
   '    "connect_timeout_ms": 100,' \
-  '    "io_timeout_ms": 1000,' \
+  '    "io_timeout_ms": 5000,' \
   '    "max_request_bytes": 65536,' \
   '    "max_response_bytes": 65536' \
   '  },' \
@@ -100,13 +103,25 @@ printf '%s\n' \
   '    "external_task_key": "06060606060606060606060606060606",' \
   '    "chronos_task_id": "local-model-task"' \
   '  }],' \
+  '  "task_execution": {' \
+  '    "task_incarnation": 1,' \
+  '    "attempt_number": 1,' \
+  '    "budget": {' \
+  '      "max_elapsed_millis": 5000,' \
+  '      "max_input_tokens": 4096,' \
+  '      "max_output_tokens": 1024,' \
+  '      "max_tool_calls": 4,' \
+  '      "max_context_bytes": 65536,' \
+  '      "max_output_bytes": 65536' \
+  '    }' \
+  '  },' \
   '  "context": [{' \
   '    "reference": "07070707070707070707070707070707",' \
   '    "kind": "chronos_work",' \
   '    "text": "bounded local-model work"' \
   '  }],' \
   '  "messages": [{"role": "system", "content": "answer carefully"}],' \
-  '  "io_timeout_ms": 1000,' \
+  '  "io_timeout_ms": 10000,' \
   '  "max_executions": 8,' \
   '  "max_requests_per_connection": 4' \
   '}' >"$scratch/model.json"
@@ -115,11 +130,19 @@ printf '%s\n' \
   '{' \
   '  "version": 1,' \
   '  "name": "Hosted local model qualification",' \
-  '  "surfaces": ["daimon"],' \
+  '  "surfaces": ["chronos", "daimon"],' \
+  '  "chronos": {' \
+  '    "deployment": "hosted",' \
+  "    \"workstreams\": [{\"name\": \"Model work\", \"directory\": \"$scratch/workstream\"}]," \
+  '    "requires": ["tasks.observe.v1"],' \
+  '    "moira": [],' \
+  '    "daimon": [],' \
+  '    "planning": null' \
+  '  },' \
   '  "daimon": {' \
   '    "deployment": "hosted",' \
   "    \"model_socket\": \"$scratch/model.sock\"," \
-  '    "requires": ["models.endpoint.attach.v1", "models.provider.configure.v1", "models.provider.qualify.v1"],' \
+  '    "requires": ["models.endpoint.attach.v1", "models.provider.configure.v1", "models.provider.qualify.v1", "models.task.invoke.v1"],' \
   '    "host": {' \
   "      \"executable\": \"$model\"," \
   "      \"config\": \"$scratch/model.json\"" \
@@ -156,10 +179,11 @@ assert provider["endpoint_scope"] == "loopback" and provider["endpoint_port"] > 
 assert not provider["structured_output"] and provider["structured_tools"]
 assert provider.get("qualification") is None
 assert "address" not in provider and "path" not in provider and "bearer_token_env" not in provider
-assert report["hosted_shutdown"] == {
-    "status": "clean",
-    "receipts": [{"peer": "daimon", "instance": None, "disposition": "clean"}],
-}
+assert report["hosted_shutdown"]["status"] == "clean"
+assert report["hosted_shutdown"]["receipts"] == [
+    {"peer": "daimon", "instance": None, "disposition": "clean"},
+    {"peer": "chronos", "instance": "Model work", "disposition": "clean"},
+]
 '
 [ ! -e "$scratch/model.sock" ]
 
@@ -170,7 +194,8 @@ import shlex, subprocess, sys, time
 scratch, binary = sys.argv[1:]
 tmux_socket = str(Path(scratch) / "tmux.sock")
 profile = str(Path(scratch) / "profile.json")
-command = shlex.join([binary, "interactive", "--workspace-profile", profile])
+command = shlex.join([binary, "interactive", "--workspace-profile", profile, "--chronos-allow-writes"])
+command += " 2>" + shlex.quote(str(Path(scratch) / "pantheon.err"))
 
 def tmux(*args, check=True):
     return subprocess.run(
@@ -186,10 +211,21 @@ def expect(*markers, timeout=10):
         if all(marker in screen for marker in markers):
             return screen
         time.sleep(0.025)
-    raise AssertionError(f"Missing {markers!r}:\n{screen}")
+    diagnostics = []
+    for name in ("pantheon.err", "aegis.err", "chronos.err", "provider.err"):
+        path = Path(scratch) / name
+        if path.exists():
+            diagnostics.append(f"{name}:\n{path.read_text(errors='replace')}")
+    for path in (Path(scratch) / "store.task-invocations").glob("*.json"):
+        diagnostics.append(f"{path.name}:\n{path.read_text(errors='replace')}")
+    raise AssertionError(f"Missing {markers!r}:\n{screen}\n" + "\n".join(diagnostics))
 
 try:
     tmux("new-session", "-d", "-x", "200", "-y", "32", "-s", "model", command)
+    expect("CHRONOS", "Model work", "revision 0", timeout=20)
+    tmux("send-keys", "-t", "model", "C-p")
+    tmux("send-keys", "-t", "model", "-l", "go to daimon")
+    tmux("send-keys", "-t", "model", "Enter")
     expect("DAIMON", "MODEL ENDPOINT ATTACHED", "No execution, provider health, qualification", timeout=20)
     tmux("send-keys", "-t", "model", "C-p")
     tmux("send-keys", "-t", "model", "-l", "inspect local provider configuration")
@@ -233,6 +269,22 @@ try:
     tmux("send-keys", "-t", "model", "C-p")
     tmux("send-keys", "-t", "model", "-l", "qualify selected local model provider")
     tmux("send-keys", "-t", "model", "Enter")
+    expect("running model profile is stale", "drain/restart")
+    tmux("send-keys", "-t", "model", "C-q")
+    deadline = time.monotonic() + 10
+    while tmux("has-session", "-t", "model", check=False).returncode == 0:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Pantheon did not drain after provider replacement")
+        time.sleep(0.025)
+    tmux("new-session", "-d", "-x", "200", "-y", "32", "-s", "model", command)
+    expect("CHRONOS", "Model work", "revision 0", timeout=20)
+    tmux("send-keys", "-t", "model", "C-p")
+    tmux("send-keys", "-t", "model", "-l", "go to daimon")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect("DAIMON", "MODEL ENDPOINT ATTACHED", timeout=20)
+    tmux("send-keys", "-t", "model", "C-p")
+    tmux("send-keys", "-t", "model", "-l", "qualify selected local model provider")
+    tmux("send-keys", "-t", "model", "Enter")
     expect(
         "Qualify local model provider",
         "READY",
@@ -250,6 +302,34 @@ try:
         "tool continuation    not_exercised",
         timeout=20,
     )
+    tmux("send-keys", "-t", "model", "C-g")
+    tmux("send-keys", "-t", "model", "C-p", "C-u")
+    tmux("send-keys", "-t", "model", "-l", "create task with local model")
+    expect("Create task with local model")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect("Task batch")
+    tmux("send-keys", "-t", "model", "-l", "local-model-task")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect("Review 1 exact task(s)")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect(
+        "Invoke local model for Chronos task",
+        "local-model-task",
+        "context/tools          1 exact / 0 exact",
+        "human gate            review",
+        timeout=20,
+    )
+    tmux("send-keys", "-t", "model", "c", "Enter")
+    expect(
+        "COMPLETED",
+        "bounded qualification complete",
+        "17 input · 4 output tokens",
+        "Agora room and Chronos comment",
+        "linkage remain open",
+        timeout=20,
+    )
+    tmux("send-keys", "-t", "model", "r")
+    expect("replayed              true", timeout=20)
     tmux("send-keys", "-t", "model", "C-g")
     tmux("send-keys", "-t", "model", "C-q")
     deadline = time.monotonic() + 10
@@ -277,12 +357,25 @@ assert qualification["output_tokens"] == 4
 assert qualification["output_bytes"] == 30
 assert qualification["evidence_digest"].startswith("sha256:")
 assert qualification["known_deviations"] == ["tool_continuation_not_exercised"]
+catalog = report["provider_configuration"]["catalog"]
+execution = catalog["task_execution"]
+assert execution["task_incarnation"] == 1 and execution["attempt_number"] == 1
+assert execution["context_references"] == ["07070707070707070707070707070707"]
+invocation = catalog["latest_task_invocation"]
+assert invocation["chronos_task_id"] == "local-model-task"
+assert invocation["disposition"] == "completed"
+assert invocation["input_tokens"] == 17 and invocation["output_tokens"] == 4
+assert invocation["output_bytes"] == 30
+assert invocation["output_digest"].startswith("sha256:")
+assert "output" not in invocation
 assert report["hosted_shutdown"]["status"] == "clean"
 '
-[ "$(cat "$scratch/provider.count")" = 1 ]
+[ "$(cat "$scratch/provider.count")" = 2 ]
 [ ! -e "$scratch/model.sock" ]
 
-kill -TERM "$chronos_pid"
+if kill -0 "$chronos_pid" 2>/dev/null; then
+  kill -TERM "$chronos_pid"
+fi
 wait "$chronos_pid" || true
 chronos_pid=
 kill -TERM "$aegis_pid"
@@ -292,4 +385,4 @@ kill -TERM "$provider_pid"
 wait "$provider_pid" || true
 provider_pid=
 
-echo 'PASS: hosted local-model Daimon -> guarded exact-field edit/apply -> owner-retained qualification -> headless/TUI receipt parity -> one provider call -> clean drain'
+echo 'PASS: hosted local-model Daimon -> guarded exact-field edit/apply -> owner-retained qualification -> Chronos task -> reviewed replay-fenced invocation -> headless/TUI receipt parity -> two provider calls -> clean drain'
