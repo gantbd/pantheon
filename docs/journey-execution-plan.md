@@ -309,6 +309,13 @@ owner.
   Moira saga-endpoint dependency, these were admitted through Pantheon's live
   Chronos batch composer as four prioritized capability-tagged tasks at durable
   revision 4 (25 total tasks, 11 Ready and 14 Blocked).
+- The operating-review contract now makes every meaningful turn reconciliation
+  traceable source material for the next UI-visible MBR or QBR, including its
+  named sponsor, open alignment questions, human gates and outcome evidence.
+  While checking the live project boundary, `make status` was unavailable even
+  though `make run` and the qualification targets exist. That discoverability
+  gap is retained as user friction for Chronos triage; it does not weaken or
+  delay the sponsored-review acceptance requirement.
 
 ## Milestone 0 — stabilize the product contract
 

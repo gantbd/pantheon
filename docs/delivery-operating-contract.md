@@ -67,6 +67,10 @@ conversational narration.
 
 - The execution journal records turn-level outcomes, evidence, friction,
   surprises, decisions, and next slices.
+- Every per-turn reconciliation appends to that journal and becomes traceable
+  source material for the next MBR or QBR. The UI shows the current review
+  period, accountable sponsor, outstanding alignment questions, due human
+  gates, and the evidence behind each claimed outcome.
 - The monthly business review compares outcomes with commitments, journey and
   operational health, user-friction trends, model and provider performance,
   risks, accountable owners, and sponsor asks.
