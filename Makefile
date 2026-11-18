@@ -1,4 +1,4 @@
-.PHONY: check fmt lint test doc run tui-demo qualify-moira-participation qualify-task-conversation
+.PHONY: check fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-task-conversation
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -16,7 +16,11 @@ run:
 
 tui-demo:
 	./tests/live/tui_breadth.sh
+	./tests/live/emacs_keybindings.sh
 	./tests/live/tui_operational_depth.sh
+
+qualify-emacs:
+	./tests/live/emacs_keybindings.sh
 
 qualify-moira-participation:
 	./qualification/moira-participation/qualify.sh

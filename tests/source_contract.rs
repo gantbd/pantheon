@@ -2156,6 +2156,7 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
     for required in [
         "tui-demo:",
         "./tests/live/tui_breadth.sh",
+        "./tests/live/emacs_keybindings.sh",
         "./tests/live/tui_operational_depth.sh",
         "--chronos-allow-writes",
         "--vellum-allow-add-file",
@@ -2175,6 +2176,22 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
             run_gate.contains(required),
             "make run gate omits {required}"
         );
+    }
+
+    let emacs = fs::read_to_string(root.join("tests/live/emacs_keybindings.sh"))
+        .expect("Emacs keybinding gate");
+    for required in [
+        "C-x\", \"b",
+        "C-x\", \"Right",
+        "C-s",
+        "C-o",
+        "C-a",
+        "C-x\", \"C-f",
+        "C-x\", \"C-s",
+        "C-x\", \"C-c",
+        "Emacs profile uses real prefix chords",
+    ] {
+        assert!(emacs.contains(required), "Emacs gate omits {required}");
     }
 
     let depth = fs::read_to_string(root.join("tests/live/tui_operational_depth.sh"))

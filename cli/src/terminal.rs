@@ -134,6 +134,7 @@ enum KeyBehavior {
     DismissOverlay,
     Suppress,
     OpenCommands,
+    OpenSurfaceSwitcher,
     ExecuteCommand(&'static str),
     CommandUnavailable(&'static str),
     Navigate(ShellInput),
@@ -282,6 +283,12 @@ impl BehaviorFacade {
                                 "C-x C-s requires the configured Vellum surface",
                             )
                         }
+                    } else if is_key(key, KeyCode::Char('b'), KeyModifiers::NONE) {
+                        KeyBehavior::OpenSurfaceSwitcher
+                    } else if is_key(key, KeyCode::Left, KeyModifiers::NONE) {
+                        KeyBehavior::Navigate(ShellInput::PreviousSurface)
+                    } else if is_key(key, KeyCode::Right, KeyModifiers::NONE) {
+                        KeyBehavior::Navigate(ShellInput::NextSurface)
                     } else {
                         KeyBehavior::CommandUnavailable("Unbound Emacs C-x chord")
                     };
@@ -323,15 +330,23 @@ impl BehaviorFacade {
             )
         {
             KeyBehavior::ExecuteCommand("view.refresh")
-        } else if vellum_active && is_control_char(key, 'o') {
+        } else if self.profile == KeybindingProfile::Pantheon
+            && vellum_active
+            && is_control_char(key, 'o')
+        {
             KeyBehavior::ExecuteCommand("vellum.document.open")
-        } else if vellum_active && is_control_char(key, 's') {
+        } else if self.profile == KeybindingProfile::Pantheon
+            && vellum_active
+            && is_control_char(key, 's')
+        {
             KeyBehavior::ExecuteCommand("vellum.save")
         } else if surface == Surface::Chronos
             && is_key(key, KeyCode::Char('N'), KeyModifiers::SHIFT)
         {
             KeyBehavior::ExecuteCommand("workitem.agent.new")
-        } else if let Some(input) = shell_input(key) {
+        } else if self.profile == KeybindingProfile::Pantheon
+            && let Some(input) = shell_input(key)
+        {
             match input {
                 ShellInput::ActivateSurface(surface) => {
                     KeyBehavior::ExecuteCommand(Self::surface_command(surface))
@@ -4186,7 +4201,12 @@ const fn vellum_surface_active(surface: Surface, focus: Focus) -> bool {
 
 /// Routes only input that the behavior facade has deliberately left to the
 /// active peer. Global bindings are resolved before this boundary.
-fn route_surface_local_key(key: KeyEvent, surface: Surface, focus: Focus) -> RoutedInput {
+fn route_surface_local_key(
+    key: KeyEvent,
+    surface: Surface,
+    focus: Focus,
+    profile: KeybindingProfile,
+) -> RoutedInput {
     let effective_focus = match surface {
         Surface::Chronos => Focus::Chronos,
         Surface::Vellum => Focus::Vellum,
@@ -4198,18 +4218,49 @@ fn route_surface_local_key(key: KeyEvent, surface: Surface, focus: Focus) -> Rou
     {
         return match surface {
             Surface::Chronos => RoutedInput::Chronos(key),
-            Surface::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
+            Surface::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
             Surface::Workspace => RoutedInput::SwitchFocus,
             _ => match effective_focus {
                 Focus::Chronos => RoutedInput::Chronos(key),
-                Focus::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
+                Focus::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
             },
         };
     }
     match effective_focus {
         Focus::Chronos => RoutedInput::Chronos(key),
-        Focus::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
+        Focus::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
     }
+}
+
+/// Translates the selected shell key contract into Vellum's existing actions.
+/// Pantheon does not implement cursor or document semantics here; Vellum remains
+/// the sole interpreter of the normalized presentation input.
+fn translate_vellum_key(key: KeyEvent, profile: KeybindingProfile) -> vellum_tui::Input {
+    if profile != KeybindingProfile::Emacs || key.modifiers != KeyModifiers::CONTROL {
+        return vellum_tui::translate_key(key);
+    }
+    let normalized = match key.code {
+        KeyCode::Char('a') => Some(KeyCode::Home),
+        KeyCode::Char('b') => Some(KeyCode::Left),
+        KeyCode::Char('d') => Some(KeyCode::Delete),
+        KeyCode::Char('e') => Some(KeyCode::End),
+        KeyCode::Char('f') => Some(KeyCode::Right),
+        KeyCode::Char('n') => Some(KeyCode::Down),
+        KeyCode::Char('p') => Some(KeyCode::Up),
+        // Vellum currently owns a bounded literal-find prompt rather than an
+        // incremental search engine. Keep the canonical search direction and
+        // expose that limitation instead of retaining Pantheon's save chord.
+        KeyCode::Char('s') => {
+            return vellum_tui::translate_key(KeyEvent::new(
+                KeyCode::Char('f'),
+                KeyModifiers::CONTROL,
+            ));
+        }
+        _ => None,
+    };
+    normalized.map_or(vellum_tui::Input::Ignore, |code| {
+        vellum_tui::translate_key(KeyEvent::new(code, KeyModifiers::NONE))
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -10213,6 +10264,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     palette.reset();
                     overlay = WorkbenchOverlay::Commands;
                 }
+                Event::Key(_) if key_behavior == Some(KeyBehavior::OpenSurfaceSwitcher) => {
+                    palette.reset();
+                    palette.insert("go to");
+                    overlay = WorkbenchOverlay::Commands;
+                }
                 Event::Mouse(mouse)
                     if matches!(mouse.kind, MouseEventKind::Down(MouseButton::Left)) =>
                 {
@@ -11527,7 +11583,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 Event::Key(key) => match if key_behavior == Some(KeyBehavior::SafeExit) {
                     RoutedInput::Exit
                 } else {
-                    route_surface_local_key(key, shell.active(), focus)
+                    route_surface_local_key(key, shell.active(), focus, keybinding_profile)
                 } {
                     RoutedInput::Exit => {
                         let agora_unresolved = agora_create.as_ref().is_some_and(|control| {
@@ -12022,6 +12078,18 @@ mod tests {
             facade.key_event(ctrl('q'), WorkbenchOverlay::None, Surface::Vellum, true),
             KeyBehavior::SurfaceLocal
         );
+        assert_eq!(
+            facade.key_event(ctrl('o'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            facade.key_event(ctrl('s'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            facade.key_event(ctrl('1'), WorkbenchOverlay::None, Surface::Overview, false),
+            KeyBehavior::SurfaceLocal
+        );
 
         assert_eq!(
             facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
@@ -12038,6 +12106,45 @@ mod tests {
         assert_eq!(
             facade.key_event(ctrl('s'), WorkbenchOverlay::None, Surface::Vellum, true),
             KeyBehavior::ExecuteCommand("vellum.save")
+        );
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(
+                KeyEvent::new(KeyCode::Char('b'), KeyModifiers::NONE),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::OpenSurfaceSwitcher
+        );
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(
+                KeyEvent::new(KeyCode::Left, KeyModifiers::NONE),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::Navigate(ShellInput::PreviousSurface)
+        );
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(
+                KeyEvent::new(KeyCode::Right, KeyModifiers::NONE),
+                WorkbenchOverlay::None,
+                Surface::Vellum,
+                true,
+            ),
+            KeyBehavior::Navigate(ShellInput::NextSurface)
         );
         assert_eq!(
             facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
@@ -12078,6 +12185,29 @@ mod tests {
             ),
             KeyBehavior::SurfaceLocal
         );
+    }
+
+    #[test]
+    fn emacs_profile_translates_core_vellum_motion_and_search_to_owner_actions() {
+        let translated = |character| {
+            translate_service_input(translate_vellum_key(
+                KeyEvent::new(KeyCode::Char(character), KeyModifiers::CONTROL),
+                KeybindingProfile::Emacs,
+            ))
+        };
+        for (key, action) in [
+            ('a', ServiceAction::Home),
+            ('b', ServiceAction::Left),
+            ('d', ServiceAction::Delete),
+            ('e', ServiceAction::End),
+            ('f', ServiceAction::Right),
+            ('n', ServiceAction::Down),
+            ('p', ServiceAction::Up),
+        ] {
+            assert_eq!(translated(key), ServiceInput::Apply(action));
+        }
+        assert_eq!(translated('s'), ServiceInput::Find);
+        assert_eq!(translated('o'), ServiceInput::Unsupported);
     }
 
     #[test]
@@ -12974,20 +13104,40 @@ mod tests {
     fn standalone_peer_surfaces_keep_tab_local_while_legacy_workspace_switches_focus() {
         let tab = KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE);
         assert!(matches!(
-            route_surface_local_key(tab, Surface::Chronos, Focus::Chronos),
+            route_surface_local_key(
+                tab,
+                Surface::Chronos,
+                Focus::Chronos,
+                KeybindingProfile::Pantheon,
+            ),
             RoutedInput::Chronos(key) if key == tab
         ));
         assert!(matches!(
-            route_surface_local_key(tab, Surface::Vellum, Focus::Chronos),
+            route_surface_local_key(
+                tab,
+                Surface::Vellum,
+                Focus::Chronos,
+                KeybindingProfile::Pantheon,
+            ),
             RoutedInput::Vellum(_)
         ));
         assert!(matches!(
-            route_surface_local_key(tab, Surface::Workspace, Focus::Chronos),
+            route_surface_local_key(
+                tab,
+                Surface::Workspace,
+                Focus::Chronos,
+                KeybindingProfile::Pantheon,
+            ),
             RoutedInput::SwitchFocus
         ));
         let control_q = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL);
         assert!(matches!(
-            route_surface_local_key(control_q, Surface::Overview, Focus::Chronos),
+            route_surface_local_key(
+                control_q,
+                Surface::Overview,
+                Focus::Chronos,
+                KeybindingProfile::Pantheon,
+            ),
             RoutedInput::Chronos(key) if key == control_q
         ));
     }

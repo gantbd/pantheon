@@ -460,6 +460,23 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   chords. They resolve to existing semantic commands; `C-p` and `C-q` are no
   longer stolen in Emacs mode. The documented acceptance boundary keeps
   Vellum-native motion, mark/region, kill/yank, buffer and undo work open.
+- The next dogfood slice removed remaining Pantheon-keymap leakage from that
+  profile. Raw `C-o`, `C-s`, Ctrl/Alt-number and bracket navigation no longer
+  silently retain Pantheon meanings. `C-x b` opens the existing minibuffer
+  prefiltered to component surfaces; `C-x Left/Right` moves between them; and
+  `C-a/e/b/f/n/p/d` plus `C-s` normalize into Vellum's existing cursor, delete
+  and bounded-find actions without implementing editor semantics in Pantheon.
+  A real hosted Chronos/Vellum tmux gate exercises those chords, `C-x C-f`,
+  `C-x C-s`, and guarded `C-x C-c`, and is part of `make tui-demo`.
+- Cross-shell dogfood confirmed that current attachment is explicit
+  profile/endpoint attachment, not ambient process discovery or Pantheon-session
+  federation. A second shell can connect to independently owned services when
+  given their exact selected endpoints and authority, but it cannot inherit
+  another Pantheon process's hosted children. The live board already carries
+  priority-8 `pantheon-running-peer-discovery-attach`; it remains the right home
+  for a bounded authorized catalogue/handoff/status experience, so no duplicate
+  task was created. A missing `make status` target is additional operator
+  friction, not permission to add process scanning.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 

@@ -211,16 +211,21 @@ to the same semantic commands as the palette:
 | `C-g` | Keyboard quit: cancel prefix or dismiss the active overlay |
 | `C-x C-f` | `vellum.document.open` when Vellum owns the active surface |
 | `C-x C-s` | `vellum.save` when Vellum owns the active surface |
+| `C-x b` | Open the minibuffer prefiltered to Pantheon surfaces (the shell's buffer-scale navigation unit) |
+| `C-x Left`, `C-x Right` | Previous/next Pantheon surface |
 | `C-x C-c` | Guarded Pantheon exit |
 | `C-h b`, `C-h ?` | Generated binding/action help |
 | `C-h l` | Bounded activity/receipt history, analogous to lossage inspection |
+| `C-a`, `C-e`, `C-b`, `C-f`, `C-n`, `C-p`, `C-d` | Vellum line/cursor motion and forward delete through Vellum's existing actions |
+| `C-s` | Vellum's bounded literal-find prompt; incremental isearch remains a visible owner gap |
 
-In this profile `C-p` and `C-q` are not stolen for Pantheon palette/exit: they
-remain available to the peer-local editor. Unknown `C-x`/`C-h` chords refuse
-with an explicit unbound result instead of falling through as text. This is the
-first compatibility slice, not a claim of full Emacs parity. Vellum still needs
-owner-native `C-f/C-b/C-n/C-p`, `C-a/C-e`, word motion, mark/region,
-kill/yank, buffer switching and undo bindings; those must translate to Vellum
+In this profile `C-p`, `C-q`, `C-o`, Ctrl/Alt-number and the bracket rail keys
+are not stolen for Pantheon palette, exit, file-open or surface navigation.
+Core Vellum cursor keys are normalized to Vellum's existing actions; Pantheon
+does not implement editing semantics. Unknown `C-x`/`C-h` chords refuse with an
+explicit unbound result instead of falling through as text. This is not a claim
+of full Emacs parity. Vellum still needs owner-native word motion, incremental
+search, mark/region, kill/yank and undo bindings; those must remain Vellum
 actions rather than a second editor implementation in Pantheon.
 
 The work-item journey follows that same route. `Shift-N` and its minibuffer

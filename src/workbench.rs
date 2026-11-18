@@ -1069,6 +1069,18 @@ pub fn draw_help(frame: &mut Frame<'_>, commands: &[CommandSpec], keybindings: K
                 Span::raw("  Save through Vellum"),
             ]),
             Line::from(vec![
+                Span::styled("C-x b/←/→", theme::key()),
+                Span::raw(" Switch / previous / next surface"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-a/e/b/f/n/p", theme::key()),
+                Span::raw(" Vellum line and cursor motion"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-s", theme::key()),
+                Span::raw("      Find in Vellum"),
+            ]),
+            Line::from(vec![
                 Span::styled("C-x C-c", theme::key()),
                 Span::raw("  Safely leave the workbench"),
             ]),
