@@ -213,13 +213,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   `vellum-large-source-chunked-projection` and
   `recover-vellum-runtime-membership-on-restart`; chunked/viewport projection
   and actionable refusal detail are required for IDE-scale dogfooding.
+- The task-conversation slice again attempted to use Vellum for its own live
+  gate and plan edits. Runtime admission of the gate was refused as
+  `Access(OutcomeUnknown)` because the active three-document allowlist is not a
+  workspace; the refusal omitted the governing root and a recovery action, then
+  left the editor `Stale / Indeterminate` and fenced the admitted plan save.
+  Chronos now retains `vellum-workspace-admission-orientation` alongside
+  `vellum-atomic-refusal-orientation`. The repository fallback was used only
+  after observing that fence; no Vellum save is claimed.
 - This is deliberately not yet the complete requested conversation journey.
-  Agora room creation/linkage, durable chat history, Chronos status/comment
-  publication, tool continuation, delegated completion and approval remain
-  separate owner contracts. Task-execution policy is also still raw owner
-  configuration; provider/task/context/tool/budget selection must become a
-  discoverable guarded UI flow before this is ordinary-user operationally
-  complete.
+  Exact task-to-open-room linkage is now qualified, but Agora room creation,
+  durable chat history, Chronos status/comment publication, tool continuation,
+  delegated completion and approval remain separate owner contracts.
+  Task-execution policy is also still raw owner configuration;
+  provider/task/context/tool/budget selection must become a discoverable
+  guarded UI flow before this is ordinary-user operationally complete.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 
@@ -704,11 +712,15 @@ model, organizational and training-lineage correlation remain explicit gaps.
   known deviations, evidence time, and the next safe action without exposing
   credentials or treating endpoint liveness as session/workflow completion.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
-- [ ] Create or bind an exact Agora task room. The separately owned
-  `agora-chronos-adapter` now has a green, durable `task-conversation.v1`
-  registry with exact replay/conflict, bidirectional lookup and explicit
-  broken-link projection; local service/client publication and Pantheon
-  TUI/headless room-create-and-bind composition remain open.
+- [x] Create or bind an exact Agora task room. The separately owned
+  `agora-chronos-adapter` publishes a durable `task-conversation.v1` local
+  owner/client with exact replay/conflict, bidirectional lookup and explicit
+  broken-link projection. Pantheon's shared behavior facade now reviews, arms
+  and confirms the exact selected Chronos task and open Agora room, reports the
+  owner receipt, and projects the same content-free relationship status
+  headlessly. `tests/live/task_conversation.sh` qualifies the real TUI path,
+  headless parity and owner restart recovery. Room creation remains a separate
+  Agora capability; this completed increment binds an already open exact room.
 - [ ] Open a per-task Daimon session bound to the exact Chronos attempt.
 - [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or

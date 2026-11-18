@@ -1,4 +1,4 @@
-.PHONY: check fmt lint test doc run tui-demo qualify-moira-participation
+.PHONY: check fmt lint test doc run tui-demo qualify-moira-participation qualify-task-conversation
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -20,6 +20,9 @@ tui-demo:
 
 qualify-moira-participation:
 	./qualification/moira-participation/qualify.sh
+
+qualify-task-conversation:
+	./tests/live/task_conversation.sh
 
 check: fmt lint test doc
 

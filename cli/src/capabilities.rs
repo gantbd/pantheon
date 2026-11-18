@@ -88,6 +88,15 @@ pub fn agora(mode: Mode, hosted: bool) -> Vec<Capability> {
     capabilities
 }
 
+pub fn task_conversation(mode: Mode) -> Vec<Capability> {
+    let mut capabilities = vec![capability("task-conversation.v1", Plane::Observation)];
+    if mode == Mode::Interactive {
+        capabilities.push(capability("task-conversation.bind.v1", Plane::Control));
+    }
+    capabilities.push(topology(false));
+    capabilities
+}
+
 pub fn moira(mode: Mode, hosted: bool, selected_participation: bool) -> Vec<Capability> {
     let mut capabilities = vec![capability("sagas.inspect.v1", Plane::Observation)];
     if selected_participation {

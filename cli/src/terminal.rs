@@ -37,7 +37,9 @@ use vellum_tui::{
 
 use crate::capabilities::GUARDED_CONTROL_ROUTES;
 use crate::native_host::NativeHost;
-use crate::profile::{AgoraTransportProfile, DaimonExecutionPolicyProfile, WorkspaceProfile};
+use crate::profile::{
+    AgoraTransportProfile, DaimonExecutionPolicyProfile, TaskConversationProfile, WorkspaceProfile,
+};
 #[cfg(test)]
 use crate::provider::{
     ContextCatalogProjection, ModelTaskBudgetProjection, TaskBindingCatalogProjection,
@@ -106,6 +108,7 @@ enum WorkbenchOverlay {
     ProviderEdit,
     ProviderQualification,
     ModelTaskInvocation,
+    TaskConversation,
     AcpSessions,
     AgoraRooms,
     Reconfiguration,
@@ -121,6 +124,7 @@ enum KeyBehavior {
     ProviderEditInput,
     ProviderQualificationInput,
     ModelTaskInvocationInput,
+    TaskConversationInput,
     ReconfigurationInput,
     DismissOverlay,
     Suppress,
@@ -174,6 +178,16 @@ impl BehaviorFacade {
                     KeyBehavior::DismissOverlay
                 } else {
                     KeyBehavior::ModelTaskInvocationInput
+                };
+            }
+            WorkbenchOverlay::TaskConversation => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::TaskConversationInput
                 };
             }
             WorkbenchOverlay::LocalProviders
@@ -1961,6 +1975,7 @@ fn workbench_commands(
     vellum_durable: bool,
     agora: bool,
     agora_control: bool,
+    task_conversation: bool,
     moira: bool,
     moira_participation: bool,
     moira_agent_worker: bool,
@@ -2260,6 +2275,21 @@ fn workbench_commands(
         } else {
             "A selected local Daimon model endpoint is not configured"
         })
+    });
+    let bind_task_conversation = CommandSpec::available(
+        "task-conversation.bind",
+        "Bind selected task to open Agora room",
+        "Review and bind the exact current Chronos task or attempt to the open Agora room through the durable relationship owner; room activity remains distinct from task progress.",
+        "Work item journey",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if chronos && agora && task_conversation {
+        bind_task_conversation
+    } else {
+        bind_task_conversation.unavailable(
+            "Chronos, Agora, and the task-conversation relationship owner must all be configured",
+        )
     });
     for lens in AGENT_COLLABORATION_LENSES {
         let new_task_command = CommandSpec::available(
@@ -5032,6 +5062,187 @@ impl ModelTaskInvocationWorkflow {
     }
 }
 
+struct TaskConversationWorker {
+    result: Receiver<Result<agora_chronos_adapter::task_conversation_local::LocalReplyV1, String>>,
+    started: Instant,
+}
+
+struct TaskConversationWorkflow {
+    socket: PathBuf,
+    link: agora_chronos_adapter::task_conversation_local::LinkWireV1,
+    armed: bool,
+    notice: String,
+    worker: Option<TaskConversationWorker>,
+    complete: bool,
+}
+
+impl TaskConversationWorkflow {
+    fn new(
+        profile: &TaskConversationProfile,
+        chronos: &Hub,
+        agora: &agora_tui::Component,
+    ) -> Result<Self, String> {
+        let task = chronos.selected_task().ok_or_else(|| {
+            "refresh Chronos and select one current task before binding a conversation".to_owned()
+        })?;
+        let room = agora.message_target().ok_or_else(|| {
+            "open and refresh one Agora room before binding it to the selected task".to_owned()
+        })?;
+        let now = current_unix_time()?;
+        let encode = |value: [u8; 16]| {
+            value
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        };
+        parse_hex_identity(&profile.principal)?;
+        Ok(Self {
+            socket: profile.socket.clone(),
+            link: agora_chronos_adapter::task_conversation_local::LinkWireV1 {
+                link_id: encode(fresh_identity()?),
+                task: agora_chronos_adapter::task_conversation_local::TaskReferenceWireV1 {
+                    scope: task.workstream,
+                    task: task.task,
+                    incarnation: task.incarnation,
+                    attempt: task.attempt,
+                },
+                conversation:
+                    agora_chronos_adapter::task_conversation_local::ConversationReferenceWireV1 {
+                        room: room.room_id,
+                        thread_root: None,
+                    },
+                operation_id: encode(fresh_identity()?),
+                principal_id: profile.principal.clone(),
+                created_at_unix_seconds: now,
+                visibility_principal_id: None,
+                chronos_revision: task.revision,
+                agora_revision: room.expected_revision,
+                observed_at_unix_seconds: now,
+            },
+            armed: false,
+            notice: "READY · Review the exact task/room relationship; press c to arm.".into(),
+            worker: None,
+            complete: false,
+        })
+    }
+
+    fn input(&mut self, key: KeyEvent) {
+        if self.worker.is_some() {
+            return;
+        }
+        if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) && !self.complete {
+            self.armed = !self.armed;
+            self.notice = if self.armed {
+                "ARMED · Enter offers this exact immutable link once to the relationship owner."
+            } else {
+                "READY · Relationship disarmed; review the exact owner references or press c."
+            }
+            .into();
+        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) && self.armed && !self.complete {
+            let socket = self.socket.clone();
+            let request = agora_chronos_adapter::task_conversation_local::LocalRequestV1::Bind {
+                link: self.link.clone(),
+            };
+            let (sender, result) = sync_channel(1);
+            std::thread::spawn(move || {
+                let client = agora_chronos_adapter::task_conversation_local::TaskConversationLocalClientV1::new(socket);
+                let outcome = client
+                    .request(&request)
+                    .map_err(|error| format!("relationship owner unavailable: {error:?}"));
+                let _ = sender.send(outcome);
+            });
+            self.armed = false;
+            self.notice = "BINDING · Waiting for the exact durable owner receipt; Pantheon will not infer success from either peer.".into();
+            self.worker = Some(TaskConversationWorker {
+                result,
+                started: Instant::now(),
+            });
+        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) && !self.complete {
+            self.notice =
+                "REFUSED · Relationship is not armed · Next: review the references and press c."
+                    .into();
+        }
+    }
+
+    fn settle(&mut self) -> Option<(ActivityLevel, Duration)> {
+        let worker = self.worker.as_ref()?;
+        let result = match worker.result.try_recv() {
+            Ok(result) => result,
+            Err(TryRecvError::Empty) => return None,
+            Err(TryRecvError::Disconnected) => {
+                Err("relationship owner worker ended without a receipt".into())
+            }
+        };
+        let elapsed = worker.started.elapsed();
+        self.worker = None;
+        self.complete = true;
+        match result {
+            Ok(reply)
+                if reply.version == 1
+                    && reply.capability == "task-conversation.v1"
+                    && reply.complete
+                    && matches!(reply.status.as_str(), "created" | "replayed") =>
+            {
+                self.notice = format!(
+                    "BOUND · Owner {} relationship at revision {} · Next: return to Chronos or Agora; room activity remains separate from task progress",
+                    reply.status,
+                    reply
+                        .revision
+                        .map_or_else(|| "unknown".into(), |value| value.to_string())
+                );
+                Some((ActivityLevel::Success, elapsed))
+            }
+            Ok(reply) => {
+                self.notice = format!(
+                    "REFUSED · Relationship owner returned {} ({}) · Next: refresh both peers and inspect owner state before a fresh link",
+                    reply.status,
+                    reply.refusal.as_deref().unwrap_or("unclassified")
+                );
+                Some((ActivityLevel::Warning, elapsed))
+            }
+            Err(reason) => {
+                self.notice = format!(
+                    "NOT SENT · {reason} · Next: restore the relationship owner and reopen a fresh review"
+                );
+                Some((ActivityLevel::Warning, elapsed))
+            }
+        }
+    }
+
+    fn lines(&self) -> Vec<String> {
+        vec![
+            self.notice.clone(),
+            String::new(),
+            format!("Chronos scope        {}", self.link.task.scope),
+            format!("Chronos task         {}", self.link.task.task),
+            format!("incarnation          {}", self.link.task.incarnation),
+            format!(
+                "attempt              {}",
+                self.link
+                    .task
+                    .attempt
+                    .map_or_else(|| "task-level".into(), |value| value.to_string())
+            ),
+            format!("Chronos revision     {}", self.link.chronos_revision),
+            format!("Agora room           {}", self.link.conversation.room),
+            format!("Agora revision       {}", self.link.agora_revision),
+            "visibility           workspace".into(),
+            "human gate           review → arm → confirm once".into(),
+            "authority            owner/Aegis policy; this screen grants none".into(),
+            String::new(),
+            "Boundary: this link selects an interaction venue. It does not create task progress, approve work, activate an agent, or copy either peer's state.".into(),
+            if self.complete {
+                "Esc close · use Chronos/Agora refresh for current peer truth"
+            } else if self.worker.is_some() {
+                "Owner operation in progress · Ctrl-Q waits for settlement"
+            } else {
+                "c arm/disarm · Enter confirm only while armed · Esc close"
+            }
+            .into(),
+        ]
+    }
+}
+
 const AGENT_PROVIDER_EDIT_FIELDS: [&str; 11] = [
     "provider ID",
     "harness profile ID",
@@ -6550,6 +6761,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut vellum_atomic_operation = None;
     let mut vellum_open_prompt: Option<TextPrompt> = None;
     let mut vellum_find_prompt: Option<TextPrompt> = None;
+    let task_conversation_profile = current_profile
+        .as_ref()
+        .and_then(|profile| profile.task_conversation.clone());
     let commands = workbench_commands(
         &shell,
         chronos.is_some(),
@@ -6559,6 +6773,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         vellum_control.is_some(),
         agora.is_some(),
         agora_control.is_some(),
+        task_conversation_profile.is_some(),
         moira.is_some(),
         moira_participation_control.is_some(),
         moira_agent_worker_config.is_some(),
@@ -6623,6 +6838,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut provider_edit: Option<ProviderEditWorkflow> = None;
     let mut provider_qualification: Option<ProviderQualificationWorkflow> = None;
     let mut model_task_invocation: Option<ModelTaskInvocationWorkflow> = None;
+    let mut task_conversation_workflow: Option<TaskConversationWorkflow> = None;
     let mut model_provider_restart_required = false;
     let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
     let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
@@ -6651,6 +6867,22 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         let _input_capture = InputCapture::enable()?;
         loop {
+            if let Some((level, elapsed)) = task_conversation_workflow
+                .as_mut()
+                .and_then(TaskConversationWorkflow::settle)
+            {
+                let workflow = task_conversation_workflow
+                    .as_ref()
+                    .expect("settled task-conversation workflow exists");
+                notice = workflow.notice.clone();
+                instrumentation.record(
+                    "task-conversation.bind.result",
+                    "task-conversation",
+                    level,
+                    elapsed,
+                );
+                activity.push(level, "task-conversation", notice.clone());
+            }
             if let Some((level, elapsed)) = model_task_invocation
                 .as_mut()
                 .and_then(ModelTaskInvocationWorkflow::settle)
@@ -7904,6 +8136,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             );
                         }
                     }
+                    WorkbenchOverlay::TaskConversation => {
+                        if let Some(workflow) = &task_conversation_workflow {
+                            draw_inspector(
+                                frame,
+                                "Bind Chronos task to Agora room",
+                                &workflow.lines(),
+                            );
+                        }
+                    }
                     WorkbenchOverlay::AcpSessions => {
                         draw_inspector(
                             frame,
@@ -8091,6 +8332,51 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         pending_ui_feedback =
                             ui_operation.map(|(operation, _)| (operation, ActivityLevel::Warning));
                         overlay = WorkbenchOverlay::None;
+                        continue;
+                    }
+                    if action == "task-conversation.bind" {
+                        let outcome = task_conversation_profile
+                            .as_ref()
+                            .ok_or_else(|| "task-conversation owner is not configured".to_owned())
+                            .and_then(|profile| {
+                                chronos
+                                    .as_ref()
+                                    .zip(agora.as_ref())
+                                    .ok_or_else(|| {
+                                        "Chronos and Agora must both be configured".to_owned()
+                                    })
+                                    .and_then(|(chronos, agora)| {
+                                        TaskConversationWorkflow::new(profile, chronos, agora)
+                                    })
+                            });
+                        match outcome {
+                            Ok(workflow) => {
+                                task_conversation_workflow = Some(workflow);
+                                notice = "OPENED · Exact task-conversation review · Next: inspect task, room, revisions and boundary; press c to arm"
+                                    .into();
+                                activity.push(
+                                    ActivityLevel::Info,
+                                    "task-conversation",
+                                    notice.clone(),
+                                );
+                                pending_ui_feedback = ui_operation
+                                    .map(|(operation, _)| (operation, ActivityLevel::Info));
+                                overlay = WorkbenchOverlay::TaskConversation;
+                            }
+                            Err(reason) => {
+                                notice = format!(
+                                    "REFUSED · Task-conversation review could not open: {reason}"
+                                );
+                                activity.push(
+                                    ActivityLevel::Warning,
+                                    "task-conversation",
+                                    notice.clone(),
+                                );
+                                pending_ui_feedback = ui_operation
+                                    .map(|(operation, _)| (operation, ActivityLevel::Warning));
+                                overlay = WorkbenchOverlay::None;
+                            }
+                        }
                         continue;
                     }
                     let configuration_overlay = match action {
@@ -8572,6 +8858,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         overlay = WorkbenchOverlay::None;
                     }
                 }
+                Event::Key(key) if key_behavior == Some(KeyBehavior::TaskConversationInput) => {
+                    if let Some(workflow) = &mut task_conversation_workflow {
+                        workflow.input(key);
+                        notice = workflow.notice.clone();
+                    } else {
+                        overlay = WorkbenchOverlay::None;
+                    }
+                }
                 Event::Key(key) if key_behavior == Some(KeyBehavior::ReconfigurationInput) => {
                     if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
                         overlay = WorkbenchOverlay::None;
@@ -8705,6 +8999,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         let model_task_invocation_pending = model_task_invocation
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some());
+                        let task_conversation_pending = task_conversation_workflow
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         let vellum_unresolved =
                             vellum_durable_save.as_ref().is_some_and(|control| {
                                 control.request_pending() || control.recovery_required()
@@ -8716,6 +9013,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             || provider_edit_pending
                             || provider_qualification_pending
                             || model_task_invocation_pending
+                            || task_conversation_pending
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -10164,10 +10462,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         let model_task_invocation_unresolved = model_task_invocation
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some());
+                        let task_conversation_unresolved = task_conversation_workflow
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         if chronos_unresolved
                             || provider_edit_unresolved
                             || provider_qualification_unresolved
                             || model_task_invocation_unresolved
+                            || task_conversation_unresolved
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -11241,6 +11543,7 @@ mod tests {
             name: name.into(),
             surfaces,
             agora: None,
+            task_conversation: None,
             moira: None,
             daimon: None,
             hermes: None,
@@ -11356,7 +11659,7 @@ mod tests {
             .expect("valid shell");
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true, true, true, true, true, true,
         );
         for expected in [
             "navigate.overview",
@@ -11481,7 +11784,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false,
-            false,
+            false, false,
         );
         let save = commands
             .iter()

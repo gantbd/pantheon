@@ -30,6 +30,7 @@ pub struct HeadlessRequest {
     pub workspace: String,
     pub agora: Option<AgoraProfile>,
     pub agora_hosted: bool,
+    pub task_conversation_socket: Option<PathBuf>,
     pub moira_socket: Option<PathBuf>,
     pub moira_participation_socket: Option<PathBuf>,
     pub moira_participation: Option<participation::ParticipationIdV1>,
@@ -104,6 +105,17 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             observation,
             current,
             request.agora_hosted,
+        );
+    }
+    if let Some(socket) = request.task_conversation_socket {
+        let (observation, current) = observe_task_conversation(socket);
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            false,
         );
     }
     if let Some(socket) = request.moira_socket {
@@ -330,6 +342,54 @@ fn record_observation(
     management.push(PeerRuntime::from_observation(&observation, hosted));
     peers.push(observation);
     *complete &= current;
+}
+
+fn observe_task_conversation(socket: PathBuf) -> (serde_json::Value, bool) {
+    use agora_chronos_adapter::task_conversation_local::{
+        LocalRequestV1, TASK_CONVERSATION_CAPABILITY_V1, TaskConversationLocalClientV1,
+    };
+
+    let client = TaskConversationLocalClientV1::new(socket);
+    match client.request(&LocalRequestV1::Status) {
+        Ok(reply)
+            if reply.version == 1
+                && reply.capability == TASK_CONVERSATION_CAPABILITY_V1
+                && reply.complete
+                && reply.status == "current" =>
+        {
+            (
+                serde_json::json!({
+                    "peer": "task-conversation",
+                    "capability": TASK_CONVERSATION_CAPABILITY_V1,
+                    "status": "current",
+                    "revision": reply.revision,
+                    "links": reply.link_count,
+                    "boundary": "typed relationship truth only; room activity is not task progress",
+                }),
+                true,
+            )
+        }
+        Ok(reply) => (
+            serde_json::json!({
+                "peer": "task-conversation",
+                "capability": TASK_CONVERSATION_CAPABILITY_V1,
+                "status": "refused",
+                "owner_status": reply.status,
+                "refusal": reply.refusal,
+                "next_action": "inspect the relationship owner and recover any fenced or uncertain commit before binding",
+            }),
+            false,
+        ),
+        Err(error) => (
+            peer_failure(
+                "task-conversation",
+                TASK_CONVERSATION_CAPABILITY_V1,
+                "unavailable",
+                format!("{error:?}"),
+            ),
+            false,
+        ),
+    }
 }
 
 fn observe_tellus(endpoint: SocketAddr, token_path: Option<&PathBuf>) -> (serde_json::Value, bool) {
@@ -1493,6 +1553,7 @@ mod tests {
                 requires: vec!["messages.read.v2".into()],
             }),
             agora_hosted: false,
+            task_conversation_socket: None,
             moira_socket: None,
             moira_participation_socket: None,
             moira_participation: None,

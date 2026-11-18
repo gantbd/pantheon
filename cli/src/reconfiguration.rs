@@ -106,6 +106,7 @@ mod tests {
             name: name.into(),
             surfaces: vec![pantheon::Surface::Overview],
             agora: None,
+            task_conversation: None,
             moira: None,
             daimon: None,
             hermes: None,

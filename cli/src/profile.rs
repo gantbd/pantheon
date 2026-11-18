@@ -22,6 +22,7 @@ pub struct WorkspaceProfile {
     pub name: String,
     pub surfaces: Vec<Surface>,
     pub agora: Option<AgoraProfile>,
+    pub task_conversation: Option<TaskConversationProfile>,
     pub moira: Option<MoiraProfile>,
     pub daimon: Option<DaimonProfile>,
     pub hermes: Option<HermesProfile>,
@@ -29,6 +30,17 @@ pub struct WorkspaceProfile {
     pub tellus: Option<TellusProfile>,
     pub chronos: Option<ChronosProfile>,
     pub vellum: Option<VellumProfile>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct TaskConversationProfile {
+    pub socket: PathBuf,
+    /// Attributed relationship creator; this is not an authority grant or a
+    /// substitute for the interactive human gate.
+    pub principal: String,
+    #[serde(default)]
+    pub requires: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -336,6 +348,9 @@ impl WorkspaceProfile {
                 host.config = resolve(base, &host.config);
             }
         }
+        if let Some(task_conversation) = &mut profile.task_conversation {
+            task_conversation.socket = resolve(base, &task_conversation.socket);
+        }
         if let Some(moira) = &mut profile.moira {
             moira.socket = resolve(base, &moira.socket);
             if let Some(socket) = &mut moira.participation_socket {
@@ -443,6 +458,14 @@ impl WorkspaceProfile {
                 }
             }
             validate_required_capabilities(&agora.requires)?;
+        }
+        if let Some(task_conversation) = &self.task_conversation {
+            if self.agora.is_none() || self.chronos.is_none() {
+                return Err("task-conversation configuration requires Agora and Chronos");
+            }
+            validate_path(&task_conversation.socket)?;
+            validate_hex_identifier(&task_conversation.principal, "task-conversation principal")?;
+            validate_required_capabilities(&task_conversation.requires)?;
         }
         if let Some(moira) = &self.moira {
             if !self.surfaces.contains(&Surface::Moira) {

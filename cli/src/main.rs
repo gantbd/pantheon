@@ -59,6 +59,7 @@ struct Options {
     workspace_name: String,
     shell: Shell,
     agora: Option<AgoraProfile>,
+    task_conversation_socket: Option<PathBuf>,
     agora_host: Option<AgoraProcessOptions>,
     moira_socket: Option<PathBuf>,
     moira_participation_socket: Option<PathBuf>,
@@ -199,6 +200,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut daimon_bindings = Vec::new();
     let mut chronos_planning = None;
     let mut agora_requires = Vec::new();
+    let mut task_conversation_socket = None;
+    let mut task_conversation_requires = Vec::new();
     let mut chronos_requires = Vec::new();
     let mut host_chronos = false;
     let mut host_vellum = false;
@@ -225,6 +228,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         agora = profile.agora.inspect(|configured| {
             agora_requires = configured.requires.clone();
         });
+        if let Some(task_conversation) = profile.task_conversation {
+            task_conversation_socket = Some(task_conversation.socket);
+            task_conversation_requires = task_conversation.requires;
+        }
         if let Some(configured) = &agora
             && configured.deployment == DeploymentMode::Hosted
         {
@@ -509,6 +516,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         Mode::Interactive
     };
     let agora_capabilities = capabilities::agora(mode, agora_host.is_some());
+    let task_conversation_capabilities = capabilities::task_conversation(mode);
     let moira_capabilities =
         capabilities::moira(mode, moira_host.is_some(), moira_participation.is_some());
     let daimon_capabilities = capabilities::daimon(
@@ -571,6 +579,15 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         capabilities::agora(Mode::Interactive, agora_host.is_some()),
     )?;
     negotiate_selected_route(
+        "task-conversation",
+        &task_conversation_requires,
+        &[capabilities::Capability {
+            id: "task-conversation.v1",
+            plane: capabilities::Plane::Observation,
+        }],
+        task_conversation_capabilities.clone(),
+    )?;
+    negotiate_selected_route(
         "moira",
         &moira_requires,
         &moira_capabilities,
@@ -630,6 +647,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if agora.is_some() {
         capability_plan.push(("agora", agora_capabilities));
     }
+    if task_conversation_socket.is_some() {
+        capability_plan.push(("task-conversation", task_conversation_capabilities));
+    }
     if moira_socket.is_some() {
         capability_plan.push(("moira", moira_capabilities));
     }
@@ -657,6 +677,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         workspace_name,
         shell,
         agora,
+        task_conversation_socket,
         agora_host,
         moira_socket,
         moira_participation_socket,
@@ -3836,6 +3857,7 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         workspace: options.workspace_name.clone(),
         agora: options.agora.clone(),
         agora_hosted: options.agora_host.is_some(),
+        task_conversation_socket: options.task_conversation_socket.clone(),
         moira_socket: options.moira_socket.clone(),
         moira_participation_socket: options.moira_participation_socket.clone(),
         moira_participation: options.moira_participation,

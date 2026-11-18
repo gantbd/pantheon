@@ -35,6 +35,7 @@ agora-tui = { version = "=0.1.0", path = "../../agora-tui" }
 agora-local-client = { version = "=0.1.0", path = "../../agora/client/agora-local-client" }
 agora-client = { version = "=0.1.0", path = "../../agora/client/agora-client" }
 agora-protocol = { version = "=0.1.0", path = "../../agora/protocol/agora-protocol" }
+agora-chronos-adapter = { version = "=0.1.0", path = "../../agora-chronos-adapter" }
 moira-tui = { version = "=0.1.0", path = "../../moira-tui" }
 moira-tui-local-client = { version = "=0.1.0", path = "../../moira-tui/local-client" }
 moira-client = { version = "=0.1.0", path = "../../moira/crates/moira-client", features = ["unix"] }

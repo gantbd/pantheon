@@ -2331,3 +2331,25 @@ fn moira_agent_worker_is_opaque_participation_bound_and_separate_from_preparatio
         assert!(live.contains(required), "live worker gate omits {required}");
     }
 }
+
+#[test]
+fn task_conversation_gate_proves_tui_headless_and_recovery_parity() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let live = fs::read_to_string(root.join("tests/live/task_conversation.sh"))
+        .expect("task-conversation live qualification");
+    for required in [
+        "Bind selected task to open Agora room",
+        "room activity remains separate from task progress",
+        "task-conversation.v1",
+        "peer[\"revision\"] == 1 and peer[\"links\"] == 1",
+        "drain_link",
+        "owner restart recovery",
+    ] {
+        assert!(
+            live.contains(required),
+            "task-conversation gate omits {required}"
+        );
+    }
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
+    assert!(makefile.contains("qualify-task-conversation"));
+}
