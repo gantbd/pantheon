@@ -7,12 +7,16 @@ workspace=$(CDPATH= cd -- "$root/.." && pwd -P)
 # Chronos/Daimon fixture topology under the short private temp root.
 scratch=$(mktemp -d "/private/tmp/pwiaj.XXXXXX")
 fixture_pid=
+agora_pid=
+link_pid=
 
 cleanup() {
-  if [ -n "$fixture_pid" ] && kill -0 "$fixture_pid" 2>/dev/null; then
-    kill "$fixture_pid" 2>/dev/null || true
-    wait "$fixture_pid" 2>/dev/null || true
-  fi
+  for pid in "$fixture_pid" "$agora_pid" "$link_pid"; do
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
+    fi
+  done
   rm -rf "$scratch"
 }
 trap cleanup EXIT HUP INT TERM
@@ -22,11 +26,47 @@ chmod 700 "$scratch/chronos"
 
 cargo build --manifest-path "$workspace/daimon-tui/Cargo.toml" \
   --package daimon-tui-cli --example agent_open_journey_fixture --locked --offline
+cargo build --manifest-path "$workspace/agora-tui/Cargo.toml" \
+  --package agora-tui-cli --example real_daemon_fixture --locked --offline
+cargo build --manifest-path "$workspace/agora-chronos-adapter/Cargo.toml" \
+  --bin task-conversation-service --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
   --package pantheon-cli --bin pantheon --locked --offline
 
 workbench="$root/target/debug/pantheon"
 catalog_owner="$root/tests/support/provider_catalog_open_owner.sh"
+agora_fixture="$workspace/agora-tui/target/debug/examples/real_daemon_fixture"
+link_service="$workspace/agora-chronos-adapter/target/debug/task-conversation-service"
+
+wait_socket() {
+  path=$1
+  pid=$2
+  log=$3
+  attempt=0
+  while [ ! -S "$path" ]; do
+    if ! kill -0 "$pid" 2>/dev/null || [ "$attempt" -eq 400 ]; then
+      sed -n '1,160p' "$log" >&2
+      echo "FAIL: service did not publish $path" >&2
+      exit 1
+    fi
+    attempt=$((attempt + 1))
+    sleep 0.025
+  done
+}
+
+start_agora() {
+  "$agora_fixture" "$scratch/agora.sock" \
+    >"$scratch/agora.out" 2>"$scratch/agora.err" &
+  agora_pid=$!
+  wait_socket "$scratch/agora.sock" "$agora_pid" "$scratch/agora.err"
+}
+
+start_link() {
+  "$link_service" "$scratch/link-state" "$scratch/task-conversation.sock" \
+    >"$scratch/link.out" 2>"$scratch/link.err" &
+  link_pid=$!
+  wait_socket "$scratch/task-conversation.sock" "$link_pid" "$scratch/link.err"
+}
 
 cat >"$scratch/provider-catalog.json" <<'EOF'
 {
@@ -57,7 +97,17 @@ cat >"$scratch/profile.json" <<EOF
 {
   "version": 1,
   "name": "Work item agent journey",
-  "surfaces": ["chronos", "daimon"],
+  "surfaces": ["chronos", "agora", "daimon"],
+  "agora": {
+    "socket": "$scratch/agora.sock",
+    "participant": "operator",
+    "requires": ["rooms.read.v2"]
+  },
+  "task_conversation": {
+    "socket": "$scratch/task-conversation.sock",
+    "principal": "10101010101010101010101010101010",
+    "requires": ["task-conversation.v1"]
+  },
   "chronos": {
     "deployment": "hosted",
     "workstreams": [{"name": "Local work", "directory": "$scratch/chronos"}],
@@ -104,6 +154,8 @@ cat >"$scratch/profile.json" <<EOF
 }
 EOF
 
+start_link
+start_agora
 headless=$("$workbench" headless --workspace-profile "$scratch/profile.json")
 printf '%s' "$headless" | python3 -c '
 import json, sys
@@ -132,6 +184,10 @@ assert report["not_exercised_profile_requirements"] == [
 ]
 assert "not a control receipt" in report["requirement_boundary"]
 '
+
+wait "$agora_pid"
+agora_pid=
+start_agora
 
 python3 - "$scratch" "$workbench" <<'PYTHON'
 from pathlib import Path
@@ -209,9 +265,27 @@ try:
     expect("Daimon guarded session set", "prompt ready session")
     keys("c", "Enter")
     expect(
-        "Local-agent turn accepted",
+        "AGORA",
+        "Create Agora room",
+        "local-agent-task",
+        "invite only",
         timeout=20,
     )
+    keys("c", "Enter")
+    expect(
+        "Bind Chronos task to Agora room",
+        "local-agent-task",
+        "human gate",
+        timeout=20,
+    )
+    keys("c", "Enter")
+    expect(
+        "BOUND · Owner created relationship",
+        "Agora room local-agent-task durably created",
+        "DONE · Local-agent turn accepted",
+        timeout=20,
+    )
+    keys("Escape")
     keys("C-p", "C-u")
     literal("return to the kanban board")
     expect("Return to the Kanban board")
@@ -231,4 +305,4 @@ test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 2
 grep '^opened$' "$scratch/receipts" >/dev/null
 grep '^prompted$' "$scratch/receipts" >/dev/null
 
-echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded product-owner-lensed prompt -> refreshed Kanban board'
+echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated Agora task room -> durable exact relationship -> refreshed Kanban board'

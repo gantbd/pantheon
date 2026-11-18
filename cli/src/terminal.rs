@@ -5355,12 +5355,29 @@ impl TaskConversationWorkflow {
         chronos: &Hub,
         agora: &agora_tui::Component,
     ) -> Result<Self, String> {
-        let task = chronos.selected_task().ok_or_else(|| {
-            "refresh Chronos and select one current task before binding a conversation".to_owned()
-        })?;
         let room = agora.message_target().ok_or_else(|| {
             "open and refresh one Agora room before binding it to the selected task".to_owned()
         })?;
+        Self::new_for_room(profile, chronos, room.room_id, room.expected_revision, None)
+    }
+
+    fn new_for_room(
+        profile: &TaskConversationProfile,
+        chronos: &Hub,
+        room_id: String,
+        agora_revision: u64,
+        expected_task_id: Option<&str>,
+    ) -> Result<Self, String> {
+        let task = chronos.selected_task().ok_or_else(|| {
+            "refresh Chronos and select one current task before binding a conversation".to_owned()
+        })?;
+        if expected_task_id.is_some_and(|expected| task.task != expected) {
+            return Err(format!(
+                "selected Chronos task {} no longer matches composed work item {}",
+                task.task,
+                expected_task_id.expect("checked as present")
+            ));
+        }
         let now = current_unix_time()?;
         let encode = |value: [u8; 16]| {
             value
@@ -5381,7 +5398,7 @@ impl TaskConversationWorkflow {
                 },
                 conversation:
                     agora_chronos_adapter::task_conversation_local::ConversationReferenceWireV1 {
-                        room: room.room_id,
+                        room: room_id,
                         thread_root: None,
                     },
                 operation_id: encode(fresh_identity()?),
@@ -5389,7 +5406,7 @@ impl TaskConversationWorkflow {
                 created_at_unix_seconds: now,
                 visibility_principal_id: None,
                 chronos_revision: task.revision,
-                agora_revision: room.expected_revision,
+                agora_revision,
                 observed_at_unix_seconds: now,
             },
             armed: false,
@@ -7009,6 +7026,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut daimon_recovery_refresh = false;
     let mut daimon_unknown_evidence = false;
     let mut work_item_agent = WorkItemAgentJourney::default();
+    let mut work_item_task_id: Option<String> = None;
+    let mut work_item_room_creation_pending = false;
+    let mut work_item_task_conversation_pending = false;
     let mut hermes_acknowledge: Option<hermes_tui::AcknowledgeComponent> = None;
     let mut hermes_compaction: Option<hermes_tui::CompactionComponent> = None;
     let mut last_hermes_compaction_notice = String::new();
@@ -7157,6 +7177,25 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     elapsed,
                 );
                 activity.push(level, "task-conversation", notice.clone());
+                if work_item_task_conversation_pending {
+                    work_item_task_conversation_pending = false;
+                    if level == ActivityLevel::Success {
+                        work_item_agent = WorkItemAgentJourney::ConversationReady;
+                        notice = format!(
+                            "DONE · Local-agent turn accepted, Agora room created, and exact relationship bound for Chronos task {} · Next: continue in Agora or return to the Kanban board",
+                            work_item_task_id.as_deref().unwrap_or("unknown")
+                        );
+                        activity.push(ActivityLevel::Success, "work-item", notice.clone());
+                    } else {
+                        work_item_agent = WorkItemAgentJourney::Failed;
+                        notice = command_feedback(
+                            "workitem.agent.room.bind",
+                            level,
+                            "The room exists, but its exact Chronos relationship was not applied; inspect the retained owner evidence before retrying",
+                        );
+                        activity.push(level, "work-item", notice.clone());
+                    }
+                }
             }
             if let Some((level, elapsed)) = model_task_invocation
                 .as_mut()
@@ -7331,6 +7370,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     .expect("binding settlement requires an active inspection");
                 match settlement {
                     Ok(evidence) => {
+                        if inspection.target == WorkItemExecutionTarget::Agent {
+                            work_item_task_id = Some(evidence.task_id.clone());
+                        }
                         instrumentation.record(
                             "workitem.agent.binding.result",
                             "daimon",
@@ -7642,6 +7684,74 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     {
                         component.update(agora_tui::Input::Refresh, true);
                     }
+                    if work_item_room_creation_pending && level != ActivityLevel::Info {
+                        work_item_room_creation_pending = false;
+                        if control.disposition() == agora_tui::CreateRoomDisposition::Applied {
+                            let receipt = control.applied_receipt().cloned();
+                            let outcome = receipt
+                                .ok_or_else(|| {
+                                    "Agora reported an applied room without its owner receipt"
+                                        .to_owned()
+                                })
+                                .and_then(|receipt| {
+                                    let profile =
+                                        task_conversation_profile.as_ref().ok_or_else(|| {
+                                            "task-conversation owner is not configured".to_owned()
+                                        })?;
+                                    let chronos = chronos.as_ref().ok_or_else(|| {
+                                        "Chronos is no longer configured".to_owned()
+                                    })?;
+                                    let task_id =
+                                        work_item_task_id.as_deref().ok_or_else(|| {
+                                            "composed work-item identity was lost".to_owned()
+                                        })?;
+                                    TaskConversationWorkflow::new_for_room(
+                                        profile,
+                                        chronos,
+                                        receipt.room_id,
+                                        receipt.revision,
+                                        Some(task_id),
+                                    )
+                                });
+                            match outcome {
+                                Ok(workflow) => {
+                                    task_conversation_workflow = Some(workflow);
+                                    work_item_task_conversation_pending = true;
+                                    overlay = WorkbenchOverlay::TaskConversation;
+                                    notice = "READY · Agora room owner receipt applied · Next: review the exact Chronos task/Agora room relationship, press c to arm, then Enter once"
+                                        .into();
+                                    activity.push(
+                                        ActivityLevel::Success,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                                Err(reason) => {
+                                    work_item_agent = WorkItemAgentJourney::Failed;
+                                    notice = command_feedback(
+                                        "workitem.agent.room.bind",
+                                        ActivityLevel::Warning,
+                                        &format!(
+                                            "Agora created the room, but the exact relationship review could not open: {reason}"
+                                        ),
+                                    );
+                                    activity.push(
+                                        ActivityLevel::Warning,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                            }
+                        } else {
+                            work_item_agent = WorkItemAgentJourney::Failed;
+                            notice = command_feedback(
+                                "workitem.agent.room.create",
+                                level,
+                                "The task-room proposal did not produce an applied owner receipt; inspect the retained Agora evidence before retrying",
+                            );
+                            activity.push(level, "work-item", notice.clone());
+                        }
+                    }
                     last_agora_create_notice = current.into();
                 }
             }
@@ -7906,10 +8016,68 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         && level != ActivityLevel::Info
                     {
                         if control.disposition() == daimon_tui::AgentControlDisposition::Applied {
-                            work_item_agent = WorkItemAgentJourney::ConversationReady;
-                            notice = "DONE · Local-agent turn accepted; the selected Daimon timeline is the live conversation · Next: continue here, or run M-x Return to the Kanban board"
-                                .into();
-                            activity.push(ActivityLevel::Success, "work-item", notice.clone());
+                            let outcome = (|| {
+                                if agora_control.is_none() {
+                                    return Err("Agora room control is not configured".to_owned());
+                                }
+                                if task_conversation_profile.is_none() {
+                                    return Err(
+                                        "task-conversation owner is not configured".to_owned()
+                                    );
+                                }
+                                let task_id = work_item_task_id.as_deref().ok_or_else(|| {
+                                    "composed work-item identity was lost".to_owned()
+                                })?;
+                                let component = agora.as_ref().ok_or_else(|| {
+                                    "Agora is not configured for this workspace".to_owned()
+                                })?;
+                                let revision = component.room_revision().ok_or_else(|| {
+                                    "Agora has no stable room revision; refresh its room list"
+                                        .to_owned()
+                                })?;
+                                let mut create = agora_tui::CreateRoomComponent::new_with_handle(
+                                    component.control_handle(),
+                                    revision,
+                                );
+                                create
+                                    .prefill(
+                                        task_id,
+                                        &format!("Task · {task_id}"),
+                                        agora_protocol::v2::AdmissionPolicyV2::InviteOnly,
+                                    )
+                                    .map_err(str::to_owned)?;
+                                Ok(create)
+                            })();
+                            match outcome {
+                                Ok(create) => {
+                                    agora_create = Some(create);
+                                    last_agora_create_notice.clear();
+                                    work_item_room_creation_pending = true;
+                                    let _ = shell.activate(Surface::Agora);
+                                    notice = "READY · Local-agent turn accepted · Next: review the prefilled task-room identity, admission, and revision; press c to arm, then Enter once"
+                                        .into();
+                                    activity.push(
+                                        ActivityLevel::Success,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                                Err(reason) => {
+                                    work_item_agent = WorkItemAgentJourney::Failed;
+                                    notice = command_feedback(
+                                        "workitem.agent.room.create",
+                                        ActivityLevel::Warning,
+                                        &format!(
+                                            "The local-agent turn was accepted, but a human-gated task-room review could not open: {reason}"
+                                        ),
+                                    );
+                                    activity.push(
+                                        ActivityLevel::Warning,
+                                        "work-item",
+                                        notice.clone(),
+                                    );
+                                }
+                            }
                         } else {
                             work_item_agent = WorkItemAgentJourney::Failed;
                             notice = command_feedback(
@@ -9066,6 +9234,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         || action == "workitem.model.new"
                         || agent_task_collaboration_lens(action).is_some()
                     {
+                        work_item_task_id = None;
+                        work_item_room_creation_pending = false;
+                        work_item_task_conversation_pending = false;
                         work_item_agent = if level == ActivityLevel::Info {
                             WorkItemAgentJourney::EditingTask {
                                 draft: String::new(),

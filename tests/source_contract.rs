@@ -2194,7 +2194,10 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "agent_open_journey_fixture",
         "Open fresh Daimon session for Chronos task",
         "human-gated fresh Daimon session",
-        "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded product-owner-lensed prompt -> refreshed Kanban board",
+        "Create Agora room",
+        "Bind Chronos task to Agora room",
+        "durable exact relationship",
+        "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated Agora task room -> durable exact relationship -> refreshed Kanban board",
     ] {
         assert!(
             journey.contains(required),

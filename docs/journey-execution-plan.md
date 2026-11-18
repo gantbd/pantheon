@@ -218,12 +218,19 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   `Access(OutcomeUnknown)` because the active three-document allowlist is not a
   workspace; the refusal omitted the governing root and a recovery action, then
   left the editor `Stale / Indeterminate` and fenced the admitted plan save.
-  Chronos now retains `vellum-workspace-admission-orientation` alongside
-  `vellum-atomic-refusal-orientation`. The repository fallback was used only
-  after observing that fence; no Vellum save is claimed.
-- This is deliberately not yet the complete requested conversation journey.
-  Exact task-to-open-room linkage is now qualified, but Agora room creation,
-  durable chat history, Chronos status/comment publication, tool continuation,
+  A fresh isolated owner admitted the plan and its guarded save produced a
+  durable file update, but dogfood then proved that a literal match is not an
+  editable replacement range and service-mode undo is unavailable. Repository
+  diff review caught the resulting appended text before commit; an exact patch
+  repaired it after the Vellum session was cleanly closed. Chronos now retains
+  `vellum-workspace-admission-orientation`, `vellum-save-settlement-feedback`
+  and `vellum-literal-match-replace-recovery` alongside
+  `vellum-atomic-refusal-orientation`.
+- The bounded task-to-agent-to-room relationship slice is now qualified. After
+  the applied Daimon turn, Pantheon prefills an invitation-only Agora task room,
+  retains the ordinary room review/arm/confirm gate, consumes the exact applied
+  owner receipt, and opens a second human-gated task-room relationship review.
+  Durable chat history, Chronos status/comment publication, tool continuation,
   delegated completion and approval remain separate owner contracts.
   Task-execution policy is also still raw owner configuration;
   provider/task/context/tool/budget selection must become a discoverable
@@ -723,15 +730,20 @@ model, organizational and training-lineage correlation remain explicit gaps.
   known deviations, evidence time, and the next safe action without exposing
   credentials or treating endpoint liveness as session/workflow completion.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
-- [x] Create or bind an exact Agora task room. The separately owned
-  `agora-chronos-adapter` publishes a durable `task-conversation.v1` local
-  owner/client with exact replay/conflict, bidirectional lookup and explicit
-  broken-link projection. Pantheon's shared behavior facade now reviews, arms
-  and confirms the exact selected Chronos task and open Agora room, reports the
-  owner receipt, and projects the same content-free relationship status
-  headlessly. `tests/live/task_conversation.sh` qualifies the real TUI path,
-  headless parity and owner restart recovery. Room creation remains a separate
-  Agora capability; this completed increment binds an already open exact room.
+- [x] Create or bind an exact Agora task room through explicit human gates. The
+  separately owned `agora-chronos-adapter` publishes a durable
+  `task-conversation.v1` local owner/client with exact replay/conflict,
+  bidirectional lookup and explicit broken-link projection. Pantheon's shared
+  behavior facade now reviews, arms and confirms the exact selected Chronos task
+  and open Agora room, reports the owner receipt, and projects the same
+  content-free relationship status headlessly. `tests/live/task_conversation.sh`
+  and `tests/live/work_item_agent_journey.sh` qualify complementary real-TUI
+  paths, headless parity and owner restart recovery. The composed work-item
+  journey now includes the Agora capability: after an applied Daimon turn it
+  prefills an invitation-only task room, retains Agora's ordinary
+  review/arm/confirm gate, and opens the separately gated exact relationship
+  from the applied owner receipt. Standalone room creation and manual binding
+  remain independently available capabilities.
 - [x] Open a per-task Daimon session bound to the exact Chronos attempt.
 - [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or
