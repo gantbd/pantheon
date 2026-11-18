@@ -123,9 +123,11 @@ try:
     send("F1")
 
     send("C-p")
-    send_literal("configure local model providers")
+    send_literal("inspect local provider configuration")
     send("Enter")
-    expect("Local provider configuration", "Daimon local-agent supervisor", "transport: acp")
+    expect("Local provider configuration", "No hosted Daimon owner configuration", "did not inspect a fallback file")
+    send("r")
+    expect("No hosted Daimon owner configuration", "Esc closes")
     send("C-g")
 
     send("C-p")
@@ -152,7 +154,7 @@ try:
     send("C-g")
 
     send("C-g")
-    expect("ACTIVITY & RECEIPTS", "Workspace profile loaded")
+    expect("ACTIVITY & RECEIPTS", "Local provider configuration")
     send("Escape")
 
     send("]")

@@ -13,9 +13,13 @@ use daimon_protocol::{
     agent::{AgentEventV1, AgentSessionPhaseV1},
 };
 use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
-use std::fs::File;
+use serde::Deserialize;
+use std::fs::{self, File};
 use std::io::Read;
+use std::os::unix::fs::DirBuilderExt;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, TryRecvError, sync_channel};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vellum_sdk_client::{
@@ -120,10 +124,24 @@ impl BehaviorFacade {
         match overlay {
             WorkbenchOverlay::Commands => return KeyBehavior::CommandPaletteInput,
             WorkbenchOverlay::Reconfiguration => return KeyBehavior::ReconfigurationInput,
+            WorkbenchOverlay::LocalProviders
+                if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) =>
+            {
+                return KeyBehavior::ExecuteCommand("configuration.providers.refresh");
+            }
+            WorkbenchOverlay::LocalProviders => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::Suppress
+                };
+            }
             WorkbenchOverlay::Help
             | WorkbenchOverlay::Activity
             | WorkbenchOverlay::Configuration
-            | WorkbenchOverlay::LocalProviders
             | WorkbenchOverlay::AcpSessions
             | WorkbenchOverlay::AgoraRooms
             | WorkbenchOverlay::Instrumentation => {
@@ -2360,8 +2378,8 @@ fn workbench_commands(
     commands.extend([
         CommandSpec::available(
             "configuration.providers.local",
-            "Configure local model providers",
-            "Review the owner boundary and exact profile/restart path for a local or ACP-backed Daimon provider.",
+            "Inspect local provider configuration",
+            "Ask the selected Daimon owner to validate and return its redacted local-model or ACP provider catalogue.",
             "Configuration",
             None,
             CommandKind::Lifecycle,
@@ -3790,26 +3808,323 @@ fn session_configuration(
     ]
 }
 
+const MAX_PROVIDER_CATALOG_BYTES: u64 = 256 * 1024;
+const PROVIDER_CATALOG_TIMEOUT: Duration = Duration::from_secs(3);
+static NEXT_PROVIDER_CATALOG: AtomicU64 = AtomicU64::new(0);
+
+struct ProviderInspection {
+    updates: Receiver<Vec<String>>,
+    refresh: bool,
+    started: Instant,
+}
+
+fn spawn_provider_inspection(
+    profile: Option<WorkspaceProfile>,
+    refresh: bool,
+) -> ProviderInspection {
+    let (updates, receiver) = sync_channel(1);
+    std::thread::spawn(move || {
+        let lines = local_provider_configuration(profile.as_ref());
+        let _ = updates.send(lines);
+    });
+    ProviderInspection {
+        updates: receiver,
+        refresh,
+        started: Instant::now(),
+    }
+}
+
+#[derive(Deserialize)]
+struct ProviderCatalogProjection {
+    version: u8,
+    owner: String,
+    document_digest: String,
+    providers: Vec<ProviderCatalogEntryProjection>,
+}
+
+#[derive(Deserialize)]
+struct ProviderCatalogEntryProjection {
+    provider_id: String,
+    harness_profile_id: String,
+    profile_document_digest: String,
+    #[serde(default)]
+    policy_digest: Option<String>,
+    #[serde(default)]
+    transport: Option<String>,
+    #[serde(default)]
+    isolation: Option<String>,
+    #[serde(default)]
+    executable_available: Option<bool>,
+    #[serde(default)]
+    argument_count: Option<usize>,
+    #[serde(default)]
+    inherited_environment_name_count: Option<usize>,
+    #[serde(default)]
+    authentication_method_configured: Option<bool>,
+    #[serde(default)]
+    wire: Option<String>,
+    #[serde(default)]
+    model: Option<String>,
+    #[serde(default)]
+    endpoint_scope: Option<String>,
+    #[serde(default)]
+    endpoint_port: Option<u16>,
+    #[serde(default)]
+    structured_output: Option<bool>,
+    #[serde(default)]
+    structured_tools: Option<bool>,
+    #[serde(default)]
+    sampling_temperature_milli: Option<u16>,
+    #[serde(default)]
+    bearer_token_configured: Option<bool>,
+}
+
 fn local_provider_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> {
-    let hosted = profile
+    let Some(host) = profile
         .and_then(|profile| profile.daimon.as_ref())
-        .is_some_and(|daimon| daimon.host.is_some());
-    vec![
-        format!(
-            "current              Daimon owner configuration {}",
-            if hosted { "selected" } else { "not selected" }
-        ),
-        "owner                Daimon local-agent supervisor".into(),
-        "boundary             Pantheon never stores provider commands, models, credentials, or inherited secret values".into(),
+        .and_then(|daimon| daimon.host.as_ref())
+    else {
+        return vec![
+            "REFUSED · No hosted Daimon owner configuration is selected.".into(),
+            "Next: select a hosted Daimon executable/config in the workspace profile, preflight the exact profile, then restart once.".into(),
+            "Pantheon did not inspect a fallback file or infer provider state from a socket.".into(),
+            String::new(),
+            "Esc closes".into(),
+        ];
+    };
+    match provider_catalog(&host.executable, &host.config) {
+        Ok(catalog) => provider_catalog_lines(catalog),
+        Err(reason) => vec![
+            format!("REFUSED · Daimon provider inspection failed: {reason}"),
+            "No raw owner configuration, command, argument, credential name, or secret was displayed.".into(),
+            "Next: run the selected Daimon executable with --check against its selected config, correct the owner refusal, then press r here.".into(),
+            String::new(),
+            "r retries exact owner inspection · Esc closes".into(),
+        ],
+    }
+}
+
+fn provider_catalog(executable: &Path, config: &Path) -> Result<ProviderCatalogProjection, String> {
+    let root = std::env::temp_dir().join(format!(
+        "pantheon-provider-catalog-{}-{}",
+        std::process::id(),
+        NEXT_PROVIDER_CATALOG.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&root)
+        .map_err(|_| "private result directory unavailable".to_owned())?;
+    let stdout_path = root.join("stdout");
+    let stderr_path = root.join("stderr");
+    let result = (|| {
+        let stdout = File::create(&stdout_path)
+            .map_err(|_| "owner projection output unavailable".to_owned())?;
+        let stderr = File::create(&stderr_path)
+            .map_err(|_| "owner refusal output unavailable".to_owned())?;
+        let mut child = Command::new(executable)
+            .arg("--describe-providers")
+            .arg(config)
+            .stdin(Stdio::null())
+            .stdout(Stdio::from(stdout))
+            .stderr(Stdio::from(stderr))
+            .spawn()
+            .map_err(|_| "selected owner executable could not start".to_owned())?;
+        let deadline = Instant::now() + PROVIDER_CATALOG_TIMEOUT;
+        let status = loop {
+            match child.try_wait() {
+                Ok(Some(status)) => break status,
+                Ok(None) if Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Ok(None) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return Err("owner projection timed out and was terminated".to_owned());
+                }
+                Err(_) => return Err("owner projection status unavailable".to_owned()),
+            }
+        };
+        if !status.success() {
+            let refusal = read_bounded_text(&stderr_path)
+                .unwrap_or_else(|_| "owner returned a non-success status".into());
+            return Err(single_line(&refusal, 240));
+        }
+        let bytes = read_bounded(&stdout_path)?;
+        let projection: ProviderCatalogProjection = serde_json::from_slice(&bytes)
+            .map_err(|_| "owner returned an invalid provider projection".to_owned())?;
+        validate_provider_catalog(&projection)?;
+        Ok(projection)
+    })();
+    let _ = fs::remove_dir_all(root);
+    result
+}
+
+fn read_bounded(path: &Path) -> Result<Vec<u8>, String> {
+    let mut bytes = Vec::new();
+    File::open(path)
+        .map_err(|_| "owner projection output unavailable".to_owned())?
+        .take(MAX_PROVIDER_CATALOG_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| "owner projection output unreadable".to_owned())?;
+    if bytes.len() as u64 > MAX_PROVIDER_CATALOG_BYTES {
+        return Err("owner projection exceeded the 256 KiB bound".into());
+    }
+    Ok(bytes)
+}
+
+fn read_bounded_text(path: &Path) -> Result<String, String> {
+    String::from_utf8(read_bounded(path)?)
+        .map_err(|_| "owner refusal was not valid UTF-8".to_owned())
+}
+
+fn single_line(value: &str, maximum: usize) -> String {
+    value
+        .chars()
+        .filter(|character| !character.is_control())
+        .take(maximum)
+        .collect::<String>()
+}
+
+fn valid_projection_text(value: &str, maximum: usize) -> bool {
+    !value.is_empty()
+        && value.len() <= maximum
+        && value.chars().all(|character| !character.is_control())
+}
+
+fn valid_digest(value: &str) -> bool {
+    value.len() == 71
+        && value.starts_with("sha256:")
+        && value[7..].bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn valid_id(value: &str) -> bool {
+    value.len() == 32 && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> Result<(), String> {
+    if catalog.version != 1
+        || !matches!(
+            catalog.owner.as_str(),
+            "daimon-local-agent" | "daimon-local-model"
+        )
+        || !valid_digest(&catalog.document_digest)
+        || catalog.providers.is_empty()
+        || catalog.providers.len() > 64
+    {
+        return Err("owner returned unsupported provider catalogue facts".into());
+    }
+    for provider in &catalog.providers {
+        if !valid_id(&provider.provider_id)
+            || !valid_id(&provider.harness_profile_id)
+            || !valid_digest(&provider.profile_document_digest)
+            || provider
+                .policy_digest
+                .as_deref()
+                .is_some_and(|value| !valid_digest(value))
+            || provider
+                .model
+                .as_deref()
+                .is_some_and(|value| !valid_projection_text(value, 1_024))
+            || provider
+                .transport
+                .as_deref()
+                .is_some_and(|value| !valid_projection_text(value, 64))
+            || provider
+                .isolation
+                .as_deref()
+                .is_some_and(|value| !valid_projection_text(value, 64))
+            || provider
+                .wire
+                .as_deref()
+                .is_some_and(|value| !valid_projection_text(value, 64))
+            || provider
+                .endpoint_scope
+                .as_deref()
+                .is_some_and(|value| !valid_projection_text(value, 64))
+        {
+            return Err("owner returned malformed provider catalogue facts".into());
+        }
+    }
+    Ok(())
+}
+
+fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
+    let mut lines = vec![
+        "CURRENT · Daimon validated the selected owner document.".into(),
+        format!("owner                {}", catalog.owner),
+        format!("owner document       {}", catalog.document_digest),
+        format!("providers            {} exact", catalog.providers.len()),
+        "boundary             commands, arguments, paths, credential names, and secrets remain redacted by Daimon".into(),
+    ];
+    for (index, provider) in catalog.providers.into_iter().enumerate() {
+        lines.push(String::new());
+        lines.push(format!(
+            "{}. provider           {}",
+            index + 1,
+            provider.provider_id
+        ));
+        lines.push(format!(
+            "   harness profile     {}",
+            provider.harness_profile_id
+        ));
+        lines.push(format!(
+            "   profile document    {}",
+            provider.profile_document_digest
+        ));
+        if let (Some(transport), Some(isolation), Some(executable)) = (
+            provider.transport,
+            provider.isolation,
+            provider.executable_available,
+        ) {
+            lines.push(format!(
+                "   agent transport     {transport} · isolation {isolation} · executable {}",
+                if executable {
+                    "available"
+                } else {
+                    "unavailable"
+                }
+            ));
+            lines.push(format!(
+                "   launch shape        {} argument(s) · {} inherited environment name(s) · authentication method {}",
+                provider.argument_count.unwrap_or_default(),
+                provider.inherited_environment_name_count.unwrap_or_default(),
+                if provider.authentication_method_configured.unwrap_or(false) {
+                    "configured"
+                } else {
+                    "not configured"
+                }
+            ));
+            if let Some(policy) = provider.policy_digest {
+                lines.push(format!("   policy               {policy}"));
+            }
+        }
+        if let (Some(wire), Some(model), Some(scope), Some(port)) = (
+            provider.wire,
+            provider.model,
+            provider.endpoint_scope,
+            provider.endpoint_port,
+        ) {
+            lines.push(format!("   model                {model}"));
+            lines.push(format!("   wire                 {wire} · {scope}:{port}"));
+            lines.push(format!(
+                "   conformance policy   structured output {} · structured tools {} · temperature milli {} · bearer token {}",
+                provider.structured_output.unwrap_or(false),
+                provider.structured_tools.unwrap_or(false),
+                provider.sampling_temperature_milli.unwrap_or_default(),
+                if provider.bearer_token_configured.unwrap_or(false) {
+                    "configured"
+                } else {
+                    "not configured"
+                }
+            ));
+        }
+    }
+    lines.extend([
         String::new(),
-        "1  Add or edit the provider in Daimon's owner configuration (transport: acp for an ACP process).".into(),
-        "2  Keep provider command, arguments, model policy, and credential environment names in that owner document.".into(),
-        "3  Select deployment=hosted plus Daimon's executable/config and public agent_socket in the workspace profile.".into(),
-        "4  Run M-x configure ACP agent sessions to select owner-created sessions.".into(),
-        "5  Run M-x preflight and restart workspace profile; review the exact diff, arm, then confirm once.".into(),
-        String::new(),
-        "Result: Operations owns lifecycle; Daimon owns provider execution; Pantheon presents bounded evidence and controls.".into(),
-    ]
+        "r revalidates the exact owner document · Esc closes".into(),
+        "Editing is not yet published by this owner contract; Pantheon will not fall back to raw JSON mutation.".into(),
+    ]);
+    lines
 }
 
 fn acp_session_configuration(profile: Option<&WorkspaceProfile>) -> Vec<String> {
@@ -4034,10 +4349,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         aegis_control_socket.is_some(),
         grounding.is_some(),
     );
-    let provider_configuration_lines = local_provider_configuration(current_profile.as_ref());
+    let mut provider_configuration_lines = vec![
+        "Provider configuration has not been inspected in this session.".into(),
+        "Run M-x Inspect local provider configuration to request a fresh redacted owner projection.".into(),
+    ];
+    let mut provider_inspection: Option<ProviderInspection> = None;
     let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
     let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
-    let mut reconfiguration = current_profile.map(ReconfigurationWorkflow::new);
+    let mut reconfiguration = current_profile.clone().map(ReconfigurationWorkflow::new);
     let health_channels = [
         ("chronos", "tasks", chronos.is_some()),
         ("vellum", "workspace", vellum.is_some()),
@@ -4062,6 +4381,65 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         let _input_capture = InputCapture::enable()?;
         loop {
+            let provider_settlement = provider_inspection.as_ref().and_then(|inspection| {
+                match inspection.updates.try_recv() {
+                    Ok(lines) => Some(Ok(lines)),
+                    Err(TryRecvError::Disconnected) => Some(Err(())),
+                    Err(TryRecvError::Empty) => None,
+                }
+            });
+            if let Some(settlement) = provider_settlement {
+                let inspection = provider_inspection
+                    .take()
+                    .expect("provider settlement requires an active inspection");
+                match settlement {
+                    Ok(lines) => {
+                        let current = lines
+                            .first()
+                            .is_some_and(|line| line.starts_with("CURRENT ·"));
+                        provider_configuration_lines = lines;
+                        let level = if current {
+                            ActivityLevel::Success
+                        } else {
+                            ActivityLevel::Warning
+                        };
+                        notice = if current && inspection.refresh {
+                            "REFRESHED · Local provider configuration · Exact owner projection revalidated · Next: review changed digest/facts or Esc to close"
+                                .into()
+                        } else if current {
+                            "CURRENT · Local provider configuration · Owner projection inspected · Next: review exact redacted facts, press r to revalidate, or Esc to close"
+                                .into()
+                        } else {
+                            "REFUSED · Local provider configuration is not current · Next: follow the displayed owner-oriented recovery action"
+                                .into()
+                        };
+                        instrumentation.record(
+                            "configuration.providers.result",
+                            "daimon",
+                            level,
+                            inspection.started.elapsed(),
+                        );
+                        activity.push(level, "configuration", notice.clone());
+                    }
+                    Err(()) => {
+                        provider_configuration_lines = vec![
+                            "REFUSED · Provider inspection worker ended without a projection."
+                                .into(),
+                            "Next: inspect Activity, verify the selected owner executable, then retry."
+                                .into(),
+                        ];
+                        notice = "REFUSED · Provider inspection ended without a projection · Next: inspect Activity and retry only after correcting the owner executable"
+                            .into();
+                        instrumentation.record(
+                            "configuration.providers.result",
+                            "daimon",
+                            ActivityLevel::Warning,
+                            inspection.started.elapsed(),
+                        );
+                        activity.push(ActivityLevel::Warning, "configuration", notice.clone());
+                    }
+                }
+            }
             if let Some((level, shutdown)) = operations.poll() {
                 settle_drain_operations(
                     &mut drain_operations,
@@ -5085,6 +5463,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             WorkbenchOverlay::LocalProviders,
                             "Local provider configuration",
                         )),
+                        "configuration.providers.refresh" => Some((
+                            WorkbenchOverlay::LocalProviders,
+                            "Local provider configuration",
+                        )),
                         "configuration.acp.sessions" => {
                             Some((WorkbenchOverlay::AcpSessions, "ACP session configuration"))
                         }
@@ -5094,9 +5476,42 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         _ => None,
                     };
                     if let Some((next_overlay, label)) = configuration_overlay {
-                        notice = format!(
-                            "OPENED · {label} · Next: follow the owner/profile checklist, then run workspace-profile preflight from M-x"
-                        );
+                        if matches!(
+                            action,
+                            "configuration.providers.local" | "configuration.providers.refresh"
+                        ) {
+                            if provider_inspection.is_some() {
+                                notice = "QUEUED · Local provider inspection is already running · Next: wait for the bounded owner projection or its refusal"
+                                    .into();
+                                activity.push(ActivityLevel::Info, "configuration", notice.clone());
+                                pending_ui_feedback = ui_operation
+                                    .map(|(operation, _)| (operation, ActivityLevel::Info));
+                                overlay = next_overlay;
+                                continue;
+                            }
+                            provider_configuration_lines = vec![
+                                "INSPECTING · Asking the selected Daimon owner to validate and redact its provider catalogue."
+                                    .into(),
+                                "The TUI remains responsive; no provider effect or configuration mutation is being attempted."
+                                    .into(),
+                            ];
+                            provider_inspection = Some(spawn_provider_inspection(
+                                current_profile.clone(),
+                                action == "configuration.providers.refresh",
+                            ));
+                        }
+                        notice = if matches!(
+                            action,
+                            "configuration.providers.local" | "configuration.providers.refresh"
+                        ) {
+                            format!(
+                                "QUEUED · {label} inspection · Next: wait for the bounded owner projection; the interface remains responsive"
+                            )
+                        } else {
+                            format!(
+                                "OPENED · {label} · Next: review owner/profile requirements or Esc to close"
+                            )
+                        };
                         activity.push(ActivityLevel::Info, "configuration", notice.clone());
                         pending_ui_feedback =
                             ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
@@ -5607,6 +6022,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             || chronos
                                 .as_ref()
                                 .is_some_and(Hub::mutation_recovery_required);
+                        let provider_inspection_pending = provider_inspection.is_some();
                         let vellum_unresolved =
                             vellum_durable_save.as_ref().is_some_and(|control| {
                                 control.request_pending() || control.recovery_required()
@@ -5614,6 +6030,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 control.disposition() == AtomicReplaceDisposition::OutcomeUnknown
                             }) || vellum_atomic_operation.is_some();
                         if chronos_unresolved
+                            || provider_inspection_pending
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -7152,6 +7569,15 @@ mod tests {
             KeyBehavior::Suppress
         );
         assert_eq!(
+            BehaviorFacade::key(
+                plain('r'),
+                WorkbenchOverlay::LocalProviders,
+                Surface::Configuration,
+                false,
+            ),
+            KeyBehavior::ExecuteCommand("configuration.providers.refresh")
+        );
+        assert_eq!(
             BehaviorFacade::key(ctrl('p'), WorkbenchOverlay::None, Surface::Vellum, true),
             KeyBehavior::OpenCommands
         );
@@ -7214,6 +7640,43 @@ mod tests {
             ),
             KeyBehavior::ExecuteCommand("workitem.agent.new")
         );
+    }
+
+    #[test]
+    fn provider_catalog_projection_is_bounded_redacted_and_owner_oriented() {
+        let catalog = ProviderCatalogProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            document_digest: format!("sha256:{}", "11".repeat(32)),
+            providers: vec![ProviderCatalogEntryProjection {
+                provider_id: "22".repeat(16),
+                harness_profile_id: "33".repeat(16),
+                profile_document_digest: format!("sha256:{}", "44".repeat(32)),
+                policy_digest: None,
+                transport: None,
+                isolation: None,
+                executable_available: None,
+                argument_count: None,
+                inherited_environment_name_count: None,
+                authentication_method_configured: None,
+                wire: Some("openai_chat_completions".into()),
+                model: Some("qwen/qwen3-coder-next".into()),
+                endpoint_scope: Some("loopback".into()),
+                endpoint_port: Some(1234),
+                structured_output: Some(false),
+                structured_tools: Some(true),
+                sampling_temperature_milli: Some(0),
+                bearer_token_configured: Some(false),
+            }],
+        };
+        validate_provider_catalog(&catalog).unwrap();
+        let lines = provider_catalog_lines(catalog).join("\n");
+        assert!(lines.contains("Daimon validated"));
+        assert!(lines.contains("qwen/qwen3-coder-next"));
+        assert!(lines.contains("loopback:1234"));
+        assert!(lines.contains("structured tools true"));
+        assert!(!lines.contains("host_header"));
+        assert!(!lines.contains("OPENAI_API_KEY"));
     }
 
     #[test]

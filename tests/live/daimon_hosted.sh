@@ -175,11 +175,39 @@ try:
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
-        if "Daimon agent" in screen and "ReattachRequired/1" in screen:
+        if "Configured sessions" in screen and "ReattachRequired/1" in screen:
             break
         time.sleep(0.025)
     else:
         raise AssertionError(f"Hosted Daimon pane not ready:\n{screen}")
+    tmux("send-keys", "-t", "daimon", "C-p")
+    tmux("send-keys", "-t", "daimon", "-l", "inspect local provider configuration")
+    tmux("send-keys", "-t", "daimon", "Enter")
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
+        if all(marker in screen for marker in (
+            "Local provider configuration",
+            "Daimon validated the selected owner document",
+            "daimon-local-agent",
+            "agent transport",
+            "acp",
+            "commands, arguments, paths, credential names, and secrets remain redacted",
+        )):
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Provider catalogue not ready:\n{screen}")
+    tmux("send-keys", "-t", "daimon", "r")
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
+        if "REFRESHED" in screen and "CURRENT · Daimon validated" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Provider catalogue refresh did not settle:\n{screen}")
+    tmux("send-keys", "-t", "daimon", "C-g")
     tmux("send-keys", "-t", "daimon", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "daimon", check=False).returncode == 0:
@@ -196,4 +224,4 @@ wait "$aegis_pid"
 aegis_pid=
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: production Daimon agent -> durable session -> Pantheon hosted headless and interactive reopen -> clean drain'
+echo 'PASS: production Daimon agent -> redacted owner provider catalogue -> durable session -> Pantheon hosted headless and interactive reopen -> clean drain'

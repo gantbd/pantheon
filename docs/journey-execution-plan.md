@@ -61,6 +61,24 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   invoke Make targets merely to configure and qualify a provider. Credentials
   and provider commands remain in the sovereign owner; Pantheon edits or invokes
   only an explicit bounded owner contract and presents its receipts.
+- The first owner-backed inspection slice is now qualified. Both
+  `daimon-local-agent` and `daimon-local-model` validate their complete selected
+  document before publishing a versioned redacted provider catalogue. Pantheon
+  invokes that contract only for the explicitly hosted Daimon owner, bounds its
+  runtime/output, runs inspection off the input/render loop, validates catalogue
+  identity/digests/cardinality, renders
+  model or agent conformance facts, and offers observable `r` revalidation
+  through the central behavior facade. A real hosted-agent/tmux gate proves the
+  current and refreshed projections; the no-owner breadth gate refuses fallback
+  file inspection. Commands, arguments, paths, credential names and secrets
+  never enter the projection.
+- This does not complete onboarding: neither owner yet publishes a guarded
+  edit/apply transaction, endpoint/model discovery, health/conformance run, or
+  retained qualification receipt. Pantheon's hosted Daimon profile also selects
+  the interactive-agent owner shape only; it cannot yet compose the distinct
+  local-model owner and therefore cannot present the running LM Studio/Qwen
+  catalogue through this surface. Those are owner/composition gaps, not reasons
+  for Pantheon to mutate raw JSON.
 
 ### Operational discovery loop
 
@@ -151,6 +169,14 @@ owner.
   name the conflicting endpoint/owner and offer inspect, reconnect, replace or
   choose-another-path actions rather than requiring the user to infer a stale
   socket from a generic binding failure.
+- The provider-catalog slice used Pantheon's live structured Chronos composer to
+  admit `local-model-owner-composition` at priority 8 and
+  `guarded-provider-edit-qualification` at priority 9, each requiring the
+  `daimon-provider` capability. Chronos applied one atomic two-task graph, then a
+  clean Pantheon drain and owner restart reopened revision 1 with both exact
+  Ready identities. The malformed first draft produced while driving tmux was
+  explicitly discarded before submission, providing useful confirmation that
+  review/escape does not leak an accidental task into owner state.
 
 ## Milestone 0 — stabilize the product contract
 
