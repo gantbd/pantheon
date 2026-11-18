@@ -2516,7 +2516,7 @@ fn shared_agent_context_gate_proves_exact_multi_stakeholder_routing() {
 }
 
 #[test]
-fn moira_deliberation_gate_proves_exact_ensemble_standing_in_both_surfaces() {
+fn moira_deliberation_gate_proves_exact_ensemble_and_human_gate_evidence_in_both_surfaces() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let live = fs::read_to_string(root.join("tests/live/moira_deliberation.sh"))
         .expect("Moira deliberation qualification");
@@ -2526,6 +2526,9 @@ fn moira_deliberation_gate_proves_exact_ensemble_standing_in_both_surfaces() {
         "authorized_representative",
         "stakeholder standing: accountable=22222222222222222222222222222222",
         "evidence=1 dissent=1",
+        "human gate: changes_requested",
+        "material_revision_digest",
+        "authority",
         "infers no ensemble fitness",
         "Open Moira deliberation",
     ] {
@@ -2542,6 +2545,8 @@ fn moira_deliberation_gate_proves_exact_ensemble_standing_in_both_surfaces() {
     assert!(terminal.contains("MoiraPane::Deliberation"));
     let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
     assert!(headless.contains("moira_tui::deliberation_view_json"));
+    assert!(headless.contains("Named-human deliberation gate"));
+    assert!(terminal.contains("operator_agenda_observation"));
     let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
     assert!(makefile.contains("qualify-moira-deliberation"));
 }

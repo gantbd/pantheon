@@ -1042,6 +1042,7 @@ impl OperationsRuntime {
 fn operator_agenda_view(
     chronos: Option<&Hub>,
     moira_participation: Option<&moira_tui::ParticipationComponent>,
+    moira_deliberation: Option<&moira_tui::DeliberationComponent>,
 ) -> OperatorAgendaView {
     let mut agenda = OperatorAgendaView::default();
     if let Some(chronos) = chronos {
@@ -1096,8 +1097,40 @@ fn operator_agenda_view(
             route: "navigate.moira".into(),
         });
     }
+    if let Some(observation) =
+        moira_deliberation.and_then(moira_tui::DeliberationComponent::operator_agenda_observation)
+    {
+        agenda.push(AgendaEntry {
+            source_peer: "moira-deliberation".into(),
+            source_instance: None,
+            source_revision: observation.registry_revision.to_string(),
+            resource_identity: agenda_identity(observation.request.id.0),
+            kind: AgendaKind::HumanGate,
+            urgency: AgendaUrgency::Blocking,
+            title: "Named-human deliberation gate".into(),
+            why_operator: format!(
+                "Moira retained an unresolved gate for reviewer {}",
+                agenda_identity(observation.request.reviewer)
+            ),
+            authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
+            requested_action: "inspect the finding, decision, material revision and policy; then approve, reject, defer, or request changes".into(),
+            consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
+            next_owner_action: "open Moira deliberation and verify the named reviewer and current material before acting".into(),
+            route: "navigate.moira.deliberation".into(),
+        });
+    }
     agenda.sort();
     agenda
+}
+
+fn agenda_identity(value: [u8; 16]) -> String {
+    const DIGITS: &[u8; 16] = b"0123456789abcdef";
+    let mut encoded = String::with_capacity(32);
+    for byte in value {
+        encoded.push(char::from(DIGITS[usize::from(byte >> 4)]));
+        encoded.push(char::from(DIGITS[usize::from(byte & 0x0f)]));
+    }
+    encoded
 }
 
 const fn registry_lifecycle_label(lifecycle: RegistryLifecycle) -> &'static str {
@@ -9803,7 +9836,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             let height = terminal.size()?.height.saturating_sub(4);
             let vellum_frame = vellum.as_ref().and_then(|editor| editor.frame(height));
             let operations_view = operations.view();
-            let agenda_view = operator_agenda_view(chronos.as_ref(), moira_participation.as_ref());
+            let agenda_view = operator_agenda_view(
+                chronos.as_ref(),
+                moira_participation.as_ref(),
+                moira_deliberation.as_ref(),
+            );
             let render_started = Instant::now();
             terminal.draw(|frame| {
                 let prompt_notice = vellum_open_prompt

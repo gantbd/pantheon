@@ -2066,8 +2066,15 @@ through the behavior facade, while headless reuses the same owner-defined exact
 projection. A real read-only daemon gate proves ensemble admission, assessor and
 coverage/equity digests, authorized-representative standing, accountable
 principal, mandate, conflict, evidence and dissent in both paths; see
-[`tests/live/moira_deliberation.sh`](../tests/live/moira_deliberation.sh). This is
-inspection, not a human finding disposition or authority grant.
+[`tests/live/moira_deliberation.sh`](../tests/live/moira_deliberation.sh). The
+same owner contract now projects the exact named reviewer, finding, decision,
+material revision, policy, four-way human disposition and injected authority.
+Only an unresolved request appears in Pantheon's shared operator agenda, where
+it retains the request identity and owner revision and routes back to Moira;
+settled evidence remains in deliberation instead of masquerading as pending
+work. This is inspection and routing, not a human finding disposition or
+authority grant: Pantheon does not yet expose Moira's Aegis-authorized response
+command.
 The selected execution profile now freezes an explicit opaque task key,
 incarnation and attempt alongside principal, harness profile, context/tools and
 budgets; prompt, permission and reattach operations retain that exact attempt
@@ -2200,6 +2207,15 @@ Necessary aggregate UI:
 6. An accountable Aegis-authorized choice selects one candidate, and a separate
    action authorization selects what may affect Agora/Vellum/other peers.
 7. `Maybe` and `Mu` remain valid terminal outcomes and are presented as such.
+
+Current qualified human-gate boundary: Moira retains an exact request binding
+the named reviewer and current finding/decision/material/policy digests, and an
+exact response distinguishes approve, reject, defer and request-changes while
+recording verified authority. Pantheon's TUI and headless surfaces present the
+same settled evidence and place only a pending request on the operator agenda.
+The user still cannot submit that response through Pantheon; adding that control
+requires command-scoped Aegis authorization, owner-native confirmation and
+lost-reply recovery rather than a UI-local decision flag.
 
 ### J5. Produce and review a grounded code/document change
 

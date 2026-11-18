@@ -493,6 +493,49 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
             }
         } else if name == "moira-participation" && status != "current" {
             agenda.unavailable_sources.push(name.into());
+        } else if name == "moira-deliberation" && status == "current" {
+            let Some(gate) = peer
+                .get("deliberation")
+                .and_then(|value| value.get("human_gate"))
+                .filter(|value| !value.is_null())
+            else {
+                continue;
+            };
+            if gate.get("status").and_then(serde_json::Value::as_str) != Some("pending") {
+                continue;
+            }
+            let Some(request) = gate.get("request") else {
+                continue;
+            };
+            let identity = request
+                .get("id")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown");
+            let reviewer = request
+                .get("reviewer")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown");
+            let revision = peer
+                .get("registry_revision")
+                .map(serde_json::Value::to_string)
+                .unwrap_or_else(|| "unknown".into());
+            agenda.push(AgendaEntry {
+                source_peer: "moira-deliberation".into(),
+                source_instance: None,
+                source_revision: revision,
+                resource_identity: identity.into(),
+                kind: AgendaKind::HumanGate,
+                urgency: AgendaUrgency::Blocking,
+                title: "Named-human deliberation gate".into(),
+                why_operator: format!("Moira retained an unresolved gate for reviewer {reviewer}"),
+                authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
+                requested_action: "inspect the finding, decision, material revision and policy; then approve, reject, defer, or request changes".into(),
+                consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
+                next_owner_action: "open Moira deliberation and verify the named reviewer and current material before acting".into(),
+                route: "navigate.moira.deliberation".into(),
+            });
+        } else if name == "moira-deliberation" && status != "current" {
+            agenda.unavailable_sources.push(name.into());
         }
     }
     agenda.sort();
@@ -1979,5 +2022,51 @@ mod tests {
         assert_eq!(agenda.entries[0].source_revision, "Finite(7)");
         assert_eq!(agenda.entries[0].resource_identity, "recover-effect#3");
         assert!(!agenda.operating_reviews.owner_configured);
+    }
+
+    #[test]
+    fn operator_agenda_routes_only_pending_exact_moira_human_gates() {
+        let pending = serde_json::json!({
+            "peer": "moira-deliberation",
+            "status": "current",
+            "registry_revision": 12,
+            "deliberation": {
+                "human_gate": {
+                    "status": "pending",
+                    "request": {
+                        "id": "17".repeat(16),
+                        "reviewer": "18".repeat(16),
+                        "finding_digest": "19".repeat(32),
+                        "decision_digest": "1a".repeat(32),
+                        "material_revision_digest": "1b".repeat(32),
+                        "policy_digest": "1c".repeat(32),
+                        "requested_at": 29
+                    },
+                    "response": null
+                }
+            }
+        });
+        let settled = serde_json::json!({
+            "peer": "moira-deliberation",
+            "status": "current",
+            "registry_revision": 13,
+            "deliberation": {
+                "human_gate": {
+                    "status": "settled",
+                    "request": {"id": "20".repeat(16), "reviewer": "21".repeat(16)},
+                    "response": {"disposition": "rejected"}
+                }
+            }
+        });
+        let agenda = project_operator_agenda(&[pending, settled]);
+        assert_eq!(agenda.entries.len(), 1);
+        let entry = &agenda.entries[0];
+        assert_eq!(entry.kind, AgendaKind::HumanGate);
+        assert_eq!(entry.source_peer, "moira-deliberation");
+        assert_eq!(entry.source_revision, "12");
+        assert_eq!(entry.resource_identity, "17".repeat(16));
+        assert!(entry.why_operator.contains(&"18".repeat(16)));
+        assert!(entry.authority.contains("grants none"));
+        assert_eq!(entry.route, "navigate.moira.deliberation");
     }
 }

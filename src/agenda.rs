@@ -12,6 +12,7 @@ pub const MAX_AGENDA_ENTRIES: usize = 128;
 pub enum AgendaKind {
     OutcomeUnknown,
     GovernedPermission,
+    HumanGate,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]

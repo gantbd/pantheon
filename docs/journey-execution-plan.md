@@ -667,6 +667,16 @@ Exit evidence: J33/J35/J36 human gates plus acceptance cases 73, 82, 93, 111,
 112 and 113; an agenda is a projection and action router, never an authority
 owner.
 
+Qualified 2026-11-18 first-source slice: Moira's exact pending
+`HumanGateRequestV1` now enters the shared operator agenda as a blocking item
+with the owner request identity, registry revision, named reviewer, reason,
+consequence of waiting and a route to deliberation. A settled response remains
+deliberation evidence and is not left on the agenda. TUI and headless projections
+share that rule, and agenda presence explicitly grants no authority. This does
+not close the multi-owner agenda or provide an action control: Pantheon still
+needs an Aegis-authorized, command-scoped Moira response path with stale/reply
+recovery before a human can settle the gate from this surface.
+
 ### 2026-11-17 — Chronos backlog dogfood
 
 - Pantheon's real writable Chronos surface atomically admitted six discoveries
@@ -1185,19 +1195,25 @@ mature stakeholder ensemble.
   `agora_shared_agent_context` live gate is fixture evidence for the opening
   exchange only; it does not yet prove durable multi-turn deliberation,
   adjudication, or owner-applied priority disposition.
-- [ ] Publish `HumanGateRequestV1` and exact presentation/response receipts.
+- [x] Publish `HumanGateRequestV1` and exact presentation/response receipts.
 - [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and
   invalidate it after any material decision change.
 
-Qualified 2026-11-18 inspection slice: `moira-tui` now owns one reusable exact
-TUI/headless projection for admission and stakeholder standing; Pantheon can
-attach only the independent deliberation endpoint, select its own Moira pane
-through the behavior facade, and display the projection in both modes. The
-real-daemon gate is `tests/live/moira_deliberation.sh`. It does not close
-Dendrite concern routing, independent member execution, finding disposition or
-the named-human gate.
+Qualified 2026-11-18 inspection slice: Moira now owns an exact
+`HumanGateRequestV1` and response contract binding the named reviewer, finding,
+decision, material revision and policy. The response distinguishes approved,
+rejected, deferred and changes-requested, injects verified Aegis authority, and
+recovers an exact lost success without accepting a conflicting stale response.
+`moira-tui` owns one reusable exact TUI/headless projection for admission,
+stakeholder standing and pending/settled gate evidence. Pantheon can attach only
+the independent deliberation endpoint, select its own Moira pane through the
+behavior facade, display settled evidence in both modes, and route only a pending
+gate into the operator agenda. The real-daemon gate is
+`tests/live/moira_deliberation.sh`. It does not close Dendrite concern routing,
+independent member execution, finding disposition, or the still-missing
+Pantheon control for an Aegis-authorized named-human response.
 
 Exit evidence: J33 and acceptance cases 87–95 and 111–113.
 

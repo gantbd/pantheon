@@ -58,12 +58,18 @@ value = json.load(open(sys.argv[1]))
 peer = next(item for item in value["peers"] if item["peer"] == "moira-deliberation")
 assert peer["capability"] == "deliberation.inspect.v1"
 assert peer["status"] == "current"
-assert peer["registry_revision"] == 2
+assert peer["registry_revision"] == 5
 assert peer["deliberation"]["admission"]["fitness"] == "yes"
 stakeholder = peer["deliberation"]["members"][0]["stakeholder"]
 assert stakeholder["representation"] == "authorized_representative"
 assert stakeholder["accountable_principal"] == "22" * 16
 assert peer["deliberation"]["reports"][0]["dissent_digests"] == ["2c" * 32]
+gate = peer["deliberation"]["human_gate"]
+assert gate["status"] == "settled"
+assert gate["request"]["reviewer"] == "31" * 16
+assert gate["request"]["material_revision_digest"] == "34" * 32
+assert gate["response"]["disposition"] == "changes_requested"
+assert gate["response"]["authority"]["subject"] == "31" * 16
 assert "infers no ensemble fitness" in peer["boundary"]
 PYTHON
 
@@ -109,6 +115,9 @@ try:
         "stakeholder AuthorizedRepresentative",
         "stakeholder standing: accountable=22222222222222222222222222222222",
         "evidence=1 dissent=1",
+        "human gate: changes_requested",
+        "human gate material:",
+        "human gate authority:",
     )
     tmux("send-keys", "-t", session, "C-p", "C-u")
     tmux("send-keys", "-t", session, "-l", "open moira deliberation")
@@ -119,4 +128,4 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo "qualified: Pantheon composes exact Moira ensemble admission and stakeholder standing in headless and TUI paths"
+echo "qualified: Pantheon composes exact Moira ensemble standing and settled human-gate evidence in headless and TUI paths"
