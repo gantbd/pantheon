@@ -429,10 +429,12 @@ a known-good path.
 | Chronos | Preserve admission, attempt identity, claims, lease expiry and fencing; old and new schedulers cannot both accept as current authority |
 | Moira | Version workflow definitions and state transitions; maintain saga/effect identity, compensation and uncertain-effect fencing across mixed versions |
 | Daimon | Preserve agent/session identity, checkpoint/tool/provider contracts, budgets and event sequence; changing the runtime cannot silently restart an effect or widen tools |
+| Hestia | Preserve host/runtime identity, placement incarnation, admitted model artifact, resource/isolation posture and lifecycle uncertainty; replacement cannot silently reuse a stale endpoint or duplicate a runtime |
 | Dendrite/Tellus | Corpus content already promoted out of band may hot reload under Dendrite's current contract; authoring/promotion and server/runtime replacement remain separate guarded changes with pinned consultation digests |
 | Vellum | Protect dirty edits, revision witnesses, persistence receipts, collaboration state and coordinate/schema migrations before editor or service replacement |
 | Hermes | Preserve producer/event identity, retention, cursor, acknowledgement and schema compatibility; replay or relay changes cannot duplicate domain effects |
 | Aegis | Highest sensitivity: candidate policy/runtime cannot authorize its own installation, mint its own trust, erase prior decisions or replace the independent recovery root |
+| Oculus | Preserve source/frontier, query, time window, sampling, gaps, schema and disclosure; a dashboard or backend replacement cannot restyle missing or partial telemetry as healthy completeness |
 | Keystone | Shared-mechanism changes require downstream conformance and mixed-version evidence because one defect can violate every sovereign peer's laws |
 
 Current qualification is intentionally narrower than this target. Pantheon has
@@ -875,10 +877,12 @@ same owner observations, challenges, commands, receipts and recovery states.
 | Chronos | Workstream/task/attempt/feed and revision/cursor | Task state, scheduling and existing leases not owned by this attachment | Claim/release, pause, cancel, reschedule, complete, retire |
 | Moira | Saga/participation/effect frontier and evidence cursor | Workflow progress, uncertainty fences, timers and peer-effect identities | Advance, reconcile, compensate, cancel, terminal disposition |
 | Daimon | Exact agent session/turn/event cursor | Session checkpoint, active/waiting work, budget and retained events | Prompt, permission decision, advance, cancel, provider reattach, close |
+| Hestia | Hosting authority/runtime incarnation and lifecycle revision | Runtime placement, admitted artifact/resource posture and owner-retained lifecycle | Acquire/delete model, qualify provider, invoke inference, move placement, kill unknown process |
 | Tellus / Dendrite | Load/corpus/fold/SME/query reference | Corpus identity and queryable service; finite query needs no durable attachment | Reload/publish corpus in owner tools; long search/index jobs only if separately modeled |
 | Vellum | Workspace/document/revision and optional collaboration cursor | Source state, saved state and other collaborators; local unpublished draft policy is explicit | Edit, save, discard draft, release lock/lease, close workspace, rebind destination |
 | Hermes | Stream/consumer and disclosed event frontier | Stream and consumer cursor; observation must not acknowledge delivery | Acknowledge, reset/retire consumer, compact, redrive |
 | Aegis | Authority namespace/epoch or managed admin session | Durable authority state; ordinary observation can reconnect | Issue, attenuate, authorize, revoke; managed session disconnect deliberately abandons its session-local grant names/handles rather than reattaching them |
+| Oculus | Source catalogue/query/run cursor and explicit time window | Saved query identity, backend data and independent telemetry pipelines | Start/stop producers, acknowledge domain events, settle incidents, mutate peer state |
 | Analysis/query | Saved analysis plus exact run/result cursor | Persisted run/checkpoint/result where the selected owner promises it | Execute, cancel, interrupt kernel, schedule refresh, publish result, close session/kernel |
 | Pantheon Operations | External instance or explicitly owned supervised topology | External peer processes; hosted peers only after supervisor handoff | Drain, stop, restart, promote/fail over, rehome, abandon residue |
 
@@ -908,6 +912,14 @@ These are Required/Later capabilities, not claims about the current qualified
 profile.
 
 ### Events, logs, metrics, and operational signals
+
+Oculus is the sovereign observability-query peer for this capability family. It
+owns source catalogues, bounded query/follow runs, saved analysis definitions,
+typed pivots, partial-source/gap evidence and backend adapters. It does not own
+producer instrumentation, peer-domain meaning, Hermes streams, alert authority,
+incident/workflow state or the underlying telemetry stores. Pantheon and a
+future `oculus-tui` reuse its public observation/query client; headless callers
+use the same contract without constructing presentation state.
 
 “Event” is overloaded. Pantheon must label the kind and owner before presenting
 or correlating it. A shared timestamp or trace ID does not erase the different
@@ -1062,7 +1074,7 @@ active-active mutation for every domain.
 | Deployment | An operated collection of sites, trust relationships, component instances, routing policy and governance |
 | Trust domain | One administrative identity root and policy boundary; it need not equal a DNS domain or organization |
 | Site / failure domain | A host, cluster, zone, region, device or organization boundary whose correlated failure matters |
-| Component kind | Agora, Chronos, Moira, Daimon, Tellus, Vellum, Hermes, Aegis or another sovereign protocol family |
+| Component kind | Agora, Chronos, Moira, Daimon, Hestia, Tellus, Vellum, Hermes, Aegis, Oculus or another sovereign protocol family |
 | Logical authority | The named owner of a resource namespace and its mutation order, independent of the process currently serving it |
 | Instance | One concurrently running service member with a unique, observable identity |
 | Incarnation | One lifetime of an instance or authority home; restart/replacement changes it and fences stale sessions |
@@ -1111,10 +1123,12 @@ arbitrary tasks, grants, workflows or effects.
 | Chronos | Workstream homes, graph shards, scheduler/claim replicas, remote intake | One authority orders each task graph and lease epoch; global fairness or ordering is not inferred across workstreams | Attributable remote admission, cross-authority dependencies, resource brokerage, lease fencing, rehome of quiesced work and federated portfolio projection |
 | Moira | Saga homes, workflow shards, standby/consensus replicas, remote peer routers | One saga authority orders its decision/effect frontier; peer effects remain remote owner receipts | Durable remote-effect outbox/inbox, route pinning, reconciliation across partitions, coordinator recovery and controlled saga-home transfer |
 | Daimon | Provider gateways, regional worker pools, session homes, checkpoint replicas | One exact execution attempt has one admitted owner even if compute is replaceable; duplicate providers do not imply duplicate permission | Capability/attestation-aware placement, session reattachment, checkpoint portability, data/egress locality, result deduplication and worker-loss fencing |
+| Hestia | Host authorities, runtime placements, accelerator pools and lifecycle replicas | One placement authority orders each runtime incarnation; endpoint liveness is not readiness, qualification or execution authority | Resource/posture-aware placement, remote host protocol, drain/rehome, orphan reconciliation, artifact locality and duplicate-runtime fencing |
 | Tellus | Source-local indexes, read replicas, federated query brokers | Source identity, version, provenance and disclosure remain authoritative at their named owner; broker ranking is derived | Bounded fan-out, per-source freshness/completeness, query budget, result provenance, cache invalidation and no-result versus unreachable distinction |
 | Vellum | Workspace homes, read replicas, remote editors, selected collaborative replicas | First profile retains one authoritative workspace home; replicas cannot allocate revisions or persist edits | Disclosure-bound replication, source-revision gap repair, remote edit admission, explicit collaboration/merge profile and controlled workspace transfer |
 | Hermes | Stream homes, partitions, consumer groups, selected replicated logs | Ordering is per declared stream/partition unless a stronger profile proves otherwise; acknowledgement remains consumer progress | Producer routing, replicated retention, consumer rebalance, cross-site relay with loop prevention, schema/disclosure negotiation and gap/lag posture |
 | Aegis | Trust-domain authorities, policy decision replicas, attenuating delegation bridges | Authentication, trust and authorization stay distinct; a foreign identity or grant is not locally authoritative without an explicit relationship | Trust-bundle lifecycle, policy/claim mapping, epoch/revocation propagation, constrained delegation, cross-domain audit and fail-closed stale-policy behavior |
+| Oculus | Query brokers, source catalogues, saved analyses, dashboards and selected telemetry gateways | Every result preserves source/frontier, time, sampling, gaps, disclosure and backend-specific limits; correlation is not domain causation | Federated query planning, partial-result settlement, cursor handoff, locality/cost policy, schema negotiation and source-health projection |
 | Operations / Configuration | Site operators, fleet views, deployment controllers | Each controller owns only declared instances/sites; remote reachability does not imply lifecycle authority | Inventory, placement, rollout, drain/failover, certificate/route rotation, dependency-aware maintenance, disaster recovery and topology change receipts |
 
 Agora and Vellum already provide strong repository precedents: their federation
@@ -1212,10 +1226,12 @@ Pantheon's present profile remains local attach/host.
 | Chronos | What work is admitted, eligible, leased, paused, cancelled, or terminal? | Tickets, dependency graphs, scheduling, capacity, attempt attribution | Agent executor, chat system, workflow coordinator, or document owner |
 | Moira | What durable multi-step workflow decision and effect frontier is known? | Sagas, compensation, reconciliation, deliberation, accountable selection | Distributed transaction manager, scheduler, model runtime, or owner of peer effects |
 | Daimon | What happened in an already-authorized, budgeted agent/model/tool execution? | Sessions, prompts, permissions, progress, cancellation, reattachment, evidence | Work selector, retry scheduler, room, editor, or authorization policy |
+| Hestia | Where is an admitted local-inference runtime placed, and what lifecycle/resource/posture evidence exists? | Explicit start, readiness, drain, crash/orphan reconciliation and later distributed placement | Model acquisition, provider qualification, inference execution, task scheduling, or authorization |
 | Tellus (Dendrite-backed) | Which authored method, surface, fold, source, and freshness evidence is available? | Provenance inspection, method discovery, context validation, stale-grounding warnings | Workflow runtime, semantic proof by routing, or mutation authority |
 | Vellum | What source/document state, history, edit, and persistence evidence exists? | Reading, editing, save, durable operation recovery, semantic proposals | Git authority, task completion, workflow state, or agent transcript |
 | Hermes | What event is retained on a stream and where is a consumer cursor? | Durable delivery, replay, disclosure, acknowledgement, retention operations | Conversation history, workflow completion, telemetry, or downstream-effect proof |
 | Aegis | Does explicit current authority permit this action on this resource? | Issue, attenuate, authorize, inspect, revoke, audit redacted decisions | Authentication provider, credential vault, UI confirmation, or durable workflow |
+| Oculus | What authorized events, logs, metrics, traces, profiles and alerts are observable across explicit sources and gaps? | Catalogue, bounded query/follow, pivot, dashboards, SLO inspection and telemetry-pipeline health | Domain history, global causal truth, incident settlement, generic storage engine, or authority |
 | Operations | Which Pantheon-owned local peers are live, draining, fenced, or replaced? | Status, supervised startup, reverse drain, exact restart, residue handling | Peer semantic recovery or service-manager/fleet control without a selected profile |
 | Configuration | What exact profile, topology, selector, and launch-only capability set is active? | Preflight, diff, capability discovery, safe whole-process replacement | Secret store, live semantic mutation, or implicit authority grant |
 | Keystone | Which reusable bounded mechanism and law is shared by multiple owners? | Codecs, framing, replay, effect knowledge, storage gates, safe observation | Universal protocol, generic domain model, or application component |
@@ -1668,7 +1684,7 @@ following universal requirements:
 | Tool/resource manifest | Required | Stable capability IDs, risk class, input/output schema, sandbox/egress evidence, current authority |
 | Artifact/output handoff | Required via Moira | Output/proposals are evidence; only workflow-selected adapters may create peer effects |
 | Provider portability/conformance | Required | ACP/MCP/provider capability negotiation, TCK evidence, known deviations, version pin |
-| Provider setup and local-hosting experience | Required | Configure through the owner-backed Pantheon surface; distinguish attached endpoints from explicitly hosted processes; discover only selected local endpoints; review executable/model provenance and resource/sandbox/egress budgets; preflight and confirm start/restart/drain; show lifecycle plus model/capability/health evidence; qualify independently through Daimon; select for a session without exposing credentials or provider commands; never imply download, update, execution authority or workflow completion from hosting |
+| Provider setup and local-hosting experience | Required via Hestia | Configure through owner-backed Pantheon surfaces; distinguish Daimon-attached provider endpoints from Hestia-owned runtime placements; discover only selected endpoints; review model provenance and resource/sandbox/egress posture; preflight and confirm Hestia start/restart/drain; show lifecycle separately from Daimon model/capability/qualification evidence; select for a session without exposing credentials or provider commands; never imply download, update, execution authority or workflow completion from hosting |
 | Remote/background execution | Later | Requires identity, sandbox, network/secret, retention, audit, and incident-response profiles |
 
 #### Precedents and practices
@@ -1692,9 +1708,52 @@ following universal requirements:
   save a document, or declare task/workflow completion.
 - Provider prose is never a tool receipt or factual proof.
 - A permission UI approval is never sufficient without the owner/Aegis decision.
-- Pantheon may supervise an explicitly selected local inference process, but it
-  is not the model runtime, provider qualifier or execution owner; model
-  acquisition remains a separate human-gated network/disk/license decision.
+- Hestia supervises explicitly admitted local-inference runtime placements.
+  Pantheon is its presentation/composition shell; Daimon remains provider
+  qualifier and execution owner. Model acquisition remains a separate
+  human-gated network/disk/license decision.
+
+### Hestia — inference hosting and placement
+
+#### Individual use cases
+
+- Admit one exact host-owned runtime profile and model-artifact identity without
+  acquiring, qualifying or invoking the model.
+- Start a new runtime incarnation, observe starting/loading/ready/degraded/
+  draining/stopped/crashed/orphaned/uncertain, and retain exact lifecycle evidence.
+- Drain or restart only the selected incarnation; fence duplicate/stale endpoints
+  and reconcile process loss without assuming that liveness means readiness.
+- Present placement, host/site, executable/profile digest, endpoint, artifact,
+  quantization/context facts, resource expectations, enforced versus inherited
+  sandbox/egress controls and lifecycle budgets without exposing secrets.
+- Later, choose among authorized host/accelerator pools and rehome only through a
+  guarded workflow that preserves authoritative placement and runtime identity.
+
+#### Required first profile
+
+- A closed versioned public protocol and ordinary client separate observation,
+  start, drain, restart and reconciliation; each mutation binds host authority,
+  runtime identity/incarnation, expected revision and idempotency identity.
+- A private local-process adapter owns executable paths, arguments, environment
+  references, readiness probe and OS process handle. Those deployment details do
+  not become the distributed protocol or Pantheon configuration semantics.
+- The owner refuses an endpoint already in use, missing/mismatched artifact or
+  executable, exceeded resource/isolation preflight, unsupported posture, stale
+  revision/incarnation and an uncertain prior lifecycle effect.
+- Model acquisition/update/delete is a separate human-gated capability with
+  network, storage, provenance, license/trust and rollback evidence; it is not an
+  implicit consequence of start or provider selection.
+- `hestia-tui`, Pantheon and headless clients eventually reuse the same public
+  client. Detaching presentation never drains a runtime; explicit operator or
+  workflow authority is required for lifecycle mutation.
+
+#### Non-goals
+
+- Hestia does not implement inference APIs, qualify provider behavior, select
+  tasks/models, manage agent sessions, schedule retries, grant authority, record
+  workflow completion or treat process/port health as successful execution.
+- Hestia is not a generic service manager. Its vocabulary and evidence remain
+  specific to admitted inference-runtime placement and lifecycle.
 
 ### Tellus — grounded methods, context, and provenance
 

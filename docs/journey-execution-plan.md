@@ -353,33 +353,37 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
 ### 2026-11-18 — hosted local-inference lifecycle
 
 - Local-provider onboarding now distinguishes an attached endpoint from a
-  Pantheon-hosted inference process. Attachment observes an independently owned
-  runtime; hosting makes Pantheon accountable only for the selected process
-  lifecycle. Daimon continues to own provider configuration, qualification,
-  invocation, retained model evidence and recovery. Neither endpoint liveness
-  nor process ownership grants execution, tool, workflow or rollout authority.
+  Hestia-owned inference runtime. Attachment observes an independently owned
+  endpoint; Hestia is a sovereign peer accountable for admitted placement and
+  process lifecycle, including the future distributed target. Pantheon composes
+  Hestia's public client rather than owning model-process handles. Daimon
+  continues to own provider configuration, qualification, invocation, retained
+  model evidence and recovery. Neither endpoint liveness nor Hestia ownership
+  grants execution, tool, workflow or rollout authority.
 - The first host profile is a bounded managed-process contract, not a model
-  engine embedded in Pantheon. It binds an exact executable identity, redacted
+  engine embedded in Pantheon or Hestia. Hestia binds a public opaque hosting
+  profile and a private deployment plan containing exact executable identity, redacted
   arguments, credential-name references, private endpoint, model/artifact
   identity and digest where available, quantization/context facts, memory/
   accelerator/thread/concurrency budgets, sandbox and egress posture, readiness
   probe, graceful drain and orphan-recovery policy. LM Studio may remain an
   attached GUI-owned endpoint; llama.cpp, Ollama, MLX or another explicitly
   selected executable can implement the same qualified host profile without
-  becoming Pantheon semantics.
+  becoming Pantheon or Daimon semantics.
 - Model acquisition is a separate human-gated operation because it can spend
   network, disk and license/trust budget. Hosting never implicitly downloads,
   updates, deletes, changes a model, kills an unknown process, reuses an
   unverified stale endpoint or retries an uncertain start. Configuration change
   requires a reviewed restart and fresh Daimon qualification before selection.
-- Configuration must present attach versus host, runtime/model provenance,
+- Configuration must present Daimon attach versus Hestia host, runtime/model provenance,
   effective resource budgets and preflight results. Operations must present
   starting, loading, ready, degraded, draining, stopped, crashed, orphaned and
-  uncertain states with exact owner, correlation, elapsed time and next safe
-  action. Daimon presents only the independently qualified provider/session
-  view. Moira can coordinate staged start/qualify/select/drain workflows;
-  Chronos owns durable work; Hermes/Moira observations seed events, logs,
-  metrics and traces without model text or credentials.
+  uncertain states with exact Hestia owner, host/site, runtime incarnation,
+  correlation, elapsed time and next safe action. Daimon presents only the
+  independently qualified provider/session view. Moira can coordinate staged
+  start/qualify/select/drain workflows; Chronos owns durable work; Oculus
+  queries authorized telemetry sources while Hermes retains only domain and
+  integration events. No default signal contains model text or credentials.
 - Acceptance includes TUI/headless parity and real-process gates for clean
   start/drain, restart after configuration, path-budget preflight, stale socket,
   port conflict, missing executable/model, load failure, resource refusal,
@@ -397,6 +401,34 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   live interactive owner. The TUI creation path composed, reviewed and applied
   the item exactly. Attach readiness therefore remains a separate parity and
   diagnostics defect; it is not folded into hosted-inference lifecycle semantics.
+- The operator then selected the sovereign-peer boundary. An abandoned internal
+  Pantheon launch-profile draft was removed before commit. The same live owner
+  admitted priority-9 `hestia-sovereign-local-inference-host` at revision 20,
+  priority-8 `oculus-observability-query-peer` at revision 21, and priority-8
+  `tellus-operational-presentation-breadth` at revision 22. Hestia receives the
+  placement/lifecycle protocol and private process adapter; Oculus receives the
+  source/query/follow/pivot contract over external telemetry backends; Tellus
+  must become an operational provenance/query surface with headless parity.
+- The Tellus breadth audit found that the existing tab and standalone client
+  honestly expose only `tellus.observe.v1`: load identity, state, freshness and
+  digest. Rune/method discovery, SME roster, provenance chains, bounded query,
+  source explanation and deep links remain absent owner contracts, not merely
+  Pantheon rendering work. The obvious palette phrase `open tellus` also found
+  no action even though `navigate.tellus` exists; the footer did not orient the
+  operator to Tellus's `Ctrl-6`/`Alt-6` route.
+- Vellum dogfood used a fresh owner-backed session to update `README.md`: one
+  exact match at revision 0, owner generation 2 atomic publication, then guarded
+  save back to Clean. A stale session separately turned tmux `F6` into literal
+  `[17~` bytes and service mode refused undo; the bytes were removed without
+  saving over the externally changed journey plan. The live Chronos owner
+  admitted priority-6 `pantheon-palette-navigation-aliases` at revision 23 and
+  priority-7 `vellum-function-key-escape-and-undo` at revision 24.
+- The bounded palette defect was then repaired centrally: command kinds publish
+  natural search verbs while execution still returns the existing command ID to
+  the behavior facade. A focused test proves `open tellus` resolves only
+  `navigate.tellus`; a rebuilt tmux-driven TUI run selected that one action and
+  opened the Tellus landing with the ordinary success notice. No second
+  navigation implementation or surface-specific special case was added.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 

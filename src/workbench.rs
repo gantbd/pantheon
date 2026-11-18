@@ -48,6 +48,16 @@ impl CommandKind {
             Self::Lifecycle => theme::VIOLET,
         }
     }
+
+    const fn search_aliases(self) -> &'static str {
+        match self {
+            Self::Navigate => "open go navigate switch show",
+            Self::Observe => "inspect refresh observe view",
+            Self::Work => "work create edit",
+            Self::Guarded => "review confirm guarded",
+            Self::Lifecycle => "start stop restart drain lifecycle",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -346,12 +356,13 @@ fn command_matches(command: &CommandSpec, query: &str) -> bool {
         return true;
     }
     let candidate = format!(
-        "{} {} {} {} {}",
+        "{} {} {} {} {} {}",
         command.id,
         command.title,
         command.description,
         command.group,
-        command.kind.label()
+        command.kind.label(),
+        command.kind.search_aliases()
     )
     .to_ascii_lowercase();
     query
@@ -1161,6 +1172,26 @@ mod tests {
         assert_eq!(palette.visible()[0].id, "vellum.save");
         palette.insert(&"x".repeat(100));
         assert!(palette.query().len() <= MAX_COMMAND_QUERY_BYTES);
+    }
+
+    #[test]
+    fn palette_natural_verbs_resolve_through_the_same_behavior_command() {
+        let mut commands = commands();
+        commands.push(CommandSpec::available(
+            "navigate.tellus",
+            "Go to Tellus",
+            "Inspect grounding provenance.",
+            "Tellus",
+            Some("Ctrl-6"),
+            CommandKind::Navigate,
+        ));
+        let mut palette = CommandPalette::new(commands);
+        palette.insert("open tellus");
+        assert_eq!(palette.visible().len(), 1);
+        assert_eq!(
+            palette.key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
+            PaletteOutcome::Execute("navigate.tellus")
+        );
     }
 
     #[test]

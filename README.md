@@ -17,7 +17,9 @@ The active journey delivery ledger is
 [`docs/journey-execution-plan.md`](docs/journey-execution-plan.md); architectural
 decisions live under [`docs/decisions/`](docs/decisions/), and initial
 declarative work-mode definitions live under
-[`docs/work-modes/`](docs/work-modes/).
+[`docs/work-modes/`](docs/work-modes/). Hestia owns inference-runtime placement,
+and Oculus owns bounded observability inquiry; Pantheon composition for both
+remains planned rather than claimed.
 The interactive shell now
 provides a searchable `Ctrl-P` Emacs-style minibuffer, generated `F1` help, and a
 bounded `Ctrl-G` activity/receipt timeline. `[` and `]` move across the adaptive
