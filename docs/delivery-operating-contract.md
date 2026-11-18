@@ -1,3 +1,4 @@
+<!-- Active delivery edits use hosted Vellum when practical; bypasses are disclosed per turn. -->
 <!-- Maintained through Pantheon Vellum dogfood; see the per-turn reconciliation contract. -->
 
 # Delivery operating contract
