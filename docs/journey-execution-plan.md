@@ -71,6 +71,31 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   topmost, making the task form invisible and input inert. Chronos-TUI now
   dismisses presentation-only overlays before entering guarded task and cancel
   workflows. Unit, strict Clippy and hosted tmux restart gates qualify the fix.
+- A later Vellum/Chronos dogfood pass reproduced two user-facing inconsistencies:
+  the compact header advertised `Ctrl-2` for Vellum but Overview did not route
+  it while the behavior-facade command palette succeeded, and an automated
+  overlay-close/save burst returned to an already-Clean view without proving the
+  newer document generation reached disk. A separated retry then refused the
+  now-larger plan as `SnapshotLimit` with no partial file change. Chronos revision
+  17 retains direct-chord parity; the existing Vellum workspace/large-source and
+  save-settlement items retain the bounded projection and generation-specific
+  feedback work.
+- Chronos commit `ca12fe2` now exposes one bounded, non-cloneable in-process
+  worker handle from its writable atomic owner. Ordinary coordination admission
+  and native claim/complete share one serial durable envelope; no grant, lease,
+  request, or result is serialized. Full owner tests caught and drove fixes for
+  a duplicated poll descriptor and clean worker-channel EOF. Restart after a
+  committed claim projects Uncertain and refuses a second claim. Moira still
+  must own the adapter and Pantheon still needs a guarded composition action.
+- The live LM Studio gate now accepts a bounded review-context file and used the
+  real Pantheon task-to-Daimon path for an independent Qwen critique. Qwen
+  correctly prioritized reply-loss, restart, drop and persistence-fence tests,
+  but incorrectly treated nonblocking `try_recv` as blocking, reversed the
+  send-before-wake ordering, conflated Chronos state mutation with an external
+  effect and proposed two-phase reply delivery. Categorization: useful grounded
+  review with distributed-systems training inertia; harness attribution and
+  retained evidence were correct, and the accountable integrator accepted only
+  the source-grounded test recommendations.
 
 ### 2026-11-17 — local-provider delegation
 

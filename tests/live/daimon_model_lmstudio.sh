@@ -29,6 +29,25 @@ chmod 700 "$scratch/workstream"
 
 model_name=${PANTHEON_LMSTUDIO_MODEL:-qwen/qwen3-coder-next}
 provider_address=${PANTHEON_LMSTUDIO_ADDRESS:-127.0.0.1:1234}
+review_context='Act as an independent architecture reviewer. Chronos public coordination supports submit and cancel, while claim and complete require a trusted in-process worker profile with native grants and leases. Pantheon work may be completed externally. Propose the smallest owner-safe contract for admitting evidence of external completion. Preserve grant, lease, revision and evidence semantics; do not expose worker authority as a bearer protocol; require named-human review. Separate facts, recommendation, risks and rejected shortcuts. Do not invent identifiers or claim APIs already exist.'
+if [ -n "${PANTHEON_LMSTUDIO_REVIEW_CONTEXT_FILE:-}" ]; then
+  review_context=$(python3 - "$PANTHEON_LMSTUDIO_REVIEW_CONTEXT_FILE" <<'PYTHON'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+payload = path.read_bytes()
+if not payload or len(payload) > 65536:
+    raise SystemExit("review context must contain 1..65536 bytes")
+print(payload.decode("utf-8"), end="")
+PYTHON
+  )
+fi
+review_context_json=$(python3 - "$review_context" <<'PYTHON'
+import json, sys
+print(json.dumps(sys.argv[1]))
+PYTHON
+)
 python3 - "$provider_address" "$model_name" <<'PYTHON'
 import json, sys, urllib.request
 address, selected = sys.argv[1:]
@@ -118,7 +137,7 @@ printf '%s\n' \
   '  "context": [{' \
   '    "reference": "17171717171717171717171717171717",' \
   '    "kind": "chronos_work",' \
-  '    "text": "Act as an independent architecture reviewer. Chronos public coordination supports submit and cancel, while claim and complete require a trusted in-process worker profile with native grants and leases. Pantheon work may be completed externally. Propose the smallest owner-safe contract for admitting evidence of external completion. Preserve grant, lease, revision and evidence semantics; do not expose worker authority as a bearer protocol; require named-human review. Separate facts, recommendation, risks and rejected shortcuts. Do not invent identifiers or claim APIs already exist."' \
+  "    \"text\": $review_context_json" \
   '  }],' \
   '  "messages": [{"role": "system", "content": "Be concise, explicit about uncertainty, and treat the supplied architecture statement as the complete evidence packet."}],' \
   '  "io_timeout_ms": 300000,' \
