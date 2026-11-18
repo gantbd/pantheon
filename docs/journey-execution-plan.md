@@ -35,6 +35,26 @@ does not close an item; input profiles share one behavior facade.
 This ledger records experience gathered while using the component ensemble to
 deliver Pantheon. It is product input, not a substitute for journey acceptance.
 
+### 2026-11-18 — owner-work admission and contribution delivery
+
+- Live Pantheon/Chronos dogfood admitted `chronos-external-work-admission-contract`
+  and `daimon-contribution-delivery-contract` at owner revision 15.
+- Chronos public coordination can submit and cancel work, while claim and
+  completion remain a trusted in-process worker profile with native grants and
+  leases. Delivered external work therefore cannot be honestly adopted after
+  the fact. The next owner slice must preserve grant, lease, revision and
+  evidence semantics without turning worker authority into a bearer protocol.
+- Daimon task invocation retains task, execution, provider, context, usage,
+  disposition and output-digest evidence, but Pantheon cannot yet present the
+  actual contribution for accountable review. Agora delivery and Chronos
+  comment/status linkage remain explicit owner-contract gaps; raw provider HTTP
+  is not an acceptable hidden collaboration path.
+- The same run exposed a presentation-state leak: invoking Create a Chronos task
+  from the Execution roster dispatched the behavior but left the roster
+  topmost, making the task form invisible and input inert. Chronos-TUI now
+  dismisses presentation-only overlays before entering guarded task and cancel
+  workflows. Unit, strict Clippy and hosted tmux restart gates qualify the fix.
+
 ### 2026-11-17 — local-provider delegation
 
 - Gemma 3 27B through Ollama completed the grounded chatbot journey across a

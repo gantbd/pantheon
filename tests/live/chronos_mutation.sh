@@ -178,6 +178,16 @@ try:
     expect("chronos.task.cancel-batch")
     keys("C-g")
 
+    keys("5", "l")
+    expect("Daimon roster is not configured")
+    palette("create task", "Create a Chronos task")
+    expect("Task batch")
+    text("overlay-routed-task")
+    keys("Enter")
+    expect("Review 1 exact task(s)")
+    keys("Enter")
+    expect("Applied.")
+
     keys("C-q")
     deadline = time.monotonic() + 10
     while tmux("has-session", "-t", "chronos", check=False).returncode == 0:
@@ -223,10 +233,13 @@ try:
     if task["value"]["snapshot"]["phase"] != "cancelled":
         raise AssertionError("reopened task was not cancelled")
     tertiary = readback(1, {"operation": "snapshot", "task": "workbench-tertiary"})
+    overlay_routed = readback(1, {"operation": "snapshot", "task": "overlay-routed-task"})
     if secondary["value"]["snapshot"]["phase"] != "cancelled":
         raise AssertionError("reopened second task was not cancelled")
     if tertiary["value"]["snapshot"]["phase"] != "cancelled":
         raise AssertionError("reopened third task was not cancelled")
+    if overlay_routed["value"]["snapshot"]["phase"] not in ("blocked", "ready"):
+        raise AssertionError("overlay-routed task was not durably submitted")
     if not scheduling["controls"]["paused"]:
         raise AssertionError("reopened scheduling was not paused")
     if scheduling["concurrency"]["capacity"] != 3:
