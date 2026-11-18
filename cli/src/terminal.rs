@@ -14,6 +14,7 @@ use daimon_protocol::{
     ToolCapabilityIdV1,
     agent::{AgentEventV1, AgentOutcomeV1, AgentSessionBudgetV1, AgentSessionPhaseV1},
 };
+use hestia_protocol::{OperationIdV1 as HestiaOperationIdV1, RuntimeIdV1 as HestiaRuntimeIdV1};
 use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
 use serde::Deserialize;
 use std::collections::BTreeSet;
@@ -395,6 +396,7 @@ impl BehaviorFacade {
             Surface::Agora => "navigate.agora",
             Surface::Moira => "navigate.moira",
             Surface::Daimon => "navigate.daimon",
+            Surface::Hestia => "navigate.hestia",
             Surface::Tellus => "navigate.tellus",
             Surface::Aegis => "navigate.aegis",
             Surface::Hermes => "navigate.hermes",
@@ -2108,6 +2110,7 @@ fn workbench_commands(
     daimon_model: bool,
     daimon_control: bool,
     daimon_execution: bool,
+    hestia: bool,
     hermes: bool,
     hermes_operator: bool,
     hermes_disclosure: bool,
@@ -2186,6 +2189,14 @@ fn workbench_commands(
                 Some("Ctrl-5"),
                 CommandKind::Navigate,
             ),
+            Surface::Hestia => CommandSpec::available(
+                "navigate.hestia",
+                "Go to Hestia",
+                "Inspect and operate explicitly bound local model runtimes.",
+                "Hestia",
+                Some("Alt-I"),
+                CommandKind::Navigate,
+            ),
             Surface::Tellus => CommandSpec::available(
                 "navigate.tellus",
                 "Go to Tellus",
@@ -2228,7 +2239,8 @@ fn workbench_commands(
             ),
         })
         .collect::<Vec<_>>();
-    let any_peer = chronos || vellum || agora || moira || daimon || hermes || aegis || tellus;
+    let any_peer =
+        chronos || vellum || agora || moira || daimon || hestia || hermes || aegis || tellus;
     let refresh = CommandSpec::available(
         "view.refresh",
         "Refresh current view",
@@ -2255,6 +2267,62 @@ fn workbench_commands(
     } else {
         refresh_all.unavailable("No peer is configured")
     });
+    for command in [
+        CommandSpec::available(
+            "hestia.runtime.refresh",
+            "Refresh selected Hestia runtime",
+            "Ask Hestia for the exact current observation of the selected runtime.",
+            "Hestia",
+            Some("r"),
+            CommandKind::Observe,
+        ),
+        CommandSpec::available(
+            "hestia.runtime.start",
+            "Propose starting Hestia runtime",
+            "Review a restart of an observed stopped runtime using its retained owner intent.",
+            "Hestia",
+            Some("s"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.runtime.drain",
+            "Propose draining Hestia runtime",
+            "Review a drain against the exact observed revision and incarnation.",
+            "Hestia",
+            Some("d"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.runtime.arm",
+            "Arm reviewed Hestia lifecycle change",
+            "Arm or disarm the exact selected lifecycle proposal without sending it.",
+            "Hestia",
+            Some("c"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.runtime.confirm",
+            "Confirm Hestia lifecycle change",
+            "Send one armed exact lifecycle operation to Hestia and await settlement.",
+            "Hestia",
+            Some("Enter"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.runtime.cancel",
+            "Cancel Hestia lifecycle review",
+            "Discard the unsent Hestia proposal.",
+            "Hestia",
+            Some("Esc"),
+            CommandKind::Guarded,
+        ),
+    ] {
+        commands.push(if hestia {
+            command
+        } else {
+            command.unavailable("Hestia is not configured")
+        });
+    }
     let focus = CommandSpec::available(
         "workspace.focus.toggle",
         "Switch workspace focus",
@@ -3110,6 +3178,76 @@ fn workbench_commands(
     commands
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum HestiaAction {
+    Refresh,
+    Previous,
+    Next,
+    ProposeStart,
+    ProposeDrain,
+    ToggleArm,
+    Confirm,
+    Cancel,
+}
+
+impl HestiaAction {
+    fn from_command(action: &str) -> Option<Self> {
+        match action {
+            "hestia.runtime.refresh" => Some(Self::Refresh),
+            "hestia.runtime.start" => Some(Self::ProposeStart),
+            "hestia.runtime.drain" => Some(Self::ProposeDrain),
+            "hestia.runtime.arm" => Some(Self::ToggleArm),
+            "hestia.runtime.confirm" => Some(Self::Confirm),
+            "hestia.runtime.cancel" => Some(Self::Cancel),
+            _ => None,
+        }
+    }
+}
+
+fn apply_hestia_action(
+    component: &mut hestia_tui::Component,
+    action: HestiaAction,
+) -> (ActivityLevel, String) {
+    let identity = || fresh_identity().map(HestiaOperationIdV1);
+    match action {
+        HestiaAction::Refresh => component.refresh(),
+        HestiaAction::Previous => {
+            component.previous();
+            component.refresh();
+        }
+        HestiaAction::Next => {
+            component.next();
+            component.refresh();
+        }
+        HestiaAction::ProposeStart => match identity() {
+            Ok(operation) => component.propose_start(operation),
+            Err(reason) => return (ActivityLevel::Warning, format!("REFUSED · {reason}")),
+        },
+        HestiaAction::ProposeDrain => match identity() {
+            Ok(operation) => component.propose_drain(operation),
+            Err(reason) => return (ActivityLevel::Warning, format!("REFUSED · {reason}")),
+        },
+        HestiaAction::ToggleArm => component.toggle_arm(),
+        HestiaAction::Confirm => component.confirm(),
+        HestiaAction::Cancel => component.cancel(),
+    }
+    let notice = component.notice().to_owned();
+    let level = if notice.starts_with("APPLIED") || notice.starts_with("IDENTITY") {
+        ActivityLevel::Success
+    } else if notice.starts_with("OUTCOME UNKNOWN") {
+        ActivityLevel::Uncertain
+    } else if notice.starts_with("REFUSED")
+        || notice.starts_with("NOT SENT")
+        || notice.starts_with("UNAVAILABLE")
+        || notice.starts_with("MISSING")
+    {
+        ActivityLevel::Warning
+    } else {
+        ActivityLevel::Info
+    };
+    (level, notice)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn execute_workbench_action<T: ServicePort>(
     action: &str,
@@ -3142,6 +3280,7 @@ fn execute_workbench_action<T: ServicePort>(
     daimon_prompt_composer: &mut Option<daimon_tui::AgentPromptComposer>,
     daimon_permission_composer: &mut Option<daimon_tui::AgentPermissionComposer>,
     daimon_control: &mut Option<daimon_tui::AgentControlBatchComponent>,
+    hestia: &mut Option<hestia_tui::Component>,
     hermes: &mut Option<hermes_tui::Component>,
     hermes_operator_socket: Option<&Path>,
     hermes_compaction: &mut Option<hermes_tui::CompactionComponent>,
@@ -3165,6 +3304,7 @@ fn execute_workbench_action<T: ServicePort>(
         "navigate.agora" => Some(Surface::Agora),
         "navigate.moira" => Some(Surface::Moira),
         "navigate.daimon" => Some(Surface::Daimon),
+        "navigate.hestia" => Some(Surface::Hestia),
         "navigate.tellus" => Some(Surface::Tellus),
         "navigate.aegis" => Some(Surface::Aegis),
         "navigate.hermes" => Some(Surface::Hermes),
@@ -3179,6 +3319,14 @@ fn execute_workbench_action<T: ServicePort>(
             "pantheon",
             format!("Opened {}", destination.label()),
         );
+    }
+    if let Some(hestia_action) = HestiaAction::from_command(action) {
+        let Some(component) = hestia.as_mut() else {
+            return (ActivityLevel::Warning, "hestia", "Not configured".into());
+        };
+        let (level, message) = apply_hestia_action(component, hestia_action);
+        let _ = shell.activate(Surface::Hestia);
+        return (level, "hestia", message);
     }
     if agent_task_collaboration_lens(action).is_some() {
         return invoke_chronos_workbench(shell, focus, chronos, WorkbenchIntent::NewTask);
@@ -4089,6 +4237,7 @@ fn execute_workbench_action<T: ServicePort>(
             moira_participation,
             daimon,
             daimon_agent,
+            hestia,
             hermes,
             aegis,
             tellus,
@@ -4103,6 +4252,7 @@ fn execute_workbench_action<T: ServicePort>(
             moira_participation,
             daimon,
             daimon_agent,
+            hestia,
             hermes,
             aegis,
             tellus,
@@ -4275,6 +4425,7 @@ fn refresh_current<T: ServicePort>(
     moira_participation: &mut Option<moira_tui::ParticipationComponent>,
     daimon: &mut Option<daimon_tui::Component>,
     daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
+    hestia: &mut Option<hestia_tui::Component>,
     hermes: &mut Option<hermes_tui::Component>,
     aegis: &mut Option<aegis_tui::Component>,
     tellus: &mut Option<tellus::Component>,
@@ -4305,6 +4456,9 @@ fn refresh_current<T: ServicePort>(
             if let Some(component) = daimon_agent {
                 component.update(daimon_tui::AgentSetInput::RefreshAll, true);
             }
+            if let Some(component) = hestia {
+                component.refresh();
+            }
             if let Some(component) = hermes {
                 component.update(hermes_tui::Input::Refresh, true);
             }
@@ -4330,6 +4484,7 @@ fn refresh_current<T: ServicePort>(
             moira_participation,
             daimon,
             daimon_agent,
+            hestia,
             hermes,
             aegis,
             tellus,
@@ -4393,6 +4548,17 @@ fn refresh_current<T: ServicePort>(
                 refresh_peer(daimon.as_mut(), daimon_tui::Input::Refresh, "daimon")
             }
         }
+        Surface::Hestia => match hestia {
+            Some(component) => {
+                component.refresh();
+                (
+                    ActivityLevel::Info,
+                    "hestia",
+                    "Runtime refresh queued".into(),
+                )
+            }
+            None => (ActivityLevel::Warning, "hestia", "Not configured".into()),
+        },
         Surface::Hermes => refresh_peer(hermes.as_mut(), hermes_tui::Input::Refresh, "hermes"),
         Surface::Aegis => refresh_peer(aegis.as_mut(), aegis_tui::Input::Refresh, "aegis"),
         Surface::Tellus => refresh_peer(tellus.as_mut(), tellus::Input::Refresh, "tellus"),
@@ -7460,6 +7626,27 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         .as_ref()
         .and_then(|profile| profile.agora.as_ref())
         .map(|profile| profile.participant.clone());
+    let mut hestia = match current_profile
+        .as_ref()
+        .and_then(|profile| profile.hestia.as_ref())
+    {
+        Some(profile) => {
+            let bindings = profile
+                .runtime_bindings
+                .iter()
+                .map(|binding| {
+                    Ok(hestia_tui::RuntimeBinding {
+                        label: format!("provider {}", &binding.provider_id[..8]),
+                        runtime: HestiaRuntimeIdV1(parse_hex_identity(&binding.runtime_id)?),
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            let mut component = hestia_tui::Component::new(profile.socket.clone(), bindings)?;
+            component.refresh();
+            Some(component)
+        }
+        None => None,
+    };
     let commands = workbench_commands(
         &shell,
         chronos.is_some(),
@@ -7484,6 +7671,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         daimon_agent.is_some()
             && daimon_agent_control_socket.is_some()
             && daimon_execution_policy.is_some(),
+        hestia.is_some(),
         hermes.is_some(),
         hermes_operator_socket.is_some(),
         hermes_disclosure_socket.is_some(),
@@ -7557,6 +7745,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         ("moira", "sagas", moira.is_some()),
         ("daimon", "presence", daimon.is_some()),
         ("daimon", "sessions/events", daimon_agent.is_some()),
+        ("hestia", "runtime/lifecycle", hestia.is_some()),
         ("hermes", "ledger/cursors", hermes.is_some()),
         ("aegis", "authority", aegis.is_some()),
         ("tellus", "provenance", tellus.is_some()),
@@ -7574,6 +7763,18 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         let _input_capture = InputCapture::enable()?;
         loop {
+            if let Some((success, elapsed)) = hestia.as_mut().and_then(hestia_tui::Component::poll)
+            {
+                let component = hestia.as_ref().expect("settled Hestia component exists");
+                let level = if success {
+                    ActivityLevel::Success
+                } else {
+                    ActivityLevel::Warning
+                };
+                notice = component.notice().into();
+                instrumentation.record("hestia.lifecycle.result", "hestia", level, elapsed);
+                activity.push(level, "hestia", notice.clone());
+            }
             if let Some((level, elapsed)) = task_conversation_workflow
                 .as_mut()
                 .and_then(TaskConversationWorkflow::settle)
@@ -9091,6 +9292,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some())
                 }
+                "hestia" => hestia.as_ref().is_some_and(hestia_tui::Component::busy),
                 "hermes" => {
                     hermes
                         .as_ref()
@@ -9157,6 +9359,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         .as_ref()
                         .is_some_and(|workflow| workflow.phase == DaimonSessionOpenPhase::Fenced)
                 }
+                "hestia" => hestia
+                    .as_ref()
+                    .is_some_and(hestia_tui::Component::uncertain),
                 "hermes" => {
                     hermes_compaction.as_ref().is_some_and(|control| {
                         control.disposition() == hermes_tui::CompactionDisposition::OutcomeUnknown
@@ -9208,6 +9413,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         daimon_permission: daimon_permission_composer.as_ref(),
                         daimon_prompt: daimon_prompt_composer.as_ref(),
                         daimon_control: daimon_control.as_ref(),
+                        hestia: hestia.as_ref(),
                         hermes: hermes.as_ref(),
                         hermes_compaction: hermes_compaction.as_ref(),
                         hermes_disclosure: hermes_disclosure.as_ref(),
@@ -9808,6 +10014,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut daimon_prompt_composer,
                         &mut daimon_permission_composer,
                         &mut daimon_control,
+                        &mut hestia,
                         &mut hermes,
                         hermes_operator_socket.as_deref(),
                         &mut hermes_compaction,
@@ -11425,6 +11632,52 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         notice = Surface::Aegis
                             .gap()
                             .unwrap_or("Aegis presentation is unavailable")
+                            .into();
+                    }
+                }
+                Event::Key(key)
+                    if shell.active() == Surface::Hestia
+                        && key_behavior != Some(KeyBehavior::SafeExit) =>
+                {
+                    if key.kind != KeyEventKind::Press {
+                        continue;
+                    }
+                    if let Some(component) = &mut hestia {
+                        let action = match (key.code, key.modifiers) {
+                            (KeyCode::Up, KeyModifiers::NONE) => Some(HestiaAction::Previous),
+                            (KeyCode::Down, KeyModifiers::NONE) => Some(HestiaAction::Next),
+                            (KeyCode::Char('r'), KeyModifiers::NONE) => Some(HestiaAction::Refresh),
+                            (KeyCode::Char('s'), KeyModifiers::NONE) => {
+                                Some(HestiaAction::ProposeStart)
+                            }
+                            (KeyCode::Char('d'), KeyModifiers::NONE) => {
+                                Some(HestiaAction::ProposeDrain)
+                            }
+                            (KeyCode::Char('c'), KeyModifiers::NONE) => {
+                                Some(HestiaAction::ToggleArm)
+                            }
+                            (KeyCode::Enter, KeyModifiers::NONE) => Some(HestiaAction::Confirm),
+                            (KeyCode::Esc, KeyModifiers::NONE) => Some(HestiaAction::Cancel),
+                            _ => None,
+                        };
+                        if let Some(action) = action {
+                            let started = Instant::now();
+                            let (level, message) = apply_hestia_action(component, action);
+                            if action == HestiaAction::Confirm {
+                                instrumentation.record(
+                                    "hestia.lifecycle.dispatch",
+                                    "hestia",
+                                    level,
+                                    started.elapsed(),
+                                );
+                            }
+                            notice = message;
+                            activity.push(level, "hestia", notice.clone());
+                        }
+                    } else {
+                        notice = Surface::Hestia
+                            .gap()
+                            .unwrap_or("Hestia presentation is unavailable")
                             .into();
                     }
                 }
@@ -13268,16 +13521,28 @@ mod tests {
 
     #[test]
     fn command_catalog_combines_contextual_work_with_all_qualified_guards() {
-        let shell = Shell::new(vec![Surface::Overview, Surface::Workspace, Surface::Moira])
-            .expect("valid shell");
+        let shell = Shell::new(vec![
+            Surface::Overview,
+            Surface::Workspace,
+            Surface::Moira,
+            Surface::Hestia,
+        ])
+        .expect("valid shell");
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         );
         for expected in [
             "navigate.overview",
             "navigate.workspace",
             "navigate.moira",
+            "navigate.hestia",
+            "hestia.runtime.refresh",
+            "hestia.runtime.start",
+            "hestia.runtime.drain",
+            "hestia.runtime.arm",
+            "hestia.runtime.confirm",
+            "hestia.runtime.cancel",
             "moira.participation.open.prepare",
             "moira.participation.worker.run",
             "view.refresh",
@@ -13398,7 +13663,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false,
+            false, false, false, false,
         );
         let save = commands
             .iter()
@@ -13406,6 +13671,33 @@ mod tests {
             .unwrap();
         assert!(!save.enabled);
         assert_eq!(save.unavailable, Some("Vellum is not configured"));
+        let hestia_start = commands
+            .iter()
+            .find(|command| command.id == "hestia.runtime.start")
+            .unwrap();
+        assert!(!hestia_start.enabled);
+        assert_eq!(hestia_start.unavailable, Some("Hestia is not configured"));
+    }
+
+    #[test]
+    fn hestia_keys_and_palette_commands_share_one_semantic_action_path() {
+        let mut component = hestia_tui::Component::new(
+            "/tmp/nonexistent-hestia.sock",
+            vec![hestia_tui::RuntimeBinding {
+                label: "local model".into(),
+                runtime: HestiaRuntimeIdV1([8; 16]),
+            }],
+        )
+        .unwrap();
+        assert_eq!(
+            HestiaAction::from_command("hestia.runtime.start"),
+            Some(HestiaAction::ProposeStart)
+        );
+        let (level, notice) = apply_hestia_action(&mut component, HestiaAction::ProposeStart);
+        assert_eq!(level, ActivityLevel::Warning);
+        assert_eq!(notice, "REFUSED · Refresh before proposing start.");
+        let (_, cancelled) = apply_hestia_action(&mut component, HestiaAction::Cancel);
+        assert_eq!(cancelled, "CANCELLED · No lifecycle request was sent.");
     }
 
     #[test]

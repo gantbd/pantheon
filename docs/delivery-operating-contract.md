@@ -43,6 +43,16 @@ After every meaningful delivery turn:
 - Providers and models, ACP sessions, work modes, keybinding profiles, context
   limits, budgets, and operational endpoints are discoverable interface
   configuration.
+- Human and agent operators receive equivalent typed observations, command
+  discovery, receipts, refusal reasons and safe-next-action guidance through
+  TUI and headless surfaces. Agent ergonomics never bypasses human gates,
+  least authority, bounded context or independent settlement evidence.
+- The target dogfood topology is a durable Claude/Codex supervisory thread in
+  an Agora room that watches Chronos and delegates fit-for-purpose bounded work
+  through Daimon to local models. Persistent SRE and delivery-management agents
+  may observe Oculus/Moira and Chronos and propose incidents, backlog changes,
+  prioritization or follow-up; proposals remain owner-bound, attributable and
+  human-gated wherever a credible stakeholder could contest the effect.
 - Every action exposes pending, success, refusal, and outcome-unknown settlement
   with correlation, retained evidence, and an actionable next step without
   leaking task or model content into telemetry.

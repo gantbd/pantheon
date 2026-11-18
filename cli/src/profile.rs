@@ -731,6 +731,9 @@ impl WorkspaceProfile {
             validate_required_capabilities(&daimon.requires)?;
         }
         if let Some(hestia) = &self.hestia {
+            if !self.surfaces.contains(&Surface::Hestia) {
+                return Err("Hestia configuration requires the Hestia surface");
+            }
             if self
                 .daimon
                 .as_ref()
@@ -1252,7 +1255,7 @@ mod tests {
     #[test]
     fn hestia_runtime_bindings_are_explicit_one_to_one_and_model_scoped() {
         let valid = br#"{
-          "version":1,"name":"Hestia correlation","surfaces":["daimon"],
+          "version":1,"name":"Hestia correlation","surfaces":["daimon","hestia"],
           "daimon":{"model_socket":"model.sock"},
           "hestia":{"socket":"hestia.sock","runtime_bindings":[{
             "provider_id":"04040404040404040404040404040404",
@@ -1264,7 +1267,7 @@ mod tests {
         assert_eq!(hestia.runtime_bindings.len(), 1);
 
         let duplicate = br#"{
-          "version":1,"name":"Hestia correlation","surfaces":["daimon"],
+          "version":1,"name":"Hestia correlation","surfaces":["daimon","hestia"],
           "daimon":{"model_socket":"model.sock"},
           "hestia":{"socket":"hestia.sock","runtime_bindings":[
             {"provider_id":"04040404040404040404040404040404","runtime_id":"08080808080808080808080808080808"},
@@ -1273,7 +1276,7 @@ mod tests {
         assert!(WorkspaceProfile::parse(duplicate, Path::new(".")).is_err());
 
         let unbound = br#"{
-          "version":1,"name":"Hestia correlation","surfaces":["daimon"],
+          "version":1,"name":"Hestia correlation","surfaces":["daimon","hestia"],
           "hestia":{"socket":"hestia.sock","runtime_bindings":[{
             "provider_id":"04040404040404040404040404040404",
             "runtime_id":"08080808080808080808080808080808"}]}

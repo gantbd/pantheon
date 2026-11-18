@@ -24,6 +24,7 @@ daimon-tui = { version = "=0.1.0", path = "../daimon-tui" }
 hermes-tui = { version = "=0.1.0", path = "../hermes-tui" }
 aegis-tui = { version = "=0.1.0", path = "../aegis-tui" }
 tellus = { version = "=0.1.0", path = "../tellus" }
+hestia-tui = { version = "=0.1.0", path = "../hestia/crates/hestia-tui" }
 ratatui = { version = "=0.30.2", default-features = false, features = ["crossterm"] }
 crossterm = "=0.29.0"
 serde = { version = "=1.0.229", features = ["derive"] }

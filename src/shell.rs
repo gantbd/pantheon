@@ -16,6 +16,7 @@ pub enum Surface {
     Agora,
     Moira,
     Daimon,
+    Hestia,
     Tellus,
     Aegis,
     Hermes,
@@ -36,6 +37,7 @@ impl Surface {
             Self::Agora => "3",
             Self::Moira => "4",
             Self::Daimon => "5",
+            Self::Hestia => "I",
             Self::Tellus => "6",
             Self::Aegis => "7",
             Self::Hermes => "8",
@@ -55,6 +57,7 @@ impl Surface {
             Self::Agora => "Agora",
             Self::Moira => "Moira",
             Self::Daimon => "Daimon",
+            Self::Hestia => "Hestia",
             Self::Tellus => "Tellus",
             Self::Aegis => "Aegis",
             Self::Hermes => "Hermes",
@@ -73,6 +76,7 @@ impl Surface {
             Self::Agora => "◌",
             Self::Moira => "◇",
             Self::Daimon => "◆",
+            Self::Hestia => "♨",
             Self::Tellus => "⌁",
             Self::Aegis => "⬡",
             Self::Hermes => "≋",
@@ -91,6 +95,7 @@ impl Surface {
             Self::Agora => "rooms, conversation, and composition",
             Self::Moira => "sagas, decisions, and recovery",
             Self::Daimon => "agents, presence, and exact control",
+            Self::Hestia => "runtime placement, readiness, and lifecycle",
             Self::Tellus => "grounded methods, context, and provenance",
             Self::Aegis => "authority, grants, and deliberate trust",
             Self::Hermes => "streams, cursors, and durable motion",
@@ -111,6 +116,7 @@ impl Surface {
             Self::Agora => Some("Agora has no composable Ratatui presentation peer"),
             Self::Moira => Some("Moira workflow presentation is not configured"),
             Self::Daimon => Some("Daimon operations presentation is not configured"),
+            Self::Hestia => Some("Hestia runtime presentation is not configured"),
             Self::Tellus => Some("Tellus grounding presentation is not configured"),
             Self::Aegis => Some("Aegis authority presentation is not configured"),
             Self::Hermes => Some("Hermes ledger presentation is not configured"),
@@ -129,7 +135,7 @@ impl Shell {
         if surfaces.is_empty() {
             return Err("workspace profile must enable at least one surface");
         }
-        if surfaces.len() > 12 {
+        if surfaces.len() > 13 {
             return Err("workspace profile enables too many surfaces");
         }
         for (index, surface) in surfaces.iter().enumerate() {
@@ -152,6 +158,7 @@ impl Shell {
             Surface::Agora,
             Surface::Moira,
             Surface::Daimon,
+            Surface::Hestia,
             Surface::Tellus,
             Surface::Aegis,
             Surface::Hermes,
@@ -252,6 +259,7 @@ pub fn shell_input(key: KeyEvent) -> Option<ShellInput> {
             KeyCode::Char('a') => Surface::Agora,
             KeyCode::Char('m') => Surface::Moira,
             KeyCode::Char('d') => Surface::Daimon,
+            KeyCode::Char('i') => Surface::Hestia,
             KeyCode::Char('g') => Surface::Tellus,
             KeyCode::Char('e') => Surface::Aegis,
             KeyCode::Char('l') => Surface::Hermes,

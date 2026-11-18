@@ -139,6 +139,7 @@ pub fn draw_shell(
             daimon_permission: None,
             daimon_prompt: None,
             daimon_control: None,
+            hestia: None,
             hermes: None,
             hermes_compaction: None,
             hermes_disclosure: None,
@@ -176,6 +177,7 @@ pub struct PeerViews<'a> {
     pub daimon_permission: Option<&'a daimon_tui::AgentPermissionComposer>,
     pub daimon_prompt: Option<&'a daimon_tui::AgentPromptComposer>,
     pub daimon_control: Option<&'a daimon_tui::AgentControlBatchComponent>,
+    pub hestia: Option<&'a hestia_tui::Component>,
     pub hermes: Option<&'a hermes_tui::Component>,
     pub hermes_compaction: Option<&'a hermes_tui::CompactionComponent>,
     pub hermes_disclosure: Option<&'a hermes_tui::DisclosureComponent>,
@@ -275,6 +277,7 @@ pub fn draw_shell_with_moira(
         daimon_permission,
         daimon_prompt,
         daimon_control,
+        hestia,
         hermes,
         hermes_compaction,
         hermes_disclosure,
@@ -338,7 +341,7 @@ pub fn draw_shell_with_moira(
     frame.render_widget(
         Tabs::new(tab_titles)
             .select(shell.active_index())
-            .divider(Span::styled("  ", theme::muted()))
+            .divider(Span::styled(" ", theme::muted()))
             .style(theme::muted())
             .highlight_style(
                 Style::default()
@@ -445,6 +448,7 @@ pub fn draw_shell_with_moira(
                 agora: agora.is_some(),
                 moira: moira.is_some() || moira_participation.is_some(),
                 daimon: daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
+                hestia: hestia.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
                 tellus: tellus.is_some(),
@@ -552,6 +556,9 @@ pub fn draw_shell_with_moira(
                 body,
             );
         }
+        Surface::Hestia if hestia.is_some() => {
+            frame.render_widget(hestia.expect("matched above"), body);
+        }
         Surface::Hermes if hermes_compaction.is_some() => {
             hermes_compaction
                 .expect("matched above")
@@ -622,8 +629,9 @@ pub fn surface_tab_at(shell: &Shell, width: u16, column: u16, row: u16) -> Optio
         if (start..end).contains(&column) {
             return Some(*surface);
         }
-        // Ratatui's configured divider is two spaces.
-        start = end + 2;
+        // Ratatui's configured divider is one space so the complete suite
+        // remains reachable without hiding the final operational surfaces.
+        start = end + 1;
     }
     None
 }
@@ -785,6 +793,15 @@ fn draw_unconfigured_surface(frame: &mut Frame<'_>, area: Rect, surface: Surface
                 "Review permissions and guarded cancellation",
             ],
             r#"profile \"daimon\" · agent socket + selection"#,
+        ),
+        Surface::Hestia => (
+            "runtime lifecycle console",
+            [
+                "Observe exact runtime revision and incarnation",
+                "Review readiness, resources, and control posture",
+                "Start or drain only through a human-gated owner request",
+            ],
+            r#"profile "hestia" · socket + runtime bindings"#,
         ),
         Surface::Tellus => (
             "grounded methods and evidence",
@@ -1192,6 +1209,7 @@ struct PeerAvailability {
     agora: bool,
     moira: bool,
     daimon: bool,
+    hestia: bool,
     hermes: bool,
     aegis: bool,
     tellus: bool,
@@ -1210,6 +1228,7 @@ fn draw_overview(
             Surface::Agora => peers.agora,
             Surface::Moira => peers.moira,
             Surface::Daimon => peers.daimon,
+            Surface::Hestia => peers.hestia,
             Surface::Hermes => peers.hermes,
             Surface::Aegis => peers.aegis,
             Surface::Tellus => peers.tellus,
@@ -1882,6 +1901,7 @@ mod tests {
             (Surface::Agora, "conversation workspace"),
             (Surface::Moira, "saga operations desk"),
             (Surface::Daimon, "agent control room"),
+            (Surface::Hestia, "runtime lifecycle console"),
             (Surface::Tellus, "grounded methods and evidence"),
             (Surface::Aegis, "authority console"),
             (Surface::Hermes, "ledger observatory"),
@@ -1929,6 +1949,7 @@ mod tests {
             Surface::Agora,
             Surface::Moira,
             Surface::Daimon,
+            Surface::Hestia,
             Surface::Tellus,
             Surface::Aegis,
             Surface::Hermes,
@@ -2042,6 +2063,7 @@ mod tests {
                         agora: false,
                         moira: false,
                         daimon: true,
+                        hestia: false,
                         hermes: true,
                         aegis: false,
                         tellus: false,
@@ -2133,6 +2155,7 @@ mod tests {
                             daimon_permission: None,
                             daimon_prompt: None,
                             daimon_control: None,
+                            hestia: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,
@@ -2201,6 +2224,7 @@ mod tests {
                             daimon_permission: None,
                             daimon_prompt: None,
                             daimon_control: None,
+                            hestia: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,
@@ -2267,6 +2291,7 @@ mod tests {
                             daimon_permission: None,
                             daimon_prompt: None,
                             daimon_control: None,
+                            hestia: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,
@@ -2332,6 +2357,7 @@ mod tests {
                             daimon_permission: None,
                             daimon_prompt: None,
                             daimon_control: None,
+                            hestia: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,

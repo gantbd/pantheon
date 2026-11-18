@@ -170,7 +170,7 @@ printf '%s\n' \
   '{' \
   '  "version": 1,' \
   '  "name": "Hosted local model qualification",' \
-  '  "surfaces": ["chronos", "daimon"],' \
+  '  "surfaces": ["chronos", "daimon", "hestia"],' \
   '  "chronos": {' \
   '    "deployment": "hosted",' \
   "    \"workstreams\": [{\"name\": \"Model work\", \"directory\": \"$scratch/workstream\"}]," \
@@ -279,6 +279,30 @@ def expect(*markers, timeout=10):
 try:
     tmux("new-session", "-d", "-x", "200", "-y", "48", "-s", "model", command)
     expect("CHRONOS", "Model work", "revision 0", timeout=20)
+    tmux("send-keys", "-t", "model", "M-i")
+    expect(
+        "HESTIA",
+        "provider 04040404",
+        "lifecycle          Ready",
+        "incarnation        1",
+        "Hestia owns lifecycle",
+        timeout=20,
+    )
+    tmux("send-keys", "-t", "model", "d")
+    expect("REVIEW", "proposal           Drain", "armed              false")
+    tmux("send-keys", "-t", "model", "c")
+    expect("ARMED", "armed              true")
+    tmux("send-keys", "-t", "model", "Enter")
+    expect("APPLIED", "lifecycle          Stopped", timeout=20)
+    tmux("send-keys", "-t", "model", "s")
+    expect("REVIEW", "proposal           Start", "armed              false")
+    tmux("send-keys", "-t", "model", "c", "Enter")
+    expect(
+        "APPLIED",
+        "lifecycle          Ready",
+        "incarnation        2",
+        timeout=20,
+    )
     tmux("send-keys", "-t", "model", "C-p")
     tmux("send-keys", "-t", "model", "-l", "go to daimon")
     tmux("send-keys", "-t", "model", "Enter")
@@ -375,7 +399,7 @@ try:
     }))
     restarted = hestia("start", start_path)["Applied"]
     assert restarted["lifecycle"] == "Ready"
-    assert restarted["incarnation"] == 2
+    assert restarted["incarnation"] == 3
 
     tmux("new-session", "-d", "-x", "200", "-y", "48", "-s", "model", command)
     expect("CHRONOS", "Model work", "revision 0", timeout=20)
@@ -417,7 +441,7 @@ try:
         "Invoke local model for Chronos task",
         "local-model-task",
         "provider posture      qualified_completion · completion true · observed",
-        "runtime health         ready · readiness ready (tcp_accept) · incarnation 2",
+        "runtime health         ready · readiness ready (tcp_accept) · incarnation 3",
         "HESTIA RUNTIME EVIDENCE",
         "qwen/qwen3-coder-next · matches Daimon true",
         "sandbox inherited · egress inherited · fenced false",
@@ -485,7 +509,7 @@ runtime = hestia["runtimes"][0]["evidence"]
 assert hestia["status"] == "current"
 assert runtime["model_identity"] == "qwen/qwen3-coder-next"
 assert runtime["model_matches_provider"] and runtime["invocation_eligible"]
-assert runtime["incarnation"] == 2
+assert runtime["incarnation"] == 3
 assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ "$(cat "$scratch/provider.count")" = 2 ]
@@ -531,4 +555,4 @@ chronos_pid=
 kill -TERM "$aegis_pid"
 wait "$aegis_pid"
 aegis_pid=
-echo 'PASS: Hestia-owned local runtime -> guarded exact-field edit/apply -> owner-retained qualification -> Chronos task -> Hestia-correlated human gate -> reviewed replay-fenced invocation -> headless/TUI receipt parity -> two provider calls -> clean dual-owner drain'
+echo 'PASS: Hestia-owned local runtime -> guarded exact-field edit/apply -> dedicated Hestia TUI drain/restart -> owner-retained qualification -> Chronos task -> Hestia-correlated human gate -> reviewed replay-fenced invocation -> headless/TUI receipt parity -> two provider calls -> clean dual-owner drain'

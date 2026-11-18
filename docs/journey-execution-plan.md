@@ -90,9 +90,36 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
 - Hestia commit `ece6dba` now also ships a bounded ordinary `hestiactl` client for observe,
   start, drain and clean shutdown. It emits one versioned JSON result and reads
   bounded absolute request documents; lifecycle decisions remain daemon-owned.
-  Pantheon's dedicated Hestia tab and guarded lifecycle mutation presentation,
-  restart persistence/orphan reconciliation, stronger artifact/resource/control
+- Hestia commit `8a58abc` adds the reusable `hestia-tui` Ratatui component.
+  Pantheon now gives Hestia a dedicated tab and routes its keys and command-
+  palette actions through one semantic behavior path. Exact Ready evidence,
+  retained intent, review, arm, one-shot drain/restart, settled refusal and
+  outcome-unknown guidance stay owner-native. The real tmux journey used Alt-I
+  to operate incarnation 1→2, then replaced the provider model and observed
+  incarnation 3 at the Daimon invocation gate and through headless parity.
+  Restart persistence/orphan reconciliation, stronger artifact/resource/control
   enforcement and Aegis authority remain open.
+- The next Hestia product slice is a separately authorized model-artifact
+  catalog and acquisition workflow. It must disclose source, license, size,
+  digest/signature, compatibility, storage destination and projected resource
+  impact before download; verify before admission; and keep acquire, instantiate,
+  qualify and invoke as distinct receipts. Devstral is the first intended
+  dogfood artifact. OpenRouter is a later Daimon provider-integration backlog
+  item rather than a Hestia lifecycle shortcut.
+- Live Pantheon/Chronos dogfood admitted four owner-visible Ready items at board
+  revision 6: priority-9 `hestia-model-artifact-acquisition-devstral`, priority-2
+  `daimon-openrouter-provider-integration`, priority-5
+  `agora-supervisor-local-agent-operating-topology`, and priority-5
+  `oculus-persistent-sre-and-delivery-agents`. This keeps immediate local model
+  acquisition, later hosted-provider portability, supervisory delegation and
+  persistent operational/delivery roles independently schedulable.
+- The same admission exposed severe synthetic/bulk-input latency: tmux literal
+  task IDs were consumed approximately one key per render/poll cycle, leaving a
+  valid atomic batch visibly half-entered for tens of seconds. The graph did
+  eventually settle exactly, but this is poor human and agent ergonomics.
+  Priority-6 `pantheon-tui-bulk-input-throughput` was admitted at board revision
+  7; bounded paste/batch handling and progress feedback must share the behavior
+  facade rather than introducing an automation-only mutation path.
 - Keystone is directionally appropriate for a small semantic-neutral input
   mechanism—bounded chords, prefix state, profiles and conflict detection—but
   not for component commands, behavior facades or Ratatui state. Live Pantheon

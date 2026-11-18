@@ -877,7 +877,7 @@ same owner observations, challenges, commands, receipts and recovery states.
 | Chronos | Workstream/task/attempt/feed and revision/cursor | Task state, scheduling and existing leases not owned by this attachment | Claim/release, pause, cancel, reschedule, complete, retire |
 | Moira | Saga/participation/effect frontier and evidence cursor | Workflow progress, uncertainty fences, timers and peer-effect identities | Advance, reconcile, compensate, cancel, terminal disposition |
 | Daimon | Exact agent session/turn/event cursor | Session checkpoint, active/waiting work, budget and retained events | Prompt, permission decision, advance, cancel, provider reattach, close |
-| Hestia | Hosting authority/runtime incarnation and lifecycle revision | Runtime placement, admitted artifact/resource posture and owner-retained lifecycle | Acquire/delete model, qualify provider, invoke inference, move placement, kill unknown process |
+| Hestia | Hosting authority/runtime incarnation, artifact-catalog revision and lifecycle revision | Verified local artifact cache, runtime placement, admitted artifact/resource posture and owner-retained lifecycle | Qualify provider behavior, invoke inference, schedule work, or kill an unknown process; acquisition and runtime lifecycle remain separately authorized operations |
 | Tellus / Dendrite | Load/corpus/fold/SME/query reference | Corpus identity and queryable service; finite query needs no durable attachment | Reload/publish corpus in owner tools; long search/index jobs only if separately modeled |
 | Vellum | Workspace/document/revision and optional collaboration cursor | Source state, saved state and other collaborators; local unpublished draft policy is explicit | Edit, save, discard draft, release lock/lease, close workspace, rebind destination |
 | Hermes | Stream/consumer and disclosed event frontier | Stream and consumer cursor; observation must not acknowledge delivery | Acknowledge, reset/retire consumer, compact, redrive |
@@ -1226,7 +1226,7 @@ Pantheon's present profile remains local attach/host.
 | Chronos | What work is admitted, eligible, leased, paused, cancelled, or terminal? | Tickets, dependency graphs, scheduling, capacity, attempt attribution | Agent executor, chat system, workflow coordinator, or document owner |
 | Moira | What durable multi-step workflow decision and effect frontier is known? | Sagas, compensation, reconciliation, deliberation, accountable selection | Distributed transaction manager, scheduler, model runtime, or owner of peer effects |
 | Daimon | What happened in an already-authorized, budgeted agent/model/tool execution? | Sessions, prompts, permissions, progress, cancellation, reattachment, evidence | Work selector, retry scheduler, room, editor, or authorization policy |
-| Hestia | Where is an admitted local-inference runtime placed, and what lifecycle/resource/posture evidence exists? | Explicit start, readiness, drain, crash/orphan reconciliation and later distributed placement | Model acquisition, provider qualification, inference execution, task scheduling, or authorization |
+| Hestia | Which verified local model artifacts are available, where is an admitted local-inference runtime placed, and what lifecycle/resource/posture evidence exists? | Human-gated catalog discovery/acquisition/verification/retirement; explicit start, readiness, drain, crash/orphan reconciliation and later distributed placement | Provider-behavior qualification, inference execution, task scheduling, or authorization; artifact acquisition never implies instantiation or use |
 | Tellus (Dendrite-backed) | Which authored method, surface, fold, source, and freshness evidence is available? | Provenance inspection, method discovery, context validation, stale-grounding warnings | Workflow runtime, semantic proof by routing, or mutation authority |
 | Vellum | What source/document state, history, edit, and persistence evidence exists? | Reading, editing, save, durable operation recovery, semantic proposals | Git authority, task completion, workflow state, or agent transcript |
 | Hermes | What event is retained on a stream and where is a consumer cursor? | Durable delivery, replay, disclosure, acknowledgement, retention operations | Conversation history, workflow completion, telemetry, or downstream-effect proof |
@@ -1684,7 +1684,7 @@ following universal requirements:
 | Tool/resource manifest | Required | Stable capability IDs, risk class, input/output schema, sandbox/egress evidence, current authority |
 | Artifact/output handoff | Required via Moira | Output/proposals are evidence; only workflow-selected adapters may create peer effects |
 | Provider portability/conformance | Required | ACP/MCP/provider capability negotiation, TCK evidence, known deviations, version pin |
-| Provider setup and local-hosting experience | Required via Hestia | Configure through owner-backed Pantheon surfaces; distinguish Daimon-attached provider endpoints from Hestia-owned runtime placements; discover only selected endpoints; review model provenance and resource/sandbox/egress posture; preflight and confirm Hestia start/restart/drain; show lifecycle separately from Daimon model/capability/qualification evidence; select for a session without exposing credentials or provider commands; never imply download, update, execution authority or workflow completion from hosting |
+| Provider setup and local-hosting experience | Required via Hestia | Configure through owner-backed Pantheon surfaces; distinguish Daimon-attached provider endpoints from Hestia-owned artifact/runtime placements; discover catalog entries from selected registries; review source, license, digest/signature, size, compatibility, storage and resource impact; independently confirm acquire/update/retire and start/restart/drain; show lifecycle separately from Daimon model/capability/qualification evidence; select for a session without exposing credentials or provider commands; never imply instantiation, execution authority or workflow completion from acquisition or hosting |
 | Remote/background execution | Later | Requires identity, sandbox, network/secret, retention, audit, and incident-response profiles |
 
 #### Precedents and practices
@@ -1708,10 +1708,13 @@ following universal requirements:
   save a document, or declare task/workflow completion.
 - Provider prose is never a tool receipt or factual proof.
 - A permission UI approval is never sufficient without the owner/Aegis decision.
-- Hestia supervises explicitly admitted local-inference runtime placements.
+- Hestia owns a verified local model-artifact catalog and supervises explicitly
+  admitted local-inference runtime placements. Catalog acquisition and runtime
+  lifecycle are separate human-gated capabilities.
   Pantheon is its presentation/composition shell; Daimon remains provider
-  qualifier and execution owner. Model acquisition remains a separate
-  human-gated network/disk/license decision.
+  qualifier and execution owner. Hestia artifact acquisition is a separate
+  human-gated network/disk/license decision and never grants runtime or
+  execution authority.
 
 ### Hestia — inference hosting and placement
 
@@ -1732,17 +1735,27 @@ Hestia runtime identity and presents Hestia lifecycle/readiness/incarnation,
 model, resource and control evidence beside Daimon qualification at the human
 invocation gate and in headless observation. Configured missing, mismatched,
 fenced or non-Ready evidence refuses before arming. `hestiactl` supplies bounded
-ordinary observe/start/drain/shutdown access to the same owner. Persistence
+ordinary observe/start/drain/shutdown access to the same owner. The reusable
+`hestia-tui` component and Pantheon Hestia tab now present exact bound runtimes
+and require review, arm and one-shot confirmation for start/restart/drain; keys
+and command-palette actions share one behavior path. A real tmux journey proves
+incarnation transitions, Daimon correlation and headless/TUI parity. Persistence
 across abrupt daemon loss, orphan reconciliation, artifact/executable digest
-verification, enforced resource/sandbox preflight, a dedicated Pantheon Hestia
-surface and guarded lifecycle workflows remain required before this is a
-complete operational hosting product. Filesystem permissions are the current
+verification, enforced resource/sandbox preflight and Aegis-backed lifecycle
+authority remain required before this is a complete operational hosting
+product. A separately authorized artifact catalog must add registry discovery,
+license/source/size/digest disclosure, bounded download, verification,
+admission and retirement; Devstral is the first intended dogfood acquisition.
+Filesystem permissions are the current
 local deployment boundary, not an Aegis-backed authorization claim.
 
 #### Individual use cases
 
 - Admit one exact host-owned runtime profile and model-artifact identity without
-  acquiring, qualifying or invoking the model.
+  qualifying or invoking the model.
+- Discover a bounded selected registry catalog; review provenance, license,
+  size, digest/signature, compatibility, storage destination and resource
+  impact; then independently authorize download, verify, admit, update or retire.
 - Start a new runtime incarnation, observe starting/loading/ready/degraded/
   draining/stopped/crashed/orphaned/uncertain, and retain exact lifecycle evidence.
 - Drain or restart only the selected incarnation; fence duplicate/stale endpoints

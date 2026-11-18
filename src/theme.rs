@@ -29,6 +29,7 @@ pub const fn surface_accent(surface: Surface) -> Color {
         Surface::Agora => VIOLET,
         Surface::Moira => PINK,
         Surface::Daimon => GREEN,
+        Surface::Hestia => Color::Rgb(255, 171, 92),
         Surface::Tellus => YELLOW,
         Surface::Aegis => Color::Rgb(255, 150, 92),
         Surface::Hermes => Color::Rgb(99, 200, 255),

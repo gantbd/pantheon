@@ -658,6 +658,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hestia-tui"
+version = "0.1.0"
+dependencies = [
+ "hestia-local-client",
+ "hestia-protocol",
+ "ratatui",
+]
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -985,6 +994,7 @@ dependencies = [
  "hermes-client",
  "hermes-protocol",
  "hermes-tui",
+ "hestia-tui",
  "moira-client",
  "moira-protocol",
  "moira-tui",
@@ -1032,6 +1042,7 @@ dependencies = [
  "hermes-tui",
  "hestia-local-client",
  "hestia-protocol",
+ "hestia-tui",
  "moira-chronos-worker",
  "moira-client",
  "moira-protocol",
