@@ -1715,6 +1715,18 @@ following universal requirements:
 
 ### Hestia — inference hosting and placement
 
+**Current qualified owner slice (2026-11-18):** Hestia now binds one exact
+prepared runtime incarnation to a private local process, refuses occupied or
+non-loopback endpoints, and settles start from bounded TCP-accept evidence with
+an observation time and opaque endpoint reference. TCP accept is an explicit
+readiness basis—not model-loaded, provider-conformant, inference-success or task
+completion evidence. Crashed and still-running readiness-timeout outcomes stay
+distinct; timeout fences the runtime as `OutcomeUnknown`. Graceful drain retains
+the process handle inside Hestia. Durable owner service/client attachment,
+artifact/executable digest verification, enforced resource/sandbox preflight,
+orphan reconciliation, Pantheon presentation and Daimon correlation remain
+required before this is an operational hosting product.
+
 #### Individual use cases
 
 - Admit one exact host-owned runtime profile and model-artifact identity without

@@ -49,9 +49,15 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   before invocation and retains owner observation time in the completion
   receipt. This advances the provider-health checklist without closing it:
   continuous runtime/service health and endpoint/model discovery remain owner
-  contract gaps. Live Pantheon/Chronos dogfood admitted priority-7
-  `daimon-local-model-runtime-health-projection` at board revision 27 so that
-  gap has an owner-directed executable follow-up.
+  contract gaps. The first dogfood pass incorrectly assigned runtime health to
+  Daimon. The ownership audit caught that leak: Pantheon cancelled
+  `daimon-local-model-runtime-health-projection` at board revision 28 and
+  admitted priority-8 `hestia-runtime-readiness-daimon-correlation` at revision
+  29. Hestia's first private-process slice now publishes bounded loopback
+  TCP-accept readiness basis, observation time and opaque endpoint identity,
+  while retaining launch details and process handles inside Hestia. Continuous
+  service health, durable client attachment and the cross-owner Pantheon view
+  remain open.
 
 ### 2026-11-18 — owner-work admission and contribution delivery
 
