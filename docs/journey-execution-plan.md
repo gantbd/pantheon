@@ -706,10 +706,12 @@ model, organizational and training-lineage correlation remain explicit gaps.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
 - [ ] Create or bind an exact Agora task room.
 - [ ] Open a per-task Daimon session bound to the exact Chronos attempt.
-- [ ] Expose a governed terminal-model invocation from the selected task so a
+- [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or
   raw HTTP; retain exact task/execution/profile/context/tool/budget identities,
-  usage, evidence, refusal and uncertainty recovery.
+  usage, evidence, refusal and uncertainty recovery. The first qualified slice
+  is one reviewed terminal attempt; Agora conversation, Chronos update and
+  tool-continuation composition remain separate unchecked items below.
 - [ ] Qualify coding delegation with bounded read-only repository exploration,
   explicit context lineage, iterative reviewer challenge and a typed proposal;
   keep integration, authority and acceptance with the accountable human/agent
