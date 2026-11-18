@@ -1160,7 +1160,8 @@ mature stakeholder ensemble.
 
 - [ ] Compose the selected Moira deliberation and Dendrite concern-routing
   contracts.
-- [ ] Make stakeholder standing first-class and distinct from persona: retain
+- [x] Make stakeholder standing first-class and distinct from persona in the
+  owner protocol and Pantheon read-only presentation: retain
   constituency/domain, representation kind, accountable principal, mandate and
   conflicts for every member; label modeled perspectives and technical SMEs so
   neither can impersonate an affected stakeholder.
@@ -1175,6 +1176,14 @@ mature stakeholder ensemble.
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and
   invalidate it after any material decision change.
+
+Qualified 2026-11-18 inspection slice: `moira-tui` now owns one reusable exact
+TUI/headless projection for admission and stakeholder standing; Pantheon can
+attach only the independent deliberation endpoint, select its own Moira pane
+through the behavior facade, and display the projection in both modes. The
+real-daemon gate is `tests/live/moira_deliberation.sh`. It does not close
+Dendrite concern routing, independent member execution, finding disposition or
+the named-human gate.
 
 Exit evidence: J33 and acceptance cases 87–95 and 111–113.
 

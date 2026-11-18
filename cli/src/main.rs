@@ -63,6 +63,8 @@ struct Options {
     moira_socket: Option<PathBuf>,
     moira_participation_socket: Option<PathBuf>,
     moira_participation: Option<moira_protocol::agent_participation::ParticipationIdV1>,
+    moira_deliberation_socket: Option<PathBuf>,
+    moira_deliberation: Option<moira_protocol::deliberation::DeliberationIdV1>,
     moira_agent_worker: Option<MoiraAgentWorkerProfile>,
     moira_host: Option<MoiraProcessOptions>,
     daimon_socket: Option<PathBuf>,
@@ -172,6 +174,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut moira_socket = None;
     let mut moira_participation_socket = None;
     let mut moira_participation = None;
+    let mut moira_deliberation_socket = None;
+    let mut moira_deliberation = None;
     let mut moira_requires = Vec::new();
     let mut moira_host = None;
     let mut moira_agent_worker = None;
@@ -256,7 +260,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                 moira_host = Some(MoiraProcessOptions {
                     executable: host.executable.clone(),
                     config: host.config.clone(),
-                    socket: moira.socket.clone(),
+                    socket: moira
+                        .socket
+                        .clone()
+                        .expect("validated hosted Moira saga socket"),
                 });
             }
             moira_participation_socket = moira.participation_socket;
@@ -266,7 +273,14 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                 .map(parse_fixed_hex::<16>)
                 .transpose()?
                 .map(moira_protocol::agent_participation::ParticipationIdV1);
-            moira_socket = Some(moira.socket);
+            moira_deliberation_socket = moira.deliberation_socket;
+            moira_deliberation = moira
+                .deliberation
+                .as_deref()
+                .map(parse_fixed_hex::<16>)
+                .transpose()?
+                .map(moira_protocol::deliberation::DeliberationIdV1);
+            moira_socket = moira.socket;
             moira_requires = moira.requires;
         }
         if let Some(daimon) = profile.daimon {
@@ -519,8 +533,13 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     };
     let agora_capabilities = capabilities::agora(mode, agora_host.is_some());
     let task_conversation_capabilities = capabilities::task_conversation(mode);
-    let moira_capabilities =
-        capabilities::moira(mode, moira_host.is_some(), moira_participation.is_some());
+    let moira_capabilities = capabilities::moira(
+        mode,
+        moira_host.is_some(),
+        moira_socket.is_some(),
+        moira_participation.is_some(),
+        moira_deliberation.is_some(),
+    );
     let daimon_capabilities = capabilities::daimon(
         mode,
         daimon_host.is_some(),
@@ -597,7 +616,9 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         capabilities::moira(
             Mode::Interactive,
             moira_host.is_some(),
+            moira_socket.is_some(),
             moira_participation.is_some(),
+            moira_deliberation.is_some(),
         ),
     )?;
     negotiate_selected_route(
@@ -685,6 +706,8 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_socket,
         moira_participation_socket,
         moira_participation,
+        moira_deliberation_socket,
+        moira_deliberation,
         moira_agent_worker,
         moira_host,
         daimon_socket,
@@ -3329,6 +3352,21 @@ fn interactive(
         (None, None) => None,
         _ => unreachable!("workspace profile validates the participation pair"),
     };
+    let moira_deliberation = match (
+        options.moira_deliberation_socket,
+        options.moira_deliberation,
+    ) {
+        (Some(socket), Some(deliberation)) => {
+            let port = moira_tui_local_client::LocalDeliberationPort::connect(
+                &socket,
+                moira_tui_local_client::ClientLimits::default(),
+            )
+            .map_err(|error| format!("Moira deliberation service refused: {error:?}"))?;
+            Some(moira_tui::DeliberationComponent::new(port, deliberation))
+        }
+        (None, None) => None,
+        _ => unreachable!("workspace profile validates the deliberation pair"),
+    };
     let daimon = if let Some(socket) = options.daimon_socket {
         let (session, port) = daimon_client::unix::connect(
             socket,
@@ -3491,6 +3529,7 @@ fn interactive(
             agora_control,
             moira,
             moira_participation,
+            moira_deliberation,
             moira_participation_control,
             moira_agent_worker,
             moira_control_socket,
@@ -3981,6 +4020,8 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         moira_socket: options.moira_socket.clone(),
         moira_participation_socket: options.moira_participation_socket.clone(),
         moira_participation: options.moira_participation,
+        moira_deliberation_socket: options.moira_deliberation_socket.clone(),
+        moira_deliberation: options.moira_deliberation,
         moira_hosted: options.moira_host.is_some(),
         daimon_socket: options.daimon_socket.clone(),
         daimon_model_socket: options.daimon_model_socket.clone(),

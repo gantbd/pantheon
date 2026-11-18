@@ -114,11 +114,15 @@ pub struct AgoraHostProfile {
 pub struct MoiraProfile {
     #[serde(default)]
     pub deployment: DeploymentMode,
-    pub socket: PathBuf,
+    pub socket: Option<PathBuf>,
     /// Optional independently attached owner endpoint for one governed agent
     /// participation. The saga host does not implicitly serve this protocol.
     pub participation_socket: Option<PathBuf>,
     pub participation: Option<String>,
+    /// Optional independently attached read-only methodical-deliberation
+    /// endpoint. The saga host does not implicitly serve this protocol.
+    pub deliberation_socket: Option<PathBuf>,
+    pub deliberation: Option<String>,
     /// Optional one-step owner worker. Pantheon treats the configuration as
     /// opaque and accepts only an exact participation-bound process receipt.
     pub agent_worker: Option<MoiraAgentWorkerProfile>,
@@ -431,8 +435,13 @@ impl WorkspaceProfile {
             task_conversation.socket = resolve(base, &task_conversation.socket);
         }
         if let Some(moira) = &mut profile.moira {
-            moira.socket = resolve(base, &moira.socket);
+            if let Some(socket) = &mut moira.socket {
+                *socket = resolve(base, socket);
+            }
             if let Some(socket) = &mut moira.participation_socket {
+                *socket = resolve(base, socket);
+            }
+            if let Some(socket) = &mut moira.deliberation_socket {
                 *socket = resolve(base, socket);
             }
             if let Some(host) = &mut moira.host {
@@ -628,7 +637,9 @@ impl WorkspaceProfile {
             if !self.surfaces.contains(&Surface::Moira) {
                 return Err("Moira configuration requires the Moira surface");
             }
-            validate_path(&moira.socket)?;
+            if let Some(socket) = &moira.socket {
+                validate_path(socket)?;
+            }
             match (&moira.participation_socket, &moira.participation) {
                 (Some(socket), Some(participation)) => {
                     validate_path(socket)?;
@@ -641,6 +652,18 @@ impl WorkspaceProfile {
                     );
                 }
             }
+            match (&moira.deliberation_socket, &moira.deliberation) {
+                (Some(socket), Some(deliberation)) => {
+                    validate_path(socket)?;
+                    validate_hex_identifier(deliberation, "Moira deliberation")?;
+                }
+                (None, None) => {}
+                _ => {
+                    return Err(
+                        "Moira deliberation socket and deliberation identifier must be configured together",
+                    );
+                }
+            }
             if let Some(worker) = &moira.agent_worker {
                 if moira.participation.is_none() {
                     return Err("Moira agent worker requires an exact selected participation");
@@ -650,6 +673,9 @@ impl WorkspaceProfile {
             }
             match (moira.deployment, &moira.host) {
                 (DeploymentMode::Hosted, Some(host)) => {
+                    if moira.socket.is_none() {
+                        return Err("hosted Moira requires a saga socket");
+                    }
                     validate_path(&host.executable)?;
                     validate_path(&host.config)?;
                 }
@@ -660,6 +686,12 @@ impl WorkspaceProfile {
                     return Err("attached Moira cannot carry owner configuration");
                 }
                 (DeploymentMode::Attach, None) => {}
+            }
+            if moira.socket.is_none()
+                && moira.participation_socket.is_none()
+                && moira.deliberation_socket.is_none()
+            {
+                return Err("Moira requires at least one selected presentation endpoint");
             }
             validate_required_capabilities(&moira.requires)?;
         }
@@ -1520,6 +1552,40 @@ mod tests {
             "agent_worker":{"executable":"moira-agent-local","config":"agent.json"}}
         }"#;
         assert!(WorkspaceProfile::parse(worker_without_participation, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn moira_deliberation_requires_an_exact_attached_pair() {
+        let valid = br#"{
+          "version":1,"name":"Moira deliberation","surfaces":["moira"],
+          "moira":{"socket":"saga.sock",
+            "deliberation_socket":"deliberation.sock",
+            "deliberation":"0102030405060708090a0b0c0d0e0f10",
+            "requires":["deliberation.inspect.v1"]}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let moira = profile.moira.unwrap();
+        assert_eq!(
+            moira.deliberation_socket.as_deref(),
+            Some(Path::new("/tmp/workbench/deliberation.sock"))
+        );
+        assert_eq!(
+            moira.deliberation.as_deref(),
+            Some("0102030405060708090a0b0c0d0e0f10")
+        );
+
+        let missing_id = br#"{
+          "version":1,"name":"Moira deliberation","surfaces":["moira"],
+          "moira":{"socket":"saga.sock","deliberation_socket":"deliberation.sock"}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_id, Path::new(".")).is_err());
+
+        let malformed_id = br#"{
+          "version":1,"name":"Moira deliberation","surfaces":["moira"],
+          "moira":{"socket":"saga.sock","deliberation_socket":"deliberation.sock",
+            "deliberation":"not-an-exact-id"}
+        }"#;
+        assert!(WorkspaceProfile::parse(malformed_id, Path::new(".")).is_err());
     }
 
     #[test]

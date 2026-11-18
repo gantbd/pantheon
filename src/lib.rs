@@ -131,6 +131,7 @@ pub fn draw_shell(
             agora_message: None,
             moira: None,
             moira_participation: None,
+            moira_deliberation: None,
             moira_open: None,
             moira_reconciliation: None,
             daimon: None,
@@ -170,6 +171,7 @@ pub struct PeerViews<'a> {
     pub agora_message: Option<&'a agora_tui::ComposeMessageComponent>,
     pub moira: Option<&'a moira_tui::Component>,
     pub moira_participation: Option<&'a moira_tui::ParticipationComponent>,
+    pub moira_deliberation: Option<&'a moira_tui::DeliberationComponent>,
     pub moira_open: Option<&'a moira_tui::OpenControlComponent>,
     pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
@@ -271,6 +273,7 @@ pub fn draw_shell_with_moira(
         agora_message,
         moira,
         moira_participation,
+        moira_deliberation,
         moira_open,
         moira_reconciliation,
         daimon,
@@ -449,7 +452,9 @@ pub fn draw_shell_with_moira(
                 chronos: chronos.is_some(),
                 vellum: vellum.is_some(),
                 agora: agora.is_some(),
-                moira: moira.is_some() || moira_participation.is_some(),
+                moira: moira.is_some()
+                    || moira_participation.is_some()
+                    || moira_deliberation.is_some(),
                 daimon: daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
                 hestia: hestia.is_some() || hestia_artifact.is_some(),
                 hermes: hermes.is_some(),
@@ -478,6 +483,11 @@ pub fn draw_shell_with_moira(
         }
         Surface::Moira if moira_reconciliation.is_some() => {
             moira_reconciliation
+                .expect("matched above")
+                .draw_in(frame, body, true);
+        }
+        Surface::Moira if moira_deliberation.is_some() => {
+            moira_deliberation
                 .expect("matched above")
                 .draw_in(frame, body, true);
         }
@@ -2153,6 +2163,7 @@ mod tests {
                             agora_message: None,
                             moira: Some(&moira),
                             moira_participation: None,
+                            moira_deliberation: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
@@ -2223,6 +2234,7 @@ mod tests {
                             agora_message: None,
                             moira: None,
                             moira_participation: Some(&participation),
+                            moira_deliberation: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
@@ -2291,6 +2303,7 @@ mod tests {
                             agora_message: None,
                             moira: None,
                             moira_participation: None,
+                            moira_deliberation: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: Some(&daimon),
@@ -2358,6 +2371,7 @@ mod tests {
                             agora_message: None,
                             moira: None,
                             moira_participation: None,
+                            moira_deliberation: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,

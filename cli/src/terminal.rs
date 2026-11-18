@@ -1349,6 +1349,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             agora_control: None,
             moira,
             moira_participation: None,
+            moira_deliberation: None,
             moira_participation_control: None,
             moira_agent_worker: None,
             moira_control_socket: None,
@@ -1376,6 +1377,7 @@ pub struct OperationalPeers {
     pub agora_control: Option<AgoraControlConfig>,
     pub moira: Option<moira_tui::Component>,
     pub moira_participation: Option<moira_tui::ParticipationComponent>,
+    pub moira_deliberation: Option<moira_tui::DeliberationComponent>,
     pub moira_participation_control: Option<(
         PathBuf,
         moira_protocol::agent_participation::ParticipationIdV1,
@@ -2104,6 +2106,7 @@ fn workbench_commands(
     task_conversation_addressee: bool,
     moira: bool,
     moira_participation: bool,
+    moira_deliberation: bool,
     moira_agent_worker: bool,
     moira_control: bool,
     daimon: bool,
@@ -2806,6 +2809,34 @@ fn workbench_commands(
         prepare_agent_open
             .unavailable("A selected Moira participation control endpoint is required")
     });
+    for (id, label, detail, available) in [
+        (
+            "moira.view.sagas",
+            "Open Moira sagas",
+            "Show the owner-backed saga operations desk.",
+            moira,
+        ),
+        (
+            "moira.view.participation",
+            "Open Moira participation",
+            "Show the exact governed agent participation.",
+            moira_participation,
+        ),
+        (
+            "moira.view.deliberation",
+            "Open Moira deliberation",
+            "Show exact ensemble admission, stakeholder standing, evidence, dissent, and resolution without inferring disposition.",
+            moira_deliberation,
+        ),
+    ] {
+        let command =
+            CommandSpec::available(id, label, detail, "Moira", None, CommandKind::Observe);
+        commands.push(if available {
+            command
+        } else {
+            command.unavailable("This Moira presentation endpoint is not configured")
+        });
+    }
     let run_agent_worker = CommandSpec::available(
         "moira.participation.worker.run",
         "Dispatch prepared Moira agent session",
@@ -3246,6 +3277,13 @@ enum HestiaPane {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MoiraPane {
+    Sagas,
+    Participation,
+    Deliberation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum HestiaArtifactAction {
     Refresh,
     Previous,
@@ -3376,6 +3414,8 @@ fn execute_workbench_action<T: ServicePort>(
     agora_message: &mut Option<agora_tui::ComposeMessageComponent>,
     moira: &mut Option<moira_tui::Component>,
     moira_participation: &mut Option<moira_tui::ParticipationComponent>,
+    moira_deliberation: &mut Option<moira_tui::DeliberationComponent>,
+    moira_pane: &mut MoiraPane,
     moira_participation_control: Option<&(
         PathBuf,
         moira_protocol::agent_participation::ParticipationIdV1,
@@ -3432,6 +3472,39 @@ fn execute_workbench_action<T: ServicePort>(
             ActivityLevel::Info,
             "pantheon",
             format!("Opened {}", destination.label()),
+        );
+    }
+    if let Some(pane) = match action {
+        "moira.view.sagas" => Some(MoiraPane::Sagas),
+        "moira.view.participation" => Some(MoiraPane::Participation),
+        "moira.view.deliberation" => Some(MoiraPane::Deliberation),
+        _ => None,
+    } {
+        let configured = match pane {
+            MoiraPane::Sagas => moira.is_some(),
+            MoiraPane::Participation => moira_participation.is_some(),
+            MoiraPane::Deliberation => moira_deliberation.is_some(),
+        };
+        if !configured {
+            return (
+                ActivityLevel::Warning,
+                "moira",
+                "Selected Moira presentation endpoint is not configured".into(),
+            );
+        }
+        *moira_pane = pane;
+        *moira_open = None;
+        *moira_reconciliation = None;
+        let _ = shell.activate(Surface::Moira);
+        return (
+            ActivityLevel::Info,
+            "moira",
+            match pane {
+                MoiraPane::Sagas => "Opened Moira sagas",
+                MoiraPane::Participation => "Opened Moira participation",
+                MoiraPane::Deliberation => "Opened Moira deliberation",
+            }
+            .into(),
         );
     }
     if let Some(hestia_action) = HestiaAction::from_command(action) {
@@ -4363,6 +4436,7 @@ fn execute_workbench_action<T: ServicePort>(
             agora,
             moira,
             moira_participation,
+            moira_deliberation,
             daimon,
             daimon_agent,
             hestia,
@@ -4380,6 +4454,7 @@ fn execute_workbench_action<T: ServicePort>(
             agora,
             moira,
             moira_participation,
+            moira_deliberation,
             daimon,
             daimon_agent,
             hestia,
@@ -4555,6 +4630,7 @@ fn refresh_current<T: ServicePort>(
     agora: &mut Option<agora_tui::Component>,
     moira: &mut Option<moira_tui::Component>,
     moira_participation: &mut Option<moira_tui::ParticipationComponent>,
+    moira_deliberation: &mut Option<moira_tui::DeliberationComponent>,
     daimon: &mut Option<daimon_tui::Component>,
     daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
     hestia: &mut Option<hestia_tui::Component>,
@@ -4582,6 +4658,9 @@ fn refresh_current<T: ServicePort>(
                 component.update(moira_tui::Input::Refresh, true);
             }
             if let Some(component) = moira_participation {
+                component.update(moira_tui::Input::Refresh, true);
+            }
+            if let Some(component) = moira_deliberation {
                 component.update(moira_tui::Input::Refresh, true);
             }
             if let Some(component) = daimon {
@@ -4619,6 +4698,7 @@ fn refresh_current<T: ServicePort>(
             agora,
             moira,
             moira_participation,
+            moira_deliberation,
             daimon,
             daimon_agent,
             hestia,
@@ -4663,13 +4743,16 @@ fn refresh_current<T: ServicePort>(
             if let Some(component) = moira_participation {
                 component.update(moira_tui::Input::Refresh, true);
             }
+            if let Some(component) = moira_deliberation {
+                component.update(moira_tui::Input::Refresh, true);
+            }
             if moira.is_some() {
                 refresh_peer(moira.as_mut(), moira_tui::Input::Refresh, "moira")
-            } else if moira_participation.is_some() {
+            } else if moira_participation.is_some() || moira_deliberation.is_some() {
                 (
                     ActivityLevel::Info,
                     "moira",
-                    "Participation refresh queued".into(),
+                    "Moira read-model refresh queued".into(),
                 )
             } else {
                 (ActivityLevel::Warning, "moira", "Not configured".into())
@@ -7773,6 +7856,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         agora_control,
         mut moira,
         mut moira_participation,
+        mut moira_deliberation,
         moira_participation_control,
         moira_agent_worker: moira_agent_worker_config,
         moira_control_socket,
@@ -7801,6 +7885,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut agora_message_operation = None;
     let mut moira_reconciliation: Option<moira_tui::ReconciliationBatchComponent> = None;
     let mut moira_open: Option<moira_tui::OpenControlComponent> = None;
+    let mut moira_pane = if moira.is_some() {
+        MoiraPane::Sagas
+    } else if moira_participation.is_some() {
+        MoiraPane::Participation
+    } else {
+        MoiraPane::Deliberation
+    };
     let mut moira_agent_worker = MoiraAgentWorkerControl::new();
     let mut last_moira_open_notice = String::new();
     let mut last_moira_reconciliation_notice = String::new();
@@ -7905,6 +7996,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         }),
         moira.is_some(),
         moira_participation_control.is_some(),
+        moira_deliberation.is_some(),
         moira_agent_worker_config.is_some(),
         moira_control_socket.is_some(),
         daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
@@ -8786,6 +8878,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             }
             if let Some(participation) = &mut moira_participation {
                 participation.poll();
+            }
+            if let Some(deliberation) = &mut moira_deliberation {
+                deliberation.poll();
             }
             if let Some(control) = &mut moira_open {
                 control.poll();
@@ -9728,8 +9823,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         agora: agora.as_ref(),
                         agora_create: agora_create.as_ref(),
                         agora_message: agora_message.as_ref(),
-                        moira: moira.as_ref(),
-                        moira_participation: moira_participation.as_ref(),
+                        moira: (moira_pane == MoiraPane::Sagas)
+                            .then_some(moira.as_ref())
+                            .flatten(),
+                        moira_participation: (moira_pane == MoiraPane::Participation)
+                            .then_some(moira_participation.as_ref())
+                            .flatten(),
+                        moira_deliberation: (moira_pane == MoiraPane::Deliberation)
+                            .then_some(moira_deliberation.as_ref())
+                            .flatten(),
                         moira_open: moira_open.as_ref(),
                         moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),
@@ -10332,6 +10434,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut agora_message,
                         &mut moira,
                         &mut moira_participation,
+                        &mut moira_deliberation,
+                        &mut moira_pane,
                         moira_participation_control.as_ref(),
                         &mut moira_open,
                         moira_agent_worker_config.as_ref(),
@@ -11310,13 +11414,28 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             .into();
                             activity.push(ActivityLevel::Info, "moira", notice.clone());
                         }
-                    } else if let Some(moira) = &mut moira {
+                    } else if moira_pane == MoiraPane::Deliberation
+                        && let Some(deliberation) = &mut moira_deliberation
+                    {
+                        if let Some(input) = moira_tui::translate_key(key)
+                            && deliberation.update(input, true)
+                                == moira_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else if moira_pane == MoiraPane::Participation
+                        && let Some(participation) = &mut moira_participation
+                    {
+                        if let Some(input) = moira_tui::translate_key(key)
+                            && participation.update(input, true)
+                                == moira_tui::Lifecycle::CloseRequested
+                        {
+                            notice = "Use Ctrl-Q to exit the complete workbench".into();
+                        }
+                    } else if moira_pane == MoiraPane::Sagas
+                        && let Some(moira) = &mut moira
+                    {
                         if let Some(input) = moira_tui::translate_key(key) {
-                            if input == moira_tui::Input::Refresh
-                                && let Some(participation) = &mut moira_participation
-                            {
-                                participation.update(moira_tui::Input::Refresh, true);
-                            }
                             let started = Instant::now();
                             let pending_before = moira.request_pending();
                             let action = match input {
@@ -11338,13 +11457,6 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                     started,
                                 );
                             }
-                        }
-                    } else if let Some(participation) = &mut moira_participation {
-                        if let Some(input) = moira_tui::translate_key(key)
-                            && participation.update(input, true)
-                                == moira_tui::Lifecycle::CloseRequested
-                        {
-                            notice = "Use Ctrl-Q to exit the complete workbench".into();
                         }
                     } else {
                         notice = Surface::Moira
@@ -13993,7 +14105,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
             true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true,
+            true, true,
         );
         for expected in [
             "navigate.overview",
@@ -14013,6 +14125,9 @@ mod tests {
             "hestia.artifact.cancel",
             "moira.participation.open.prepare",
             "moira.participation.worker.run",
+            "moira.view.sagas",
+            "moira.view.participation",
+            "moira.view.deliberation",
             "view.refresh",
             "vellum.atomic-replace-selected",
             "suite.refresh",
@@ -14131,7 +14246,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false, false, false,
+            false, false, false, false, false, false,
         );
         let save = commands
             .iter()

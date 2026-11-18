@@ -1622,8 +1622,8 @@ following universal requirements:
 | Saga inspection/evidence/operator receipts and guarded reconciliation | Qualified | Exact revision, current authority, durable receipt, no retry on uncertainty |
 | Agent participation/session/event inspection | Peer-qualified, Pantheon absent | Compose as the central aggregate agent journey rather than duplicating Daimon state |
 | Agent prompt/permission/cancel/reattach confirmations | Peer-qualified, Pantheon absent | Owner-native confirmation views; command scoped and exact-revision bound |
-| Deliberation inspection | Peer-qualified, Pantheon absent | Show claims/evidence/dissent/frontier/resolution and grounding identities |
-| Stakeholder-ensemble review | Peer-qualified foundations; composition required | Frame exact question/method/cohort; admit independently attributed reports; preserve evidence, dissent, coverage, non-convergence, disposition and resolution without vote-to-truth or vote-to-authority |
+| Deliberation inspection | Qualified read-only composition | Pantheon attaches the independently selectable owner endpoint and shows the exact question/method, ensemble admission and assessor evidence, stakeholder representation/standing, claims, grounding, reports, evidence, dissent, candidates and resolution in TUI and headless paths; it infers no fitness, frontier, authority or disposition |
+| Stakeholder-ensemble review | Qualified inspection foundation; disposition composition required | Frame exact question/method/cohort; admit independently attributed reports; preserve evidence, dissent, coverage, non-convergence, disposition and resolution without vote-to-truth or vote-to-authority |
 | Visual saga graph/timeline | Required | Separate step state, effect knowledge, peer receipt, and operator action |
 | Workflow templates and version migration | Required | Versioned authored definitions, compatibility/refusal, dry-run, migration evidence |
 | Timer/signal/compensation catalogue | Required | Closed types and exact idempotency/authority/recovery rules per handler |
@@ -2060,6 +2060,14 @@ project-management group, promotes “Do we have the right ensemble?” only aft
 explicit review, and proves exactly two routed receipts while excluding the
 ambient session; see
 [`tests/live/agora_shared_agent_context.sh`](../tests/live/agora_shared_agent_context.sh).
+The selected Moira deliberation is now an independent presentation endpoint:
+the Moira surface switches between saga, participation and deliberation panes
+through the behavior facade, while headless reuses the same owner-defined exact
+projection. A real read-only daemon gate proves ensemble admission, assessor and
+coverage/equity digests, authorized-representative standing, accountable
+principal, mandate, conflict, evidence and dissent in both paths; see
+[`tests/live/moira_deliberation.sh`](../tests/live/moira_deliberation.sh). This is
+inspection, not a human finding disposition or authority grant.
 The selected execution profile now freezes an explicit opaque task key,
 incarnation and attempt alongside principal, harness profile, context/tools and
 budgets; prompt, permission and reattach operations retain that exact attempt
@@ -2079,8 +2087,8 @@ bootstraps distinct human and agent participants without granting Pantheon
 runtime registration authority. This slice does **not** yet claim dynamic exact
 task-attempt creation, a Moira workflow, dynamic Vellum document selection and
 proposal publication, per-effect Aegis decisions, Dendrite context assembly,
-runtime Agora participant administration, an independently reasoned stakeholder-
-ensemble method, standing/mandate proof, human-gated finding disposition, or
+runtime Agora participant administration, an independently executed stakeholder-
+ensemble method, verification of standing/mandate claims, human-gated finding disposition, or
 evidence-backed Chronos status and comment transitions. Those remain Required
 below and need owner-published contracts rather than presentation-side inference.
 

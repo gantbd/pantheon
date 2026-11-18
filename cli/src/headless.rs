@@ -7,8 +7,13 @@ use agora_client::v2::ClientV2 as AgoraClientV2;
 use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::Workstream;
 use hestia_local_client::LocalClient as HestiaLocalClient;
-use moira_client::{AgentParticipationReadOnlyClient, SagaReadOnlyClient};
-use moira_protocol::{SagaOutcomeV1, SagaReplyV1, agent_participation as participation};
+use moira_client::{
+    AgentParticipationReadOnlyClient, DeliberationReadOnlyClient, SagaReadOnlyClient,
+};
+use moira_protocol::{
+    SagaOutcomeV1, SagaReplyV1, agent_participation as participation,
+    deliberation as deliberation_protocol,
+};
 use sha2::{Digest, Sha256};
 use vellum_sdk_client::{
     transport::{
@@ -37,6 +42,8 @@ pub struct HeadlessRequest {
     pub moira_socket: Option<PathBuf>,
     pub moira_participation_socket: Option<PathBuf>,
     pub moira_participation: Option<participation::ParticipationIdV1>,
+    pub moira_deliberation_socket: Option<PathBuf>,
+    pub moira_deliberation: Option<deliberation_protocol::DeliberationIdV1>,
     pub moira_hosted: bool,
     pub daimon_socket: Option<PathBuf>,
     pub daimon_model_socket: Option<PathBuf>,
@@ -147,6 +154,20 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         request.moira_participation,
     ) {
         let (observation, current) = observe_moira_participation(socket, participation);
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            false,
+        );
+    }
+    if let (Some(socket), Some(deliberation)) = (
+        request.moira_deliberation_socket,
+        request.moira_deliberation,
+    ) {
+        let (observation, current) = observe_moira_deliberation(socket, deliberation);
         record_observation(
             &mut peers,
             &mut management,
@@ -1332,6 +1353,97 @@ fn observe_moira_participation(
     }
 }
 
+fn observe_moira_deliberation(
+    socket: PathBuf,
+    id: deliberation_protocol::DeliberationIdV1,
+) -> (serde_json::Value, bool) {
+    let capability = "deliberation.inspect.v1";
+    let port = match moira_tui_local_client::LocalDeliberationPort::connect(
+        socket,
+        moira_tui_local_client::ClientLimits::default(),
+    ) {
+        Ok(port) => port,
+        Err(error) => {
+            return (
+                peer_failure(
+                    "moira-deliberation",
+                    capability,
+                    "connect_refused",
+                    format!("{error:?}"),
+                ),
+                false,
+            );
+        }
+    };
+    let mut client = DeliberationReadOnlyClient::new(port);
+    match moira_tui::observe_deliberation(&mut client, id) {
+        moira_tui::DeliberationObservation::Current {
+            registry_revision,
+            view,
+        } => (
+            serde_json::json!({
+                "peer": "moira-deliberation",
+                "capability": capability,
+                "status": "current",
+                "accountable_owner": "moira",
+                "registry_revision": registry_revision,
+                "deliberation": moira_tui::deliberation_view_json(*view),
+                "boundary": "read-only evidence and stakeholder standing; Pantheon infers no ensemble fitness, frontier, authority, or human disposition",
+            }),
+            true,
+        ),
+        moira_tui::DeliberationObservation::NotFound { registry_revision } => (
+            serde_json::json!({
+                "peer": "moira-deliberation",
+                "capability": capability,
+                "status": "not_found",
+                "registry_revision": registry_revision,
+            }),
+            false,
+        ),
+        moira_tui::DeliberationObservation::Stale => (
+            peer_failure(
+                "moira-deliberation",
+                capability,
+                "stale",
+                "registry revision changed during observation",
+            ),
+            false,
+        ),
+        moira_tui::DeliberationObservation::NeedsReopen => (
+            peer_failure(
+                "moira-deliberation",
+                capability,
+                "needs_reopen",
+                "owner store requires reopen",
+            ),
+            false,
+        ),
+        moira_tui::DeliberationObservation::Refused(reason) => (
+            peer_failure("moira-deliberation", capability, "refused", reason),
+            false,
+        ),
+        moira_tui::DeliberationObservation::InvalidReply => (
+            peer_failure(
+                "moira-deliberation",
+                capability,
+                "invalid_reply",
+                "unexpected owner reply",
+            ),
+            false,
+        ),
+        moira_tui::DeliberationObservation::Transport => (
+            peer_failure(
+                "moira-deliberation",
+                capability,
+                "transport_unavailable",
+                "owner transport unavailable",
+            ),
+            false,
+        ),
+    }
+}
+
 fn participation_operation_kind(operation: participation::OperationV1) -> &'static str {
     match operation {
         participation::OperationV1::Open { .. } => "open",
@@ -1775,6 +1887,8 @@ mod tests {
             moira_socket: None,
             moira_participation_socket: None,
             moira_participation: None,
+            moira_deliberation_socket: None,
+            moira_deliberation: None,
             moira_hosted: false,
             daimon_socket: None,
             daimon_model_socket: None,

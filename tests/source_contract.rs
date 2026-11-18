@@ -2514,3 +2514,34 @@ fn shared_agent_context_gate_proves_exact_multi_stakeholder_routing() {
     let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
     assert!(makefile.contains("qualify-agora-shared-context"));
 }
+
+#[test]
+fn moira_deliberation_gate_proves_exact_ensemble_standing_in_both_surfaces() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let live = fs::read_to_string(root.join("tests/live/moira_deliberation.sh"))
+        .expect("Moira deliberation qualification");
+    for required in [
+        "deliberation.inspect.v1",
+        "right ensemble? Yes",
+        "authorized_representative",
+        "stakeholder standing: accountable=22222222222222222222222222222222",
+        "evidence=1 dissent=1",
+        "infers no ensemble fitness",
+        "Open Moira deliberation",
+    ] {
+        assert!(
+            live.contains(required),
+            "Moira deliberation gate omits {required}"
+        );
+    }
+    let profile = fs::read_to_string(root.join("cli/src/profile.rs")).expect("profile source");
+    assert!(profile.contains("deliberation_socket"));
+    assert!(profile.contains("at least one selected presentation endpoint"));
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    assert!(terminal.contains("moira.view.deliberation"));
+    assert!(terminal.contains("MoiraPane::Deliberation"));
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
+    assert!(headless.contains("moira_tui::deliberation_view_json"));
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
+    assert!(makefile.contains("qualify-moira-deliberation"));
+}

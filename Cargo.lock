@@ -888,6 +888,7 @@ dependencies = [
  "moira-client",
  "moira-protocol",
  "ratatui",
+ "serde_json",
  "sha2",
 ]
 
