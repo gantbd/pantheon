@@ -104,6 +104,47 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   surface. Those are owner/composition gaps, not reasons for Pantheon to mutate
   raw JSON.
 
+### 2026-11-17 — exact agent-context receipt and Vellum presentation
+
+- Daimon now retains a content-free receipt for the exact context admitted to
+  each successful open, prompt or reattach operation. The receipt binds the
+  execution, ordered context references, owner kind, source digest, byte count,
+  optional Dendrite grounding evidence and a canonical manifest digest. It is
+  service-owned session state rather than a synthetic provider event, so it
+  cannot collide with or impersonate provider event cursors.
+- The receipt survives Daimon's checkpoint/recovery and replay paths. The agent
+  wire profile advanced and rejects the prior shape; the checkpoint codec
+  advanced while retaining an explicit prior-version decode path. Provider
+  refusal or an invalid/mismatched context assembly cannot publish a receipt.
+- Moira projects the receipt into an independent public type and incorporates
+  it into retained provider-evidence digests. A changed Vellum source digest
+  therefore changes the evidence identity even when agent events are otherwise
+  identical. Moira's agent wire frame family also advanced and rejects the old
+  shape rather than reinterpreting it.
+- Daimon-TUI renders the exact Vellum reference, source digest and byte count in
+  the session surface. Pantheon's observation-only headless projection exposes
+  the same identity and explicitly publishes `content_disclosure:
+  not_published`; neither path copies source content into presentation state.
+- The hosted Daimon live qualification now opens a real resumable agent session
+  with one configured `vellum_document` context, drains and reopens the durable
+  owner, verifies the exact receipt first through Pantheon headless JSON, then
+  drives the production Ratatui surface in tmux and observes the same execution,
+  reference, kind, source digest and byte count. It then continues through the
+  existing guarded provider-edit journey and clean hosted drain.
+- Full Daimon-TUI and Moira workspace suites passed. Daimon's full suite reached
+  unrelated process-boundary timing failures only under four-way parallel
+  load; the complete process-boundary test target passed serially. Pantheon's
+  69 neighboring library tests and the new headless test passed in the broad
+  run; the native Chronos socket test passed when rerun with its required local
+  socket permission.
+- This closes the retained identity/projection leak for context that Daimon has
+  actually assembled. It does **not** yet make Vellum a dynamic context owner
+  for the local-agent composition: selecting a live workspace/document/revision,
+  reading it through Vellum's public contract, binding that exact receipt into
+  Daimon, and driving one concurrent TUI/headless local-provider run remain
+  open. Static fixture text labeled as Vellum evidence is not accepted as proof
+  of that missing owner integration.
+
 ### Operational discovery loop
 
 - [ ] Add a consistent `Capture in Chronos` behavior to failures, anomalies,

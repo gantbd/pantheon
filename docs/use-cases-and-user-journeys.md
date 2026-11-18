@@ -1933,11 +1933,16 @@ while receiving fresh execution/idempotency identities. TUI and observation-
 only headless projections show the same credential-free facts and explicitly
 mark role/work mode, principal type, delegation, accountable owner, authority,
 policy epoch and expiry as `not_published`. The live fixture rejects any
-different task envelope.
+different task envelope. Daimon now also retains a service-owned, content-free
+receipt for the exact ordered context evidence admitted to each successful
+open, prompt or reattach. Its TUI presentation and Pantheon's observation-only
+headless projection show the same execution, manifest, Vellum reference/source
+digest and byte count without publishing the document content; Moira's public
+projection binds that receipt into its retained provider-evidence digest.
 Refusal or uncertainty stops the chain. This slice does **not** claim a new
 per-task Daimon session, a proven mapping between the newly admitted Chronos
 task and the preselected opaque task key, dynamic exact task-attempt binding,
-Moira workflow,
+Moira workflow, dynamic Vellum document selection/reading through the owner,
 Agora room, durable typed journey link, or Chronos ticket comments; those remain
 Required below and need owner-published contracts rather than presentation-side
 inference.

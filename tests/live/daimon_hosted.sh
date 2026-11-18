@@ -83,7 +83,11 @@ printf '%s\n' \
   '    "chronos_task_id": "local-agent-task"' \
   '  }],' \
   '  "tool_capabilities": [],' \
-  '  "context": [],' \
+  '  "context": [{' \
+  '    "reference": "08080808080808080808080808080808",' \
+  '    "kind": "vellum_document",' \
+  '    "text": "exact Vellum revision"' \
+  '  }],' \
   '  "io_timeout_ms": 3000,' \
   '  "max_agent_sessions": 8,' \
   '  "max_service_sessions": 4,' \
@@ -148,6 +152,18 @@ assert peer["capability"] == "agents.session.inspect.v1"
 session = peer["configured_agent_session"]
 assert session["status"] == "current"
 assert session["phase"] == "ReattachRequired" and session["revision"] == 1
+context = session["last_context"]
+assert context["execution"] == "0c" * 16
+assert len(context["entries"]) == 1
+entry = context["entries"][0]
+assert entry == {
+    "reference": "08" * 16,
+    "kind": "vellum_document",
+    "source_digest": "sha256:d0726d2d048d7c9ecb8d80f31dbded527ccde6e144141ddc4d215391e149e346",
+    "content_bytes": 21,
+    "grounding": None,
+}
+assert context["content_disclosure"] == "not_published"
 assert report["hosted_shutdown"] == {
     "status": "clean",
     "receipts": [{"peer": "daimon", "instance": None, "disposition": "clean"}],
@@ -171,11 +187,17 @@ def tmux(*args, check=True):
     )
 
 try:
-    tmux("new-session", "-d", "-x", "130", "-y", "20", "-s", "daimon", command)
+    tmux("new-session", "-d", "-x", "220", "-y", "20", "-s", "daimon", command)
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
-        if "Configured sessions" in screen and "ReattachRequired/1" in screen:
+        if all(marker in screen for marker in (
+            "Configured sessions",
+            "ReattachRequired/1",
+            "last context: execution 0c0c0c0c",
+            "VellumDocument",
+            "21 bytes",
+        )):
             break
         time.sleep(0.025)
     else:

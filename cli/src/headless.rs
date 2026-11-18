@@ -562,6 +562,7 @@ fn observe_daimon_agent(
         Ok(observation) => {
             let view = observation.view;
             let capabilities = view.capabilities;
+            let last_context = daimon_context_projection(view.last_context.as_ref());
             let events = observation
                 .events
                 .entries
@@ -581,6 +582,7 @@ fn observe_daimon_agent(
                     "active_turn": view.active_turn.map(|_| "present"),
                     "last_event_cursor": view.last_event_cursor,
                     "profile_document_digest": hex_bytes(&view.profile_document_digest.into_bytes()),
+                    "last_context": last_context,
                     "capabilities": {
                         "load_session": capabilities.load_session,
                         "resume_session": capabilities.resume_session,
@@ -606,6 +608,46 @@ fn observe_daimon_agent(
             (serde_json::json!({"status": status, "error": error}), false)
         }
     }
+}
+
+fn daimon_context_projection(
+    value: Option<&daimon_protocol::agent::AgentContextReceiptV1>,
+) -> Option<serde_json::Value> {
+    value.map(|receipt| {
+        serde_json::json!({
+            "execution": hex_bytes(&receipt.execution.into_bytes()),
+            "manifest_digest": format!(
+                "sha256:{}",
+                hex_bytes(&receipt.manifest_digest.into_bytes())
+            ),
+            "entries": receipt.entries.iter().map(|entry| serde_json::json!({
+                "reference": hex_bytes(&entry.reference.into_bytes()),
+                "kind": match entry.kind {
+                    daimon_protocol::ContextKindV1::AgoraMessage => "agora_message",
+                    daimon_protocol::ContextKindV1::ChronosWork => "chronos_work",
+                    daimon_protocol::ContextKindV1::VellumDocument => "vellum_document",
+                    daimon_protocol::ContextKindV1::DendriteGrounding => "dendrite_grounding",
+                },
+                "source_digest": format!(
+                    "sha256:{}",
+                    hex_bytes(&entry.source_digest.into_bytes())
+                ),
+                "content_bytes": entry.content_bytes,
+                "grounding": entry.grounding.map(|grounding| serde_json::json!({
+                    "depth": format!("{:?}", grounding.depth).to_ascii_lowercase(),
+                    "grounding_digest": format!(
+                        "sha256:{}",
+                        hex_bytes(&grounding.grounding_digest.into_bytes())
+                    ),
+                    "surface_digest": format!(
+                        "sha256:{}",
+                        hex_bytes(&grounding.surface_digest.into_bytes())
+                    ),
+                })),
+            })).collect::<Vec<_>>(),
+            "content_disclosure": "not_published",
+        })
+    })
 }
 
 fn daimon_agent_event_kind(event: &daimon_protocol::agent::AgentEventV1) -> &'static str {
@@ -1203,6 +1245,41 @@ mod tests {
                 .contains("not role activation")
         );
         assert!(daimon_execution_projection(None).is_null());
+    }
+
+    #[test]
+    fn daimon_context_projection_is_exact_and_content_free() {
+        use daimon_protocol::{
+            ContentDigestV1, ContextKindV1, ContextReferenceIdV1, ExecutionIdV1,
+            agent::{AgentContextManifestEntryV1, AgentContextReceiptV1},
+        };
+
+        let receipt = AgentContextReceiptV1 {
+            execution: ExecutionIdV1::new([1; 16]),
+            manifest_digest: ContentDigestV1::new([2; 32]),
+            entries: vec![AgentContextManifestEntryV1 {
+                reference: ContextReferenceIdV1::new([3; 16]),
+                kind: ContextKindV1::VellumDocument,
+                source_digest: ContentDigestV1::new([4; 32]),
+                content_bytes: 21,
+                grounding: None,
+            }],
+        };
+        let projection = daimon_context_projection(Some(&receipt)).unwrap();
+        assert_eq!(projection["execution"], "01".repeat(16));
+        assert_eq!(
+            projection["manifest_digest"],
+            format!("sha256:{}", "02".repeat(32))
+        );
+        assert_eq!(projection["entries"][0]["kind"], "vellum_document");
+        assert_eq!(
+            projection["entries"][0]["source_digest"],
+            format!("sha256:{}", "04".repeat(32))
+        );
+        assert_eq!(projection["entries"][0]["content_bytes"], 21);
+        assert_eq!(projection["content_disclosure"], "not_published");
+        assert!(projection.get("content").is_none());
+        assert!(daimon_context_projection(None).is_none());
     }
 
     #[test]

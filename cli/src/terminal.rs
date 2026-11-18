@@ -9170,6 +9170,7 @@ mod tests {
             profile_document_digest: ContentDigestV1::new([3; 32]),
             active_turn: Some(AgentTurnIdV1::new([4; 16])),
             last_event_cursor: Some(2),
+            last_context: None,
             capabilities: AgentCapabilitiesV1 {
                 load_session: true,
                 resume_session: true,
@@ -9215,6 +9216,7 @@ mod tests {
                 profile_document_digest: ContentDigestV1::new([3; 32]),
                 active_turn: None,
                 last_event_cursor: None,
+                last_context: None,
                 capabilities: AgentCapabilitiesV1 {
                     load_session: true,
                     resume_session: true,
@@ -9321,6 +9323,7 @@ mod tests {
                 profile_document_digest: ContentDigestV1::new([3; 32]),
                 active_turn: None,
                 last_event_cursor: None,
+                last_context: None,
                 capabilities: AgentCapabilitiesV1 {
                     load_session: true,
                     resume_session: true,
@@ -9415,6 +9418,7 @@ mod tests {
                     profile_document_digest: ContentDigestV1::new([3; 32]),
                     active_turn: Some(turn),
                     last_event_cursor: Some(5),
+                    last_context: None,
                     capabilities: AgentCapabilitiesV1 {
                         load_session: true,
                         resume_session: true,
