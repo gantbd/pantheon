@@ -2197,7 +2197,10 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "Create Agora room",
         "Bind Chronos task to Agora room",
         "durable exact relationship",
-        "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated Agora task room -> durable exact relationship -> refreshed Kanban board",
+        "offer addressed agora message to local agent",
+        "ordinary room chatter is not a prompt",
+        "ordinary room chatter remains inert",
+        "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated direct Agora task conversation -> durable exact relationship -> explicitly addressed room message -> guarded second agent turn -> refreshed Kanban board",
     ] {
         assert!(
             journey.contains(required),

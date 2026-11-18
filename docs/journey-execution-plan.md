@@ -227,9 +227,32 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   and `vellum-literal-match-replace-recovery` alongside
   `vellum-atomic-refusal-orientation`.
 - The bounded task-to-agent-to-room relationship slice is now qualified. After
-  the applied Daimon turn, Pantheon prefills an invitation-only Agora task room,
-  retains the ordinary room review/arm/confirm gate, consumes the exact applied
-  owner receipt, and opens a second human-gated task-room relationship review.
+  the applied Daimon turn, Pantheon prefills a direct Agora task conversation
+  between the configured operator and agent participants, retains the ordinary
+  room review/arm/confirm gate, consumes the exact applied owner receipt, and
+  opens a second human-gated task-conversation relationship review.
+  The agent addressee is configuration, not an alias for the operator; both
+  participants must already be registered with Agora.
+- The addressed-message follow-on is also qualified. A command-palette action
+  accepts only the explicitly selected message when it addresses the configured
+  agent participant and the task-conversation owner proves one exact current
+  Chronos-task-to-Agora-room relationship. It then opens the ordinary reviewed
+  Daimon prompt composer; ambient room chatter remains inert. The same durable
+  session accepts the second turn only after its owner again projects `Ready`
+  with no active turn. `tests/live/work_item_agent_journey.sh` now proves task
+  creation, first agent turn, direct conversation creation, exact relationship,
+  addressed message, second agent turn and refreshed Kanban return through the
+  real tmux UI.
+- Depth qualification exposed three integration/presentation defects and drove
+  their fixes: Agora peer cohorts require canonical lexical order at the shared
+  client boundary; the prompt's safety boundary and selected body must appear
+  together in the first review viewport; and post-receipt reconciliation must
+  preserve compact success/boundary/next-action feedback. Vellum performed two
+  exact previewed plan edits and guarded saves. A separate hosted workspace
+  attempt failed the whole admission as generic `Adapter(Limit)` when one
+  602 KiB root was present, without identifying that file or a recovery action;
+  Chronos retains `vellum-root-limit-diagnostic` and
+  `agora-agent-participant-qualification` from this run.
   Durable chat history, Chronos status/comment publication, tool continuation,
   delegated completion and approval remain separate owner contracts.
   Task-execution policy is also still raw owner configuration;
@@ -740,10 +763,11 @@ model, organizational and training-lineage correlation remain explicit gaps.
   and `tests/live/work_item_agent_journey.sh` qualify complementary real-TUI
   paths, headless parity and owner restart recovery. The composed work-item
   journey now includes the Agora capability: after an applied Daimon turn it
-  prefills an invitation-only task room, retains Agora's ordinary
-  review/arm/confirm gate, and opens the separately gated exact relationship
-  from the applied owner receipt. Standalone room creation and manual binding
-  remain independently available capabilities.
+  prefills a direct conversation for the configured operator and agent
+  participants, retains Agora's ordinary review/arm/confirm gate, and opens the
+  separately gated exact relationship from the applied owner receipt.
+  Standalone room creation and manual binding remain independently available
+  capabilities.
 - [x] Open a per-task Daimon session bound to the exact Chronos attempt.
 - [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or
@@ -759,8 +783,12 @@ model, organizational and training-lineage correlation remain explicit gaps.
   silently changing principal identity, authority, accountability, tool grants,
   budgets or approval rights. Each switch retains the prior activation,
   rationale, scope and owner revision.
-- [ ] Admit addressed room messages through an explicit replay-safe prompt
-  command; ordinary chatter never becomes a prompt.
+- [x] Admit addressed room messages through an explicit replay-safe prompt
+  command; ordinary chatter never becomes a prompt. The shared behavior facade
+  requires one selected addressed message, one exact current owner relationship
+  and one owner-projected ready Daimon session, then routes the bounded evidence
+  through the ordinary prompt review/arm/confirm flow. The live J1 gate proves a
+  second accepted turn and user-visible reconciliation feedback.
 - [ ] Link Dendrite grounding, Aegis decisions, Daimon progress, Vellum proposals,
   Agora responses, Chronos status/comments and Moira settlement.
 - [ ] Let the local agent propose Chronos status, priority, dependency, comment

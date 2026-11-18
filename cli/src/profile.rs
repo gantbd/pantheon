@@ -39,6 +39,10 @@ pub struct TaskConversationProfile {
     /// Attributed relationship creator; this is not an authority grant or a
     /// substitute for the interactive human gate.
     pub principal: String,
+    /// Exact Agora participant identity that may be deliberately promoted from
+    /// an addressed room message into a reviewed Daimon prompt. Omission keeps
+    /// the cross-component command unavailable.
+    pub agent_addressee: Option<String>,
     #[serde(default)]
     pub requires: Vec<String>,
 }
@@ -488,6 +492,28 @@ impl WorkspaceProfile {
             }
             validate_path(&task_conversation.socket)?;
             validate_hex_identifier(&task_conversation.principal, "task-conversation principal")?;
+            if let Some(addressee) = &task_conversation.agent_addressee
+                && (addressee.is_empty()
+                    || addressee.len() > 128
+                    || addressee.chars().any(char::is_control))
+            {
+                return Err(
+                    "task-conversation agent_addressee must be 1–128 bytes without control text",
+                );
+            }
+            if task_conversation
+                .agent_addressee
+                .as_ref()
+                .is_some_and(|addressee| {
+                    self.agora
+                        .as_ref()
+                        .is_some_and(|agora| &agora.participant == addressee)
+                })
+            {
+                return Err(
+                    "task-conversation agent_addressee must be distinct from the Agora operator participant",
+                );
+            }
             validate_required_capabilities(&task_conversation.requires)?;
         }
         if let Some(moira) = &self.moira {
@@ -1429,6 +1455,36 @@ mod tests {
           "chronos":null,"vellum":null
         }"#;
         assert!(WorkspaceProfile::parse(hidden_agora, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn task_conversation_agent_addressee_is_explicit_and_bounded() {
+        let valid = br#"{
+          "version":1,"name":"Addressed message","surfaces":["chronos","agora"],
+          "agora":{"socket":"a.sock","participant":"operator"},
+          "task_conversation":{"socket":"links.sock",
+            "principal":"01010101010101010101010101010101",
+            "agent_addressee":"local-agent"},
+          "chronos":{"workstreams":[{"name":"work","directory":"work"}],
+            "requires":[],"moira":[],"daimon":[],"planning":null}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/addressed")).unwrap();
+        assert_eq!(
+            profile
+                .task_conversation
+                .and_then(|profile| profile.agent_addressee),
+            Some("local-agent".into())
+        );
+
+        let invalid = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("local-agent", "");
+        assert!(WorkspaceProfile::parse(invalid.as_bytes(), Path::new(".")).is_err());
+
+        let aliased = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("local-agent", "operator");
+        assert!(WorkspaceProfile::parse(aliased.as_bytes(), Path::new(".")).is_err());
     }
 
     #[test]

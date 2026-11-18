@@ -106,6 +106,7 @@ cat >"$scratch/profile.json" <<EOF
   "task_conversation": {
     "socket": "$scratch/task-conversation.sock",
     "principal": "10101010101010101010101010101010",
+    "agent_addressee": "local-agent",
     "requires": ["task-conversation.v1"]
   },
   "chronos": {
@@ -268,7 +269,7 @@ try:
         "AGORA",
         "Create Agora room",
         "local-agent-task",
-        "invite only",
+        "direct · local-agent, operator",
         timeout=20,
     )
     keys("c", "Enter")
@@ -286,6 +287,41 @@ try:
         timeout=20,
     )
     keys("Escape")
+    keys("Escape")
+    expect("Live Room", "Task · local-agent-task", timeout=20)
+    keys("Down", "Enter")
+    expect("Conversation · local-agent-task", timeout=20)
+    keys("C-p", "C-u")
+    literal("compose an agora message")
+    expect("Compose an Agora message")
+    keys("Enter")
+    expect("Compose Agora message", "revision")
+    literal("Please inspect the bounded acceptance evidence")
+    keys("Tab")
+    literal("local-agent")
+    keys("Tab", "c", "Enter")
+    expect("Agora accepted message #", timeout=20)
+    keys("Escape")
+    expect("Please inspect the bounded acceptance evidence", "to: local-agent", timeout=20)
+    keys("C-p", "C-u")
+    literal("offer addressed agora message to local agent")
+    expect("Offer addressed Agora message to local agent")
+    keys("Enter")
+    expect(
+        "Compose Daimon prompt",
+        "ordinary room chatter is not a prompt",
+        "Please inspect the bounded acceptance evidence",
+        "local-agent-task",
+        timeout=20,
+    )
+    keys("Tab", "c", "Enter")
+    expect("Daimon guarded session set", "prompt ready session")
+    keys("c", "Enter")
+    expect(
+        "Addressed message accepted",
+        "ordinary room chatter remains inert",
+        timeout=20,
+    )
     keys("C-p", "C-u")
     literal("return to the kanban board")
     expect("Return to the Kanban board")
@@ -301,8 +337,8 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 2
+test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 3
 grep '^opened$' "$scratch/receipts" >/dev/null
-grep '^prompted$' "$scratch/receipts" >/dev/null
+test "$(grep -c '^prompted$' "$scratch/receipts")" = 2
 
-echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated Agora task room -> durable exact relationship -> refreshed Kanban board'
+echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated direct Agora task conversation -> durable exact relationship -> explicitly addressed room message -> guarded second agent turn -> refreshed Kanban board'
