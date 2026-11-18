@@ -315,8 +315,14 @@ try:
     expect(
         "Invoke local model for Chronos task",
         "local-model-task",
+        "provider posture      qualified_completion · completion true · observed",
+        "runtime health         not published",
+        "tool continuation     not_exercised",
+        "qualification evidence sha256:",
+        "known deviations      tool_continuation_not_exercised",
         "context/tools          1 exact / 0 exact",
         "human gate            review",
+        "next safe action      bounded completion only",
         timeout=20,
     )
     tmux("send-keys", "-t", "model", "c", "Enter")
@@ -324,6 +330,7 @@ try:
         "COMPLETED",
         "bounded qualification complete",
         "17 input · 4 output tokens",
+        "owner observed",
         "Agora room and Chronos comment",
         "linkage remain open",
         timeout=20,

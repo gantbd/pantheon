@@ -4876,7 +4876,7 @@ struct ModelWorkItemBindingEvidence {
     provider_id: String,
     harness_profile_id: String,
     model: String,
-    qualification_operation_id: String,
+    qualification: ProviderQualificationProjection,
     execution: ModelTaskExecutionProjection,
 }
 
@@ -5140,6 +5140,7 @@ struct ModelTaskInvocationPlan {
     provider_id: String,
     harness_profile_id: String,
     model: String,
+    qualification: ProviderQualificationProjection,
     execution: ModelTaskExecutionProjection,
     request_now: u64,
 }
@@ -5191,12 +5192,13 @@ impl ModelTaskInvocationWorkflow {
                 config: host.config.clone(),
                 operation_id,
                 document_digest: evidence.document_digest,
-                qualification_operation_id: model.qualification_operation_id,
+                qualification_operation_id: model.qualification.operation_id.clone(),
                 task_id: evidence.task_id,
                 task_key: evidence.external_task_key,
                 provider_id: model.provider_id,
                 harness_profile_id: model.harness_profile_id,
                 model: model.model,
+                qualification: model.qualification,
                 execution: model.execution,
                 request_now: current_unix_time()?,
             },
@@ -5336,6 +5338,7 @@ impl ModelTaskInvocationWorkflow {
         if receipt.operation_id != self.plan.operation_id
             || receipt.document_digest != self.plan.document_digest
             || receipt.qualification_operation_id != self.plan.qualification_operation_id
+            || receipt.profile_document_digest != self.plan.qualification.profile_document_digest
             || receipt.chronos_task_id != self.plan.task_id
             || receipt.task_key != self.plan.task_key
             || receipt.provider_id != self.plan.provider_id
@@ -5355,6 +5358,16 @@ impl ModelTaskInvocationWorkflow {
 
     fn lines(&self) -> Vec<String> {
         let budget = self.plan.execution.budget;
+        let qualification = &self.plan.qualification;
+        let qualification_deviations = if qualification.known_deviations.is_empty() {
+            "none published".to_owned()
+        } else {
+            qualification.known_deviations.join(" · ")
+        };
+        let qualification_evidence = qualification
+            .evidence_digest
+            .as_deref()
+            .unwrap_or("not published");
         let mut lines = vec![
             format!(
                 "phase                {}",
@@ -5388,6 +5401,10 @@ impl ModelTaskInvocationWorkflow {
                         .unwrap_or("digest unavailable")
                 ),
                 format!("proposals             {}", receipt.proposal_count),
+                format!(
+                    "owner observed         {} unix ms",
+                    receipt.host_observed_at_unix_ms
+                ),
                 format!("replayed              {}", receipt.replayed),
                 String::new(),
                 "MODEL RESPONSE".into(),
@@ -5414,11 +5431,23 @@ impl ModelTaskInvocationWorkflow {
             format!("provider              {}", self.plan.provider_id),
             format!("harness profile       {}", self.plan.harness_profile_id),
             format!("model                 {}", self.plan.model),
-            format!("owner document        {}", self.plan.document_digest),
             format!(
-                "qualification         {}",
+                "provider posture      {} · completion {} · observed {} unix ms",
+                qualification.disposition,
+                qualification.completion,
+                qualification.host_observed_at_unix_ms
+            ),
+            "runtime health         not published · endpoint liveness is not readiness or task success".into(),
+            format!(
+                "tool continuation     {}",
+                qualification.tool_continuation
+            ),
+            format!(
+                "qualification evidence {qualification_evidence} · operation {}",
                 self.plan.qualification_operation_id
             ),
+            format!("known deviations      {qualification_deviations}"),
+            format!("owner document        {}", self.plan.document_digest),
             format!(
                 "context/tools          {} exact / {} exact",
                 self.plan.execution.context_references.len(),
@@ -5433,8 +5462,8 @@ impl ModelTaskInvocationWorkflow {
                 budget.max_context_bytes,
                 budget.max_output_bytes,
             ),
-            "human gate            review → arm → confirm once".into(),
-            "authority             owner/Aegis decision; this screen grants none".into(),
+            "human gate            review → arm → confirm once · grants no authority; owner/Aegis decides".into(),
+            "next safe action      bounded completion only; review any proposal separately because tool continuation is not implied".into(),
             String::new(),
         ]);
         lines.push("Boundary: this is one governed terminal-model attempt, not an Agora room, durable chat session, Chronos comment/status transition, tool continuation, delegation completion, approval, or authority.".into());
@@ -6709,7 +6738,7 @@ fn validate_work_item_binding(
                 .model
                 .clone()
                 .ok_or_else(|| "the local-model owner omitted the selected model".to_owned())?,
-            qualification_operation_id: qualification.operation_id.clone(),
+            qualification: qualification.clone(),
             execution: execution.clone(),
         })
     } else {
@@ -12279,7 +12308,7 @@ mod tests {
                 structured_tools: Some(true),
                 sampling_temperature_milli: Some(0),
                 bearer_token_configured: Some(false),
-                qualification: Some(qualification),
+                qualification: Some(qualification.clone()),
             }],
             task_bindings: vec![TaskBindingCatalogProjection {
                 external_task_key: "aa".repeat(16),
@@ -12306,7 +12335,39 @@ mod tests {
             WorkItemExecutionTarget::Model,
         )
         .unwrap();
-        assert_eq!(evidence.model.unwrap().execution.attempt_number, 3);
+        let model = evidence.model.unwrap();
+        assert_eq!(model.execution.attempt_number, 3);
+        assert_eq!(model.qualification.host_observed_at_unix_ms, 1);
+        assert_eq!(model.qualification.tool_continuation, "not_exercised");
+        let workflow = ModelTaskInvocationWorkflow {
+            phase: ModelTaskInvocationPhase::Reviewing,
+            plan: ModelTaskInvocationPlan {
+                executable: PathBuf::from("/owner"),
+                config: PathBuf::from("/owner.json"),
+                operation_id: "cc".repeat(16),
+                document_digest: evidence.document_digest,
+                qualification_operation_id: model.qualification.operation_id.clone(),
+                task_id: evidence.task_id,
+                task_key: evidence.external_task_key,
+                provider_id: model.provider_id,
+                harness_profile_id: model.harness_profile_id,
+                model: model.model,
+                qualification: model.qualification,
+                execution: model.execution,
+                request_now: 2,
+            },
+            armed: false,
+            notice: "READY".into(),
+            receipt: None,
+            worker: None,
+        };
+        let lines = workflow.lines().join("\n");
+        assert!(lines.contains("qualified_completion · completion true"));
+        assert!(lines.contains("runtime health         not published"));
+        assert!(lines.contains("observed 1 unix ms"));
+        assert!(lines.contains("tool continuation     not_exercised"));
+        assert!(lines.contains("tool_continuation_not_exercised"));
+        assert!(lines.contains("next safe action      bounded completion only"));
         catalog.providers[0].qualification = None;
         assert!(
             validate_work_item_binding(

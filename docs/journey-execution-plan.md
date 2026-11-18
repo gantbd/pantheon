@@ -35,6 +35,24 @@ does not close an item; input profiles share one behavior facade.
 This ledger records experience gathered while using the component ensemble to
 deliver Pantheon. It is product input, not a substitute for journey acceptance.
 
+### 2026-11-18 — provider posture at the J1 human gate
+
+- The exact task-to-model binding previously retained Daimon's qualification
+  receipt but reduced it to an operation ID before showing the invocation
+  review. The review now carries the owner-published completion disposition,
+  observation time, evidence digest, tool-continuation posture and known
+  deviations alongside the effective context/tool budget. Runtime health is
+  explicitly `not published`; endpoint liveness is not restyled as readiness or
+  task success. The screen gives one bounded next safe action and separately
+  labels proposal review, preserving the human gate.
+- The hosted local-model gate now requires those facts on the real tmux surface
+  before invocation and retains owner observation time in the completion
+  receipt. This advances the provider-health checklist without closing it:
+  continuous runtime/service health and endpoint/model discovery remain owner
+  contract gaps. Live Pantheon/Chronos dogfood admitted priority-7
+  `daimon-local-model-runtime-health-projection` at board revision 27 so that
+  gap has an owner-directed executable follow-up.
+
 ### 2026-11-18 — owner-work admission and contribution delivery
 
 - Live Pantheon/Chronos dogfood admitted `chronos-external-work-admission-contract`
@@ -933,6 +951,10 @@ model, organizational and training-lineage correlation remain explicit gaps.
 - [ ] Present provider/model health, conformance, effective tool/context budget,
   known deviations, evidence time, and the next safe action without exposing
   credentials or treating endpoint liveness as session/workflow completion.
+  The invocation gate now presents every owner-published qualification,
+  deviation, evidence-time and effective-budget fact and explicitly reports
+  runtime health as unpublished. This remains open until the provider owner
+  publishes a bounded current runtime-health projection rather than liveness.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
 - [x] Create or bind an exact Agora task room through explicit human gates. The
   separately owned `agora-chronos-adapter` publishes a durable
