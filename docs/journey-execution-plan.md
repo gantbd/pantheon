@@ -55,9 +55,25 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   admitted priority-8 `hestia-runtime-readiness-daimon-correlation` at revision
   29. Hestia's first private-process slice now publishes bounded loopback
   TCP-accept readiness basis, observation time and opaque endpoint identity,
-  while retaining launch details and process handles inside Hestia. Continuous
-  service health, durable client attachment and the cross-owner Pantheon view
-  remain open.
+  while retaining launch details and process handles inside Hestia.
+- Hestia commit `12c4a5c` advances that owner boundary into a standalone local
+  daemon and ordinary bounded client. The daemon retains lifecycle state and
+  OS process handles across fresh client connections, refuses shutdown while a
+  runtime is active, and makes an exact retry after a discarded start reply
+  resolve to the retained ready incarnation rather than spawning a duplicate.
+  Private configuration selects executable, arguments, environment and
+  readiness policy; none crosses the public protocol. Strict format, Clippy,
+  all-target workspace tests, rustdoc and a process-separated daemon fixture
+  qualify the slice. Persistence across abrupt daemon loss, orphan
+  reconciliation, artifact/executable digest verification, enforced resource
+  and isolation posture, and the cross-owner Pantheon presentation remain open.
+- The same dogfood pass used Pantheon's hosted Vellum to edit Hestia's README.
+  `C-s` visibly found the selected phrase, but typing inserted after it instead
+  of replacing the active selection. The receipt was honest and the edit was
+  repaired without concealing the failure. Priority-8 Chronos work
+  `vellum-find-selection-edit-semantics` was admitted through the live TUI at
+  owner revision 30; selection replacement and an orienting success/failure
+  presentation remain required before that path is editor-faithful.
 
 ### 2026-11-18 — owner-work admission and contribution delivery
 

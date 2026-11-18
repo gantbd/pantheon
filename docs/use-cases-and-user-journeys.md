@@ -1718,14 +1718,20 @@ following universal requirements:
 **Current qualified owner slice (2026-11-18):** Hestia now binds one exact
 prepared runtime incarnation to a private local process, refuses occupied or
 non-loopback endpoints, and settles start from bounded TCP-accept evidence with
-an observation time and opaque endpoint reference. TCP accept is an explicit
-readiness basis—not model-loaded, provider-conformant, inference-success or task
-completion evidence. Crashed and still-running readiness-timeout outcomes stay
-distinct; timeout fences the runtime as `OutcomeUnknown`. Graceful drain retains
-the process handle inside Hestia. Durable owner service/client attachment,
+an observation time and opaque endpoint reference. Its standalone local daemon
+retains lifecycle state and process handles across fresh bounded Unix-client
+connections: presentation detach does not stop a runtime, discarded-reply
+retries recover identity without duplicate start, and clean shutdown refuses
+while lifecycle work remains active. Private executable, argument, environment
+and readiness configuration never enters the public protocol. TCP accept is an
+explicit readiness basis—not model-loaded, provider-conformant,
+inference-success or task-completion evidence. Crashed and still-running
+readiness-timeout outcomes stay distinct; timeout fences the runtime as
+`OutcomeUnknown`. Persistence across abrupt daemon loss, orphan reconciliation,
 artifact/executable digest verification, enforced resource/sandbox preflight,
-orphan reconciliation, Pantheon presentation and Daimon correlation remain
-required before this is an operational hosting product.
+Pantheon presentation and Daimon correlation remain required before this is an
+operational hosting product. Filesystem permissions are the current local
+deployment boundary, not an Aegis-backed authorization claim.
 
 #### Individual use cases
 
