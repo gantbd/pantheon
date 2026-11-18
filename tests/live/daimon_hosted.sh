@@ -155,11 +155,11 @@ assert report["hosted_shutdown"] == {
 '
 [ ! -e "$scratch/agent.sock" ]
 
-python3 - "$scratch" "$workbench" <<'PYTHON'
+python3 - "$scratch" "$workbench" "$provider_fixture" <<'PYTHON'
 from pathlib import Path
 import shlex, subprocess, sys, time
 
-scratch, binary = sys.argv[1:]
+scratch, binary, provider_fixture = sys.argv[1:]
 tmux_socket = str(Path(scratch) / "tmux.sock")
 profile = str(Path(scratch) / "profile.json")
 command = shlex.join([binary, "interactive", "--workspace-profile", profile])
@@ -208,6 +208,63 @@ try:
     else:
         raise AssertionError(f"Provider catalogue refresh did not settle:\n{screen}")
     tmux("send-keys", "-t", "daimon", "C-g")
+    tmux("send-keys", "-t", "daimon", "C-p")
+    tmux("send-keys", "-t", "daimon", "-l", "add or replace a local agent provider")
+    tmux("send-keys", "-t", "daimon", "Enter")
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
+        if "Add or replace local agent provider" in screen and "configuration only" in screen:
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Provider edit form did not open:\n{screen}")
+    for value in (
+        "02020202020202020202020202020202",
+        "03030303030303030303030303030303",
+    ):
+        tmux("send-keys", "-t", "daimon", "C-u")
+        tmux("send-keys", "-t", "daimon", "-l", value)
+        tmux("send-keys", "-t", "daimon", "Tab")
+    tmux("send-keys", "-t", "daimon", "-l", "sha256:" + "99" * 32)
+    tmux("send-keys", "-t", "daimon", "Tab")
+    tmux("send-keys", "-t", "daimon", "-l", "/bin/sh")
+    tmux("send-keys", "-t", "daimon", "Tab")
+    tmux("send-keys", "-t", "daimon", "-l", provider_fixture)
+    for _ in range(6):
+        tmux("send-keys", "-t", "daimon", "Tab")
+    tmux("send-keys", "-t", "daimon", "Enter")
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
+        if all(marker in screen for marker in (
+            "REVIEWING",
+            "candidate document",
+            "confirmation plan",
+            "policy_digest",
+            "arguments",
+            "configuration only",
+        )):
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Provider edit plan did not settle:\n{screen}")
+    tmux("send-keys", "-t", "daimon", "c")
+    tmux("send-keys", "-t", "daimon", "Enter")
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
+        if all(marker in screen for marker in (
+            "APPLIED",
+            "restart required",
+            "no qualification",
+            "action              replace",
+        )):
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Provider edit apply did not settle:\n{screen}")
+    tmux("send-keys", "-t", "daimon", "C-g")
     tmux("send-keys", "-t", "daimon", "C-q")
     deadline = time.monotonic() + 5
     while tmux("has-session", "-t", "daimon", check=False).returncode == 0:
@@ -218,10 +275,17 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 [ ! -e "$scratch/agent.sock" ]
+python3 - "$scratch/agent.json" <<'PYTHON'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    provider = json.load(source)["providers"][0]
+assert provider["policy_digest"] == "sha256:" + "99" * 32
+assert provider["arguments"] and provider["arguments"][0].endswith("fake_acp_agent.sh")
+PYTHON
 
 kill -TERM "$aegis_pid"
 wait "$aegis_pid"
 aegis_pid=
 [ ! -e "$scratch/aegis.sock" ]
 
-echo 'PASS: production Daimon agent -> redacted owner provider catalogue -> durable session -> Pantheon hosted headless and interactive reopen -> clean drain'
+echo 'PASS: production Daimon agent -> redacted catalogue -> guarded plan/apply provider edit -> durable session -> Pantheon hosted reopen -> clean drain'

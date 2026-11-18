@@ -15,7 +15,7 @@ use daimon_protocol::{
 use moira_protocol::{OperatorDispositionV1, ReconciliationProposalV1};
 use serde::Deserialize;
 use std::fs::{self, File};
-use std::io::Read;
+use std::io::{Read, Write};
 use std::os::unix::fs::DirBuilderExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
@@ -87,6 +87,7 @@ enum WorkbenchOverlay {
     Activity,
     Configuration,
     LocalProviders,
+    ProviderEdit,
     AcpSessions,
     AgoraRooms,
     Reconfiguration,
@@ -99,6 +100,7 @@ enum WorkbenchOverlay {
 enum KeyBehavior {
     SafeExit,
     CommandPaletteInput,
+    ProviderEditInput,
     ReconfigurationInput,
     DismissOverlay,
     Suppress,
@@ -124,6 +126,16 @@ impl BehaviorFacade {
         match overlay {
             WorkbenchOverlay::Commands => return KeyBehavior::CommandPaletteInput,
             WorkbenchOverlay::Reconfiguration => return KeyBehavior::ReconfigurationInput,
+            WorkbenchOverlay::ProviderEdit => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::ProviderEditInput
+                };
+            }
             WorkbenchOverlay::LocalProviders
                 if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) =>
             {
@@ -2385,6 +2397,14 @@ fn workbench_commands(
             CommandKind::Lifecycle,
         ),
         CommandSpec::available(
+            "configuration.providers.agent.upsert",
+            "Add or replace a local agent provider",
+            "Complete a bounded form, review Daimon's redacted exact-change plan, then explicitly arm one atomic owner-document replacement.",
+            "Configuration",
+            None,
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
             "configuration.acp.sessions",
             "Configure ACP agent sessions",
             "Review the exact agent-session selection, execution-policy requirements, and clean profile restart path.",
@@ -3818,6 +3838,497 @@ struct ProviderInspection {
     started: Instant,
 }
 
+const PROVIDER_EDIT_FIELDS: [&str; 11] = [
+    "provider ID",
+    "harness profile ID",
+    "policy digest",
+    "program (absolute path)",
+    "arguments (one per line; Ctrl-J adds a line)",
+    "inherited environment names (one per line; Ctrl-J adds a line)",
+    "ACP authentication method (optional)",
+    "isolation (direct or macos_seatbelt)",
+    "seatbelt policy path (when selected)",
+    "seatbelt policy digest (when selected)",
+    "transport (acp or claude_stream_json)",
+];
+
+#[derive(Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ProviderEditPlanProjection {
+    version: u8,
+    owner: String,
+    operation_id: String,
+    action: String,
+    expected_document_digest: String,
+    current_document_digest: String,
+    candidate_document_digest: String,
+    plan_digest: String,
+    provider: ProviderCatalogEntryProjection,
+    changed_fields: Vec<String>,
+    restart_required: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ProviderEditReceiptProjection {
+    version: u8,
+    owner: String,
+    operation_id: String,
+    disposition: String,
+    applied: bool,
+    replayed: bool,
+    document_digest: String,
+    provider_id: String,
+    restart_required: bool,
+}
+
+enum ProviderEditWorkerResult {
+    Planned {
+        plan: Box<ProviderEditPlanProjection>,
+        provider: serde_json::Value,
+    },
+    Applied(ProviderEditReceiptProjection),
+}
+
+struct ProviderEditWorker {
+    updates: Receiver<Result<ProviderEditWorkerResult, String>>,
+    started: Instant,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ProviderEditPhase {
+    Editing,
+    Planning,
+    Reviewing,
+    Applying,
+    Complete,
+}
+
+struct ProviderEditWorkflow {
+    values: [String; 11],
+    selected: usize,
+    phase: ProviderEditPhase,
+    plan: Option<ProviderEditPlanProjection>,
+    provider: Option<serde_json::Value>,
+    armed: bool,
+    notice: String,
+    worker: Option<ProviderEditWorker>,
+}
+
+impl ProviderEditWorkflow {
+    fn new() -> Self {
+        let identity = fresh_identity()
+            .map(|bytes| bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+            .unwrap_or_default();
+        let harness = fresh_identity()
+            .map(|bytes| bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+            .unwrap_or_default();
+        let mut values: [String; 11] = std::array::from_fn(|_| String::new());
+        values[0] = identity;
+        values[1] = harness;
+        values[7] = "direct".into();
+        values[10] = "acp".into();
+        Self {
+            values,
+            selected: 0,
+            phase: ProviderEditPhase::Editing,
+            plan: None,
+            provider: None,
+            armed: false,
+            notice: "EDITING · Complete the owner fields; no configuration effect has occurred."
+                .into(),
+            worker: None,
+        }
+    }
+
+    fn key(&mut self, key: KeyEvent, profile: Option<WorkspaceProfile>) {
+        match self.phase {
+            ProviderEditPhase::Editing => match key.code {
+                KeyCode::Tab if key.modifiers == KeyModifiers::NONE => {
+                    self.selected = (self.selected + 1) % self.values.len();
+                }
+                KeyCode::BackTab => {
+                    self.selected = self
+                        .selected
+                        .checked_sub(1)
+                        .unwrap_or(self.values.len() - 1);
+                }
+                KeyCode::Up if key.modifiers == KeyModifiers::NONE => {
+                    self.selected = self.selected.saturating_sub(1);
+                }
+                KeyCode::Down if key.modifiers == KeyModifiers::NONE => {
+                    self.selected = (self.selected + 1).min(self.values.len() - 1);
+                }
+                KeyCode::Backspace if key.modifiers == KeyModifiers::NONE => {
+                    self.values[self.selected].pop();
+                }
+                _ if is_control_char(key, 'u') => {
+                    self.values[self.selected].clear();
+                }
+                KeyCode::Enter if key.modifiers == KeyModifiers::NONE => {
+                    if self.selected + 1 < self.values.len() {
+                        self.selected += 1;
+                    } else {
+                        self.begin_plan(profile);
+                    }
+                }
+                _ if is_control_char(key, 'j') && matches!(self.selected, 4 | 5) => {
+                    if self.values[self.selected].len() < 16_384 {
+                        self.values[self.selected].push('\n');
+                    }
+                }
+                _ => {
+                    if let Some(character) = bounded_text_character(key)
+                        && self.values[self.selected].len() + character.len_utf8() <= 16_384
+                    {
+                        self.values[self.selected].push(character);
+                    }
+                }
+            },
+            ProviderEditPhase::Reviewing => match key.code {
+                KeyCode::Char('c') if key.modifiers == KeyModifiers::NONE => {
+                    self.armed = !self.armed;
+                    self.notice = if self.armed {
+                        "ARMED · Enter applies only the reviewed candidate digest; c disarms."
+                            .into()
+                    } else {
+                        "REVIEWING · Plan disarmed; inspect the exact owner facts before applying."
+                            .into()
+                    };
+                }
+                KeyCode::Enter if key.modifiers == KeyModifiers::NONE && self.armed => {
+                    self.begin_apply(profile);
+                }
+                KeyCode::Char('e') if key.modifiers == KeyModifiers::NONE => {
+                    self.phase = ProviderEditPhase::Editing;
+                    self.plan = None;
+                    self.provider = None;
+                    self.armed = false;
+                    self.notice =
+                        "EDITING · Prior plan discarded; submit a fresh owner plan.".into();
+                }
+                _ => {}
+            },
+            ProviderEditPhase::Complete => {
+                if is_key(key, KeyCode::Char('n'), KeyModifiers::NONE) {
+                    *self = Self::new();
+                }
+            }
+            ProviderEditPhase::Planning | ProviderEditPhase::Applying => {}
+        }
+    }
+
+    fn paste(&mut self, text: &str) {
+        if self.phase != ProviderEditPhase::Editing {
+            return;
+        }
+        let available = 16_384usize.saturating_sub(self.values[self.selected].len());
+        self.values[self.selected].extend(
+            text.chars()
+                .filter(|character| !character.is_control() || *character == '\n')
+                .take(available),
+        );
+    }
+
+    fn begin_plan(&mut self, profile: Option<WorkspaceProfile>) {
+        let Some(host) = profile
+            .and_then(|profile| profile.daimon)
+            .and_then(|daimon| daimon.host)
+        else {
+            self.notice = "REFUSED · No hosted Daimon owner is selected · Next: select and preflight a hosted interactive-agent owner, restart once, then retry."
+                .into();
+            return;
+        };
+        let provider = match self.provider_value() {
+            Ok(provider) => provider,
+            Err(reason) => {
+                self.notice = format!("REFUSED · {reason}");
+                return;
+            }
+        };
+        let operation_id = match fresh_identity() {
+            Ok(bytes) => bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+            Err(reason) => {
+                self.notice = format!("REFUSED · {reason}");
+                return;
+            }
+        };
+        let (sender, receiver) = sync_channel(1);
+        std::thread::spawn(move || {
+            let result = (|| {
+                let catalog = provider_catalog(&host.executable, &host.config)?;
+                if catalog.owner != "daimon-local-agent" {
+                    return Err(
+                        "selected owner does not publish interactive-agent provider edits".into(),
+                    );
+                }
+                let request = serde_json::json!({
+                    "version": 1,
+                    "operation_id": operation_id,
+                    "expected_document_digest": catalog.document_digest,
+                    "provider": provider
+                });
+                let bytes = invoke_provider_owner(
+                    &host.executable,
+                    &host.config,
+                    "--plan-provider-edit",
+                    Some(
+                        &serde_json::to_vec(&request)
+                            .map_err(|_| "provider plan request could not be encoded")?,
+                    ),
+                )?;
+                let plan: ProviderEditPlanProjection = serde_json::from_slice(&bytes)
+                    .map_err(|_| "owner returned an invalid provider edit plan")?;
+                validate_provider_edit_plan(
+                    &plan,
+                    &operation_id,
+                    &catalog.document_digest,
+                    &provider,
+                )?;
+                Ok(ProviderEditWorkerResult::Planned {
+                    plan: Box::new(plan),
+                    provider,
+                })
+            })();
+            let _ = sender.send(result);
+        });
+        self.phase = ProviderEditPhase::Planning;
+        self.notice = "PLANNING · Daimon is validating the complete current and candidate owner documents; the interface remains responsive."
+            .into();
+        self.worker = Some(ProviderEditWorker {
+            updates: receiver,
+            started: Instant::now(),
+        });
+    }
+
+    fn begin_apply(&mut self, profile: Option<WorkspaceProfile>) {
+        let Some(host) = profile
+            .and_then(|profile| profile.daimon)
+            .and_then(|daimon| daimon.host)
+        else {
+            self.notice =
+                "REFUSED · Hosted Daimon owner is no longer selected; no apply was attempted."
+                    .into();
+            self.armed = false;
+            return;
+        };
+        let (Some(plan), Some(provider)) = (self.plan.clone(), self.provider.clone()) else {
+            self.notice =
+                "REFUSED · Reviewed plan is unavailable; return to editing and plan again.".into();
+            self.armed = false;
+            return;
+        };
+        let (sender, receiver) = sync_channel(1);
+        std::thread::spawn(move || {
+            let result = (|| {
+                let request = serde_json::json!({
+                    "version": 1,
+                    "operation_id": plan.operation_id,
+                    "expected_document_digest": plan.expected_document_digest,
+                    "expected_plan_digest": plan.plan_digest,
+                    "expected_candidate_document_digest": plan.candidate_document_digest,
+                    "provider": provider
+                });
+                let bytes = invoke_provider_owner(
+                    &host.executable,
+                    &host.config,
+                    "--apply-provider-edit",
+                    Some(
+                        &serde_json::to_vec(&request)
+                            .map_err(|_| "provider apply request could not be encoded")?,
+                    ),
+                )?;
+                let receipt: ProviderEditReceiptProjection = serde_json::from_slice(&bytes)
+                    .map_err(|_| "owner returned an invalid provider edit receipt")?;
+                validate_provider_edit_receipt(&receipt, &plan)?;
+                Ok(ProviderEditWorkerResult::Applied(receipt))
+            })();
+            let _ = sender.send(result);
+        });
+        self.phase = ProviderEditPhase::Applying;
+        self.armed = false;
+        self.notice = "APPLYING · Daimon is checking the reviewed plan and replacing the owner document atomically; do not infer delegation or agent invocation."
+            .into();
+        self.worker = Some(ProviderEditWorker {
+            updates: receiver,
+            started: Instant::now(),
+        });
+    }
+
+    fn provider_value(&self) -> Result<serde_json::Value, String> {
+        if !valid_id(self.values[0].trim()) {
+            return Err("provider ID must be exactly 32 hexadecimal characters · Next: correct the selected field".into());
+        }
+        if !valid_id(self.values[1].trim()) {
+            return Err("harness profile ID must be exactly 32 hexadecimal characters · Next: correct the selected field".into());
+        }
+        if !valid_digest(self.values[2].trim()) {
+            return Err("policy digest must be sha256: followed by 64 hexadecimal characters · Next: correct the selected field".into());
+        }
+        if !Path::new(self.values[3].trim()).is_absolute() {
+            return Err("program must be an absolute path · Next: select the owner executable path, not a shell command".into());
+        }
+        let isolation = match self.values[7].trim() {
+            "direct" => serde_json::json!({"kind": "direct"}),
+            "macos_seatbelt" => {
+                if !Path::new(self.values[8].trim()).is_absolute()
+                    || !valid_digest(self.values[9].trim())
+                {
+                    return Err("macos_seatbelt requires an absolute policy path and exact sha256 digest · Next: complete both seatbelt fields".into());
+                }
+                serde_json::json!({
+                    "kind": "macos_seatbelt",
+                    "policy_path": self.values[8].trim(),
+                    "policy_digest": self.values[9].trim()
+                })
+            }
+            _ => {
+                return Err(
+                    "isolation must be direct or macos_seatbelt · Next: correct the selected field"
+                        .into(),
+                );
+            }
+        };
+        let transport = self.values[10].trim();
+        if !matches!(transport, "acp" | "claude_stream_json") {
+            return Err(
+                "transport must be acp or claude_stream_json · Next: correct the selected field"
+                    .into(),
+            );
+        }
+        let lines = |value: &str| {
+            value
+                .lines()
+                .filter(|line| !line.is_empty())
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        };
+        Ok(serde_json::json!({
+            "provider_id": self.values[0].trim(),
+            "harness_profile_id": self.values[1].trim(),
+            "policy_digest": self.values[2].trim(),
+            "program": self.values[3].trim(),
+            "arguments": lines(&self.values[4]),
+            "inherited_environment_names": lines(&self.values[5]),
+            "acp_agent_authentication_method": (!self.values[6].trim().is_empty()).then(|| self.values[6].trim()),
+            "isolation": isolation,
+            "transport": transport
+        }))
+    }
+
+    fn settle(&mut self) -> Option<(ActivityLevel, Duration)> {
+        let settlement =
+            self.worker
+                .as_ref()
+                .and_then(|worker| match worker.updates.try_recv() {
+                    Ok(value) => Some(value),
+                    Err(TryRecvError::Disconnected) => Some(Err(
+                        "provider edit worker ended without an owner result".into(),
+                    )),
+                    Err(TryRecvError::Empty) => None,
+                })?;
+        let elapsed = self
+            .worker
+            .take()
+            .expect("settled worker exists")
+            .started
+            .elapsed();
+        match settlement {
+            Ok(ProviderEditWorkerResult::Planned { plan, provider }) => {
+                self.plan = Some(*plan);
+                self.provider = Some(provider);
+                self.phase = ProviderEditPhase::Reviewing;
+                self.notice = "REVIEWING · Daimon validated a redacted exact-change plan; c arms, Enter applies only while armed."
+                    .into();
+                Some((ActivityLevel::Info, elapsed))
+            }
+            Ok(ProviderEditWorkerResult::Applied(receipt)) => {
+                self.phase = ProviderEditPhase::Complete;
+                self.notice = format!(
+                    "APPLIED · Daimon {} provider {} · owner document {} · restart required · Next: restart/qualify the provider, then explicitly bind it to work",
+                    if receipt.replayed {
+                        "verified an existing apply for"
+                    } else {
+                        "configured"
+                    },
+                    receipt.provider_id,
+                    receipt.document_digest
+                );
+                Some((ActivityLevel::Success, elapsed))
+            }
+            Err(reason) => {
+                self.phase = if self.plan.is_some() {
+                    ProviderEditPhase::Reviewing
+                } else {
+                    ProviderEditPhase::Editing
+                };
+                self.armed = false;
+                self.notice = format!(
+                    "REFUSED · {reason} · Next: correct the named condition, then plan again; no delegation or invocation occurred"
+                );
+                Some((ActivityLevel::Warning, elapsed))
+            }
+        }
+    }
+
+    fn lines(&self) -> Vec<String> {
+        let mut lines = vec![
+            "scope               one Daimon interactive-agent owner document".into(),
+            "boundary            configuration only · no qualification, task binding, delegation, persona activation, or invocation".into(),
+            String::new(),
+        ];
+        if matches!(
+            self.phase,
+            ProviderEditPhase::Editing | ProviderEditPhase::Planning
+        ) {
+            for (index, label) in PROVIDER_EDIT_FIELDS.iter().enumerate() {
+                let value = self.values[index].replace('\n', " ↵ ");
+                lines.push(format!(
+                    "{} {:<47} {}",
+                    if index == self.selected { "▶" } else { " " },
+                    label,
+                    if value.is_empty() { "—" } else { &value }
+                ));
+            }
+        } else if let Some(plan) = &self.plan {
+            lines.extend([
+                format!("action              {}", plan.action),
+                format!("operation           {}", plan.operation_id),
+                format!("current document    {}", plan.current_document_digest),
+                format!("candidate document  {}", plan.candidate_document_digest),
+                format!("confirmation plan   {}", plan.plan_digest),
+                format!("changed fields      {}", plan.changed_fields.join(", ")),
+                format!("restart required    {}", plan.restart_required),
+                format!("provider            {}", plan.provider.provider_id),
+                format!("harness profile     {}", plan.provider.harness_profile_id),
+                format!(
+                    "profile document    {}",
+                    plan.provider.profile_document_digest
+                ),
+                format!(
+                    "launch shape        {} · {} · {} argument(s) · {} environment name(s)",
+                    plan.provider.transport.as_deref().unwrap_or("unknown"),
+                    plan.provider.isolation.as_deref().unwrap_or("unknown"),
+                    plan.provider.argument_count.unwrap_or_default(),
+                    plan.provider
+                        .inherited_environment_name_count
+                        .unwrap_or_default()
+                ),
+            ]);
+        }
+        lines.extend([String::new(), self.notice.clone(), match self.phase {
+            ProviderEditPhase::Editing => "Tab/Enter next field · Shift-Tab previous · Ctrl-U clears field · Ctrl-J newline in list fields · Enter on transport plans · Esc closes",
+            ProviderEditPhase::Planning | ProviderEditPhase::Applying => "Owner operation in progress · Ctrl-Q requests safe exit after the worker settles",
+            ProviderEditPhase::Reviewing => "e edits/discards plan · c arms/disarms · Enter confirms only while armed · Esc closes",
+            ProviderEditPhase::Complete => "n starts another provider form · Esc closes",
+        }.into()]);
+        lines
+    }
+}
+
 fn spawn_provider_inspection(
     profile: Option<WorkspaceProfile>,
     refresh: bool,
@@ -3842,7 +4353,7 @@ struct ProviderCatalogProjection {
     providers: Vec<ProviderCatalogEntryProjection>,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct ProviderCatalogEntryProjection {
     provider_id: String,
     harness_profile_id: String,
@@ -3905,6 +4416,19 @@ fn local_provider_configuration(profile: Option<&WorkspaceProfile>) -> Vec<Strin
 }
 
 fn provider_catalog(executable: &Path, config: &Path) -> Result<ProviderCatalogProjection, String> {
+    let bytes = invoke_provider_owner(executable, config, "--describe-providers", None)?;
+    let projection: ProviderCatalogProjection = serde_json::from_slice(&bytes)
+        .map_err(|_| "owner returned an invalid provider projection".to_owned())?;
+    validate_provider_catalog(&projection)?;
+    Ok(projection)
+}
+
+fn invoke_provider_owner(
+    executable: &Path,
+    config: &Path,
+    command: &str,
+    request: Option<&[u8]>,
+) -> Result<Vec<u8>, String> {
     let root = std::env::temp_dir().join(format!(
         "pantheon-provider-catalog-{}-{}",
         std::process::id(),
@@ -3922,13 +4446,25 @@ fn provider_catalog(executable: &Path, config: &Path) -> Result<ProviderCatalogP
         let stderr = File::create(&stderr_path)
             .map_err(|_| "owner refusal output unavailable".to_owned())?;
         let mut child = Command::new(executable)
-            .arg("--describe-providers")
+            .arg(command)
             .arg(config)
-            .stdin(Stdio::null())
+            .stdin(if request.is_some() {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            })
             .stdout(Stdio::from(stdout))
             .stderr(Stdio::from(stderr))
             .spawn()
             .map_err(|_| "selected owner executable could not start".to_owned())?;
+        if let Some(request) = request {
+            child
+                .stdin
+                .take()
+                .ok_or_else(|| "owner request input unavailable".to_owned())?
+                .write_all(request)
+                .map_err(|_| "owner request input could not be written".to_owned())?;
+        }
         let deadline = Instant::now() + PROVIDER_CATALOG_TIMEOUT;
         let status = loop {
             match child.try_wait() {
@@ -3949,14 +4485,88 @@ fn provider_catalog(executable: &Path, config: &Path) -> Result<ProviderCatalogP
                 .unwrap_or_else(|_| "owner returned a non-success status".into());
             return Err(single_line(&refusal, 240));
         }
-        let bytes = read_bounded(&stdout_path)?;
-        let projection: ProviderCatalogProjection = serde_json::from_slice(&bytes)
-            .map_err(|_| "owner returned an invalid provider projection".to_owned())?;
-        validate_provider_catalog(&projection)?;
-        Ok(projection)
+        read_bounded(&stdout_path)
     })();
     let _ = fs::remove_dir_all(root);
     result
+}
+
+fn validate_provider_edit_plan(
+    plan: &ProviderEditPlanProjection,
+    operation_id: &str,
+    document_digest: &str,
+    expected_provider: &serde_json::Value,
+) -> Result<(), String> {
+    let expected_arguments = expected_provider["arguments"]
+        .as_array()
+        .ok_or_else(|| "provider plan request lost its argument facts".to_owned())?;
+    let expected_environment = expected_provider["inherited_environment_names"]
+        .as_array()
+        .ok_or_else(|| "provider plan request lost its environment facts".to_owned())?;
+    let expected_isolation = expected_provider["isolation"]["kind"]
+        .as_str()
+        .ok_or_else(|| "provider plan request lost its isolation fact".to_owned())?;
+    if plan.version != 1
+        || plan.owner != "daimon-local-agent"
+        || plan.operation_id != operation_id
+        || !matches!(plan.action.as_str(), "add" | "replace")
+        || plan.expected_document_digest != document_digest
+        || plan.current_document_digest != document_digest
+        || !valid_digest(&plan.candidate_document_digest)
+        || !valid_digest(&plan.plan_digest)
+        || plan.changed_fields.is_empty()
+        || plan.changed_fields.len() > 8
+        || !plan.restart_required
+        || !valid_provider_catalog_entry(&plan.provider)
+        || plan.provider.provider_id != expected_provider["provider_id"]
+        || plan.provider.harness_profile_id != expected_provider["harness_profile_id"]
+        || plan.provider.policy_digest.as_deref() != expected_provider["policy_digest"].as_str()
+        || plan.provider.transport.as_deref() != expected_provider["transport"].as_str()
+        || plan.provider.isolation.as_deref() != Some(expected_isolation)
+        || plan.provider.argument_count != Some(expected_arguments.len())
+        || plan.provider.inherited_environment_name_count != Some(expected_environment.len())
+        || plan.provider.authentication_method_configured
+            != Some(!expected_provider["acp_agent_authentication_method"].is_null())
+        || plan.provider.executable_available.is_none()
+    {
+        return Err("owner returned unsupported or mismatched provider plan facts".into());
+    }
+    if plan.changed_fields.iter().any(|field| {
+        !matches!(
+            field.as_str(),
+            "provider_added"
+                | "harness_profile_id"
+                | "policy_digest"
+                | "program"
+                | "arguments"
+                | "inherited_environment_names"
+                | "authentication_method"
+                | "isolation"
+                | "transport"
+        )
+    }) {
+        return Err("owner returned an unknown provider change field".into());
+    }
+    Ok(())
+}
+
+fn validate_provider_edit_receipt(
+    receipt: &ProviderEditReceiptProjection,
+    plan: &ProviderEditPlanProjection,
+) -> Result<(), String> {
+    if receipt.version != 1
+        || receipt.owner != "daimon-local-agent"
+        || receipt.operation_id != plan.operation_id
+        || !matches!(receipt.disposition.as_str(), "applied" | "already_applied")
+        || !receipt.applied
+        || receipt.replayed != (receipt.disposition == "already_applied")
+        || receipt.document_digest != plan.candidate_document_digest
+        || receipt.provider_id != plan.provider.provider_id
+        || !receipt.restart_required
+    {
+        return Err("owner returned unsupported or mismatched provider receipt facts".into());
+    }
+    Ok(())
 }
 
 fn read_bounded(path: &Path) -> Result<Vec<u8>, String> {
@@ -4014,38 +4624,38 @@ fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> Result<(), 
         return Err("owner returned unsupported provider catalogue facts".into());
     }
     for provider in &catalog.providers {
-        if !valid_id(&provider.provider_id)
-            || !valid_id(&provider.harness_profile_id)
-            || !valid_digest(&provider.profile_document_digest)
-            || provider
-                .policy_digest
-                .as_deref()
-                .is_some_and(|value| !valid_digest(value))
-            || provider
-                .model
-                .as_deref()
-                .is_some_and(|value| !valid_projection_text(value, 1_024))
-            || provider
-                .transport
-                .as_deref()
-                .is_some_and(|value| !valid_projection_text(value, 64))
-            || provider
-                .isolation
-                .as_deref()
-                .is_some_and(|value| !valid_projection_text(value, 64))
-            || provider
-                .wire
-                .as_deref()
-                .is_some_and(|value| !valid_projection_text(value, 64))
-            || provider
-                .endpoint_scope
-                .as_deref()
-                .is_some_and(|value| !valid_projection_text(value, 64))
-        {
+        if !valid_provider_catalog_entry(provider) {
             return Err("owner returned malformed provider catalogue facts".into());
         }
     }
     Ok(())
+}
+
+fn valid_provider_catalog_entry(provider: &ProviderCatalogEntryProjection) -> bool {
+    valid_id(&provider.provider_id)
+        && valid_id(&provider.harness_profile_id)
+        && valid_digest(&provider.profile_document_digest)
+        && provider.policy_digest.as_deref().is_none_or(valid_digest)
+        && provider
+            .model
+            .as_deref()
+            .is_none_or(|value| valid_projection_text(value, 1_024))
+        && provider
+            .transport
+            .as_deref()
+            .is_none_or(|value| valid_projection_text(value, 64))
+        && provider
+            .isolation
+            .as_deref()
+            .is_none_or(|value| valid_projection_text(value, 64))
+        && provider
+            .wire
+            .as_deref()
+            .is_none_or(|value| valid_projection_text(value, 64))
+        && provider
+            .endpoint_scope
+            .as_deref()
+            .is_none_or(|value| valid_projection_text(value, 64))
 }
 
 fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
@@ -4354,6 +4964,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         "Run M-x Inspect local provider configuration to request a fresh redacted owner projection.".into(),
     ];
     let mut provider_inspection: Option<ProviderInspection> = None;
+    let mut provider_edit: Option<ProviderEditWorkflow> = None;
     let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
     let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
     let mut reconfiguration = current_profile.clone().map(ReconfigurationWorkflow::new);
@@ -4381,6 +4992,22 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         let _input_capture = InputCapture::enable()?;
         loop {
+            if let Some((level, elapsed)) = provider_edit
+                .as_mut()
+                .and_then(ProviderEditWorkflow::settle)
+            {
+                let edit = provider_edit
+                    .as_ref()
+                    .expect("settled provider edit exists");
+                notice = edit.notice.clone();
+                instrumentation.record(
+                    "configuration.providers.edit.result",
+                    "daimon",
+                    level,
+                    elapsed,
+                );
+                activity.push(level, "configuration", notice.clone());
+            }
             let provider_settlement = provider_inspection.as_ref().and_then(|inspection| {
                 match inspection.updates.try_recv() {
                     Ok(lines) => Some(Ok(lines)),
@@ -5349,6 +5976,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             &provider_configuration_lines,
                         );
                     }
+                    WorkbenchOverlay::ProviderEdit => {
+                        if let Some(workflow) = &provider_edit {
+                            draw_inspector(
+                                frame,
+                                "Add or replace local agent provider",
+                                &workflow.lines(),
+                            );
+                        }
+                    }
                     WorkbenchOverlay::AcpSessions => {
                         draw_inspector(
                             frame,
@@ -5457,6 +6093,25 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     if action.starts_with("navigate.") {
                         vellum_open_prompt = None;
                         confirming_discard = false;
+                    }
+                    if action == "configuration.providers.agent.upsert" {
+                        if provider_edit
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some())
+                        {
+                            notice = "QUEUED · A guarded provider owner operation is already running · Next: wait for its exact plan or receipt"
+                                .into();
+                            overlay = WorkbenchOverlay::ProviderEdit;
+                            continue;
+                        }
+                        provider_edit = Some(ProviderEditWorkflow::new());
+                        notice = "OPENED · Guarded local agent provider form · Next: complete the bounded fields and review Daimon's exact redacted plan"
+                            .into();
+                        activity.push(ActivityLevel::Info, "configuration", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::ProviderEdit;
+                        continue;
                     }
                     let configuration_overlay = match action {
                         "configuration.providers.local" => Some((
@@ -5899,6 +6554,19 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         workflow.insert(&text);
                     }
                 }
+                Event::Paste(text) if overlay == WorkbenchOverlay::ProviderEdit => {
+                    if let Some(workflow) = &mut provider_edit {
+                        workflow.paste(&text);
+                    }
+                }
+                Event::Key(key) if key_behavior == Some(KeyBehavior::ProviderEditInput) => {
+                    if let Some(workflow) = &mut provider_edit {
+                        workflow.key(key, current_profile.clone());
+                        notice = workflow.notice.clone();
+                    } else {
+                        overlay = WorkbenchOverlay::None;
+                    }
+                }
                 Event::Key(key) if key_behavior == Some(KeyBehavior::ReconfigurationInput) => {
                     if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
                         overlay = WorkbenchOverlay::None;
@@ -6023,6 +6691,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 .as_ref()
                                 .is_some_and(Hub::mutation_recovery_required);
                         let provider_inspection_pending = provider_inspection.is_some();
+                        let provider_edit_pending = provider_edit
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         let vellum_unresolved =
                             vellum_durable_save.as_ref().is_some_and(|control| {
                                 control.request_pending() || control.recovery_required()
@@ -6031,6 +6702,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             }) || vellum_atomic_operation.is_some();
                         if chronos_unresolved
                             || provider_inspection_pending
+                            || provider_edit_pending
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -6083,7 +6755,16 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     }
                 }
                 Event::Key(_) if key_behavior == Some(KeyBehavior::DismissOverlay) => {
-                    overlay = WorkbenchOverlay::None;
+                    if overlay == WorkbenchOverlay::ProviderEdit
+                        && provider_edit
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some())
+                    {
+                        notice = "WAIT · Provider owner operation is pending · Next: remain here until the exact plan or receipt settles"
+                            .into();
+                    } else {
+                        overlay = WorkbenchOverlay::None;
+                    }
                 }
                 Event::Key(_) if key_behavior == Some(KeyBehavior::Suppress) => {}
                 Event::Key(_) if key_behavior == Some(KeyBehavior::OpenCommands) => {
@@ -7340,7 +8021,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             }) || vellum_atomic_replace.as_ref().is_some_and(|control| {
                                 control.disposition() == AtomicReplaceDisposition::OutcomeUnknown
                             }) || vellum_atomic_operation.is_some();
+                        let provider_edit_unresolved = provider_edit
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         if chronos_unresolved
+                            || provider_edit_unresolved
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -7536,6 +8221,7 @@ mod tests {
             WorkbenchOverlay::Activity,
             WorkbenchOverlay::Configuration,
             WorkbenchOverlay::LocalProviders,
+            WorkbenchOverlay::ProviderEdit,
             WorkbenchOverlay::AcpSessions,
             WorkbenchOverlay::AgoraRooms,
             WorkbenchOverlay::Reconfiguration,
@@ -7576,6 +8262,15 @@ mod tests {
                 false,
             ),
             KeyBehavior::ExecuteCommand("configuration.providers.refresh")
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                plain('x'),
+                WorkbenchOverlay::ProviderEdit,
+                Surface::Configuration,
+                false,
+            ),
+            KeyBehavior::ProviderEditInput
         );
         assert_eq!(
             BehaviorFacade::key(ctrl('p'), WorkbenchOverlay::None, Surface::Vellum, true),
@@ -7677,6 +8372,98 @@ mod tests {
         assert!(lines.contains("structured tools true"));
         assert!(!lines.contains("host_header"));
         assert!(!lines.contains("OPENAI_API_KEY"));
+    }
+
+    #[test]
+    fn provider_edit_form_builds_a_complete_owner_request_without_claiming_delegation() {
+        let mut workflow = ProviderEditWorkflow::new();
+        workflow.values[0] = "22".repeat(16);
+        workflow.values[1] = "33".repeat(16);
+        workflow.values[2] = format!("sha256:{}", "44".repeat(32));
+        workflow.values[3] = "/usr/bin/provider".into();
+        workflow.values[4] = "serve\n--stdio".into();
+        workflow.values[5] = "MODEL_HOME\nMODEL_CACHE".into();
+        workflow.values[6] = "oauth-device".into();
+        let provider = workflow.provider_value().unwrap();
+        assert_eq!(provider["transport"], "acp");
+        assert_eq!(provider["isolation"]["kind"], "direct");
+        assert_eq!(
+            provider["arguments"],
+            serde_json::json!(["serve", "--stdio"])
+        );
+        assert_eq!(
+            provider["inherited_environment_names"],
+            serde_json::json!(["MODEL_HOME", "MODEL_CACHE"])
+        );
+        let lines = workflow.lines().join("\n");
+        assert!(lines.contains("configuration only"));
+        assert!(lines.contains("no qualification"));
+        assert!(lines.contains("delegation"));
+        assert!(lines.contains("invocation"));
+    }
+
+    #[test]
+    fn provider_edit_plan_and_receipt_are_exact_owner_bound_facts() {
+        let operation_id = "11".repeat(16);
+        let document_digest = format!("sha256:{}", "22".repeat(32));
+        let candidate_digest = format!("sha256:{}", "33".repeat(32));
+        let plan = ProviderEditPlanProjection {
+            version: 1,
+            owner: "daimon-local-agent".into(),
+            operation_id: operation_id.clone(),
+            action: "replace".into(),
+            expected_document_digest: document_digest.clone(),
+            current_document_digest: document_digest.clone(),
+            candidate_document_digest: candidate_digest.clone(),
+            plan_digest: format!("sha256:{}", "44".repeat(32)),
+            provider: ProviderCatalogEntryProjection {
+                provider_id: "55".repeat(16),
+                harness_profile_id: "66".repeat(16),
+                profile_document_digest: format!("sha256:{}", "77".repeat(32)),
+                policy_digest: Some(format!("sha256:{}", "88".repeat(32))),
+                transport: Some("acp".into()),
+                isolation: Some("direct".into()),
+                executable_available: Some(true),
+                argument_count: Some(2),
+                inherited_environment_name_count: Some(0),
+                authentication_method_configured: Some(false),
+                wire: None,
+                model: None,
+                endpoint_scope: None,
+                endpoint_port: None,
+                structured_output: None,
+                structured_tools: None,
+                sampling_temperature_milli: None,
+                bearer_token_configured: None,
+            },
+            changed_fields: vec!["policy_digest".into()],
+            restart_required: true,
+        };
+        let expected_provider = serde_json::json!({
+            "provider_id": "55".repeat(16),
+            "harness_profile_id": "66".repeat(16),
+            "policy_digest": format!("sha256:{}", "88".repeat(32)),
+            "program": "/usr/bin/provider",
+            "arguments": ["serve", "--stdio"],
+            "inherited_environment_names": [],
+            "acp_agent_authentication_method": null,
+            "isolation": {"kind": "direct"},
+            "transport": "acp"
+        });
+        validate_provider_edit_plan(&plan, &operation_id, &document_digest, &expected_provider)
+            .unwrap();
+        let receipt = ProviderEditReceiptProjection {
+            version: 1,
+            owner: "daimon-local-agent".into(),
+            operation_id,
+            disposition: "applied".into(),
+            applied: true,
+            replayed: false,
+            document_digest: candidate_digest,
+            provider_id: plan.provider.provider_id.clone(),
+            restart_required: true,
+        };
+        validate_provider_edit_receipt(&receipt, &plan).unwrap();
     }
 
     #[test]
@@ -7951,6 +8738,7 @@ mod tests {
             "workbench.help",
             "workbench.configuration",
             "configuration.providers.local",
+            "configuration.providers.agent.upsert",
             "configuration.acp.sessions",
             "configuration.agora.rooms",
             "workbench.reconfigure",

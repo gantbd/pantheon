@@ -72,13 +72,37 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   current and refreshed projections; the no-owner breadth gate refuses fallback
   file inspection. Commands, arguments, paths, credential names and secrets
   never enter the projection.
-- This does not complete onboarding: neither owner yet publishes a guarded
-  edit/apply transaction, endpoint/model discovery, health/conformance run, or
-  retained qualification receipt. Pantheon's hosted Daimon profile also selects
-  the interactive-agent owner shape only; it cannot yet compose the distinct
-  local-model owner and therefore cannot present the running LM Studio/Qwen
-  catalogue through this surface. Those are owner/composition gaps, not reasons
-  for Pantheon to mutate raw JSON.
+- Daimon's interactive-agent owner now publishes a guarded provider edit
+  transaction. It validates the complete current owner document, requires its
+  exact expected digest, produces a redacted exact-change plan and confirmation
+  digest, revalidates the complete candidate, then applies only those reviewed
+  bytes under an adjacent lock with permission-preserving atomic replacement and
+  parent-directory synchronization. A verified retry reports
+  `already_applied`; stale state, mismatched confirmation and concurrent edits
+  fail with distinct operator orientation. Commands, arguments, paths,
+  environment names and credentials remain absent from the plan and receipt.
+  The executable journey proves plan, redaction, apply, replay, stale-state
+  refusal and the resulting owner catalogue.
+- Pantheon now consumes that contract through a bounded, keyboard-driven form:
+  generated provider/profile identities, direct or macOS Seatbelt isolation,
+  ACP or Claude stream transport, multiline argument/environment lists, and
+  optional authentication method. The form validates obvious shape errors
+  before contact, performs plan and apply off the render/input loop, validates
+  typed owner plan/receipt facts, requires explicit arm/confirm, fences exit and
+  profile restart while the owner operation is pending, and records observable
+  result instrumentation/activity. Its boundary copy explicitly distinguishes
+  configuration from qualification, task binding, delegation, persona
+  activation and invocation. The hosted tmux journey drives the production
+  form through redacted plan and atomic apply, checks the replaced owner
+  document, and cleanly drains the hosted session.
+- This does not complete onboarding: the local-model owner still lacks
+  edit/apply, endpoint
+  and model discovery, health/conformance runs, and retained qualification
+  receipts. Pantheon's hosted Daimon profile also selects the interactive-agent
+  owner shape only; it cannot yet compose the distinct local-model owner and
+  therefore cannot present the running LM Studio/Qwen catalogue through this
+  surface. Those are owner/composition gaps, not reasons for Pantheon to mutate
+  raw JSON.
 
 ### Operational discovery loop
 
@@ -286,6 +310,15 @@ organizational title, work-mode activation, delegation, authority, approval or
 sign-off. This makes role-shaped collaboration usable now and testable in the
 task-to-agent journey, while intentionally leaving durable role activation,
 provider selection and authority binding to their sovereign owner contracts.
+
+The guarded interactive-agent provider transaction is the first configuration
+primitive needed to close that gap. The remaining Pantheon slice must compose
+it with provider selection and qualification rather than equating a successful
+configuration write with a delegated turn. An operator still reviews the exact
+task, provider/profile, persona lens, grounding depth, tools, budget and human
+gates before invocation; the resulting task, session, room and owner receipts
+must share durable correlation identities so the operator can return to
+Chronos and see evidence-backed status or comment proposals.
 
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
 - [ ] From the selected task, choose a qualified local provider, declared work
