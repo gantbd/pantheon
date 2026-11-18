@@ -1,3 +1,4 @@
+<!-- 2026-11-18: human gates now carry packet/rationale references; pending control is inspect-only. Large governing-doc edits bypassed Vellum's current size limit. -->
 <!-- 2026-11-18: hosted Vellum now settles save feedback; the 87,417-byte journey plan exceeds its current workspace limit. -->
 <!-- Active delivery edits use hosted Vellum when practical; bypasses are disclosed per turn. -->
 <!-- Maintained through Pantheon Vellum dogfood; see the per-turn reconciliation contract. -->

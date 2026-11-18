@@ -530,14 +530,14 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                 resource_identity: identity.into(),
                 kind: AgendaKind::HumanGate,
                 urgency: AgendaUrgency::Blocking,
-                actionability: AgendaActionability::Blocked,
-                blocker: Some("Moira publishes binding digests but no resolvable decision-packet references, and Pantheon has no selected Aegis-authorized response control".into()),
+                actionability: AgendaActionability::InspectOnly,
+                blocker: Some("Moira publishes an exact decision-packet reference, but Pantheon has no selected packet reader or Aegis-authorized response control".into()),
                 title: "Named-human deliberation gate".into(),
                 why_operator: format!("Moira retained an unresolved gate for reviewer {reviewer}"),
                 authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
-                requested_action: "resolve and verify the exact decision packet before any human disposition is offered".into(),
+                requested_action: "inspect the exact packet reference; configure and qualify its selected reader before any human disposition is offered".into(),
                 consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
-                next_owner_action: "publish owner-resolvable finding, decision, material and policy references; then select and qualify the command-scoped response control".into(),
+                next_owner_action: "select and qualify the decision-packet reader, then compose the command-scoped response control".into(),
                 route: "navigate.moira.deliberation".into(),
             });
         } else if name == "moira-deliberation" && status != "current" {
@@ -2046,6 +2046,12 @@ mod tests {
                         "decision_digest": "1a".repeat(32),
                         "material_revision_digest": "1b".repeat(32),
                         "policy_digest": "1c".repeat(32),
+                        "decision_packet": {
+                            "owner_route": "1d".repeat(16),
+                            "artifact_route": "1e".repeat(16),
+                            "expected_revision": 28,
+                            "expected_sha256": "1f".repeat(32)
+                        },
                         "requested_at": 29
                     },
                     "response": null
@@ -2072,12 +2078,12 @@ mod tests {
         assert_eq!(entry.source_revision, "12");
         assert_eq!(entry.resource_identity, "17".repeat(16));
         assert!(entry.why_operator.contains(&"18".repeat(16)));
-        assert_eq!(entry.actionability, AgendaActionability::Blocked);
+        assert_eq!(entry.actionability, AgendaActionability::InspectOnly);
         assert!(
             entry
                 .blocker
                 .as_deref()
-                .is_some_and(|value| value.contains("no resolvable decision-packet references"))
+                .is_some_and(|value| value.contains("no selected packet reader"))
         );
         assert!(entry.authority.contains("grants none"));
         assert_eq!(entry.route, "navigate.moira.deliberation");

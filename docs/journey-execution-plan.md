@@ -1196,7 +1196,7 @@ mature stakeholder ensemble.
   exchange only; it does not yet prove durable multi-turn deliberation,
   adjudication, or owner-applied priority disposition.
 - [x] Publish `HumanGateRequestV1` and exact presentation/response receipts.
-- [ ] Publish owner-resolvable, revision-bound references for the complete human
+- [x] Publish owner-resolvable, revision-bound references for the complete human
   decision packet and response rationale. The packet must let the reviewer see
   the exact decision, alternatives, evidence, dissent, uncertainty,
   reversibility and deadline while retaining the existing binding digests;
@@ -1214,10 +1214,25 @@ read the public snapshot, enforce a bounded packet size and verify both revision
 and SHA-256 before returning human-readable text. Unknown routes, invalid route
 scope, stale revision, changed bytes, refusal and transport failure remain
 distinct; the reader carries no edit or decision authority. Moira commit
-`874e9b4` passed the complete workspace suite. This qualifies the resolution
-behavior but does not complete the checklist above: `HumanGateRequestV1` still
-does not publish the opaque packet reference, and `HumanGateResponseV1` still
-lacks a resolvable rationale artifact reference.
+`874e9b4` passed the complete workspace suite. At that point this qualified the
+resolution behavior but did not complete the checklist above:
+`HumanGateRequestV1` still lacked the opaque packet reference, and
+`HumanGateResponseV1` still lacked a resolvable rationale artifact reference.
+
+Qualified 2026-11-18 reference-contract slice: Moira now requires one opaque
+owner/artifact route, expected revision and SHA-256 for the decision packet and
+for the attributable response rationale while retaining the existing binding
+digests. Zero routes, zero revisions and zero digests refuse at the domain
+boundary. The public protocol, bounded wire codec, service mapping, durable
+checkpoint and `moira-vellum` reader carry the same reference without importing
+Vellum document semantics or granting decision authority. Deliberation
+checkpoint bytes advance explicitly to v5; legacy v3 without gate state
+migrates, while v4 is refused rather than reinterpreted. `moira-tui` exposes the
+references in headless JSON and the reusable pane. Pantheon's pending agenda
+entry consequently advances from `blocked` for missing references to
+`inspect_only`: a selected packet reader and Aegis-authorized response control
+are still absent. `tests/live/moira_deliberation.sh` proves the exact references,
+settled and pending presentation, headless/TUI parity and durable reopen.
 - [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and
@@ -1236,10 +1251,12 @@ gate into the operator agenda. The real-daemon gate is
 `tests/live/moira_deliberation.sh`. It does not close Dendrite concern routing,
 independent member execution, finding disposition, or the still-missing
 Pantheon control for an Aegis-authorized named-human response. The subsequent
-control audit also found that the request's four binding digests have no
-owner-resolvable artifact references and the response retains only a rationale
-digest. Pantheon now classifies such an agenda entry as `blocked` and names both
-missing contracts instead of presenting a misleading approval affordance.
+control audit originally found that the request's four binding digests had no
+owner-resolvable artifact references and the response retained only a rationale
+digest. The reference-contract slice above closes that schema gap. Pantheon now
+classifies the pending entry as `inspect_only` and names the still-missing
+selected reader and response control instead of presenting a misleading
+approval affordance.
 
 Exit evidence: J33 and acceptance cases 87–95 and 111–113.
 

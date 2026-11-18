@@ -1111,17 +1111,17 @@ fn operator_agenda_view(
             resource_identity: agenda_identity(observation.request.id.0),
             kind: AgendaKind::HumanGate,
             urgency: AgendaUrgency::Blocking,
-            actionability: AgendaActionability::Blocked,
-            blocker: Some("Moira publishes binding digests but no resolvable decision-packet references, and Pantheon has no selected Aegis-authorized response control".into()),
+            actionability: AgendaActionability::InspectOnly,
+            blocker: Some("Moira publishes an exact decision-packet reference, but Pantheon has no selected packet reader or Aegis-authorized response control".into()),
             title: "Named-human deliberation gate".into(),
             why_operator: format!(
                 "Moira retained an unresolved gate for reviewer {}",
                 agenda_identity(observation.request.reviewer)
             ),
             authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
-            requested_action: "resolve and verify the exact decision packet before any human disposition is offered".into(),
+            requested_action: "inspect the exact packet reference; configure and qualify its selected reader before any human disposition is offered".into(),
             consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
-            next_owner_action: "publish owner-resolvable finding, decision, material and policy references; then select and qualify the command-scoped response control".into(),
+            next_owner_action: "select and qualify the decision-packet reader, then compose the command-scoped response control".into(),
             route: "navigate.moira.deliberation".into(),
         });
     }

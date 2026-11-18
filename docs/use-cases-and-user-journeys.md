@@ -2215,20 +2215,24 @@ recording verified authority. Pantheon's TUI and headless surfaces present the
 same settled evidence and place only a pending request on the operator agenda.
 The user still cannot submit that response through Pantheon; adding that control
 requires command-scoped Aegis authorization, owner-native confirmation and
-lost-reply recovery rather than a UI-local decision flag. The current request
-binds external material by digest but does not publish an owner-resolvable
-decision-packet reference, and its response binds a rationale digest without a
-resolvable rationale artifact. Pantheon therefore marks the agenda item blocked
-rather than inviting a human to approve hashes. Before response control is
-enabled, a selected artifact adapter must resolve and verify the complete
+lost-reply recovery rather than a UI-local decision flag. The request and
+response now publish mandatory opaque owner/artifact routes, expected revisions
+and SHA-256 values for the decision packet and attributable rationale while
+retaining their existing binding digests. The domain refuses zero routes,
+revisions or digests; the public protocol, bounded wire, durable v5 checkpoint,
+service mapping and `moira-vellum` reader preserve the same facts without
+importing Vellum document semantics into Moira. Legacy v3 checkpoints without
+gate state migrate; v4 bytes are refused rather than reinterpreted. Pantheon
+therefore presents a pending agenda item as `inspect_only`, not blocked for
+missing references and not actionable as an approval. Before response control
+is enabled, a selected artifact adapter must resolve and verify the complete
 decision packet and retain the attributable rationale; Vellum may present and
 edit that material, while the selected durable artifact owner retains its
-revision/evidence contract. The first reader boundary is now qualified in
-`moira-vellum`: an opaque external-document route selects one exact Vellum
-document and refuses unless its public snapshot matches the expected revision,
-SHA-256 and size bound. The gate remains blocked because the current Moira
-request/response schemas do not yet carry the packet and rationale references
-needed to invoke that reader.
+revision/evidence contract. The first reader boundary remains qualified in
+`moira-vellum`: an opaque route selects one exact Vellum document and refuses
+unless its public snapshot matches the expected revision, SHA-256 and size
+bound. The remaining gap is Pantheon composition of that selected reader and a
+separately qualified Aegis-authorized response control.
 
 ### J5. Produce and review a grounded code/document change
 

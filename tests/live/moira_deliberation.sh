@@ -68,7 +68,12 @@ gate = peer["deliberation"]["human_gate"]
 assert gate["status"] == "settled"
 assert gate["request"]["reviewer"] == "31" * 16
 assert gate["request"]["material_revision_digest"] == "34" * 32
+assert gate["request"]["decision_packet"]["owner_route"] == "3c" * 16
+assert gate["request"]["decision_packet"]["artifact_route"] == "3d" * 16
+assert gate["request"]["decision_packet"]["expected_revision"] == 62
 assert gate["response"]["disposition"] == "changes_requested"
+assert gate["response"]["rationale"]["owner_route"] == "40" * 16
+assert gate["response"]["rationale"]["expected_revision"] == 66
 assert gate["response"]["authority"]["subject"] == "31" * 16
 assert "infers no ensemble fitness" in peer["boundary"]
 PYTHON
@@ -117,6 +122,8 @@ try:
         "evidence=1 dissent=1",
         "human gate: changes_requested",
         "human gate material:",
+        "human gate packet:",
+        "human gate rationale artifact:",
         "human gate authority:",
     )
     tmux("send-keys", "-t", session, "C-p", "C-u")
@@ -170,8 +177,8 @@ entries = value["operator_agenda"]["entries"]
 assert len(entries) == 1
 entry = entries[0]
 assert entry["kind"] == "human_gate"
-assert entry["actionability"] == "blocked"
-assert "no resolvable decision-packet references" in entry["blocker"]
+assert entry["actionability"] == "inspect_only"
+assert "no selected packet reader" in entry["blocker"]
 assert "grants none" in entry["authority"]
 PYTHON
 
@@ -214,12 +221,12 @@ try:
     expect(
         "AGENDA",
         "Named-human deliberation gate",
-        "blocked",
-        "blocked by: Moira publishes binding digests",
+        "inspect only",
+        "blocked by: Moira publishes an exact decision-packet reference",
         "agenda presence grants no authority",
     )
 finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo "qualified: Pantheon composes settled Moira gate evidence and visibly blocks unresolved gates without resolvable decision material in headless and TUI paths"
+echo "qualified: Pantheon presents exact packet/rationale references and keeps pending gates inspect-only until a selected reader and response control exist"
