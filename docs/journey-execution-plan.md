@@ -704,7 +704,11 @@ model, organizational and training-lineage correlation remain explicit gaps.
   known deviations, evidence time, and the next safe action without exposing
   credentials or treating endpoint liveness as session/workflow completion.
 - [ ] Instantiate the selected Moira workflow with stable task/effect links.
-- [ ] Create or bind an exact Agora task room.
+- [ ] Create or bind an exact Agora task room. The separately owned
+  `agora-chronos-adapter` now has a green, durable `task-conversation.v1`
+  registry with exact replay/conflict, bidirectional lookup and explicit
+  broken-link projection; local service/client publication and Pantheon
+  TUI/headless room-create-and-bind composition remain open.
 - [ ] Open a per-task Daimon session bound to the exact Chronos attempt.
 - [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or
