@@ -46,7 +46,7 @@ run_profile() {
 
   if [ "$mode" = create ]; then
     printf '%s\n' \
-      'schema=1' \
+      'schema=2' \
       'mode=create' \
       "store=$scratch/agora-store" \
       "socket=$scratch/agora.sock" \
@@ -60,8 +60,13 @@ run_profile() {
       'grant_profile=scheduled' \
       'host_scope=08080808080808080808080808080808' \
       "server_incarnation=$incarnation" \
-      'display_name=Alice' \
-      'participant_kind=human' \
+      'participant_count=2' \
+      'participant_0_id=alice' \
+      'participant_0_display_name=Alice' \
+      'participant_0_kind=human' \
+      'participant_1_id=local-agent' \
+      'participant_1_display_name=Local Agent' \
+      'participant_1_kind=agent' \
       'room_id=scheduled-room' \
       'room_name=Scheduled Room' \
       'admission=open' \
@@ -316,7 +321,7 @@ report = json.load(sys.stdin)
 assert report["complete"]
 peers = {peer["peer"]: peer for peer in report["peers"]}
 assert peers["agora"]["rooms"] == 1
-assert peers["agora"]["revision"] == 3
+assert peers["agora"]["revision"] == 4
 assert peers["aegis"]["epoch"] == 3
 assert report["hosted_shutdown"]["status"] == "clean"
 '

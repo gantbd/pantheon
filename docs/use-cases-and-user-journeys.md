@@ -1919,18 +1919,24 @@ following universal requirements:
 
 This is the cornerstone journey requested for Pantheon.
 
-**Current qualified presentation slice (2026-11-17):** Pantheon now composes
-Chronos task admission with a guarded prompt into an already configured,
-selected Daimon session. `Shift-N` and the minibuffer action share one behavior
-route; Pantheon retains the bounded task-form text, waits for Chronos's applied
-receipt, then asynchronously requires Daimon's validated owner catalogue to map
-that one exact Chronos task ID to the frozen execution task key. Missing,
-ambiguous, wrong-owner or mismatched evidence stops before prompt preparation
-and orients the operator: the ticket exists, but no agent was invoked. Only
-after the match does Pantheon prepare the exact text in Daimon's ordinary
-review/arm/confirm flow, open the selected-session conversation, and offer a
-refresh-backed return to the Kanban board. The hosted tmux-driven evidence is
-[`tests/live/work_item_agent_journey.sh`](../tests/live/work_item_agent_journey.sh).
+**Current qualified presentation slice (2026-11-18):** Pantheon now composes
+Chronos task admission, exact owner binding, a fresh per-task Daimon session,
+two guarded agent turns, a direct Agora task conversation, and a refresh-backed
+return to the Kanban board. `Shift-N` and the minibuffer action share one
+behavior route; Pantheon retains the bounded task-form text, waits for Chronos's
+applied receipt, then asynchronously requires Daimon's validated owner catalogue
+to map that one exact Chronos task ID to the frozen execution task key. Missing,
+ambiguous, wrong-owner or mismatched evidence stops before session creation and
+orients the operator: the ticket exists, but no agent was invoked. After the
+match, a human reviews and confirms one fresh owner-created Daimon session and
+the first prompt. Pantheon then prefills a direct Agora conversation between the
+configured operator and agent, retains Agora's ordinary review/arm/confirm gate,
+and separately reviews the exact durable Chronos-task-to-room relationship.
+Only an explicitly selected message addressed to that configured agent can open
+the ordinary guarded prompt flow for the second turn; ambient chatter remains
+inert. The same session must again be owner-projected Ready, and every action
+reports success/refusal plus the next safe step. The hosted tmux-driven evidence
+is [`tests/live/work_item_agent_journey.sh`](../tests/live/work_item_agent_journey.sh).
 The selected execution profile now freezes an explicit opaque task key,
 incarnation and attempt alongside principal, harness profile, context/tools and
 budgets; prompt, permission and reattach operations retain that exact attempt
@@ -1944,13 +1950,15 @@ open, prompt or reattach. Its TUI presentation and Pantheon's observation-only
 headless projection show the same execution, manifest, Vellum reference/source
 digest and byte count without publishing the document content; Moira's public
 projection binds that receipt into its retained provider-evidence digest.
-Refusal or uncertainty stops the chain. This slice proves an owner-published
-mapping to the already selected opaque task key, but does **not** claim a new
-per-task Daimon session, dynamic exact task-attempt creation, Moira workflow,
-dynamic Vellum document selection/reading through the owner, Agora room,
-durable typed journey link, or Chronos ticket comments; those remain Required
-below and need owner-published contracts rather than presentation-side
-inference.
+Refusal or uncertainty stops the chain. Agora's private-local owner now also
+supports a versioned, bounded create-time cohort, and the hosted lifecycle gate
+bootstraps distinct human and agent participants without granting Pantheon
+runtime registration authority. This slice does **not** yet claim dynamic exact
+task-attempt creation, a Moira workflow, dynamic Vellum document selection and
+proposal publication, per-effect Aegis decisions, Dendrite context assembly,
+runtime Agora participant administration, or evidence-backed Chronos status and
+comment transitions. Those remain Required below and need owner-published
+contracts rather than presentation-side inference.
 
 Moira's selected participation surface now adds one bounded next step for an
 already-admitted agent member: Pantheon reviews the exact retained binding,

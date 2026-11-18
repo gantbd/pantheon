@@ -11659,6 +11659,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             .map(|_| ())
             .map_err(|failure| format!("Vellum disconnect refused: {failure:?}"))
     });
+    // Agora's private-local owner serves one admitted connection at a time.
+    // Release every presentation client before asking the hosted owner to
+    // drain; retaining the projection connection here fences the owner's
+    // shutdown wake behind that live stream and turns a clean UI exit into
+    // crash residue.
+    drop(agora_message);
+    drop(agora_create);
+    drop(agora);
     let shutdown = operations.finish();
     if let Err(error) = result {
         return match shutdown {

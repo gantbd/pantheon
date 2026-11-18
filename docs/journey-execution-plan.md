@@ -231,8 +231,10 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   between the configured operator and agent participants, retains the ordinary
   room review/arm/confirm gate, consumes the exact applied owner receipt, and
   opens a second human-gated task-conversation relationship review.
-  The agent addressee is configuration, not an alias for the operator; both
-  participants must already be registered with Agora.
+  The agent addressee is configuration, not an alias for the operator. Agora's
+  owner now accepts a bounded schema-2 create-time cohort, and the hosted live
+  gate bootstraps distinct human and agent participants. Runtime registration
+  and a discoverable owner-backed Pantheon configuration form remain open.
 - The addressed-message follow-on is also qualified. A command-palette action
   accepts only the explicitly selected message when it addresses the configured
   agent participant and the task-conversation owner proves one exact current
@@ -258,6 +260,22 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Task-execution policy is also still raw owner configuration;
   provider/task/context/tool/budget selection must become a discoverable
   guarded UI flow before this is ordinary-user operationally complete.
+- The owner-cohort slice exposed a pre-existing lifecycle boundary leak while
+  qualifying schema 2. Pantheon's interactive shell retained Agora's live
+  projection client while asking the single-connection private-local owner to
+  drain; the owner could not admit its shutdown wake, Pantheon killed it at the
+  deadline, and the exact socket inode remained as truthful crash residue.
+  Pantheon now releases every Agora presentation client before owner drain.
+  The unchanged schema-1 baseline and the new schema-2 human/agent cohort both
+  pass the full hosted TUI, clean shutdown, refused shutdown, abrupt loss,
+  outcome-unknown and exact residue-recovery gate.
+- Vellum admitted and rendered this 59,869-byte plan in an isolated Pantheon
+  session, but its atomic-replace owner refused both long and 54-byte literals
+  as generic `InputLimit`. The long-lived workspace also disagreed about whether
+  one or two documents were selected. Neither surface named the measured
+  workset, applicable ceiling, offending resource or recovery action. Chronos
+  retains `vellum-atomic-workset-limit-orientation`; this update therefore used
+  a repository patch after exercising and preserving the owner refusal.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 
@@ -768,6 +786,13 @@ model, organizational and training-lineage correlation remain explicit gaps.
   separately gated exact relationship from the applied owner receipt.
   Standalone room creation and manual binding remain independently available
   capabilities.
+- [x] Bootstrap a bounded, distinct human/agent Agora cohort through the
+  sovereign private-local owner's versioned create configuration. Schema 1
+  remains unchanged; schema 2 accepts 1–16 unique participants, requires the
+  authenticated principal in the cohort, and preserves participant kinds. The
+  full Pantheon-hosted lifecycle gate proves the cohort without importing
+  runtime registration authority. Existing-store participant administration
+  and the normal-user Pantheon configuration journey remain open.
 - [x] Open a per-task Daimon session bound to the exact Chronos attempt.
 - [x] Expose a governed terminal-model invocation from the selected task so a
   configured LM Studio/Ollama provider can contribute without a test harness or

@@ -837,7 +837,11 @@ fn agora_hosted_gate_sends_real_work_on_the_owner_client_session() {
         "Agora accepted message #",
         "Inspect TUI instrumentation",
         "agora.message.send",
-        "peers[\"agora\"][\"revision\"] == 3",
+        "schema=2",
+        "participant_count=2",
+        "participant_1_id=local-agent",
+        "participant_1_kind=agent",
+        "peers[\"agora\"][\"revision\"] == 4",
     ] {
         assert!(
             gate.contains(required),
@@ -851,6 +855,9 @@ fn agora_hosted_gate_sends_real_work_on_the_owner_client_session() {
         "ComposeMessageComponent::new_with_handle",
         "control_handle()",
         "peer_receipt",
+        "drop(agora_message)",
+        "drop(agora_create)",
+        "drop(agora)",
     ] {
         assert!(
             terminal.contains(required),
