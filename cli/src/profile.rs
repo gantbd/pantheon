@@ -64,8 +64,20 @@ pub struct TaskConversationProfile {
     /// an addressed room message into a reviewed Daimon prompt. Omission keeps
     /// the cross-component command unavailable.
     pub agent_addressee: Option<String>,
+    /// Bounded participant-to-session routing for shared Agora context. Each
+    /// route selects one exact configured Daimon session; it grants neither
+    /// room membership nor prompt authority.
+    #[serde(default)]
+    pub agent_routes: Vec<TaskConversationAgentRouteProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct TaskConversationAgentRouteProfile {
+    pub addressee: String,
+    pub session: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -556,6 +568,59 @@ impl WorkspaceProfile {
                 return Err(
                     "task-conversation agent_addressee must be distinct from the Agora operator participant",
                 );
+            }
+            if task_conversation.agent_addressee.is_some()
+                && !task_conversation.agent_routes.is_empty()
+            {
+                return Err(
+                    "task-conversation selects either legacy agent_addressee or bounded agent_routes, not both",
+                );
+            }
+            if task_conversation.agent_routes.len() > 16 {
+                return Err("task-conversation agent_routes exceeds the 16-route bound");
+            }
+            let configured_sessions = self
+                .daimon
+                .as_ref()
+                .map(|daimon| {
+                    daimon
+                        .agent_session
+                        .iter()
+                        .chain(daimon.agent_sessions.iter())
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            for (index, route) in task_conversation.agent_routes.iter().enumerate() {
+                if route.addressee.is_empty()
+                    || route.addressee.len() > 128
+                    || route.addressee.chars().any(char::is_control)
+                {
+                    return Err(
+                        "task-conversation agent route addressee must be 1–128 bytes without control text",
+                    );
+                }
+                if self
+                    .agora
+                    .as_ref()
+                    .is_some_and(|agora| agora.participant == route.addressee)
+                {
+                    return Err(
+                        "task-conversation agent route must be distinct from the Agora operator participant",
+                    );
+                }
+                validate_hex_identifier(&route.session, "task-conversation agent route session")?;
+                if !configured_sessions.contains(&&route.session) {
+                    return Err(
+                        "task-conversation agent route must select an exact configured Daimon session",
+                    );
+                }
+                if task_conversation.agent_routes[..index].iter().any(|prior| {
+                    prior.addressee == route.addressee || prior.session == route.session
+                }) {
+                    return Err(
+                        "task-conversation agent routes require unique addressees and sessions",
+                    );
+                }
             }
             validate_required_capabilities(&task_conversation.requires)?;
         }
@@ -1630,6 +1695,29 @@ mod tests {
             .unwrap()
             .replace("local-agent", "operator");
         assert!(WorkspaceProfile::parse(aliased.as_bytes(), Path::new(".")).is_err());
+
+        let routed = br#"{
+          "version":1,"name":"Shared agent context","surfaces":["chronos","agora","daimon"],
+          "agora":{"socket":"a.sock","participant":"operator"},
+          "task_conversation":{"socket":"links.sock",
+            "principal":"01010101010101010101010101010101",
+            "agent_routes":[
+              {"addressee":"sre-agent","session":"07070707070707070707070707070707"},
+              {"addressee":"project-agent","session":"08080808080808080808080808080808"}]},
+          "chronos":{"workstreams":[{"name":"work","directory":"work"}],
+            "requires":[],"moira":[],"daimon":[],"planning":null},
+          "daimon":{"agent_socket":"agent.sock","agent_sessions":[
+            "07070707070707070707070707070707",
+            "08080808080808080808080808080808"]}
+        }"#;
+        let profile = WorkspaceProfile::parse(routed, Path::new("/tmp/shared")).unwrap();
+        assert_eq!(profile.task_conversation.unwrap().agent_routes.len(), 2);
+
+        let missing_session = String::from_utf8(routed.to_vec()).unwrap().replace(
+            "08080808080808080808080808080808\"}]},",
+            "09090909090909090909090909090909\"}]},",
+        );
+        assert!(WorkspaceProfile::parse(missing_session.as_bytes(), Path::new(".")).is_err());
     }
 
     #[test]

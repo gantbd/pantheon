@@ -23,7 +23,7 @@ use crate::hestia::observe_provider_runtime;
 use crate::management::PeerRuntime;
 use crate::profile::{
     AgoraProfile, AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
-    DaimonHostProfile, HestiaProfile,
+    DaimonHostProfile, HestiaProfile, TaskConversationProfile,
 };
 use crate::provider::provider_catalog;
 use pantheon::{AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
@@ -33,7 +33,7 @@ pub struct HeadlessRequest {
     pub workspace: String,
     pub agora: Option<AgoraProfile>,
     pub agora_hosted: bool,
-    pub task_conversation_socket: Option<PathBuf>,
+    pub task_conversation: Option<TaskConversationProfile>,
     pub moira_socket: Option<PathBuf>,
     pub moira_participation_socket: Option<PathBuf>,
     pub moira_participation: Option<participation::ParticipationIdV1>,
@@ -112,8 +112,16 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             request.agora_hosted,
         );
     }
-    if let Some(socket) = request.task_conversation_socket {
-        let (observation, current) = observe_task_conversation(socket);
+    if let Some(profile) = request.task_conversation {
+        let routing = task_conversation_routing_projection(&profile);
+        let (mut observation, current) = observe_task_conversation(profile.socket);
+        if let Some(object) = observation.as_object_mut() {
+            object.insert("agent_routing".into(), routing);
+            object.insert(
+                "routing_boundary".into(),
+                serde_json::json!("participant-to-session routing is delivery configuration; it grants neither Agora membership, stakeholder standing, prompt authority, nor task disposition"),
+            );
+        }
         record_observation(
             &mut peers,
             &mut management,
@@ -481,6 +489,26 @@ fn record_observation(
     management.push(PeerRuntime::from_observation(&observation, hosted));
     peers.push(observation);
     *complete &= current;
+}
+
+fn task_conversation_routing_projection(profile: &TaskConversationProfile) -> serde_json::Value {
+    if !profile.agent_routes.is_empty() {
+        return serde_json::json!({
+            "mode": "exact_participant_sessions",
+            "routes": profile.agent_routes.iter().map(|route| serde_json::json!({
+                "addressee": route.addressee,
+                "session": route.session,
+            })).collect::<Vec<_>>(),
+        });
+    }
+    if let Some(addressee) = &profile.agent_addressee {
+        return serde_json::json!({
+            "mode": "legacy_selected_workset",
+            "addressee": addressee,
+            "session": "selected_in_tui",
+        });
+    }
+    serde_json::json!({"mode": "not_configured"})
 }
 
 fn observe_task_conversation(socket: PathBuf) -> (serde_json::Value, bool) {
@@ -1743,7 +1771,7 @@ mod tests {
                 requires: vec!["messages.read.v2".into()],
             }),
             agora_hosted: false,
-            task_conversation_socket: None,
+            task_conversation: None,
             moira_socket: None,
             moira_participation_socket: None,
             moira_participation: None,
@@ -1780,6 +1808,36 @@ mod tests {
         assert_eq!(
             observation.not_exercised_profile_requirements[0].capability,
             "messages.read.v2"
+        );
+    }
+
+    #[test]
+    fn task_conversation_routing_projection_preserves_exact_identity() {
+        let profile = TaskConversationProfile {
+            socket: "links.sock".into(),
+            principal: "10".repeat(16),
+            agent_addressee: None,
+            agent_routes: vec![
+                crate::profile::TaskConversationAgentRouteProfile {
+                    addressee: "sre-agent".into(),
+                    session: "07".repeat(16),
+                },
+                crate::profile::TaskConversationAgentRouteProfile {
+                    addressee: "project-agent".into(),
+                    session: "08".repeat(16),
+                },
+            ],
+            requires: vec![],
+        };
+        assert_eq!(
+            task_conversation_routing_projection(&profile),
+            serde_json::json!({
+                "mode": "exact_participant_sessions",
+                "routes": [
+                    {"addressee": "sre-agent", "session": "07".repeat(16)},
+                    {"addressee": "project-agent", "session": "08".repeat(16)},
+                ],
+            })
         );
     }
 

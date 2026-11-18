@@ -2036,7 +2036,7 @@ This is the cornerstone journey requested for Pantheon.
 
 **Current qualified presentation slice (2026-11-18):** Pantheon now composes
 Chronos task admission, exact owner binding, a fresh per-task Daimon session,
-two guarded agent turns, a direct Agora task conversation, and a refresh-backed
+guarded agent turns, direct or group-direct Agora task conversation, and a refresh-backed
 return to the Kanban board. `Shift-N` and the minibuffer action share one
 behavior route; Pantheon retains the bounded task-form text, waits for Chronos's
 applied receipt, then asynchronously requires Daimon's validated owner catalogue
@@ -2044,14 +2044,22 @@ to map that one exact Chronos task ID to the frozen execution task key. Missing,
 ambiguous, wrong-owner or mismatched evidence stops before session creation and
 orients the operator: the ticket exists, but no agent was invoked. After the
 match, a human reviews and confirms one fresh owner-created Daimon session and
-the first prompt. Pantheon then prefills a direct Agora conversation between the
-configured operator and agent, retains Agora's ordinary review/arm/confirm gate,
+the first prompt. Pantheon then prefills an Agora conversation between the
+configured operator and one legacy agent or a bounded exact agent cohort,
+retains Agora's ordinary review/arm/confirm gate,
 and separately reviews the exact durable Chronos-task-to-room relationship.
-Only an explicitly selected message addressed to that configured agent can open
-the ordinary guarded prompt flow for the second turn; ambient chatter remains
-inert. The same session must again be owner-projected Ready, and every action
-reports success/refusal plus the next safe step. The hosted tmux-driven evidence
-is [`tests/live/work_item_agent_journey.sh`](../tests/live/work_item_agent_journey.sh).
+Only an explicitly selected addressed message can open the ordinary guarded
+prompt flow; ambient chatter remains inert. A bounded participant-to-session
+route selects each exact configured Daimon session independently of the UI's
+ambient selection, and every routed session must again be owner-projected Ready.
+The configuration surface shows the exact cohort and routes; every action reports
+success/refusal plus the next safe step. The single-agent hosted tmux evidence is
+[`tests/live/work_item_agent_journey.sh`](../tests/live/work_item_agent_journey.sh).
+The shared-context gate uses a distinct ambient task agent, creates a human+SRE+
+project-management group, promotes “Do we have the right ensemble?” only after
+explicit review, and proves exactly two routed receipts while excluding the
+ambient session; see
+[`tests/live/agora_shared_agent_context.sh`](../tests/live/agora_shared_agent_context.sh).
 The selected execution profile now freezes an explicit opaque task key,
 incarnation and attempt alongside principal, harness profile, context/tools and
 budgets; prompt, permission and reattach operations retain that exact attempt
@@ -2071,9 +2079,10 @@ bootstraps distinct human and agent participants without granting Pantheon
 runtime registration authority. This slice does **not** yet claim dynamic exact
 task-attempt creation, a Moira workflow, dynamic Vellum document selection and
 proposal publication, per-effect Aegis decisions, Dendrite context assembly,
-runtime Agora participant administration, or evidence-backed Chronos status and
-comment transitions. Those remain Required below and need owner-published
-contracts rather than presentation-side inference.
+runtime Agora participant administration, an independently reasoned stakeholder-
+ensemble method, standing/mandate proof, human-gated finding disposition, or
+evidence-backed Chronos status and comment transitions. Those remain Required
+below and need owner-published contracts rather than presentation-side inference.
 
 Moira's selected participation surface now adds one bounded next step for an
 already-admitted agent member: Pantheon reviews the exact retained binding,

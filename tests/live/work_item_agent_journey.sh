@@ -304,8 +304,8 @@ try:
     keys("Escape")
     expect("Please inspect the bounded acceptance evidence", "to: local-agent", timeout=20)
     keys("C-p", "C-u")
-    literal("offer addressed agora message to local agent")
-    expect("Offer addressed Agora message to local agent")
+    literal("offer addressed agora message to agent cohort")
+    expect("Offer addressed Agora message to agent cohort")
     keys("Enter")
     expect(
         "Compose Daimon prompt",
@@ -319,7 +319,8 @@ try:
     keys("c", "Enter")
     expect(
         "Addressed message accepted",
-        "ordinary room chatter remains inert",
+        "Routed turns applied",
+        "ambient chatter inert",
         timeout=20,
     )
     keys("C-p", "C-u")

@@ -2269,9 +2269,9 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "Create Agora room",
         "Bind Chronos task to Agora room",
         "durable exact relationship",
-        "offer addressed agora message to local agent",
+        "offer addressed agora message to agent cohort",
         "ordinary room chatter is not a prompt",
-        "ordinary room chatter remains inert",
+        "ambient chatter inert",
         "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated direct Agora task conversation -> durable exact relationship -> explicitly addressed room message -> guarded second agent turn -> refreshed Kanban board",
     ] {
         assert!(
@@ -2461,4 +2461,56 @@ fn task_conversation_gate_proves_tui_headless_and_recovery_parity() {
     }
     let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
     assert!(makefile.contains("qualify-task-conversation"));
+}
+
+#[test]
+fn shared_agent_context_gate_proves_exact_multi_stakeholder_routing() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let live = fs::read_to_string(root.join("tests/live/agora_shared_agent_context.sh"))
+        .expect("Agora shared-agent-context qualification");
+    for required in [
+        "Do we have the right ensemble?",
+        "does not authorize disposition",
+        "group direct · operator, project-agent, sre-agent",
+        "agent_routes",
+        "Configured addressees: sre-agent, project-agent",
+        "2 exact session controls",
+        "session 1 prompted",
+        "session 2 prompted",
+        "session 3 prompted",
+        "ambient session excluded",
+        "exact_participant_sessions",
+        "headless routing parity",
+    ] {
+        assert!(
+            live.contains(required),
+            "shared-context gate omits {required}"
+        );
+    }
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    for required in [
+        "addressed_message_routes",
+        "target_sessions",
+        "agent.observation(*session)",
+        "participant-to-session routes",
+        "one reviewed Daimon turn per routed session",
+    ] {
+        assert!(
+            terminal.contains(required),
+            "shared-context host omits {required}"
+        );
+    }
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
+    for required in [
+        "task_conversation_routing_projection",
+        "exact_participant_sessions",
+        "grants neither Agora membership",
+    ] {
+        assert!(
+            headless.contains(required),
+            "shared-context headless projection omits {required}"
+        );
+    }
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
+    assert!(makefile.contains("qualify-agora-shared-context"));
 }

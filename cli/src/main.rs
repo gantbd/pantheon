@@ -59,7 +59,6 @@ struct Options {
     workspace_name: String,
     shell: Shell,
     agora: Option<AgoraProfile>,
-    task_conversation_socket: Option<PathBuf>,
     agora_host: Option<AgoraProcessOptions>,
     moira_socket: Option<PathBuf>,
     moira_participation_socket: Option<PathBuf>,
@@ -682,7 +681,6 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         workspace_name,
         shell,
         agora,
-        task_conversation_socket,
         agora_host,
         moira_socket,
         moira_participation_socket,
@@ -3976,7 +3974,10 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         workspace: options.workspace_name.clone(),
         agora: options.agora.clone(),
         agora_hosted: options.agora_host.is_some(),
-        task_conversation_socket: options.task_conversation_socket.clone(),
+        task_conversation: options
+            .workspace_profile
+            .as_ref()
+            .and_then(|profile| profile.task_conversation.clone()),
         moira_socket: options.moira_socket.clone(),
         moira_participation_socket: options.moira_participation_socket.clone(),
         moira_participation: options.moira_participation,
