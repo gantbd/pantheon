@@ -1796,6 +1796,35 @@ fn daimon_hosted_gate_reopens_real_durable_session_in_both_workbench_modes() {
 }
 
 #[test]
+fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_boundary() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/daimon_model_hosted.sh"))
+        .expect("hosted local-model gate");
+    for required in [
+        "daimon-local-model",
+        "model_socket",
+        "models.endpoint.attach.v1",
+        "MODEL ENDPOINT ATTACHED",
+        "qwen/qwen3-coder-next",
+        "openai_chat_completions",
+        "explicit configured-not-qualified boundary",
+        "hosted_shutdown",
+        "disposition\": \"clean",
+    ] {
+        assert!(
+            gate.contains(required),
+            "hosted local-model gate omits {required}"
+        );
+    }
+    let profile = fs::read_to_string(root.join("cli/src/profile.rs")).expect("profile source");
+    assert!(profile.contains("model_socket"));
+    assert!(profile.contains("exactly one model endpoint or exact agent selection"));
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
+    assert!(headless.contains("connect_model"));
+    assert!(headless.contains("no execution, provider health, qualification, or authority"));
+}
+
+#[test]
 fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =

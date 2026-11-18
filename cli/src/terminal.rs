@@ -49,11 +49,11 @@ use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
 use pantheon::{
     ActivityLevel, ActivityLog, AgendaEntry, AgendaKind, AgendaUrgency, CommandKind,
-    CommandPalette, CommandSpec, ExitDecision, Focus, Instrumentation, OperationsReceiptView,
-    OperationsView, OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews,
-    RoutedInput, Shell, ShellInput, SuiteHealthView, Surface, decide_exit, draw_activity,
-    draw_command_palette, draw_help, draw_inspector, draw_shell_with_moira, route_key, shell_input,
-    surface_tab_at,
+    CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus, Instrumentation,
+    OperationsReceiptView, OperationsView, OperatorAgendaView, PaletteOutcome, PeerHealthState,
+    PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView, Surface,
+    decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
+    draw_shell_with_moira, route_key, shell_input, surface_tab_at,
 };
 
 struct InputCapture {
@@ -1172,6 +1172,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             moira_agent_worker: None,
             moira_control_socket: None,
             daimon,
+            daimon_model: None,
             daimon_agent: None,
             daimon_agent_control_socket: None,
             daimon_execution_policy: None,
@@ -1200,6 +1201,7 @@ pub struct OperationalPeers {
     pub moira_agent_worker: Option<MoiraAgentWorkerConfig>,
     pub moira_control_socket: Option<PathBuf>,
     pub daimon: Option<daimon_tui::Component>,
+    pub daimon_model: Option<DaimonModelView>,
     pub daimon_agent: Option<daimon_tui::AgentSetComponent>,
     pub daimon_agent_control_socket: Option<PathBuf>,
     pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
@@ -5202,6 +5204,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         moira_agent_worker: moira_agent_worker_config,
         moira_control_socket,
         mut daimon,
+        daimon_model,
         mut daimon_agent,
         daimon_agent_control_socket,
         daimon_execution_policy,
@@ -6479,6 +6482,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         moira_open: moira_open.as_ref(),
                         moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),
+                        daimon_model: daimon_model.as_ref(),
                         daimon_agent: daimon_agent.as_ref(),
                         daimon_permission: daimon_permission_composer.as_ref(),
                         daimon_prompt: daimon_prompt_composer.as_ref(),

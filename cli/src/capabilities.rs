@@ -107,7 +107,13 @@ pub fn moira(mode: Mode, hosted: bool, selected_participation: bool) -> Vec<Capa
     capabilities
 }
 
-pub fn daimon(mode: Mode, hosted: bool, presence: bool, selected_agent: bool) -> Vec<Capability> {
+pub fn daimon(
+    mode: Mode,
+    hosted: bool,
+    presence: bool,
+    model_endpoint: bool,
+    selected_agent: bool,
+) -> Vec<Capability> {
     let mut capabilities = Vec::new();
     if mode == Mode::Headless {
         if presence {
@@ -115,6 +121,9 @@ pub fn daimon(mode: Mode, hosted: bool, presence: bool, selected_agent: bool) ->
         }
         if selected_agent {
             capabilities.push(capability("agents.session.inspect.v1", Plane::Observation));
+        }
+        if model_endpoint {
+            capabilities.push(capability("models.endpoint.attach.v1", Plane::Observation));
         }
     } else if selected_agent {
         if presence {
@@ -128,8 +137,13 @@ pub fn daimon(mode: Mode, hosted: bool, presence: bool, selected_agent: bool) ->
             capability("agents.session-set.permission.v1", Plane::Operator),
             capability("agents.session-set.reattach.v1", Plane::Operator),
         ]);
-    } else if presence {
-        capabilities.push(capability("agents.presence.v1", Plane::Operator));
+    } else {
+        if presence {
+            capabilities.push(capability("agents.presence.v1", Plane::Operator));
+        }
+    }
+    if mode == Mode::Interactive && model_endpoint {
+        capabilities.push(capability("models.endpoint.attach.v1", Plane::Operator));
     }
     capabilities.push(topology(hosted));
     capabilities
@@ -458,8 +472,8 @@ mod tests {
 
     #[test]
     fn observation_negotiation_preserves_but_does_not_exercise_workspace_controls() {
-        let observed = daimon(Mode::Headless, false, true, true);
-        let configured = daimon(Mode::Interactive, false, true, true);
+        let observed = daimon(Mode::Headless, false, true, false, true);
+        let configured = daimon(Mode::Interactive, false, true, false, true);
         let required = vec![
             "agents.session.inspect.v1".to_owned(),
             "agents.session-set.prompt.v1".to_owned(),
@@ -581,7 +595,7 @@ mod tests {
 
     #[test]
     fn daimon_interactive_reports_both_visible_components() {
-        let selected = daimon(Mode::Interactive, false, true, true);
+        let selected = daimon(Mode::Interactive, false, true, false, true);
         assert!(
             selected
                 .iter()

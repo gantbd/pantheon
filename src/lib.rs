@@ -134,6 +134,7 @@ pub fn draw_shell(
             moira_open: None,
             moira_reconciliation: None,
             daimon: None,
+            daimon_model: None,
             daimon_agent: None,
             daimon_permission: None,
             daimon_prompt: None,
@@ -169,6 +170,7 @@ pub struct PeerViews<'a> {
     pub moira_open: Option<&'a moira_tui::OpenControlComponent>,
     pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
+    pub daimon_model: Option<&'a DaimonModelView>,
     pub daimon_agent: Option<&'a daimon_tui::AgentSetComponent>,
     pub daimon_permission: Option<&'a daimon_tui::AgentPermissionComposer>,
     pub daimon_prompt: Option<&'a daimon_tui::AgentPromptComposer>,
@@ -185,6 +187,23 @@ pub struct PeerViews<'a> {
     pub operations: Option<&'a OperationsView>,
     pub health: Option<&'a SuiteHealthView>,
     pub configuration: Option<&'a [String]>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DaimonModelView {
+    pub status: String,
+    pub boundary: String,
+}
+
+impl DaimonModelView {
+    pub fn attached() -> Self {
+        Self {
+            status: "Attached through Daimon's authenticated model protocol".into(),
+            boundary:
+                "No execution, provider health, qualification, delegation, or authority is implied"
+                    .into(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -249,6 +268,7 @@ pub fn draw_shell_with_moira(
         moira_open,
         moira_reconciliation,
         daimon,
+        daimon_model,
         daimon_agent,
         daimon_permission,
         daimon_prompt,
@@ -421,7 +441,7 @@ pub fn draw_shell_with_moira(
                 vellum: vellum.is_some(),
                 agora: agora.is_some(),
                 moira: moira.is_some() || moira_participation.is_some(),
-                daimon: daimon.is_some() || daimon_agent.is_some(),
+                daimon: daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
                 tellus: tellus.is_some(),
@@ -502,6 +522,32 @@ pub fn draw_shell_with_moira(
         }
         Surface::Daimon if daimon.is_some() => {
             daimon.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Daimon if daimon_model.is_some() => {
+            let model = daimon_model.expect("matched above");
+            frame.render_widget(
+                Paragraph::new(vec![
+                    Line::styled(
+                        "MODEL ENDPOINT ATTACHED",
+                        Style::default()
+                            .fg(theme::GREEN)
+                            .bg(theme::PANEL)
+                            .add_modifier(Modifier::BOLD),
+                    ),
+                    Line::from(""),
+                    Line::styled(&model.status, theme::panel()),
+                    Line::from(""),
+                    Line::styled(&model.boundary, theme::muted()),
+                    Line::from(""),
+                    Line::styled(
+                        "Next: inspect the owner-backed provider catalogue from M-x; qualification remains a separate guarded journey.",
+                        theme::panel(),
+                    ),
+                ])
+                .wrap(Wrap { trim: true })
+                .block(theme::card(" DAIMON · LOCAL MODEL ", theme::GREEN)),
+                body,
+            );
         }
         Surface::Hermes if hermes_compaction.is_some() => {
             hermes_compaction
@@ -2054,6 +2100,7 @@ mod tests {
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
+                            daimon_model: None,
                             daimon_agent: None,
                             daimon_permission: None,
                             daimon_prompt: None,
@@ -2120,6 +2167,7 @@ mod tests {
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
+                            daimon_model: None,
                             daimon_agent: None,
                             daimon_permission: None,
                             daimon_prompt: None,
@@ -2184,6 +2232,7 @@ mod tests {
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: Some(&daimon),
+                            daimon_model: None,
                             daimon_agent: None,
                             daimon_permission: None,
                             daimon_prompt: None,
@@ -2247,6 +2296,7 @@ mod tests {
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
+                            daimon_model: None,
                             daimon_agent: None,
                             daimon_permission: None,
                             daimon_prompt: None,

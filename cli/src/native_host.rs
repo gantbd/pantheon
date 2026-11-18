@@ -199,9 +199,9 @@ pub struct HermesProcessOptions {
     pub operator_stream: Option<String>,
 }
 
-/// Explicit deployment inputs for Daimon's production interactive-agent
-/// application. Provider, credential, authority, attempt, storage and recovery
-/// policy remain in the opaque Daimon-owned configuration document.
+/// Explicit deployment inputs for one production Daimon application. Model or
+/// interactive-agent selection, provider, credential, authority, attempt,
+/// storage and recovery policy remain in the opaque owner configuration.
 #[cfg(unix)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DaimonProcessOptions {
@@ -479,9 +479,9 @@ impl NativeHost {
         self.registry.start_or_rollback(HostedPeerId::Daimon, start)
     }
 
-    /// Starts Daimon's production local-agent application in its owner-defined
-    /// supervised mode. Pantheon owns readiness and drain only and attaches
-    /// through the ordinary public agent client.
+    /// Starts one production Daimon application in its owner-defined supervised
+    /// mode. Pantheon owns readiness and drain only and attaches through the
+    /// ordinary public model or agent client selected by the profile.
     #[cfg(unix)]
     pub fn start_daimon_process(
         &mut self,

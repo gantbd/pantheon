@@ -3,7 +3,7 @@
 use agora_client::v2::ClientV2 as AgoraClientV2;
 use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::{Hub, Workstream};
-use pantheon::Shell;
+use pantheon::{DaimonModelView, Shell};
 use pantheon_cli::{
     AgoraControlConfig, OperationalPeers,
     capabilities::{self, ChronosFeatures, Mode},
@@ -66,6 +66,7 @@ struct Options {
     moira_agent_worker: Option<MoiraAgentWorkerProfile>,
     moira_host: Option<MoiraProcessOptions>,
     daimon_socket: Option<PathBuf>,
+    daimon_model_socket: Option<PathBuf>,
     daimon_agent_socket: Option<PathBuf>,
     daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     daimon_agent_sessions: Vec<daimon_protocol::AgentSessionIdV1>,
@@ -174,6 +175,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut moira_host = None;
     let mut moira_agent_worker = None;
     let mut daimon_socket = None;
+    let mut daimon_model_socket = None;
     let mut daimon_agent_socket = None;
     let mut daimon_agent_session = None;
     let mut daimon_agent_sessions = Vec::new();
@@ -270,12 +272,14 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                     executable: host.executable.clone(),
                     config: host.config.clone(),
                     socket: daimon
-                        .agent_socket
+                        .model_socket
                         .clone()
-                        .expect("validated hosted Daimon agent socket"),
+                        .or_else(|| daimon.agent_socket.clone())
+                        .expect("validated hosted Daimon owner endpoint"),
                 });
             }
             daimon_socket = daimon.socket;
+            daimon_model_socket = daimon.model_socket;
             daimon_agent_socket = daimon.agent_socket;
             daimon_agent_sessions = daimon
                 .agent_session
@@ -511,6 +515,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         mode,
         daimon_host.is_some(),
         daimon_socket.is_some(),
+        daimon_model_socket.is_some(),
         daimon_agent_socket.is_some() && !daimon_agent_sessions.is_empty(),
     );
     let hermes_capabilities =
@@ -583,6 +588,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             Mode::Interactive,
             daimon_host.is_some(),
             daimon_socket.is_some(),
+            daimon_model_socket.is_some(),
             daimon_agent_socket.is_some() && !daimon_agent_sessions.is_empty(),
         ),
     )?;
@@ -627,7 +633,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if moira_socket.is_some() {
         capability_plan.push(("moira", moira_capabilities));
     }
-    if daimon_socket.is_some() || daimon_agent_socket.is_some() {
+    if daimon_socket.is_some() || daimon_model_socket.is_some() || daimon_agent_socket.is_some() {
         capability_plan.push(("daimon", daimon_capabilities));
     }
     if hermes_socket.is_some() {
@@ -658,6 +664,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_agent_worker,
         moira_host,
         daimon_socket,
+        daimon_model_socket,
         daimon_agent_socket,
         daimon_agent_session,
         daimon_agent_sessions,
@@ -3203,6 +3210,19 @@ fn interactive(
     } else {
         None
     };
+    let daimon_model = if let Some(socket) = options.daimon_model_socket {
+        let (_session, port) = daimon_client::unix::connect_model(
+            socket,
+            daimon_wire::LimitsV1::default(),
+            daimon_wire::ModelLimitsV1::default(),
+            std::time::Duration::from_secs(5),
+        )
+        .map_err(|error| format!("Daimon model service refused: {error:?}"))?;
+        drop(port);
+        Some(DaimonModelView::attached())
+    } else {
+        None
+    };
     let daimon_agent_control_socket = options.daimon_agent_socket.clone();
     let daimon_agent = if let Some(socket) = options.daimon_agent_socket {
         Some(daimon_tui::AgentSetComponent::new_with_connector(
@@ -3338,6 +3358,7 @@ fn interactive(
             moira_agent_worker,
             moira_control_socket,
             daimon,
+            daimon_model,
             daimon_agent,
             daimon_agent_control_socket,
             daimon_execution_policy: options.daimon_execution_policy,
@@ -3820,6 +3841,7 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         moira_participation: options.moira_participation,
         moira_hosted: options.moira_host.is_some(),
         daimon_socket: options.daimon_socket.clone(),
+        daimon_model_socket: options.daimon_model_socket.clone(),
         daimon_agent_socket: options.daimon_agent_socket.clone(),
         daimon_agent_session: options.daimon_agent_session,
         daimon_execution_policy: options.daimon_execution_policy.clone(),

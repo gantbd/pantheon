@@ -35,6 +35,7 @@ pub struct HeadlessRequest {
     pub moira_participation: Option<participation::ParticipationIdV1>,
     pub moira_hosted: bool,
     pub daimon_socket: Option<PathBuf>,
+    pub daimon_model_socket: Option<PathBuf>,
     pub daimon_agent_socket: Option<PathBuf>,
     pub daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
@@ -130,9 +131,13 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             false,
         );
     }
-    if request.daimon_socket.is_some() || request.daimon_agent_socket.is_some() {
+    if request.daimon_socket.is_some()
+        || request.daimon_model_socket.is_some()
+        || request.daimon_agent_socket.is_some()
+    {
         let (observation, current) = observe_daimon(
             request.daimon_socket,
+            request.daimon_model_socket,
             request.daimon_agent_socket,
             request.daimon_agent_session,
             request.daimon_execution_policy.as_ref(),
@@ -516,6 +521,7 @@ fn observe_hermes(
 
 fn observe_daimon(
     socket: Option<PathBuf>,
+    model_socket: Option<PathBuf>,
     agent_socket: Option<PathBuf>,
     agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     execution_policy: Option<&DaimonExecutionPolicyProfile>,
@@ -527,8 +533,13 @@ fn observe_daimon(
 
     let capability = daimon_tui::CAPABILITIES.headless[0];
     let Some(socket) = socket else {
+        let (model, model_current) = match model_socket {
+            Some(socket) => observe_daimon_model(socket),
+            None => (serde_json::Value::Null, true),
+        };
         let (agent, current) = match (agent_socket, agent_session) {
             (Some(socket), Some(session)) => observe_daimon_agent(socket, session),
+            (None, None) => (serde_json::Value::Null, true),
             _ => (
                 serde_json::json!({"status": "configuration_refused"}),
                 false,
@@ -537,13 +548,19 @@ fn observe_daimon(
         return (
             serde_json::json!({
                 "peer": "daimon",
-                "capability": "agents.session.inspect.v1",
-                "capabilities": ["agents.session.inspect.v1"],
-                "status": if current { "current" } else { "partial" },
+                "capability": if model.is_null() { "agents.session.inspect.v1" } else { "models.endpoint.attach.v1" },
+                "capabilities": match (model.is_null(), agent.is_null()) {
+                    (false, false) => vec!["models.endpoint.attach.v1", "agents.session.inspect.v1"],
+                    (false, true) => vec!["models.endpoint.attach.v1"],
+                    (true, false) => vec!["agents.session.inspect.v1"],
+                    (true, true) => Vec::<&str>::new(),
+                },
+                "status": if current && model_current { "current" } else { "partial" },
+                "model_endpoint": model,
                 "configured_agent_session": agent,
                 "configured_execution_profile": daimon_execution_projection(execution_policy),
             }),
-            current,
+            current && model_current,
         );
     };
     let (session, port) = match daimon_client::unix::connect(
@@ -576,6 +593,10 @@ fn observe_daimon(
                     false,
                 ),
             };
+            let (model, model_current) = match model_socket {
+                Some(socket) => observe_daimon_model(socket),
+                None => (serde_json::Value::Null, true),
+            };
             (
                 serde_json::json!({
                     "peer": "daimon",
@@ -585,15 +606,16 @@ fn observe_daimon(
                     } else {
                         vec![capability, "agents.session.inspect.v1"]
                     },
-                    "status": if agent_current { "current" } else { "partial" },
+                    "status": if agent_current && model_current { "current" } else { "partial" },
                     "agents": entries.len(),
                     "current": current,
                     "stale": entries.len().saturating_sub(current),
                     "truncated": truncated,
+                    "model_endpoint": model,
                     "configured_agent_session": agent,
                     "configured_execution_profile": daimon_execution_projection(execution_policy),
                 }),
-                agent_current,
+                agent_current && model_current,
             )
         }
         Ok(ReplyV1::Refused(reason)) => (
@@ -612,6 +634,45 @@ fn observe_daimon(
             };
             (
                 peer_failure("daimon", capability, status, "client access failure"),
+                false,
+            )
+        }
+    }
+}
+
+fn observe_daimon_model(socket: PathBuf) -> (serde_json::Value, bool) {
+    use daimon_client::unix::{ClientErrorV1, connect_model};
+    use std::time::Duration;
+
+    match connect_model(
+        socket,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::ModelLimitsV1::default(),
+        Duration::from_secs(5),
+    ) {
+        Ok((_session, port)) => {
+            drop(port);
+            (
+                serde_json::json!({
+                    "status": "attached",
+                    "capability": "models.endpoint.attach.v1",
+                    "boundary": "authenticated model-protocol attachment only; no execution, provider health, qualification, or authority is implied",
+                }),
+                true,
+            )
+        }
+        Err(error) => {
+            let status = match error {
+                ClientErrorV1::NotSent(_) => "not_sent",
+                ClientErrorV1::OutcomeUnknown(_) => "outcome_unknown",
+                ClientErrorV1::Wire(_) | ClientErrorV1::SessionMismatch => "invalid_reply",
+            };
+            (
+                serde_json::json!({
+                    "status": status,
+                    "capability": "models.endpoint.attach.v1",
+                    "next_action": "inspect the selected Daimon model owner and retry attachment; do not invoke the provider",
+                }),
                 false,
             )
         }
@@ -1438,6 +1499,7 @@ mod tests {
             moira_participation: None,
             moira_hosted: false,
             daimon_socket: None,
+            daimon_model_socket: None,
             daimon_agent_socket: None,
             daimon_agent_session: None,
             daimon_execution_policy: None,

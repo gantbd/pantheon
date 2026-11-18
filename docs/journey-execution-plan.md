@@ -105,13 +105,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   guarded TUI edit and again after restart, including the changed owner digest,
   policy digest and redacted launch shape.
 - This does not complete onboarding: the local-model owner still lacks
-  edit/apply, endpoint
-  and model discovery, health/conformance runs, and retained qualification
-  receipts. Pantheon's hosted Daimon profile also selects the interactive-agent
-  owner shape only; it cannot yet compose the distinct local-model owner and
-  therefore cannot present the running LM Studio/Qwen catalogue through this
-  surface. Those are owner/composition gaps, not reasons for Pantheon to mutate
-  raw JSON.
+  edit/apply, endpoint and model discovery, health/conformance runs, and
+  retained qualification receipts. The owner now does expose the same explicit
+  one-byte supervised lifecycle as the interactive-agent application, and
+  Pantheon now models its socket as a distinct model-protocol endpoint rather
+  than leaking it through legacy agent-presence semantics. A hosted profile
+  selects exactly one model endpoint or exact agent selection; headless uses
+  `connect_model`, while the Daimon tab presents authenticated attachment plus
+  the explicit boundary that attachment is not execution, provider health,
+  qualification, delegation or authority. The real Aegis/Chronos/Daimon gate
+  hosts `daimon-local-model`, observes the same redacted Qwen/OpenAI-compatible
+  catalogue through headless and TUI, and proves clean drain without contacting
+  the configured provider. Pantheon can therefore present a selected running
+  local-model owner, but configuration editing, discovery, qualification and
+  task invocation remain owner-contract gaps—not reasons to mutate raw JSON or
+  call socket liveness “ready.”
 - Direct dogfooding then loaded this execution plan as Pantheon's hosted Vellum
   workset. The footer advertised `Ctrl-F`, but the key reached editing behavior,
   inserted the intended query into the document and marked it dirty instead of
@@ -126,6 +134,11 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Peer unit tests prove cursor movement without an owner effect or dirty state;
   the real `make run` tmux journey now proves `Ctrl-F`, query submission,
   visible match selection and `Service Current / Clean` before guarded exit.
+  This local-model slice dogfooded the correction again by loading this exact
+  plan through Pantheon's hosted Vellum, locating both the distinct
+  model-protocol endpoint and its non-qualification boundary, observing the
+  success feedback and clean buffer, then draining the hosted topology with
+  `Ctrl-Q`.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 
