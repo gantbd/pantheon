@@ -3040,6 +3040,7 @@ fn finish_headless(
             "mode": "headless",
             "complete": complete,
             "peers": observation.peers,
+            "provider_configuration": observation.provider_configuration,
             "operator_agenda": observation.operator_agenda,
             "management": management,
             "not_exercised_profile_requirements": observation.not_exercised_profile_requirements,
@@ -3822,6 +3823,11 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         daimon_agent_socket: options.daimon_agent_socket.clone(),
         daimon_agent_session: options.daimon_agent_session,
         daimon_execution_policy: options.daimon_execution_policy.clone(),
+        daimon_provider_owner: options
+            .workspace_profile
+            .as_ref()
+            .and_then(|profile| profile.daimon.as_ref())
+            .and_then(|daimon| daimon.host.clone()),
         daimon_hosted: options.daimon_host.is_some(),
         hermes_socket: options.hermes_socket.clone(),
         hermes_stream: options.hermes_stream,

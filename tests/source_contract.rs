@@ -2062,7 +2062,7 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "Task batch",
         "Open file",
         "source.txt",
-        "Ctrl-O-capable hosted Vellum",
+        "Ctrl-O/Ctrl-F-capable hosted Vellum",
     ] {
         assert!(
             run_gate.contains(required),

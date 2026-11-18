@@ -19,7 +19,10 @@ use vellum_sdk_client::{
 
 use crate::capabilities::RequirementDisposition;
 use crate::management::PeerRuntime;
-use crate::profile::{AgoraProfile, AgoraTransportProfile, DaimonExecutionPolicyProfile};
+use crate::profile::{
+    AgoraProfile, AgoraTransportProfile, DaimonExecutionPolicyProfile, DaimonHostProfile,
+};
+use crate::provider::provider_catalog;
 use pantheon::{AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
 
 pub struct HeadlessRequest {
@@ -35,6 +38,7 @@ pub struct HeadlessRequest {
     pub daimon_agent_socket: Option<PathBuf>,
     pub daimon_agent_session: Option<daimon_protocol::AgentSessionIdV1>,
     pub daimon_execution_policy: Option<DaimonExecutionPolicyProfile>,
+    pub daimon_provider_owner: Option<DaimonHostProfile>,
     pub daimon_hosted: bool,
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
@@ -58,6 +62,7 @@ pub struct HeadlessObservation {
     pub workspace: String,
     pub complete: bool,
     pub peers: Vec<serde_json::Value>,
+    pub provider_configuration: Option<serde_json::Value>,
     pub operator_agenda: OperatorAgendaView,
     pub management: Vec<PeerRuntime>,
     pub not_exercised_profile_requirements: Vec<RequirementDisposition>,
@@ -70,6 +75,24 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
     let mut peers = Vec::new();
     let mut management = Vec::new();
     let mut complete = true;
+    let provider_configuration = request.daimon_provider_owner.map(|owner| {
+        match provider_catalog(&owner.executable, &owner.config) {
+            Ok(catalog) => serde_json::json!({
+                "status": "current",
+                "catalog": catalog,
+                "boundary": "commands, arguments, paths, credential names, and secrets remain redacted by Daimon",
+            }),
+            Err(detail) => {
+                complete = false;
+                serde_json::json!({
+                    "status": "refused",
+                    "detail": detail,
+                    "next_action": "preflight the selected Daimon owner configuration and retry the aggregate observation",
+                    "boundary": "no fallback provider file was inspected and no provider state was inferred from a socket",
+                })
+            }
+        }
+    });
 
     if let Some(profile) = request.agora {
         let (observation, current) = observe_agora(profile);
@@ -188,6 +211,7 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         workspace: request.workspace,
         complete,
         peers,
+        provider_configuration,
         operator_agenda,
         management,
         not_exercised_profile_requirements: request.not_exercised_profile_requirements,
@@ -1417,6 +1441,7 @@ mod tests {
             daimon_agent_socket: None,
             daimon_agent_session: None,
             daimon_execution_policy: None,
+            daimon_provider_owner: None,
             daimon_hosted: false,
             hermes_socket: None,
             hermes_stream: None,

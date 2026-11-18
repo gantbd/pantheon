@@ -77,10 +77,16 @@ try:
     keys("Enter")
     expect("Vellum admitted and opened the file", "make-run proof")
 
+    keys("C-f")
+    expect("Find literal")
+    keys("-l", "make-run proof")
+    keys("Enter")
+    expect("Vellum literal match selected", "Service Current / Clean")
+
     keys("C-q")
     expect("[make-run-exit:0]", timeout=10)
 finally:
     tmux("kill-server", check=False)
 
-print("PASS: make run provides writable Chronos and Ctrl-O-capable hosted Vellum")
+print("PASS: make run provides writable Chronos and Ctrl-O/Ctrl-F-capable hosted Vellum")
 PYTHON

@@ -95,6 +95,15 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   activation and invocation. The hosted tmux journey drives the production
   form through redacted plan and atomic apply, checks the replaced owner
   document, and cleanly drains the hosted session.
+- Provider inspection no longer belongs to the terminal presentation layer.
+  One internal owner-backed facade now invokes, bounds, decodes and validates
+  the redacted catalogue for both TUI and aggregate headless presentation. The
+  headless report publishes the same exact owner/document/provider/task/context
+  facts and redaction boundary, or an actionable refusal without fallback file
+  inspection; it does not expose launch or credential material. The real
+  hosted Daimon/Vellum/tmux journey proves the headless catalogue before the
+  guarded TUI edit and again after restart, including the changed owner digest,
+  policy digest and redacted launch shape.
 - This does not complete onboarding: the local-model owner still lacks
   edit/apply, endpoint
   and model discovery, health/conformance runs, and retained qualification
@@ -103,6 +112,20 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   therefore cannot present the running LM Studio/Qwen catalogue through this
   surface. Those are owner/composition gaps, not reasons for Pantheon to mutate
   raw JSON.
+- Direct dogfooding then loaded this execution plan as Pantheon's hosted Vellum
+  workset. The footer advertised `Ctrl-F`, but the key reached editing behavior,
+  inserted the intended query into the document and marked it dirty instead of
+  opening find. Pantheon's two-step dirty-exit guard correctly prevented and
+  then discarded the unsaved edit. The defect is retained in the dogfood
+  Chronos owner as priority-8 task
+  `vellum-ctrl-f-routes-to-edit-instead-of-find`, requiring the
+  `vellum-key-routing` capability; it was not hidden as test-only feedback.
+  The remediation extended Vellum-TUI's shared service input facade with a
+  typed find intent and a projection-local, non-editing literal search, then
+  consumed that intent through Pantheon's bounded prompt and instrumentation.
+  Peer unit tests prove cursor movement without an owner effect or dirty state;
+  the real `make run` tmux journey now proves `Ctrl-F`, query submission,
+  visible match selection and `Service Current / Clean` before guarded exit.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 
@@ -578,7 +601,8 @@ model, organizational and training-lineage correlation remain explicit gaps.
   reviewable Pantheon form; show the effective owner-backed configuration before
   invocation.
 - [ ] Configure and qualify the selected local provider through an owner-backed
-  Pantheon surface; the existing checklist-only overlay does not satisfy this.
+  Pantheon surface; the existing guarded configuration transaction and shared
+  TUI/headless catalogue do not yet produce a qualification receipt.
 - [ ] Present provider/model health, conformance, effective tool/context budget,
   known deviations, evidence time, and the next safe action without exposing
   credentials or treating endpoint liveness as session/workflow completion.

@@ -183,6 +183,17 @@ printf '%s' "$headless" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)
 assert report["complete"]
+providers = report["provider_configuration"]
+assert providers["status"] == "current"
+assert "commands, arguments, paths, credential names, and secrets remain redacted" in providers["boundary"]
+catalog = providers["catalog"]
+assert catalog["owner"] == "daimon-local-agent"
+assert len(catalog["providers"]) == 1
+provider = catalog["providers"][0]
+assert provider["provider_id"] == "02" * 16
+assert provider["transport"] == "acp"
+assert provider["argument_count"] == 2
+assert not ({"program", "arguments", "inherited_environment_names", "authentication_method"} & provider.keys())
 peer = next(peer for peer in report["peers"] if peer["peer"] == "daimon")
 assert peer["peer"] == "daimon" and peer["status"] == "current"
 assert peer["capability"] == "agents.session.inspect.v1"
@@ -198,7 +209,7 @@ assert entry == {
     "kind": "vellum_document",
     "source_digest": "sha256:d0726d2d048d7c9ecb8d80f31dbded527ccde6e144141ddc4d215391e149e346",
     "content_bytes": 21,
-    "tellus": None,
+    "grounding": None,
 }
 assert context["content_disclosure"] == "not_published"
 vellum = next(peer for peer in report["peers"] if peer["peer"] == "vellum")
@@ -355,6 +366,22 @@ with open(sys.argv[1], encoding="utf-8") as source:
 assert provider["policy_digest"] == "sha256:" + "99" * 32
 assert provider["arguments"] and provider["arguments"][0].endswith("fake_acp_agent.sh")
 PYTHON
+
+headless_after=$($workbench headless --workspace-profile "$scratch/profile.json")
+printf '%s' "$headless_after" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"]
+providers = report["provider_configuration"]
+assert providers["status"] == "current"
+catalog = providers["catalog"]
+assert catalog["owner"] == "daimon-local-agent"
+provider = catalog["providers"][0]
+assert provider["policy_digest"] == "sha256:" + "99" * 32
+assert provider["argument_count"] == 1
+assert not ({"program", "arguments", "inherited_environment_names", "authentication_method"} & provider.keys())
+'
+[ ! -e "$scratch/agent.sock" ]
 
 kill -TERM "$aegis_pid"
 wait "$aegis_pid"

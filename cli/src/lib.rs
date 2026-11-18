@@ -7,6 +7,7 @@ mod hosted;
 pub mod management;
 pub mod native_host;
 pub mod profile;
+mod provider;
 pub mod reconfiguration;
 pub mod registry;
 mod terminal;
