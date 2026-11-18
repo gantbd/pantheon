@@ -137,13 +137,24 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   69 neighboring library tests and the new headless test passed in the broad
   run; the native Chronos socket test passed when rerun with its required local
   socket permission.
-- This closes the retained identity/projection leak for context that Daimon has
-  actually assembled. It does **not** yet make Vellum a dynamic context owner
-  for the local-agent composition: selecting a live workspace/document/revision,
-  reading it through Vellum's public contract, binding that exact receipt into
-  Daimon, and driving one concurrent TUI/headless local-provider run remain
-  open. Static fixture text labeled as Vellum evidence is not accepted as proof
-  of that missing owner integration.
+- This closed the retained identity/projection leak for context that Daimon had
+  already assembled. The follow-on owner slice now rejects static fixture text
+  labeled as Vellum evidence: `vellum_context` binds an exact public Vellum
+  workspace/document/revision, resolves fresh source through the authenticated
+  public SDK at open/turn time, refuses unavailable or revision-drifted owner
+  evidence without fallback/cache, and retains only the generic content-free
+  receipt. The redacted catalog projects runtime owner binding metadata without
+  paths, credentials, source digest or byte count before execution.
+- Revision `0` is valid owner state. A focused contract test accepts it, proves
+  exact-byte SHA-256 identity and refuses a mismatched configured revision.
+  Offline validation checks only bounded paths/schema/opaque identities and
+  does not load credentials or contact Vellum.
+- The hosted gate now starts authenticated Vellum, resolves the document during
+  real Daimon session creation, persists and reopens the agent receipt, compares
+  it with Vellum's own headless document/revision/witness/bytes/SHA-256 manifest,
+  then drives the same receipt and redacted runtime binding through Ratatui.
+  Daimon and Pantheon full workspace suites pass serially; the live hosted gate
+  cleanly drains Vellum, Daimon, Chronos and Aegis.
 
 ### Operational discovery loop
 
@@ -406,10 +417,11 @@ revision, witness, byte-count and SHA-256 facts; headless output deliberately
 withholds source text. A tmux-driven raw edit containing `]` exposed global
 surface navigation stealing focused editor input. The behavior facade now gives
 printable brackets to focused Vellum while retaining direct Ctrl/Alt, palette and
-mouse navigation, and the exact failure case passes live. This establishes
-content identity and presentation parity evidence, not yet agent-context parity:
-Daimon must still consume the selected Vellum context reference and prove the
-same digest on the task-bound execution receipt. The run also exposed that a
+mouse navigation, and the exact failure case passes live. This established
+content identity and presentation parity evidence. The follow-on owner slice
+now establishes agent-context parity as well: Daimon consumes the configured
+Vellum reference through the authenticated public SDK and its durable receipt
+matches Vellum headless's exact source digest. The run also exposed that a
 persistent TUI connection currently excludes a second headless Vellum client;
 attach/concurrency remains an owner-level gap rather than a reason to fork
 workspace state.

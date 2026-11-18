@@ -4375,9 +4375,17 @@ struct ContextCatalogProjection {
     reference: String,
     kind: String,
     #[serde(default)]
+    resolution: Option<String>,
+    #[serde(default)]
     source_digest: Option<String>,
     #[serde(default)]
     bytes: Option<usize>,
+    #[serde(default)]
+    workspace_id: Option<u64>,
+    #[serde(default)]
+    document_ordinal: Option<u64>,
+    #[serde(default)]
+    expected_revision: Option<u64>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -4669,10 +4677,9 @@ fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> Result<(), 
     }
     let mut context_references = std::collections::BTreeSet::new();
     for context in &catalog.contexts {
-        let static_context = matches!(
-            context.kind.as_str(),
-            "agora_message" | "chronos_work" | "vellum_document"
-        );
+        let static_context = matches!(context.kind.as_str(), "agora_message" | "chronos_work");
+        let runtime_vellum = context.kind == "vellum_document"
+            && context.resolution.as_deref() == Some("runtime_owner");
         if !valid_id(&context.reference)
             || !matches!(
                 context.kind.as_str(),
@@ -4684,8 +4691,24 @@ fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> Result<(), 
                     .source_digest
                     .as_deref()
                     .is_none_or(|value| !valid_digest(value))
-                    || context.bytes.is_none_or(|bytes| bytes == 0)))
-            || (!static_context && (context.source_digest.is_some() || context.bytes.is_some()))
+                    || context.bytes.is_none_or(|bytes| bytes == 0)
+                    || context.workspace_id.is_some()
+                    || context.document_ordinal.is_some()
+                    || context.expected_revision.is_some()))
+            || (runtime_vellum
+                && (context.source_digest.is_some()
+                    || context.bytes.is_some()
+                    || context.workspace_id.is_none_or(|value| value == 0)
+                    || context.document_ordinal.is_none_or(|value| value == 0)
+                    || context.expected_revision.is_none()))
+            || (!static_context
+                && !runtime_vellum
+                && (context.kind != "dendrite_grounding"
+                    || context.source_digest.is_some()
+                    || context.bytes.is_some()
+                    || context.workspace_id.is_some()
+                    || context.document_ordinal.is_some()
+                    || context.expected_revision.is_some()))
         {
             return Err("owner returned malformed context catalogue facts".into());
         }
@@ -4805,8 +4828,18 @@ fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
         lines.push(String::new());
         lines.push("Execution context manifest".into());
         for context in catalog.contexts {
+            let owner_binding = match (
+                context.workspace_id,
+                context.document_ordinal,
+                context.expected_revision,
+            ) {
+                (Some(workspace), Some(document), Some(revision)) => {
+                    format!(" · workspace {workspace}/document {document} @ revision {revision}")
+                }
+                _ => String::new(),
+            };
             lines.push(format!(
-                "  {} · {} · {} · {} bytes",
+                "  {} · {} · {} · {} bytes{}",
                 context.reference,
                 context.kind,
                 context
@@ -4815,7 +4848,8 @@ fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
                     .unwrap_or("runtime-resolved"),
                 context
                     .bytes
-                    .map_or_else(|| "runtime-resolved".into(), |value| value.to_string())
+                    .map_or_else(|| "runtime-resolved".into(), |value| value.to_string()),
+                owner_binding,
             ));
         }
     }
@@ -8499,8 +8533,12 @@ mod tests {
             contexts: vec![ContextCatalogProjection {
                 reference: "66".repeat(16),
                 kind: "vellum_document".into(),
-                source_digest: Some(format!("sha256:{}", "77".repeat(32))),
-                bytes: Some(4096),
+                resolution: Some("runtime_owner".into()),
+                source_digest: None,
+                bytes: None,
+                workspace_id: Some(1),
+                document_ordinal: Some(2),
+                expected_revision: Some(3),
             }],
         };
         validate_provider_catalog(&catalog).unwrap();
@@ -8511,7 +8549,8 @@ mod tests {
         assert!(lines.contains("structured tools true"));
         assert!(lines.contains("review-headless-boundary"));
         assert!(lines.contains("vellum_document"));
-        assert!(lines.contains("4096 bytes"));
+        assert!(lines.contains("runtime-resolved bytes"));
+        assert!(lines.contains("workspace 1/document 2 @ revision 3"));
         assert!(!lines.contains("host_header"));
         assert!(!lines.contains("OPENAI_API_KEY"));
     }

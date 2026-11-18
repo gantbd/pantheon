@@ -7,9 +7,10 @@ scratch=$(mktemp -d "${TMPDIR:-/tmp}/workbench-daimon-hosted.XXXXXX")
 aegis_pid=
 agent_pid=
 chronos_pid=
+vellum_pid=
 
 cleanup() {
-  for pid in "$agent_pid" "$chronos_pid" "$aegis_pid"; do
+  for pid in "$agent_pid" "$chronos_pid" "$vellum_pid" "$aegis_pid"; do
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
       wait "$pid" 2>/dev/null || true
@@ -25,6 +26,9 @@ cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
 cargo build --manifest-path "$workspace/daimon/Cargo.toml" \
   --package daimon-local-agent --bin daimon-local-agent \
   --example qualification_chronos --example qualification_seed --locked --offline
+cargo build --manifest-path "$workspace/vellum/Cargo.toml" \
+  --package vellum-daemon --bin vellum-daemon --locked --offline \
+  --target-dir "$root/target"
 cargo build --manifest-path "$root/Cargo.toml" \
   --package pantheon-cli --bin pantheon --locked --offline
 
@@ -32,10 +36,28 @@ aegis="$workspace/aegis/target/debug/aegis-daemon"
 agent="$workspace/daimon/target/debug/daimon-local-agent"
 chronos="$workspace/daimon/target/debug/examples/qualification_chronos"
 seed="$workspace/daimon/target/debug/examples/qualification_seed"
+vellum_daemon="$root/target/debug/vellum-daemon"
 workbench="$root/target/debug/pantheon"
 provider_fixture="$workspace/daimon/adapters/daimon-acp/tests/support/fake_acp_agent.sh"
 uid=$(id -u)
 gid=$(id -g)
+
+printf 'exact Vellum revision' >"$scratch/context.txt"
+"$vellum_daemon" --provision-credential "$scratch/vellum.credential"
+"$vellum_daemon" --socket "$scratch/vellum.sock" --control "$scratch/vellum.control" \
+  --credential "$scratch/vellum.credential" -- "$scratch/context.txt" \
+  >"$scratch/vellum.out" 2>"$scratch/vellum.err" &
+vellum_pid=$!
+attempt=0
+while [ ! -S "$scratch/vellum.sock" ]; do
+  attempt=$((attempt + 1))
+  if ! kill -0 "$vellum_pid" 2>/dev/null || [ "$attempt" -ge 100 ]; then
+    sed -n '1,160p' "$scratch/vellum.err" >&2
+    echo 'FAIL: Vellum context owner did not become ready' >&2
+    exit 1
+  fi
+  sleep 0.025
+done
 
 "$aegis" create "$scratch/authority" "$scratch/aegis.sock" \
   01010101010101010101010101010101 "$uid" "$gid" \
@@ -83,10 +105,14 @@ printf '%s\n' \
   '    "chronos_task_id": "local-agent-task"' \
   '  }],' \
   '  "tool_capabilities": [],' \
-  '  "context": [{' \
+  '  "context": [],' \
+  '  "vellum_context": [{' \
   '    "reference": "08080808080808080808080808080808",' \
-  '    "kind": "vellum_document",' \
-  '    "text": "exact Vellum revision"' \
+  "    \"socket\": \"$scratch/vellum.sock\"," \
+  "    \"credential\": \"$scratch/vellum.credential\"," \
+  '    "workspace_id": 1,' \
+  '    "document_ordinal": 1,' \
+  '    "expected_revision": 0' \
   '  }],' \
   '  "io_timeout_ms": 3000,' \
   '  "max_agent_sessions": 8,' \
@@ -123,12 +149,23 @@ agent_pid=
 wait "$chronos_pid"
 chronos_pid=
 [ ! -e "$scratch/agent.sock" ]
+"$vellum_daemon" --shutdown "$scratch/vellum.control" >/dev/null
+wait "$vellum_pid"
+vellum_pid=
+[ ! -e "$scratch/vellum.sock" ]
 
 printf '%s\n' \
   '{' \
   '  "version": 1,' \
   '  "name": "Hosted Daimon qualification",' \
-  '  "surfaces": ["daimon"],' \
+  '  "surfaces": ["daimon", "vellum"],' \
+  '  "vellum": {' \
+  '    "deployment": "hosted",' \
+  "    \"socket\": \"$scratch/vellum.sock\"," \
+  "    \"credential\": \"$scratch/vellum.credential\"," \
+  "    \"roots\": [\"$scratch/context.txt\"]," \
+  '    "requires": ["workspace.inventory.v1"]' \
+  '  },' \
   '  "daimon": {' \
   '    "deployment": "hosted",' \
   "    \"agent_socket\": \"$scratch/agent.sock\"," \
@@ -146,7 +183,7 @@ printf '%s' "$headless" | python3 -c '
 import json, sys
 report = json.load(sys.stdin)
 assert report["complete"]
-peer = report["peers"][0]
+peer = next(peer for peer in report["peers"] if peer["peer"] == "daimon")
 assert peer["peer"] == "daimon" and peer["status"] == "current"
 assert peer["capability"] == "agents.session.inspect.v1"
 session = peer["configured_agent_session"]
@@ -164,9 +201,22 @@ assert entry == {
     "grounding": None,
 }
 assert context["content_disclosure"] == "not_published"
+vellum = next(peer for peer in report["peers"] if peer["peer"] == "vellum")
+assert vellum["status"] == "current"
+assert vellum["context_manifest"] == [{
+    "document": 1,
+    "revision": 0,
+    "witness": 1,
+    "bytes": 21,
+    "sha256": entry["source_digest"],
+}]
+assert vellum["content_disclosure"] == "not_published"
 assert report["hosted_shutdown"] == {
     "status": "clean",
-    "receipts": [{"peer": "daimon", "instance": None, "disposition": "clean"}],
+    "receipts": [
+        {"peer": "daimon", "instance": None, "disposition": "clean"},
+        {"peer": "vellum", "instance": None, "disposition": "clean"},
+    ],
 }
 '
 [ ! -e "$scratch/agent.sock" ]
@@ -188,6 +238,7 @@ def tmux(*args, check=True):
 
 try:
     tmux("new-session", "-d", "-x", "220", "-y", "20", "-s", "daimon", command)
+    tmux("send-keys", "-t", "daimon", "M-5")
     deadline = time.monotonic() + 5
     while time.monotonic() < deadline:
         screen = tmux("capture-pane", "-p", "-t", "daimon").stdout
