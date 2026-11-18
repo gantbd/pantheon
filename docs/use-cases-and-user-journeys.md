@@ -1962,6 +1962,14 @@ preparation but does not admit the participation, dispatch a worker, create a
 new Daimon session, or connect the operation automatically to newly admitted
 Chronos work.
 
+The configured one-step Moira owner worker is now an explicit follow-on
+composition seam rather than a hidden Pantheon-to-Daimon call. Its opaque
+configuration remains owner-controlled; Pantheon launches it only after the
+selected participation retains a prepared Open and accepts only a bounded
+process receipt naming that exact participation, outcome and revision. This is
+implemented and owner-process-tested, but a combined live Pantheon gate remains
+required before worker dispatch is considered qualified J1 evidence.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

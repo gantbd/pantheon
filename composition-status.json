@@ -317,6 +317,7 @@
       "mutation": "qualified",
       "mutationCapabilities": {
         "agent.open.prepare.v1": "qualified",
+        "agent.worker.step.v1": "implemented",
         "sagas.reconciliation.confirmation.v1": "qualified",
         "sagas.reconciliation.confirm.v1": "qualified",
         "sagas.reconciliation.recovery.v1": "qualified"
@@ -326,6 +327,11 @@
           "state": "composed",
           "when": "one exact already-admitted participation and mutate-capable owner endpoint are selected",
           "evidence": ["moira-tui/src/open_control.rs", "pantheon/cli/src/terminal.rs", "pantheon/qualification/moira-participation/tests/live_participation.rs"]
+        },
+        "agent.worker.step.v1": {
+          "state": "composed",
+          "when": "an exact Open is durably prepared and an opaque one-step Moira owner-worker profile is selected",
+          "evidence": ["moira/apps/moira-agent-local/src/lib.rs", "pantheon/cli/src/terminal.rs"]
         }
       },
       "uncomposedPeerCapabilities": {

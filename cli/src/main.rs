@@ -15,7 +15,7 @@ use pantheon_cli::{
     },
     profile::{
         AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, DeploymentMode,
-        HermesAccessProfile, HermesOpenMode, WorkspaceProfile,
+        HermesAccessProfile, HermesOpenMode, MoiraAgentWorkerProfile, WorkspaceProfile,
     },
     registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers_managed_configuration,
@@ -63,6 +63,7 @@ struct Options {
     moira_socket: Option<PathBuf>,
     moira_participation_socket: Option<PathBuf>,
     moira_participation: Option<moira_protocol::agent_participation::ParticipationIdV1>,
+    moira_agent_worker: Option<MoiraAgentWorkerProfile>,
     moira_host: Option<MoiraProcessOptions>,
     daimon_socket: Option<PathBuf>,
     daimon_agent_socket: Option<PathBuf>,
@@ -171,6 +172,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut moira_participation = None;
     let mut moira_requires = Vec::new();
     let mut moira_host = None;
+    let mut moira_agent_worker = None;
     let mut daimon_socket = None;
     let mut daimon_agent_socket = None;
     let mut daimon_agent_session = None;
@@ -235,6 +237,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             });
         }
         if let Some(moira) = profile.moira {
+            moira_agent_worker = moira.agent_worker.clone();
             if moira.deployment == DeploymentMode::Hosted {
                 let host = moira
                     .host
@@ -652,6 +655,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_socket,
         moira_participation_socket,
         moira_participation,
+        moira_agent_worker,
         moira_host,
         daimon_socket,
         daimon_agent_socket,
@@ -3309,6 +3313,16 @@ fn interactive(
     } else {
         None
     };
+    let moira_agent_worker =
+        options
+            .moira_agent_worker
+            .map(|worker| pantheon_cli::MoiraAgentWorkerConfig {
+                executable: worker.executable,
+                config: worker.config,
+                participation: options
+                    .moira_participation
+                    .expect("workspace profile validates worker participation"),
+            });
     let outcome = run_terminal_with_all_peers_managed_configuration(
         options.shell,
         chronos,
@@ -3319,6 +3333,7 @@ fn interactive(
             moira,
             moira_participation,
             moira_participation_control,
+            moira_agent_worker,
             moira_control_socket,
             daimon,
             daimon_agent,

@@ -273,6 +273,30 @@ owner.
   workspace inventory/index plus an inspectable per-run context manifest with
   coverage, freshness, exclusions and resource budget; it does not mean placing
   every workspace byte in every model prompt.
+- The roadmap itself is now represented in the same durable Chronos owner, not
+  only in this document. Pantheon admitted a twelve-node milestone/stream graph
+  at revision 2 with priorities, capability requirements and dependency edges;
+  a clean owner restart reopened fourteen total tasks with five Ready and nine
+  correctly Blocked. Nodes cover the discovery loop, operator agenda, contract
+  traceability, participation history, observability correlation, declarative
+  work modes, four J1 delivery clusters, human-gated ensembles and executive
+  operating profiles. This Vellum document remains the rich acceptance source;
+  Chronos owns schedulable identities and state.
+- The active J1 worker/session node was then decomposed through Pantheon's live
+  batch composer into seven individually executable tasks: receipt contract,
+  profile validation, process controller, UI routing, receipt tests, live
+  qualification and capability/documentation closure. Chronos advanced to
+  revision 3 with 21 tasks, seven Ready and fourteen dependency-blocked. The
+  children name required capabilities such as `rust-small-edit`, `test-fixture`,
+  `process-control`, `behavior-facade` and `live-qualification`; they do not
+  hard-code a model. Provider/model assignment is a separate evidence-backed
+  Moira decision, so Gemma, Qwen, Codex or another provider can be selected or
+  replaced without changing work meaning.
+- An executable delegation packet still needs an authorized linked Vellum
+  artifact: exact objective and scope, allowed files, invariants, prohibited
+  boundary changes, acceptance commands, context-manifest identity, budget and
+  required human review. Chronos's content-minimized task record is not enough
+  input for a smaller model by itself.
 
 ## Milestone 0 — stabilize the product contract
 
@@ -419,6 +443,18 @@ durable preparation, exact replay after daemon restart and no presentation-side
 identity invention. This is an owner-bound effect-preparation seam, not yet the
 J1 chain: participation admission/template instantiation, worker dispatch,
 per-task Daimon session creation and automatic Chronos-to-Moira routing remain.
+
+The next worker/session sub-slice now has an implementation boundary. An
+optional workspace-profile field selects the `moira-agent-local` executable and
+opaque owner configuration. After the exact Open is durably prepared, a
+separate guarded workbench action launches that one-step owner process off the
+UI thread. Moira's process receipt now publishes the exact participation ID,
+outcome and retained revision; Pantheon bounds output, refuses a mismatched
+participation, keeps failure/uncertainty visible and refreshes owner state after
+a definitive result. The owner repository's real-process test crosses Moira and
+Daimon sockets and commits Ready observation; Pantheon's receipt/profile tests
+are green. A single composed live TUI gate and capability-matrix promotion are
+still required before this sub-slice is called qualified.
 
 The earlier observation-only profile copy was a presentation-boundary leak.
 The aggregate headless observer now validates requirements against the complete

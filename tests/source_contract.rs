@@ -2234,3 +2234,41 @@ fn moira_participation_gate_proves_restart_and_honest_failure_projections() {
     let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
     assert!(makefile.contains("qualify-moira-participation"));
 }
+
+#[test]
+fn moira_agent_worker_is_opaque_participation_bound_and_separate_from_preparation() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let profile = fs::read_to_string(root.join("cli/src/profile.rs")).expect("profile source");
+    for required in [
+        "MoiraAgentWorkerProfile",
+        "Moira agent worker requires an exact selected participation",
+        "worker.executable = resolve",
+        "worker.config = resolve",
+    ] {
+        assert!(
+            profile.contains(required),
+            "worker profile omits {required}"
+        );
+    }
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    for required in [
+        "moira.participation.open.prepare",
+        "moira.participation.worker.run",
+        "dispatch_ready",
+        "owner worker receipt named a different participation",
+        "owner worker output exceeded 4096 bytes",
+        "Dispatch refused: review and durably prepare",
+        "MoiraAgentWorkerSettlement::FencedUnknown",
+    ] {
+        assert!(terminal.contains(required), "worker route omits {required}");
+    }
+    let owner = fs::read_to_string(root.join("../moira/apps/moira-agent-local/src/lib.rs"))
+        .expect("Moira agent worker source");
+    for required in [
+        r#""participation":"{}""#,
+        "summary(outcome, config.participation)",
+        "participation_revision",
+    ] {
+        assert!(owner.contains(required), "owner receipt omits {required}");
+    }
+}

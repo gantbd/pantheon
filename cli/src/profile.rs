@@ -70,9 +70,19 @@ pub struct MoiraProfile {
     /// participation. The saga host does not implicitly serve this protocol.
     pub participation_socket: Option<PathBuf>,
     pub participation: Option<String>,
+    /// Optional one-step owner worker. Pantheon treats the configuration as
+    /// opaque and accepts only an exact participation-bound process receipt.
+    pub agent_worker: Option<MoiraAgentWorkerProfile>,
     pub host: Option<MoiraHostProfile>,
     #[serde(default)]
     pub requires: Vec<String>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct MoiraAgentWorkerProfile {
+    pub executable: PathBuf,
+    pub config: PathBuf,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -332,6 +342,10 @@ impl WorkspaceProfile {
                 host.executable = resolve(base, &host.executable);
                 host.config = resolve(base, &host.config);
             }
+            if let Some(worker) = &mut moira.agent_worker {
+                worker.executable = resolve(base, &worker.executable);
+                worker.config = resolve(base, &worker.config);
+            }
         }
         if let Some(daimon) = &mut profile.daimon {
             if let Some(socket) = &mut daimon.socket {
@@ -440,6 +454,13 @@ impl WorkspaceProfile {
                         "Moira participation socket and participation identifier must be configured together",
                     );
                 }
+            }
+            if let Some(worker) = &moira.agent_worker {
+                if moira.participation.is_none() {
+                    return Err("Moira agent worker requires an exact selected participation");
+                }
+                validate_path(&worker.executable)?;
+                validate_path(&worker.config)?;
             }
             match (moira.deployment, &moira.host) {
                 (DeploymentMode::Hosted, Some(host)) => {
@@ -1074,6 +1095,7 @@ mod tests {
           "moira":{"socket":"saga.sock",
             "participation_socket":"participation.sock",
             "participation":"0102030405060708090a0b0c0d0e0f10",
+            "agent_worker":{"executable":"bin/moira-agent-local","config":"agent.json"},
             "requires":["agent.participation.inspect.v1"]}
         }"#;
         let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
@@ -1086,6 +1108,12 @@ mod tests {
             moira.participation.as_deref(),
             Some("0102030405060708090a0b0c0d0e0f10")
         );
+        let worker = moira.agent_worker.unwrap();
+        assert_eq!(
+            worker.executable,
+            Path::new("/tmp/workbench/bin/moira-agent-local")
+        );
+        assert_eq!(worker.config, Path::new("/tmp/workbench/agent.json"));
 
         let missing_id = br#"{
           "version":1,"name":"Moira participation","surfaces":["moira"],
@@ -1099,6 +1127,13 @@ mod tests {
             "participation":"not-an-exact-id"}
         }"#;
         assert!(WorkspaceProfile::parse(malformed_id, Path::new(".")).is_err());
+
+        let worker_without_participation = br#"{
+          "version":1,"name":"Moira worker","surfaces":["moira"],
+          "moira":{"socket":"saga.sock",
+            "agent_worker":{"executable":"moira-agent-local","config":"agent.json"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(worker_without_participation, Path::new(".")).is_err());
     }
 
     #[test]

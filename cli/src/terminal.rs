@@ -1100,6 +1100,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             moira,
             moira_participation: None,
             moira_participation_control: None,
+            moira_agent_worker: None,
             moira_control_socket: None,
             daimon,
             daimon_agent: None,
@@ -1127,6 +1128,7 @@ pub struct OperationalPeers {
         PathBuf,
         moira_protocol::agent_participation::ParticipationIdV1,
     )>,
+    pub moira_agent_worker: Option<MoiraAgentWorkerConfig>,
     pub moira_control_socket: Option<PathBuf>,
     pub daimon: Option<daimon_tui::Component>,
     pub daimon_agent: Option<daimon_tui::AgentSetComponent>,
@@ -1141,6 +1143,171 @@ pub struct OperationalPeers {
     pub grounding: Option<tellus::Component>,
     pub vellum_control: Option<VellumControlConfig>,
     pub vellum_allow_add_file: bool,
+}
+
+#[derive(Clone, Debug)]
+pub struct MoiraAgentWorkerConfig {
+    pub executable: PathBuf,
+    pub config: PathBuf,
+    pub participation: moira_protocol::agent_participation::ParticipationIdV1,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+enum MoiraAgentWorkerOutcome {
+    Idle,
+    Observed,
+    FencedUnknown,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MoiraAgentWorkerReceipt {
+    outcome: MoiraAgentWorkerOutcome,
+    participation: String,
+    participation_revision: u64,
+}
+
+#[derive(Debug)]
+enum MoiraAgentWorkerResult {
+    Receipt(MoiraAgentWorkerReceipt),
+    Refused(String),
+    OutcomeUnknown(String),
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MoiraAgentWorkerSettlement {
+    Idle,
+    Observed,
+    FencedUnknown,
+    Refused,
+}
+
+struct MoiraAgentWorkerControl {
+    receiver: Option<Receiver<MoiraAgentWorkerResult>>,
+    pending: bool,
+    uncertain: bool,
+    notice: String,
+}
+
+impl MoiraAgentWorkerControl {
+    fn new() -> Self {
+        Self {
+            receiver: None,
+            pending: false,
+            uncertain: false,
+            notice: "Owner worker has not run".into(),
+        }
+    }
+
+    fn start(&mut self, config: MoiraAgentWorkerConfig) -> Result<(), &'static str> {
+        if self.pending {
+            return Err("Moira owner worker is already pending");
+        }
+        if self.uncertain {
+            return Err("Moira owner worker is fenced; inspect the participation before any retry");
+        }
+        let (sender, receiver) = sync_channel(1);
+        std::thread::spawn(move || {
+            let child = Command::new(&config.executable)
+                .arg(&config.config)
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn();
+            let result = match child {
+                Err(error) => {
+                    let _ = sender.send(MoiraAgentWorkerResult::Refused(format!(
+                        "owner worker could not start: {error}"
+                    )));
+                    return;
+                }
+                Ok(child) => child
+                    .wait_with_output()
+                    .map_err(|error| format!("owner worker outcome unknown: {error}"))
+                    .and_then(|output| {
+                        if output.stdout.len() > 4_096 || output.stderr.len() > 4_096 {
+                            return Err("owner worker output exceeded 4096 bytes".into());
+                        }
+                        if !output.status.success() {
+                            let detail = String::from_utf8_lossy(&output.stderr);
+                            return Err(format!(
+                                "owner worker exited {}: {}",
+                                output.status,
+                                detail.trim()
+                            ));
+                        }
+                        let receipt: MoiraAgentWorkerReceipt =
+                            serde_json::from_slice(&output.stdout).map_err(|_| {
+                                "owner worker returned an invalid receipt".to_string()
+                            })?;
+                        let expected = config
+                            .participation
+                            .0
+                            .iter()
+                            .map(|byte| format!("{byte:02x}"))
+                            .collect::<String>();
+                        if receipt.participation != expected {
+                            return Err(
+                                "owner worker receipt named a different participation".into()
+                            );
+                        }
+                        Ok(receipt)
+                    }),
+            };
+            let _ = sender.send(match result {
+                Ok(receipt) => MoiraAgentWorkerResult::Receipt(receipt),
+                Err(error) => MoiraAgentWorkerResult::OutcomeUnknown(error),
+            });
+        });
+        self.receiver = Some(receiver);
+        self.pending = true;
+        self.notice = "Moira owner worker is dispatching one durable step".into();
+        Ok(())
+    }
+
+    fn poll(&mut self) -> Option<MoiraAgentWorkerSettlement> {
+        let result = match self.receiver.as_ref().map(Receiver::try_recv) {
+            Some(Ok(result)) => result,
+            Some(Err(TryRecvError::Empty)) | None => return None,
+            Some(Err(TryRecvError::Disconnected)) => {
+                self.pending = false;
+                self.uncertain = true;
+                self.notice = "Owner worker disconnected; outcome unknown".into();
+                self.receiver = None;
+                return Some(MoiraAgentWorkerSettlement::FencedUnknown);
+            }
+        };
+        self.pending = false;
+        self.receiver = None;
+        match result {
+            MoiraAgentWorkerResult::Receipt(receipt) => {
+                self.uncertain = receipt.outcome == MoiraAgentWorkerOutcome::FencedUnknown;
+                self.notice = format!(
+                    "Moira owner worker {:?} participation revision {}",
+                    receipt.outcome, receipt.participation_revision
+                );
+                Some(match receipt.outcome {
+                    MoiraAgentWorkerOutcome::Idle => MoiraAgentWorkerSettlement::Idle,
+                    MoiraAgentWorkerOutcome::Observed => MoiraAgentWorkerSettlement::Observed,
+                    MoiraAgentWorkerOutcome::FencedUnknown => {
+                        MoiraAgentWorkerSettlement::FencedUnknown
+                    }
+                })
+            }
+            MoiraAgentWorkerResult::Refused(error) => {
+                self.notice = format!("Moira owner worker refused: {error}");
+                Some(MoiraAgentWorkerSettlement::Refused)
+            }
+            MoiraAgentWorkerResult::OutcomeUnknown(error) => {
+                self.uncertain = true;
+                self.notice = format!(
+                    "Moira owner worker outcome unknown: {error}; inspect participation before any retry"
+                );
+                Some(MoiraAgentWorkerSettlement::FencedUnknown)
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -1672,6 +1839,7 @@ fn workbench_commands(
     agora_control: bool,
     moira: bool,
     moira_participation: bool,
+    moira_agent_worker: bool,
     moira_control: bool,
     daimon: bool,
     daimon_control: bool,
@@ -2174,6 +2342,19 @@ fn workbench_commands(
         prepare_agent_open
             .unavailable("A selected Moira participation control endpoint is required")
     });
+    let run_agent_worker = CommandSpec::available(
+        "moira.participation.worker.run",
+        "Dispatch prepared Moira agent session",
+        "Run the configured Moira one-step owner worker only after an exact Open operation is durably prepared; verify its participation-bound receipt.",
+        "Moira",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if moira_agent_worker {
+        run_agent_worker
+    } else {
+        run_agent_worker.unavailable("A selected Moira owner-worker profile is required")
+    });
     for (command, configured) in [
         (
             CommandSpec::available(
@@ -2587,6 +2768,8 @@ fn execute_workbench_action<T: ServicePort>(
         moira_protocol::agent_participation::ParticipationIdV1,
     )>,
     moira_open: &mut Option<moira_tui::OpenControlComponent>,
+    moira_agent_worker_config: Option<&MoiraAgentWorkerConfig>,
+    moira_agent_worker: &mut MoiraAgentWorkerControl,
     moira_control_socket: Option<&Path>,
     moira_reconciliation: &mut Option<moira_tui::ReconciliationBatchComponent>,
     daimon: &mut Option<daimon_tui::Component>,
@@ -2952,6 +3135,35 @@ fn execute_workbench_action<T: ServicePort>(
                 "Exact admitted participation queued for session-open review; c arms and Enter asks Moira to prepare it"
                     .into(),
             )
+        }
+        "moira.participation.worker.run" => {
+            let Some(config) = moira_agent_worker_config.cloned() else {
+                return (
+                    ActivityLevel::Warning,
+                    "moira",
+                    "Moira owner-worker profile is not configured".into(),
+                );
+            };
+            if !moira_open
+                .as_ref()
+                .is_some_and(moira_tui::OpenControlComponent::dispatch_ready)
+            {
+                return (
+                    ActivityLevel::Warning,
+                    "moira",
+                    "Dispatch refused: review and durably prepare this participation Open first"
+                        .into(),
+                );
+            }
+            match moira_agent_worker.start(config) {
+                Ok(()) => (
+                    ActivityLevel::Info,
+                    "moira",
+                    "Moira one-step owner worker started; the UI remains responsive while its exact receipt is pending"
+                        .into(),
+                ),
+                Err(reason) => (ActivityLevel::Warning, "moira", reason.into()),
+            }
         }
         action @ ("moira.reconciliation.keep-uncertain"
         | "moira.reconciliation.fail-terminal"
@@ -5164,6 +5376,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         mut moira,
         mut moira_participation,
         moira_participation_control,
+        moira_agent_worker: moira_agent_worker_config,
         moira_control_socket,
         mut daimon,
         mut daimon_agent,
@@ -5188,6 +5401,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut agora_message_operation = None;
     let mut moira_reconciliation: Option<moira_tui::ReconciliationBatchComponent> = None;
     let mut moira_open: Option<moira_tui::OpenControlComponent> = None;
+    let mut moira_agent_worker = MoiraAgentWorkerControl::new();
     let mut last_moira_open_notice = String::new();
     let mut last_moira_reconciliation_notice = String::new();
     let mut active_moira_action: Option<&'static str> = None;
@@ -5239,6 +5453,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         agora_control.is_some(),
         moira.is_some(),
         moira_participation_control.is_some(),
+        moira_agent_worker_config.is_some(),
         moira_control_socket.is_some(),
         daimon.is_some() || daimon_agent.is_some(),
         daimon_agent.is_some() && daimon_agent_control_socket.is_some(),
@@ -5688,6 +5903,22 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     notice = current.into();
                     activity.push(level, "moira", current);
                     last_moira_open_notice = current.into();
+                }
+            }
+            if let Some(outcome) = moira_agent_worker.poll() {
+                let level = match outcome {
+                    MoiraAgentWorkerSettlement::Observed => ActivityLevel::Success,
+                    MoiraAgentWorkerSettlement::Idle | MoiraAgentWorkerSettlement::Refused => {
+                        ActivityLevel::Warning
+                    }
+                    MoiraAgentWorkerSettlement::FencedUnknown => ActivityLevel::Uncertain,
+                };
+                notice = moira_agent_worker.notice.clone();
+                activity.push(level, "moira", notice.clone());
+                if outcome != MoiraAgentWorkerSettlement::FencedUnknown
+                    && let Some(control) = &mut moira_open
+                {
+                    control.update(moira_tui::OpenControlInput::Refresh, true);
                 }
             }
             if let Some(reconciliation) = &mut moira_reconciliation {
@@ -6279,6 +6510,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         || moira_open
                             .as_ref()
                             .is_some_and(moira_tui::OpenControlComponent::request_pending)
+                        || moira_agent_worker.pending
                         || moira_reconciliation
                             .as_ref()
                             .is_some_and(|control| control.request_pending())
@@ -6348,6 +6580,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     moira_open
                         .as_ref()
                         .is_some_and(moira_tui::OpenControlComponent::recovery_required)
+                        || moira_agent_worker.uncertain
                         || moira_reconciliation
                             .as_ref()
                             .is_some_and(moira_tui::ReconciliationBatchComponent::recovery_required)
@@ -6781,6 +7014,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut moira_participation,
                         moira_participation_control.as_ref(),
                         &mut moira_open,
+                        moira_agent_worker_config.as_ref(),
+                        &mut moira_agent_worker,
                         moira_control_socket.as_deref(),
                         &mut moira_reconciliation,
                         &mut daimon,
@@ -9117,6 +9352,90 @@ mod tests {
     }
 
     #[test]
+    fn moira_owner_worker_accepts_only_an_exact_bounded_participation_receipt() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let root = std::env::temp_dir().join(format!(
+            "pantheon-moira-worker-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        let executable = root.join("worker");
+        let config = root.join("opaque.json");
+        std::fs::write(&config, b"opaque").unwrap();
+        std::fs::write(
+            &executable,
+            b"#!/bin/sh\nprintf '%s\\n' '{\"outcome\":\"observed\",\"participation\":\"01010101010101010101010101010101\",\"participation_revision\":2}'\n",
+        )
+        .unwrap();
+        let mut permissions = std::fs::metadata(&executable).unwrap().permissions();
+        permissions.set_mode(0o700);
+        std::fs::set_permissions(&executable, permissions).unwrap();
+
+        let mut worker = MoiraAgentWorkerControl::new();
+        worker
+            .start(MoiraAgentWorkerConfig {
+                executable: executable.clone(),
+                config: config.clone(),
+                participation: moira_protocol::agent_participation::ParticipationIdV1([1; 16]),
+            })
+            .unwrap();
+        assert_eq!(
+            worker.start(MoiraAgentWorkerConfig {
+                executable: executable.clone(),
+                config: config.clone(),
+                participation: moira_protocol::agent_participation::ParticipationIdV1([1; 16]),
+            }),
+            Err("Moira owner worker is already pending")
+        );
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let outcome = loop {
+            if let Some(outcome) = worker.poll() {
+                break outcome;
+            }
+            assert!(Instant::now() < deadline, "owner worker did not settle");
+            std::thread::sleep(Duration::from_millis(2));
+        };
+        assert_eq!(outcome, MoiraAgentWorkerSettlement::Observed);
+        assert!(worker.notice.contains("revision 2"));
+        assert!(!worker.pending);
+        assert!(!worker.uncertain);
+
+        std::fs::write(
+            &executable,
+            b"#!/bin/sh\nprintf '%s\\n' '{\"outcome\":\"observed\",\"participation\":\"02020202020202020202020202020202\",\"participation_revision\":3}'\n",
+        )
+        .unwrap();
+        worker
+            .start(MoiraAgentWorkerConfig {
+                executable,
+                config,
+                participation: moira_protocol::agent_participation::ParticipationIdV1([1; 16]),
+            })
+            .unwrap();
+        while worker.pending && Instant::now() < deadline + Duration::from_secs(2) {
+            worker.poll();
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        assert!(worker.notice.contains("different participation"));
+        assert!(worker.notice.contains("outcome unknown"));
+        assert!(worker.uncertain);
+        assert_eq!(
+            worker.start(MoiraAgentWorkerConfig {
+                executable: root.join("worker"),
+                config: root.join("opaque.json"),
+                participation: moira_protocol::agent_participation::ParticipationIdV1([1; 16]),
+            }),
+            Err("Moira owner worker is fenced; inspect the participation before any retry")
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn work_item_agent_journey_carries_bounded_task_text_into_the_prompt() {
         let mut journey = WorkItemAgentJourney::EditingTask {
             draft: String::new(),
@@ -9285,13 +9604,14 @@ mod tests {
             .expect("valid shell");
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true, true, true, true,
         );
         for expected in [
             "navigate.overview",
             "navigate.workspace",
             "navigate.moira",
             "moira.participation.open.prepare",
+            "moira.participation.worker.run",
             "view.refresh",
             "vellum.atomic-replace-selected",
             "suite.refresh",
@@ -9397,7 +9717,7 @@ mod tests {
         let shell = Shell::new(vec![Surface::Overview]).expect("valid shell");
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false, false, false, false, false, false,
+            false, false, false, false, false, false, false, false, false, false, false, false,
         );
         let save = commands
             .iter()
