@@ -200,6 +200,29 @@ behaviors. F1, Ctrl-G, semantic surface shortcuts, Vellum open/save, and their
 palette entries therefore converge on one command implementation instead of
 maintaining parallel shortcut and palette paths.
 
+Workspace profiles select the closed `pantheon` or `emacs` keybinding contract;
+the Configuration sheet shows the effective choice and a change requires the
+existing guarded shell restart. The Emacs profile is prefix-stateful and routes
+to the same semantic commands as the palette:
+
+| Emacs input | Current semantic command |
+| --- | --- |
+| `M-x` | Open command minibuffer |
+| `C-g` | Keyboard quit: cancel prefix or dismiss the active overlay |
+| `C-x C-f` | `vellum.document.open` when Vellum owns the active surface |
+| `C-x C-s` | `vellum.save` when Vellum owns the active surface |
+| `C-x C-c` | Guarded Pantheon exit |
+| `C-h b`, `C-h ?` | Generated binding/action help |
+| `C-h l` | Bounded activity/receipt history, analogous to lossage inspection |
+
+In this profile `C-p` and `C-q` are not stolen for Pantheon palette/exit: they
+remain available to the peer-local editor. Unknown `C-x`/`C-h` chords refuse
+with an explicit unbound result instead of falling through as text. This is the
+first compatibility slice, not a claim of full Emacs parity. Vellum still needs
+owner-native `C-f/C-b/C-n/C-p`, `C-a/C-e`, word motion, mark/region,
+kill/yank, buffer switching and undo bindings; those must translate to Vellum
+actions rather than a second editor implementation in Pantheon.
+
 The work-item journey follows that same route. `Shift-N` and its minibuffer
 entry both resolve to `workitem.agent.new`; the journey captures only the
 bounded text typed into the Chronos form, waits for the task receipt, prepares

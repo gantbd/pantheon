@@ -12,8 +12,8 @@ pub use agenda::{
 pub use shell::{Shell, ShellInput, Surface, shell_input};
 pub use workbench::{
     ActionMetric, ActivityEntry, ActivityLevel, ActivityLog, CommandKind, CommandPalette,
-    CommandSpec, Instrumentation, OperationTrace, PaletteOutcome, TraceStage, draw_activity,
-    draw_command_palette, draw_help, draw_inspector,
+    CommandSpec, Instrumentation, KeybindingGuide, OperationTrace, PaletteOutcome, TraceStage,
+    draw_activity, draw_command_palette, draw_help, draw_inspector,
 };
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
@@ -151,6 +151,7 @@ pub fn draw_shell(
             operations: None,
             health: None,
             configuration: None,
+            keybindings: KeybindingGuide::Pantheon,
         },
         focus,
         notice,
@@ -187,6 +188,7 @@ pub struct PeerViews<'a> {
     pub operations: Option<&'a OperationsView>,
     pub health: Option<&'a SuiteHealthView>,
     pub configuration: Option<&'a [String]>,
+    pub keybindings: KeybindingGuide,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -285,6 +287,7 @@ pub fn draw_shell_with_moira(
         operations,
         health,
         configuration,
+        keybindings,
     } = peers;
     frame.render_widget(Block::default().style(theme::base()), frame.area());
     let [brand, tabs, body, status] = Layout::vertical([
@@ -359,7 +362,7 @@ pub fn draw_shell_with_moira(
         Surface::Vellum => Focus::Vellum,
         _ => focus,
     };
-    draw_status_bar(frame, status, status_focus, notice);
+    draw_status_bar(frame, status, status_focus, notice, keybindings);
     match shell.active() {
         Surface::Agenda => draw_operator_agenda(
             frame,
@@ -587,7 +590,7 @@ pub fn draw_shell_with_moira(
             draw_operations(frame, body, operations.expect("matched above"));
         }
         Surface::Configuration => {
-            draw_configuration(frame, body, configuration.unwrap_or(&[]));
+            draw_configuration(frame, body, configuration.unwrap_or(&[]), keybindings);
         }
         surface => {
             draw_unconfigured_surface(frame, body, surface);
@@ -625,7 +628,12 @@ pub fn surface_tab_at(shell: &Shell, width: u16, column: u16, row: u16) -> Optio
     None
 }
 
-fn draw_configuration(frame: &mut Frame<'_>, area: Rect, lines: &[String]) {
+fn draw_configuration(
+    frame: &mut Frame<'_>,
+    area: Rect,
+    lines: &[String],
+    keybindings: KeybindingGuide,
+) {
     let [intro, facts_area] = Layout::vertical([Constraint::Length(4), Constraint::Min(4)])
         .spacing(1)
         .areas(area);
@@ -639,7 +647,10 @@ fn draw_configuration(frame: &mut Frame<'_>, area: Rect, lines: &[String]) {
                     .add_modifier(Modifier::BOLD),
             ),
             Line::styled(
-                "Secrets and grant handles stay redacted. Ctrl-P → preflight restart changes the profile deliberately.",
+                match keybindings {
+                    KeybindingGuide::Pantheon => "Secrets and grant handles stay redacted. Ctrl-P → preflight restart changes the profile deliberately.",
+                    KeybindingGuide::Emacs => "Secrets and grant handles stay redacted. M-x → preflight restart changes the profile deliberately.",
+                },
                 theme::muted(),
             ),
         ])
@@ -681,7 +692,13 @@ fn draw_configuration(frame: &mut Frame<'_>, area: Rect, lines: &[String]) {
     );
 }
 
-fn draw_status_bar(frame: &mut Frame<'_>, area: Rect, focus: Focus, notice: &str) {
+fn draw_status_bar(
+    frame: &mut Frame<'_>,
+    area: Rect,
+    focus: Focus,
+    notice: &str,
+    keybindings: KeybindingGuide,
+) {
     let [message, shortcuts] =
         Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)]).areas(area);
     frame.render_widget(
@@ -692,10 +709,21 @@ fn draw_status_bar(frame: &mut Frame<'_>, area: Rect, focus: Focus, notice: &str
         .style(theme::base()),
         message,
     );
-    let hints = if area.width >= 132 {
-        format!("⌃P act · F1 help · ⌃G log · ⌃0 home · ⌃, cfg · ⌃Q · focus={focus:?} ")
-    } else {
-        format!("⌃P actions  ·  F1 help  ·  [ ] tabs  ·  ⌃Q exit  ·  focus={focus:?} ")
+    let hints = match (keybindings, area.width >= 132) {
+        (KeybindingGuide::Emacs, true) => {
+            format!(
+                "M-x act · C-h b help · C-h l log · C-g cancel · C-x C-c exit · focus={focus:?} "
+            )
+        }
+        (KeybindingGuide::Emacs, false) => {
+            format!("M-x actions · C-h b help · C-g cancel · C-x C-c exit · focus={focus:?} ")
+        }
+        (KeybindingGuide::Pantheon, true) => {
+            format!("⌃P act · F1 help · ⌃G log · ⌃0 home · ⌃, cfg · ⌃Q · focus={focus:?} ")
+        }
+        (KeybindingGuide::Pantheon, false) => {
+            format!("⌃P actions  ·  F1 help  ·  [ ] tabs  ·  ⌃Q exit  ·  focus={focus:?} ")
+        }
     };
     frame.render_widget(
         Paragraph::new(hints)
@@ -2117,6 +2145,7 @@ mod tests {
                             operations: None,
                             health: None,
                             configuration: None,
+                            keybindings: KeybindingGuide::Pantheon,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -2184,6 +2213,7 @@ mod tests {
                             operations: None,
                             health: None,
                             configuration: None,
+                            keybindings: KeybindingGuide::Pantheon,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -2249,6 +2279,7 @@ mod tests {
                             operations: None,
                             health: None,
                             configuration: None,
+                            keybindings: KeybindingGuide::Pantheon,
                         },
                         Focus::Chronos,
                         "host supplied",
@@ -2313,6 +2344,7 @@ mod tests {
                             operations: None,
                             health: None,
                             configuration: None,
+                            keybindings: KeybindingGuide::Pantheon,
                         },
                         Focus::Chronos,
                         "host supplied",

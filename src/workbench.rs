@@ -997,53 +997,105 @@ pub fn draw_command_palette(frame: &mut Frame<'_>, palette: &CommandPalette) {
     );
 }
 
-pub fn draw_help(frame: &mut Frame<'_>, commands: &[CommandSpec]) {
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum KeybindingGuide {
+    #[default]
+    Pantheon,
+    Emacs,
+}
+
+pub fn draw_help(frame: &mut Frame<'_>, commands: &[CommandSpec], keybindings: KeybindingGuide) {
     let area = centered(frame.area(), 82, 78);
     frame.render_widget(Clear, area);
-    let mut lines = vec![
-        Line::from(vec![
-            Span::styled("Ctrl-P", theme::key()),
-            Span::raw("  Search every available action"),
-        ]),
-        Line::from(vec![
-            Span::styled("F1", theme::key()),
-            Span::raw("      Toggle this contextual help"),
-        ]),
-        Line::from(vec![
-            Span::styled("Ctrl-G", theme::key()),
-            Span::raw("  Show activity and receipts"),
-        ]),
-        Line::from(vec![
-            Span::styled("[ / ]", theme::key()),
-            Span::raw("   Previous / next surface"),
-        ]),
-        Line::from(vec![
-            Span::styled("Ctrl/Alt 0–9", theme::key()),
-            Span::raw(" Dashboard / direct component surface"),
-        ]),
-        Line::from(vec![
-            Span::styled("Ctrl-,", theme::key()),
-            Span::raw("   Open live session configuration"),
-        ]),
-        Line::from(vec![
-            Span::styled("Mouse", theme::key()),
-            Span::raw("    Click or wheel the surface rail"),
-        ]),
-        Line::from(vec![
-            Span::styled("Ctrl-Q", theme::key()),
-            Span::raw("  Safely leave the workbench"),
-        ]),
-        Line::from(""),
-        Line::styled(
-            "AVAILABLE ACTIONS",
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-    ];
+    let mut lines = match keybindings {
+        KeybindingGuide::Pantheon => vec![
+            Line::from(vec![
+                Span::styled("Ctrl-P", theme::key()),
+                Span::raw("  Search every available action"),
+            ]),
+            Line::from(vec![
+                Span::styled("F1", theme::key()),
+                Span::raw("      Toggle this contextual help"),
+            ]),
+            Line::from(vec![
+                Span::styled("Ctrl-G", theme::key()),
+                Span::raw("  Show activity and receipts"),
+            ]),
+            Line::from(vec![
+                Span::styled("[ / ]", theme::key()),
+                Span::raw("   Previous / next surface"),
+            ]),
+            Line::from(vec![
+                Span::styled("Ctrl/Alt 0–9", theme::key()),
+                Span::raw(" Dashboard / direct component surface"),
+            ]),
+            Line::from(vec![
+                Span::styled("Ctrl-,", theme::key()),
+                Span::raw("   Open live session configuration"),
+            ]),
+            Line::from(vec![
+                Span::styled("Mouse", theme::key()),
+                Span::raw("    Click or wheel the surface rail"),
+            ]),
+            Line::from(vec![
+                Span::styled("Ctrl-Q", theme::key()),
+                Span::raw("  Safely leave the workbench"),
+            ]),
+            Line::from(""),
+        ],
+        KeybindingGuide::Emacs => vec![
+            Line::from(vec![
+                Span::styled("M-x", theme::key()),
+                Span::raw("      Search every available action"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-g", theme::key()),
+                Span::raw("      Cancel the active prompt or prefix"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-h b", theme::key()),
+                Span::raw("    Show this binding guide"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-h l", theme::key()),
+                Span::raw("    Show activity and receipts"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-x C-f", theme::key()),
+                Span::raw("  Open a file through Vellum"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-x C-s", theme::key()),
+                Span::raw("  Save through Vellum"),
+            ]),
+            Line::from(vec![
+                Span::styled("C-x C-c", theme::key()),
+                Span::raw("  Safely leave the workbench"),
+            ]),
+            Line::from(vec![
+                Span::styled("Mouse", theme::key()),
+                Span::raw("      Click or wheel the surface rail"),
+            ]),
+            Line::from(""),
+        ],
+    };
+    lines.push(Line::styled(
+        "AVAILABLE ACTIONS",
+        Style::default().add_modifier(Modifier::BOLD),
+    ));
     lines.extend(
         commands
             .iter()
             .filter(|command| command.enabled)
             .map(|command| {
+                let shortcut = match (keybindings, command.id) {
+                    (KeybindingGuide::Emacs, "workbench.activity") => "C-h l",
+                    (KeybindingGuide::Emacs, "workbench.help") => "C-h b",
+                    (KeybindingGuide::Emacs, "vellum.document.open") => "C-x C-f",
+                    (KeybindingGuide::Emacs, "vellum.save") => "C-x C-s",
+                    (KeybindingGuide::Emacs, _) => command.shortcut.unwrap_or("M-x"),
+                    (KeybindingGuide::Pantheon, _) => command.shortcut.unwrap_or("palette"),
+                };
                 Line::from(vec![
                     Span::styled(
                         format!("{:<10}", command.kind.label()),
@@ -1051,7 +1103,7 @@ pub fn draw_help(frame: &mut Frame<'_>, commands: &[CommandSpec]) {
                     ),
                     Span::raw(format!("{:<28}", command.title)),
                     Span::styled(
-                        command.shortcut.unwrap_or("palette"),
+                        shortcut,
                         Style::default().fg(theme::MUTED).bg(theme::PANEL_RAISED),
                     ),
                 ])

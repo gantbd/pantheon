@@ -21,6 +21,8 @@ pub struct WorkspaceProfile {
     pub version: u8,
     pub name: String,
     pub surfaces: Vec<Surface>,
+    #[serde(default)]
+    pub keybindings: KeybindingProfile,
     pub agora: Option<AgoraProfile>,
     pub task_conversation: Option<TaskConversationProfile>,
     pub moira: Option<MoiraProfile>,
@@ -30,6 +32,23 @@ pub struct WorkspaceProfile {
     pub tellus: Option<TellusProfile>,
     pub chronos: Option<ChronosProfile>,
     pub vellum: Option<VellumProfile>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum KeybindingProfile {
+    #[default]
+    Pantheon,
+    Emacs,
+}
+
+impl KeybindingProfile {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Pantheon => "pantheon",
+            Self::Emacs => "emacs",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -979,6 +998,28 @@ fn resolve(base: &Path, path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn profile_selects_a_closed_keybinding_contract() {
+        let emacs = br#"{
+          "version":1,"name":"Emacs workspace","surfaces":["overview"],
+          "keybindings":"emacs"
+        }"#;
+        let profile = WorkspaceProfile::parse(emacs, Path::new(".")).unwrap();
+        assert_eq!(profile.keybindings, KeybindingProfile::Emacs);
+
+        let default = br#"{
+          "version":1,"name":"Default workspace","surfaces":["overview"]
+        }"#;
+        let profile = WorkspaceProfile::parse(default, Path::new(".")).unwrap();
+        assert_eq!(profile.keybindings, KeybindingProfile::Pantheon);
+
+        let unknown = br#"{
+          "version":1,"name":"Unknown workspace","surfaces":["overview"],
+          "keybindings":"almost_emacs"
+        }"#;
+        assert!(WorkspaceProfile::parse(unknown, Path::new(".")).is_err());
+    }
 
     #[test]
     fn profile_is_versioned_bounded_and_resolves_relative_paths() {

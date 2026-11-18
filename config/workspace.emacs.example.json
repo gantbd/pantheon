@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "name": "Pantheon · Emacs keybindings",
+  "surfaces": ["overview", "configuration"],
+  "keybindings": "emacs"
+}

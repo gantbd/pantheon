@@ -41,6 +41,13 @@ pub fn plan(
             "shell_restart_required",
         ));
     }
+    if current.keybindings != next.keybindings {
+        changes.push(change(
+            "workspace.keybindings",
+            "changed",
+            "shell_restart_required",
+        ));
+    }
     classify_peer("agora", &current.agora, &next.agora, &mut changes);
     classify_peer("moira", &current.moira, &next.moira, &mut changes);
     classify_peer("daimon", &current.daimon, &next.daimon, &mut changes);
@@ -105,6 +112,7 @@ mod tests {
             version: 1,
             name: name.into(),
             surfaces: vec![pantheon::Surface::Overview],
+            keybindings: crate::profile::KeybindingProfile::Pantheon,
             agora: None,
             task_conversation: None,
             moira: None,

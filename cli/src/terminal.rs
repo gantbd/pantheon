@@ -40,7 +40,7 @@ use vellum_tui::{
 use crate::capabilities::GUARDED_CONTROL_ROUTES;
 use crate::native_host::NativeHost;
 use crate::profile::{
-    AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
+    AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile, KeybindingProfile,
     TaskConversationProfile, WorkspaceProfile,
 };
 #[cfg(test)]
@@ -60,10 +60,10 @@ use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, Topo
 use pantheon::{
     ActivityLevel, ActivityLog, AgendaEntry, AgendaKind, AgendaUrgency, CommandKind,
     CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus, Instrumentation,
-    OperationsReceiptView, OperationsView, OperatorAgendaView, PaletteOutcome, PeerHealthState,
-    PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView, Surface,
-    decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
-    draw_shell_with_moira, route_key, shell_input, surface_tab_at,
+    KeybindingGuide, OperationsReceiptView, OperationsView, OperatorAgendaView, PaletteOutcome,
+    PeerHealthState, PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView,
+    Surface, decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
+    draw_shell_with_moira, shell_input, surface_tab_at,
 };
 
 struct InputCapture {
@@ -140,16 +140,35 @@ enum KeyBehavior {
     SurfaceLocal,
 }
 
-struct BehaviorFacade;
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+enum EmacsPrefix {
+    #[default]
+    None,
+    ControlX,
+    Help,
+}
+
+struct BehaviorFacade {
+    profile: KeybindingProfile,
+    emacs_prefix: EmacsPrefix,
+}
 
 impl BehaviorFacade {
-    fn key(
+    const fn new(profile: KeybindingProfile) -> Self {
+        Self {
+            profile,
+            emacs_prefix: EmacsPrefix::None,
+        }
+    }
+
+    fn key_event(
+        &mut self,
         key: KeyEvent,
         overlay: WorkbenchOverlay,
         surface: Surface,
         vellum_active: bool,
     ) -> KeyBehavior {
-        if is_control_char(key, 'q') {
+        if self.profile == KeybindingProfile::Pantheon && is_control_char(key, 'q') {
             return KeyBehavior::SafeExit;
         }
         match overlay {
@@ -237,7 +256,61 @@ impl BehaviorFacade {
             }
             WorkbenchOverlay::None => {}
         }
-        if is_control_char(key, 'p') {
+        if self.profile == KeybindingProfile::Emacs {
+            if is_control_char(key, 'g') {
+                self.emacs_prefix = EmacsPrefix::None;
+                return KeyBehavior::Suppress;
+            }
+            match self.emacs_prefix {
+                EmacsPrefix::ControlX => {
+                    self.emacs_prefix = EmacsPrefix::None;
+                    return if is_control_char(key, 'c') {
+                        KeyBehavior::SafeExit
+                    } else if is_control_char(key, 'f') {
+                        if vellum_active {
+                            KeyBehavior::ExecuteCommand("vellum.document.open")
+                        } else {
+                            KeyBehavior::CommandUnavailable(
+                                "C-x C-f requires the configured Vellum surface",
+                            )
+                        }
+                    } else if is_control_char(key, 's') {
+                        if vellum_active {
+                            KeyBehavior::ExecuteCommand("vellum.save")
+                        } else {
+                            KeyBehavior::CommandUnavailable(
+                                "C-x C-s requires the configured Vellum surface",
+                            )
+                        }
+                    } else {
+                        KeyBehavior::CommandUnavailable("Unbound Emacs C-x chord")
+                    };
+                }
+                EmacsPrefix::Help => {
+                    self.emacs_prefix = EmacsPrefix::None;
+                    return if matches!(key.code, KeyCode::Char('?') | KeyCode::Char('b')) {
+                        KeyBehavior::ExecuteCommand("workbench.help")
+                    } else if matches!(key.code, KeyCode::Char('l')) {
+                        KeyBehavior::ExecuteCommand("workbench.activity")
+                    } else {
+                        KeyBehavior::CommandUnavailable("Unbound Emacs C-h chord")
+                    };
+                }
+                EmacsPrefix::None => {}
+            }
+            if is_control_char(key, 'x') {
+                self.emacs_prefix = EmacsPrefix::ControlX;
+                return KeyBehavior::Suppress;
+            }
+            if is_control_char(key, 'h') {
+                self.emacs_prefix = EmacsPrefix::Help;
+                return KeyBehavior::Suppress;
+            }
+            if is_key(key, KeyCode::Char('x'), KeyModifiers::ALT) {
+                return KeyBehavior::OpenCommands;
+            }
+        }
+        if self.profile == KeybindingProfile::Pantheon && is_control_char(key, 'p') {
             KeyBehavior::OpenCommands
         } else if is_key(key, KeyCode::F(1), KeyModifiers::NONE) {
             KeyBehavior::ExecuteCommand("workbench.help")
@@ -275,6 +348,16 @@ impl BehaviorFacade {
         } else {
             KeyBehavior::SurfaceLocal
         }
+    }
+
+    #[cfg(test)]
+    fn key(
+        key: KeyEvent,
+        overlay: WorkbenchOverlay,
+        surface: Surface,
+        vellum_active: bool,
+    ) -> KeyBehavior {
+        Self::new(KeybindingProfile::Pantheon).key_event(key, overlay, surface, vellum_active)
     }
 
     fn palette(outcome: PaletteOutcome) -> KeyBehavior {
@@ -4101,7 +4184,9 @@ const fn vellum_surface_active(surface: Surface, focus: Focus) -> bool {
         || matches!(surface, Surface::Workspace) && matches!(focus, Focus::Vellum)
 }
 
-fn route_key_for_surface(key: KeyEvent, surface: Surface, focus: Focus) -> RoutedInput {
+/// Routes only input that the behavior facade has deliberately left to the
+/// active peer. Global bindings are resolved before this boundary.
+fn route_surface_local_key(key: KeyEvent, surface: Surface, focus: Focus) -> RoutedInput {
     let effective_focus = match surface {
         Surface::Chronos => Focus::Chronos,
         Surface::Vellum => Focus::Vellum,
@@ -4114,10 +4199,17 @@ fn route_key_for_surface(key: KeyEvent, surface: Surface, focus: Focus) -> Route
         return match surface {
             Surface::Chronos => RoutedInput::Chronos(key),
             Surface::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
-            _ => route_key(key, effective_focus),
+            Surface::Workspace => RoutedInput::SwitchFocus,
+            _ => match effective_focus {
+                Focus::Chronos => RoutedInput::Chronos(key),
+                Focus::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
+            },
         };
     }
-    route_key(key, effective_focus)
+    match effective_focus {
+        Focus::Chronos => RoutedInput::Chronos(key),
+        Focus::Vellum => RoutedInput::Vellum(vellum_tui::translate_key(key)),
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -4324,6 +4416,7 @@ where
 #[allow(clippy::too_many_arguments)]
 fn session_configuration(
     shell: &Shell,
+    keybindings: KeybindingProfile,
     chronos: Option<&Hub>,
     vellum: bool,
     vellum_allow_add_file: bool,
@@ -4358,6 +4451,7 @@ fn session_configuration(
     };
     vec![
         "scope               single user · local machine".into(),
+        format!("keybindings         {}", keybindings.label()),
         format!("surfaces            {surfaces}"),
         format!(
             "Chronos            {} · writes {} · scheduling {}",
@@ -4374,8 +4468,12 @@ fn session_configuration(
             }
         ),
         format!(
-            "Vellum             {} · Ctrl-O file admission {}",
+            "Vellum             {} · {} file admission {}",
             disposition(vellum),
+            match keybindings {
+                KeybindingProfile::Pantheon => "Ctrl-O",
+                KeybindingProfile::Emacs => "C-x C-f",
+            },
             if vellum_allow_add_file {
                 "selected"
             } else {
@@ -7250,6 +7348,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     );
     let mut palette = CommandPalette::new(commands);
     let mut overlay = WorkbenchOverlay::None;
+    let keybinding_profile = current_profile
+        .as_ref()
+        .map_or(KeybindingProfile::Pantheon, |profile| profile.keybindings);
+    let mut behavior_facade = BehaviorFacade::new(keybinding_profile);
     let mut activity = ActivityLog::default();
     let mut instrumentation = Instrumentation::default();
     let mut pending_ui_feedback: Option<(u64, ActivityLevel)> = None;
@@ -7264,6 +7366,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     );
     let configuration = session_configuration(
         &shell,
+        keybinding_profile,
         chronos.as_ref(),
         vellum.is_some(),
         vellum_allow_add_file,
@@ -8969,6 +9072,10 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         operations: Some(&operations_view),
                         health: Some(&health_view),
                         configuration: Some(&configuration),
+                        keybindings: match keybinding_profile {
+                            KeybindingProfile::Pantheon => KeybindingGuide::Pantheon,
+                            KeybindingProfile::Emacs => KeybindingGuide::Emacs,
+                        },
                     },
                     focus,
                     prompt_notice.as_deref().unwrap_or(&notice),
@@ -8976,7 +9083,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 match overlay {
                     WorkbenchOverlay::None => {}
                     WorkbenchOverlay::Commands => draw_command_palette(frame, &palette),
-                    WorkbenchOverlay::Help => draw_help(frame, palette.commands()),
+                    WorkbenchOverlay::Help => draw_help(
+                        frame,
+                        palette.commands(),
+                        match keybinding_profile {
+                            KeybindingProfile::Pantheon => KeybindingGuide::Pantheon,
+                            KeybindingProfile::Emacs => KeybindingGuide::Emacs,
+                        },
+                    ),
                     WorkbenchOverlay::Activity => draw_activity(frame, &activity),
                     WorkbenchOverlay::Configuration => {
                         draw_inspector(frame, "Session configuration", &configuration);
@@ -9083,7 +9197,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             let event = event::read()?;
             let input_started = Instant::now();
             let mut key_behavior = match &event {
-                Event::Key(key) => Some(BehaviorFacade::key(
+                Event::Key(key) => Some(behavior_facade.key_event(
                     *key,
                     overlay,
                     shell.active(),
@@ -11381,7 +11495,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         }
                     }
                 }
-                Event::Key(key) => match route_key_for_surface(key, shell.active(), focus) {
+                Event::Key(key) => match if key_behavior == Some(KeyBehavior::SafeExit) {
+                    RoutedInput::Exit
+                } else {
+                    route_surface_local_key(key, shell.active(), focus)
+                } {
                     RoutedInput::Exit => {
                         let agora_unresolved = agora_create.as_ref().is_some_and(|control| {
                             control.request_pending() || control.recovery_required()
@@ -11492,8 +11610,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             ExitDecision::Exit => break,
                             ExitDecision::ConfirmDiscard => {
                                 confirming_discard = true;
-                                notice = "Unsaved Vellum edit; Ctrl-Q again discards, Esc cancels"
-                                    .into();
+                                notice = match keybinding_profile {
+                                    KeybindingProfile::Pantheon => {
+                                        "Unsaved Vellum edit; Ctrl-Q again discards, Esc cancels"
+                                    }
+                                    KeybindingProfile::Emacs => {
+                                        "Unsaved Vellum edit; C-x C-c again discards, C-g cancels"
+                                    }
+                                }
+                                .into();
                             }
                             ExitDecision::RefuseIndeterminate => {
                                 notice = "Vellum effect is indeterminate; repeat the exact action before exit"
@@ -11843,6 +11968,86 @@ mod tests {
                 false,
             ),
             KeyBehavior::ExecuteCommand("workitem.agent.new")
+        );
+    }
+
+    #[test]
+    fn emacs_profile_uses_stateful_prefixes_and_existing_semantic_commands() {
+        let ctrl = |character| KeyEvent::new(KeyCode::Char(character), KeyModifiers::CONTROL);
+        let mut facade = BehaviorFacade::new(KeybindingProfile::Emacs);
+
+        assert_eq!(
+            facade.key_event(
+                KeyEvent::new(KeyCode::Char('x'), KeyModifiers::ALT),
+                WorkbenchOverlay::None,
+                Surface::Overview,
+                false,
+            ),
+            KeyBehavior::OpenCommands
+        );
+        assert_eq!(
+            facade.key_event(ctrl('p'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            facade.key_event(ctrl('q'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(ctrl('f'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::ExecuteCommand("vellum.document.open")
+        );
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(ctrl('s'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::ExecuteCommand("vellum.save")
+        );
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(ctrl('c'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SafeExit
+        );
+
+        assert_eq!(
+            facade.key_event(ctrl('h'), WorkbenchOverlay::None, Surface::Overview, false),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(
+                KeyEvent::new(KeyCode::Char('b'), KeyModifiers::NONE),
+                WorkbenchOverlay::None,
+                Surface::Overview,
+                false,
+            ),
+            KeyBehavior::ExecuteCommand("workbench.help")
+        );
+        assert_eq!(
+            facade.key_event(ctrl('x'), WorkbenchOverlay::None, Surface::Overview, false),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(ctrl('g'), WorkbenchOverlay::None, Surface::Overview, false),
+            KeyBehavior::Suppress
+        );
+        assert_eq!(
+            facade.key_event(
+                KeyEvent::new(KeyCode::Char('z'), KeyModifiers::NONE),
+                WorkbenchOverlay::None,
+                Surface::Overview,
+                false,
+            ),
+            KeyBehavior::SurfaceLocal
         );
     }
 
@@ -12633,6 +12838,7 @@ mod tests {
             version: 1,
             name: name.into(),
             surfaces,
+            keybindings: crate::profile::KeybindingProfile::Pantheon,
             agora: None,
             task_conversation: None,
             moira: None,
@@ -12707,16 +12913,21 @@ mod tests {
     fn standalone_peer_surfaces_keep_tab_local_while_legacy_workspace_switches_focus() {
         let tab = KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE);
         assert!(matches!(
-            route_key_for_surface(tab, Surface::Chronos, Focus::Chronos),
+            route_surface_local_key(tab, Surface::Chronos, Focus::Chronos),
             RoutedInput::Chronos(key) if key == tab
         ));
         assert!(matches!(
-            route_key_for_surface(tab, Surface::Vellum, Focus::Chronos),
+            route_surface_local_key(tab, Surface::Vellum, Focus::Chronos),
             RoutedInput::Vellum(_)
         ));
         assert!(matches!(
-            route_key_for_surface(tab, Surface::Workspace, Focus::Chronos),
+            route_surface_local_key(tab, Surface::Workspace, Focus::Chronos),
             RoutedInput::SwitchFocus
+        ));
+        let control_q = KeyEvent::new(KeyCode::Char('q'), KeyModifiers::CONTROL);
+        assert!(matches!(
+            route_surface_local_key(control_q, Surface::Overview, Focus::Chronos),
+            RoutedInput::Chronos(key) if key == control_q
         ));
     }
 
@@ -12977,13 +13188,32 @@ mod tests {
     fn session_configuration_is_bounded_to_non_secret_launch_facts() {
         let shell = Shell::new(vec![Surface::Overview, Surface::Moira]).expect("valid shell");
         let lines = session_configuration(
-            &shell, None, false, false, false, false, true, false, false, false, false, false,
-            false, false, false, false, false, false, false,
+            &shell,
+            KeybindingProfile::Emacs,
+            None,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
         );
         let rendered = lines.join("\n");
         assert!(rendered.contains("Overview · Moira"));
         assert!(rendered.contains("Moira              configured"));
         assert!(rendered.contains("single user · local machine"));
+        assert!(rendered.contains("keybindings         emacs"));
         assert!(!rendered.contains("socket"));
         assert!(!rendered.contains("credential"));
     }

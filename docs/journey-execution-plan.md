@@ -429,6 +429,13 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   `navigate.tellus`; a rebuilt tmux-driven TUI run selected that one action and
   opened the Tellus landing with the ordinary success notice. No second
   navigation implementation or surface-specific special case was added.
+- The live owner admitted priority-9 `pantheon-emacs-keymap-profile` at revision
+  25. The first implementation adds a validated `pantheon`/`emacs` workspace
+  choice, Configuration disclosure, shell-restart diff, and stateful Emacs
+  `M-x`, `C-g`, `C-x C-f`, `C-x C-s`, `C-x C-c`, `C-h b/?` and `C-h l`
+  chords. They resolve to existing semantic commands; `C-p` and `C-q` are no
+  longer stolen in Emacs mode. The documented acceptance boundary keeps
+  Vellum-native motion, mark/region, kill/yank, buffer and undo work open.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 
