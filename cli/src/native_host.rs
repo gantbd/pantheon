@@ -344,27 +344,7 @@ impl NativeHost {
     ) -> Result<(), StartupFailure<String>> {
         #[cfg(feature = "native-chronos")]
         {
-            let name = name.into();
-            self.registry
-                .start_or_rollback(HostedPeerId::Chronos(name), || -> Result<_, String> {
-                    let mut server = Server::bind_with_options(
-                        directory,
-                        chronos_standalone::ServerOptions {
-                            allow_writes: options.allow_writes,
-                            atomic_state: options.atomic_state,
-                            observer_history: options.observer_history,
-                            allocation_receipts: options.allocation_receipts,
-                        },
-                    )
-                    .map_err(ToOwned::to_owned)?;
-                    let (wake, writer) = UnixStream::pair()
-                        .map_err(|error| format!("Chronos shutdown channel refused: {error}"))?;
-                    let owner = thread::Builder::new()
-                        .name("workbench-chronos-owner".into())
-                        .spawn(move || server.run_with_shutdown(&wake))
-                        .map_err(|error| format!("Chronos owner thread refused: {error}"))?;
-                    Ok(((), chronos_shutdown(writer, owner)))
-                })
+            self.start_chronos_owner(name.into(), directory, options, |_| Ok(()))
         }
         #[cfg(not(feature = "native-chronos"))]
         {
@@ -377,6 +357,60 @@ impl NativeHost {
                     )
                 })
         }
+    }
+
+    /// Binds one Chronos owner and returns a Moira behavior object holding its
+    /// sole native worker capability. The handle never crosses a socket or UI
+    /// boundary; dropping or draining the owner makes later calls fail closed.
+    #[cfg(feature = "native-chronos")]
+    pub fn start_chronos_worker(
+        &mut self,
+        name: impl Into<String>,
+        directory: &Path,
+        options: ChronosHostOptions,
+        configuration: moira_chronos_worker::ConfigurationV1,
+    ) -> Result<
+        moira_chronos_worker::TrustedWorkerV1<chronos_standalone::TrustedWorkerHandle>,
+        StartupFailure<String>,
+    > {
+        self.start_chronos_owner(name.into(), directory, options, |server| {
+            let handle = server
+                .trusted_worker()
+                .map_err(|error| format!("Chronos trusted worker refused: {error}"))?;
+            moira_chronos_worker::TrustedWorkerV1::new(handle, configuration)
+                .map_err(|_| "Moira Chronos worker configuration refused".to_owned())
+        })
+    }
+
+    #[cfg(feature = "native-chronos")]
+    fn start_chronos_owner<C>(
+        &mut self,
+        name: String,
+        directory: &Path,
+        options: ChronosHostOptions,
+        compose: impl FnOnce(&mut Server) -> Result<C, String>,
+    ) -> Result<C, StartupFailure<String>> {
+        self.registry
+            .start_or_rollback(HostedPeerId::Chronos(name), || -> Result<_, String> {
+                let mut server = Server::bind_with_options(
+                    directory,
+                    chronos_standalone::ServerOptions {
+                        allow_writes: options.allow_writes,
+                        atomic_state: options.atomic_state,
+                        observer_history: options.observer_history,
+                        allocation_receipts: options.allocation_receipts,
+                    },
+                )
+                .map_err(ToOwned::to_owned)?;
+                let client = compose(&mut server)?;
+                let (wake, writer) = UnixStream::pair()
+                    .map_err(|error| format!("Chronos shutdown channel refused: {error}"))?;
+                let owner = thread::Builder::new()
+                    .name("workbench-chronos-owner".into())
+                    .spawn(move || server.run_with_shutdown(&wake))
+                    .map_err(|error| format!("Chronos owner thread refused: {error}"))?;
+                Ok((client, chronos_shutdown(writer, owner)))
+            })
     }
 
     /// Starts an Agora owner supplied by the deployment and returns its
@@ -1188,15 +1222,21 @@ mod deployment_factory_tests {
 mod tests {
     use super::*;
     use chronos_client::observer::{Observer, ObserverLimits};
-    use std::{fs, os::unix::fs::PermissionsExt, path::PathBuf};
+    use moira_chronos_worker::{ClaimIntentV1, ConfigurationV1, ErrorV1};
+    use std::{
+        fs,
+        os::unix::fs::PermissionsExt,
+        path::PathBuf,
+        time::{Duration, SystemTime},
+    };
 
-    fn scratch() -> PathBuf {
-        std::env::temp_dir().join(format!("wbc-{}", std::process::id()))
+    fn scratch(name: &str) -> PathBuf {
+        PathBuf::from("/tmp").join(format!("pnt-{}-{name}", std::process::id()))
     }
 
     #[test]
     fn hosts_observes_and_cleanly_drains_real_chronos() {
-        let directory = scratch();
+        let directory = scratch("observe");
         if directory.exists() {
             fs::remove_dir_all(&directory).unwrap();
         }
@@ -1221,6 +1261,49 @@ mod tests {
         let receipt = host.shutdown().unwrap();
         assert!(receipt.clean());
         assert_eq!(receipt.receipts.len(), 1);
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn hosted_worker_capability_fences_after_owner_drain() {
+        let directory = scratch("worker");
+        if directory.exists() {
+            fs::remove_dir_all(&directory).unwrap();
+        }
+        fs::create_dir(&directory).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+        let mut host = NativeHost::new();
+        let configuration = ConfigurationV1::new(
+            "pantheon-j1-worker",
+            Duration::from_secs(60),
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        let mut worker = host
+            .start_chronos_worker(
+                "Atlas",
+                &directory,
+                ChronosHostOptions {
+                    allow_writes: true,
+                    atomic_state: true,
+                    ..Default::default()
+                },
+                configuration,
+            )
+            .unwrap();
+        host.seal().unwrap();
+        assert!(host.shutdown().unwrap().clean());
+
+        assert!(matches!(
+            worker.claim(ClaimIntentV1 {
+                task_id: "unreachable-after-drain".into(),
+                external_task_key: [1; 16],
+                expected_revision: 0,
+                now: SystemTime::UNIX_EPOCH,
+            }),
+            Err(ErrorV1::OutcomeUnknown(_))
+        ));
+        assert!(worker.is_fenced());
         fs::remove_dir_all(directory).unwrap();
     }
 }

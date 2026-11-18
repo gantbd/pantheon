@@ -86,7 +86,15 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   request, or result is serialized. Full owner tests caught and drove fixes for
   a duplicated poll descriptor and clean worker-channel EOF. Restart after a
   committed claim projects Uncertain and refuses a second claim. Moira still
-  must own the adapter and Pantheon still needs a guarded composition action.
+  owns that behavior in separate `moira-chronos-worker` commits `233408c` and
+  `727660c`: native grants and leases remain private, exact effect/execution/
+  task/attempt evidence is required, and unsupported dispositions refuse before
+  an owner call. Its isolated real-owner profile proves completion, mismatch,
+  uncertainty without reclaim and configuration refusal. Pantheon's native host
+  now returns the sole Moira-wrapped capability from the same Chronos owner and
+  proves it fences after clean drain. The task-to-session runtime still needs to
+  retain and use that capability; the live revision-18 task therefore remains
+  Ready rather than being manually relabeled complete.
 - The live LM Studio gate now accepts a bounded review-context file and used the
   real Pantheon task-to-Daimon path for an independent Qwen critique. Qwen
   correctly prioritized reply-loss, restart, drop and persistence-fence tests,
@@ -341,6 +349,54 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   successful three-document atomic edit and durable save. This paragraph was
   itself corrected and saved through Pantheon's guarded Vellum path. The
   misclassified Chronos item was cancelled rather than retained as false work.
+
+### 2026-11-18 — hosted local-inference lifecycle
+
+- Local-provider onboarding now distinguishes an attached endpoint from a
+  Pantheon-hosted inference process. Attachment observes an independently owned
+  runtime; hosting makes Pantheon accountable only for the selected process
+  lifecycle. Daimon continues to own provider configuration, qualification,
+  invocation, retained model evidence and recovery. Neither endpoint liveness
+  nor process ownership grants execution, tool, workflow or rollout authority.
+- The first host profile is a bounded managed-process contract, not a model
+  engine embedded in Pantheon. It binds an exact executable identity, redacted
+  arguments, credential-name references, private endpoint, model/artifact
+  identity and digest where available, quantization/context facts, memory/
+  accelerator/thread/concurrency budgets, sandbox and egress posture, readiness
+  probe, graceful drain and orphan-recovery policy. LM Studio may remain an
+  attached GUI-owned endpoint; llama.cpp, Ollama, MLX or another explicitly
+  selected executable can implement the same qualified host profile without
+  becoming Pantheon semantics.
+- Model acquisition is a separate human-gated operation because it can spend
+  network, disk and license/trust budget. Hosting never implicitly downloads,
+  updates, deletes, changes a model, kills an unknown process, reuses an
+  unverified stale endpoint or retries an uncertain start. Configuration change
+  requires a reviewed restart and fresh Daimon qualification before selection.
+- Configuration must present attach versus host, runtime/model provenance,
+  effective resource budgets and preflight results. Operations must present
+  starting, loading, ready, degraded, draining, stopped, crashed, orphaned and
+  uncertain states with exact owner, correlation, elapsed time and next safe
+  action. Daimon presents only the independently qualified provider/session
+  view. Moira can coordinate staged start/qualify/select/drain workflows;
+  Chronos owns durable work; Hermes/Moira observations seed events, logs,
+  metrics and traces without model text or credentials.
+- Acceptance includes TUI/headless parity and real-process gates for clean
+  start/drain, restart after configuration, path-budget preflight, stale socket,
+  port conflict, missing executable/model, load failure, resource refusal,
+  process crash, refused drain, orphan recovery and partial topology rollback.
+  A sandbox-policy dogfood refusal reported only `socket bind failed`; hosted
+  inference must name the violated path/port/resource/policy bound and safe
+  recovery instead of repeating that opacity.
+- Pantheon's live Chronos owner admitted priority-8 task
+  `pantheon-local-model-hosting` at revision 18. The initial delivery target is
+  the lifecycle/profile/receipt boundary above plus one hermetic managed-process
+  adapter; broad runtime support and automatic model management are not implied.
+- The same live owner then admitted priority-8 task
+  `chronos-live-owner-headless-attach-readiness` at revision 19 after a second
+  headless Pantheon client reported `not_ready`/`not_sent` against the visibly
+  live interactive owner. The TUI creation path composed, reviewed and applied
+  the item exactly. Attach readiness therefore remains a separate parity and
+  diagnostics defect; it is not folded into hosted-inference lifecycle semantics.
 
 ### 2026-11-17 — exact agent-context receipt and Vellum presentation
 

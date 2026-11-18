@@ -1668,7 +1668,7 @@ following universal requirements:
 | Tool/resource manifest | Required | Stable capability IDs, risk class, input/output schema, sandbox/egress evidence, current authority |
 | Artifact/output handoff | Required via Moira | Output/proposals are evidence; only workflow-selected adapters may create peer effects |
 | Provider portability/conformance | Required | ACP/MCP/provider capability negotiation, TCK evidence, known deviations, version pin |
-| Provider setup experience | Required | Configure through the owner-backed Pantheon surface; discover only explicitly selected local endpoints; show model/capability/health evidence; preflight restart; qualify; select for a session without exposing credentials or provider commands |
+| Provider setup and local-hosting experience | Required | Configure through the owner-backed Pantheon surface; distinguish attached endpoints from explicitly hosted processes; discover only selected local endpoints; review executable/model provenance and resource/sandbox/egress budgets; preflight and confirm start/restart/drain; show lifecycle plus model/capability/health evidence; qualify independently through Daimon; select for a session without exposing credentials or provider commands; never imply download, update, execution authority or workflow completion from hosting |
 | Remote/background execution | Later | Requires identity, sandbox, network/secret, retention, audit, and incident-response profiles |
 
 #### Precedents and practices
@@ -1692,6 +1692,9 @@ following universal requirements:
   save a document, or declare task/workflow completion.
 - Provider prose is never a tool receipt or factual proof.
 - A permission UI approval is never sufficient without the owner/Aegis decision.
+- Pantheon may supervise an explicitly selected local inference process, but it
+  is not the model runtime, provider qualifier or execution owner; model
+  acquisition remains a separate human-gated network/disk/license decision.
 
 ### Tellus — grounded methods, context, and provenance
 

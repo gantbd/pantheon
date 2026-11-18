@@ -824,6 +824,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moira-chronos-worker"
+version = "0.1.0"
+dependencies = [
+ "chronos-engine",
+ "chronos-host",
+ "moira-protocol",
+]
+
+[[package]]
 name = "moira-client"
 version = "0.1.0"
 dependencies = [
@@ -1005,6 +1014,7 @@ dependencies = [
  "hermes-operator-command",
  "hermes-protocol",
  "hermes-tui",
+ "moira-chronos-worker",
  "moira-client",
  "moira-protocol",
  "moira-reconciliation-command",

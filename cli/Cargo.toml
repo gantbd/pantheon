@@ -10,7 +10,7 @@ description = "Standalone interactive and headless application for Pantheon term
 
 [features]
 default = ["native-chronos"]
-native-chronos = ["dep:chronos-standalone"]
+native-chronos = ["dep:chronos-standalone", "dep:moira-chronos-worker"]
 
 [[bin]]
 name = "pantheon"
@@ -41,6 +41,7 @@ moira-tui-local-client = { version = "=0.1.0", path = "../../moira-tui/local-cli
 moira-client = { version = "=0.1.0", path = "../../moira/crates/moira-client", features = ["unix"] }
 moira-protocol = { version = "=0.1.0", path = "../../moira/crates/moira-protocol" }
 moira-reconciliation-command = { version = "=0.1.0", path = "../../moira/crates/moira-reconciliation-command" }
+moira-chronos-worker = { version = "=0.1.0", path = "../../moira/adapters/moira-chronos-worker", optional = true }
 daimon-tui = { version = "=0.1.0", path = "../../daimon-tui" }
 daimon-agent-command = { version = "=0.1.0", path = "../../daimon/crates/daimon-agent-command" }
 daimon-client = { version = "=0.1.0", path = "../../daimon/crates/daimon-client", features = ["unix"] }
