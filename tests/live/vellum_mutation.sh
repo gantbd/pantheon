@@ -72,7 +72,7 @@ run_journey() {
   tmux -S "$tmux_socket" send-keys -t "$session" C-s
   if [ "$mode" = save ]; then
     expect 'Clean'
-    expect 'Vellum action accepted'
+    expect 'SETTLED · Vellum save is current and clean · Next: continue editing'
   else
     expect 'Dirty'
     expect 'Refused'

@@ -7970,6 +7970,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut notice = String::from("workspace profile loaded");
     let mut confirming_discard = false;
     let mut last_vellum_poll = Instant::now();
+    let mut vellum_source_save_pending = false;
     let mut vellum_durable_save: Option<DurableSaveBatchComponent> = None;
     let mut last_vellum_durable_notice = String::new();
     let mut vellum_durable_operation = None;
@@ -9604,7 +9605,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         started.elapsed(),
                     );
                     if let Err(error) = result {
+                        vellum_source_save_pending = false;
                         notice = error.to_string();
+                    } else if vellum_source_save_pending && vellum.source_is_current_and_clean() {
+                        vellum_source_save_pending = false;
+                        notice =
+                            "SETTLED · Vellum save is current and clean · Next: continue editing"
+                                .into();
+                        activity.push(ActivityLevel::Success, "vellum", notice.clone());
                     }
                 }
                 last_vellum_poll = Instant::now();
@@ -10509,6 +10517,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut tellus,
                         &mut operations,
                     );
+                    if action == "vellum.save" {
+                        vellum_source_save_pending = level == ActivityLevel::Info;
+                    }
                     if action == "daimon.session.prompt"
                         || agent_collaboration_lens(action).is_some()
                     {
