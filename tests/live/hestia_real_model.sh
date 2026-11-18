@@ -224,6 +224,17 @@ assert completion["usage"]["completion_tokens"] > 0, completion
 print("Model response:", text.replace("\n", " ")[:160])
 PYTHON
 
+if [ "${PANTHEON_REAL_MODEL_DAIMON:-0}" = 1 ]; then
+  echo 'Composing the Hestia-owned endpoint through Daimon and Pantheon'
+  PANTHEON_LOCAL_MODEL_LIVE=1 \
+  PANTHEON_LOCAL_MODEL_LABEL='Hestia-owned llama-server' \
+  PANTHEON_LOCAL_MODEL_NAME='qwen/qwen2.5-coder-1.5b-instruct' \
+  PANTHEON_LOCAL_MODEL_ADDRESS="127.0.0.1:$port" \
+  PANTHEON_LOCAL_MODEL_HESTIA_SOCKET="$scratch/hestia.sock" \
+  PANTHEON_LOCAL_MODEL_HESTIA_RUNTIME='0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e' \
+    "$root/tests/live/daimon_model_lmstudio.sh"
+fi
+
 "$hestiactl" drain "$scratch/hestia.sock" "$scratch/drain.json" >"$scratch/drain.out"
 grep -q '"Stopped"' "$scratch/drain.out"
 "$hestiactl" shutdown "$scratch/hestia.sock" 0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c >/dev/null

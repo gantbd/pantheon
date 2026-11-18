@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-if [ "${PANTHEON_LMSTUDIO_LIVE:-}" != 1 ]; then
-  echo 'SKIP: set PANTHEON_LMSTUDIO_LIVE=1 to run the explicit local-model spend gate'
+if [ "${PANTHEON_LMSTUDIO_LIVE:-0}" != 1 ] && [ "${PANTHEON_LOCAL_MODEL_LIVE:-0}" != 1 ]; then
+  echo 'SKIP: set PANTHEON_LOCAL_MODEL_LIVE=1 to run the explicit local-model spend gate'
   exit 0
 fi
 
@@ -27,11 +27,20 @@ chmod 700 "$scratch"
 mkdir "$scratch/workstream"
 chmod 700 "$scratch/workstream"
 
-model_name=${PANTHEON_LMSTUDIO_MODEL:-qwen/qwen3-coder-next}
-provider_address=${PANTHEON_LMSTUDIO_ADDRESS:-127.0.0.1:1234}
+model_name=${PANTHEON_LOCAL_MODEL_NAME:-${PANTHEON_LMSTUDIO_MODEL:-qwen/qwen3-coder-next}}
+provider_address=${PANTHEON_LOCAL_MODEL_ADDRESS:-${PANTHEON_LMSTUDIO_ADDRESS:-127.0.0.1:1234}}
+provider_label=${PANTHEON_LOCAL_MODEL_LABEL:-LM Studio}
+hestia_socket=${PANTHEON_LOCAL_MODEL_HESTIA_SOCKET:-}
+hestia_runtime=${PANTHEON_LOCAL_MODEL_HESTIA_RUNTIME:-}
+if { [ -n "$hestia_socket" ] && [ -z "$hestia_runtime" ]; } || \
+   { [ -z "$hestia_socket" ] && [ -n "$hestia_runtime" ]; }; then
+  echo 'FAIL: Hestia composition requires both socket and runtime identity' >&2
+  exit 1
+fi
 review_context='Act as an independent architecture reviewer. Chronos public coordination supports submit and cancel, while claim and complete require a trusted in-process worker profile with native grants and leases. Pantheon work may be completed externally. Propose the smallest owner-safe contract for admitting evidence of external completion. Preserve grant, lease, revision and evidence semantics; do not expose worker authority as a bearer protocol; require named-human review. Separate facts, recommendation, risks and rejected shortcuts. Do not invent identifiers or claim APIs already exist.'
-if [ -n "${PANTHEON_LMSTUDIO_REVIEW_CONTEXT_FILE:-}" ]; then
-  review_context=$(python3 - "$PANTHEON_LMSTUDIO_REVIEW_CONTEXT_FILE" <<'PYTHON'
+review_context_file=${PANTHEON_LOCAL_MODEL_REVIEW_CONTEXT_FILE:-${PANTHEON_LMSTUDIO_REVIEW_CONTEXT_FILE:-}}
+if [ -n "$review_context_file" ]; then
+  review_context=$(python3 - "$review_context_file" <<'PYTHON'
 from pathlib import Path
 import sys
 
@@ -55,7 +64,7 @@ with urllib.request.urlopen(f"http://{address}/v1/models", timeout=3) as respons
     catalogue = json.load(response)
 models = {entry["id"] for entry in catalogue.get("data", [])}
 if selected not in models:
-    raise SystemExit(f"selected LM Studio model is not loaded: {selected}")
+    raise SystemExit(f"selected local model is not loaded: {selected}")
 PYTHON
 
 cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
@@ -169,11 +178,33 @@ printf '%s\n' \
   '  }' \
   '}' >"$scratch/profile.json"
 
-python3 - "$scratch" "$workbench" <<'PYTHON'
+if [ -n "$hestia_socket" ]; then
+  python3 - "$scratch/profile.json" "$hestia_socket" "$hestia_runtime" <<'PYTHON'
+from pathlib import Path
+import json, sys
+
+path, socket, runtime = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+if len(runtime) != 32 or any(character not in "0123456789abcdefABCDEF" for character in runtime):
+    raise SystemExit("Hestia runtime identity must be 16-byte hexadecimal")
+profile = json.loads(path.read_text())
+profile["surfaces"].append("hestia")
+profile["hestia"] = {
+    "socket": socket,
+    "artifact_catalog": True,
+    "runtime_bindings": [{
+        "provider_id": "14141414141414141414141414141414",
+        "runtime_id": runtime,
+    }],
+}
+path.write_text(json.dumps(profile))
+PYTHON
+fi
+
+python3 - "$scratch" "$workbench" "$model_name" "${hestia_socket:+1}" <<'PYTHON'
 from pathlib import Path
 import shlex, subprocess, sys, time
 
-scratch, binary = sys.argv[1:]
+scratch, binary, model_name, hestia_enabled = sys.argv[1:]
 tmux_socket = str(Path(scratch) / "tmux.sock")
 profile = str(Path(scratch) / "profile.json")
 command = shlex.join([
@@ -204,6 +235,15 @@ def expect(*markers, timeout=20):
 try:
     tmux("new-session", "-d", "-x", "200", "-y", "38", "-s", "lmstudio", command)
     expect("CHRONOS", "Local model review", "write-enabled")
+    if hestia_enabled:
+        tmux("send-keys", "-t", "lmstudio", "M-i")
+        expect(
+            "HESTIA",
+            "lifecycle          Ready",
+            model_name,
+            "Hestia owns lifecycle",
+            timeout=30,
+        )
     tmux("send-keys", "-t", "lmstudio", "C-p")
     tmux("send-keys", "-t", "lmstudio", "-l", "go to daimon")
     tmux("send-keys", "-t", "lmstudio", "Enter")
@@ -211,7 +251,7 @@ try:
     tmux("send-keys", "-t", "lmstudio", "C-p")
     tmux("send-keys", "-t", "lmstudio", "-l", "qualify selected local model provider")
     tmux("send-keys", "-t", "lmstudio", "Enter")
-    expect("Qualify local model provider", "READY", "qwen/qwen3-coder-next")
+    expect("Qualify local model provider", "READY", model_name)
     tmux("send-keys", "-t", "lmstudio", "c")
     expect("ARMED", "transport uncertainty will not be retried")
     tmux("send-keys", "-t", "lmstudio", "Enter")
@@ -251,7 +291,7 @@ try:
     deadline = time.monotonic() + 15
     while tmux("has-session", "-t", "lmstudio", check=False).returncode == 0:
         if time.monotonic() >= deadline:
-            raise AssertionError("Pantheon did not cleanly drain live LM Studio topology")
+            raise AssertionError("Pantheon did not cleanly drain live local-model topology")
         time.sleep(0.05)
 finally:
     tmux("kill-server", check=False)
@@ -259,10 +299,10 @@ PYTHON
 
 headless=$("$workbench" headless --workspace-profile "$scratch/profile.json")
 printf '%s' "$headless" >"$scratch/headless.json"
-python3 - "$model_name" "$scratch/headless.json" <<'PYTHON'
+python3 - "$model_name" "$scratch/headless.json" "${hestia_socket:+1}" <<'PYTHON'
 import json, sys
 from pathlib import Path
-selected, report_path = sys.argv[1:]
+selected, report_path, hestia_enabled = sys.argv[1:]
 report = json.loads(Path(report_path).read_text(encoding="utf-8"))
 assert report["complete"]
 provider = report["provider_configuration"]["catalog"]["providers"][0]
@@ -284,6 +324,14 @@ assert invocation["output_tokens"] > 0
 assert invocation["output_bytes"] > 0
 assert invocation["output_digest"].startswith("sha256:")
 assert "output" not in invocation
+if hestia_enabled:
+    hestia = next(peer for peer in report["peers"] if peer["peer"] == "hestia")
+    runtime = hestia["runtimes"][0]["evidence"]
+    assert runtime["lifecycle"] == "ready"
+    assert runtime["readiness_basis"] == "tcp_accept"
+    assert runtime["model_identity"] == selected
+    assert runtime["model_matches_provider"]
+    assert runtime["invocation_eligible"]
 assert report["hosted_shutdown"]["status"] == "clean"
 PYTHON
 
@@ -314,4 +362,4 @@ fi
 wait "$aegis_pid" || true
 aegis_pid=
 
-echo "PASS: Pantheon qualified and invoked $model_name for one reviewed Chronos task"
+echo "PASS: Pantheon qualified and invoked $model_name from $provider_label for one reviewed Chronos task"

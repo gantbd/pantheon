@@ -1778,6 +1778,15 @@ had begun accepting connections. The lifecycle clients now wait within the
 owner's bounded long-start budget without extending ordinary observation
 deadlines. Qwen3-Coder-Next remains served by LM Studio.
 
+The composed real-model variant carries that same Hestia runtime into
+Pantheon's Hestia and Daimon surfaces, qualifies the endpoint through Daimon,
+requires human review before one Chronos-linked invocation, verifies
+content-free headless receipt parity and exact provider/runtime model
+correlation, then drains cleanly. Hestia placement evidence never substitutes
+for Daimon qualification or invocation evidence. The 1.5B model's generic,
+partly invented architecture recommendation was rejected by the accountable
+integrator; successful transport is not evidence that a model fits every role.
+
 Live registry search, signature/compatibility/resource-impact evidence,
 restart reconciliation of partial transfers, cancellation, multi-file
 manifests, update/retirement, production-engine/model qualification, observable

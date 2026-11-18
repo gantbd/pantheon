@@ -139,8 +139,12 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   now retain a bounded 420-second settlement window while observations retain
   their short deadline. It also empirically proved that Hestia TCP acceptance
   can precede provider readiness (`/v1/models` returned 503 while loading), so
-  the gate checks those facts separately. Daimon composition for this real
-  engine, persisted admission/restart, and hashing/loading progress remain open.
+  the gate checks those facts separately. The composed variant now presents the
+  same exact Hestia runtime in Pantheon, qualifies its live endpoint through
+  Daimon, performs one human-gated invocation for a Chronos task, proves
+  headless provider/runtime model correlation and invocation eligibility, and
+  drains both owner topologies cleanly. Persisted admission/restart and
+  hashing/loading progress remain open.
   Qwen3-Coder-Next continues to be served by LM Studio.
 - Live Pantheon/Chronos dogfood admitted the two independently executable
   follow-ups at owner revision 37: priority-8
@@ -149,6 +153,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   exact reviewed graph across invalid field input and submitted both changes in
   one owner revision. Existing `hestia-sovereign-local-inference-host` work was
   reused rather than duplicated.
+- The Qwen2.5-Coder 1.5B response from the composed run was retained but rejected
+  as architecture guidance: it repeated generic requirements and invented
+  encryption and a 24-hour review target absent from the evidence packet. The
+  owner/harness path was correct and fully attributed. Categorization:
+  model-capability and role-fit failure, not context transport, authority,
+  orchestration or lifecycle failure. This supports using the small model for
+  bounded mechanical verification while retaining stronger models and an
+  accountable integrator for architecture decisions.
 - Two bounded Qwen3 Coder Next reviews completed through Pantheon's
   Daimon/Chronos gate but were not accepted as approval evidence. The capacity
   proposal contradicted its own byte arithmetic and invented a Vellum protocol;
