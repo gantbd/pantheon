@@ -221,6 +221,8 @@ pub struct HestiaProfile {
     pub socket: PathBuf,
     #[serde(default)]
     pub runtime_bindings: Vec<HestiaRuntimeBindingProfile>,
+    #[serde(default)]
+    pub artifact_catalog: bool,
 }
 
 /// Explicit cross-owner composition only. Hestia does not learn Daimon
@@ -734,17 +736,23 @@ impl WorkspaceProfile {
             if !self.surfaces.contains(&Surface::Hestia) {
                 return Err("Hestia configuration requires the Hestia surface");
             }
-            if self
-                .daimon
-                .as_ref()
-                .and_then(|profile| profile.model_socket.as_ref())
-                .is_none()
+            validate_path(&hestia.socket)?;
+            if hestia.runtime_bindings.is_empty() && !hestia.artifact_catalog {
+                return Err(
+                    "Hestia requires an artifact catalog or 1–16 explicit runtime bindings",
+                );
+            }
+            if hestia.runtime_bindings.len() > 16 {
+                return Err("Hestia supports at most 16 explicit runtime bindings");
+            }
+            if !hestia.runtime_bindings.is_empty()
+                && self
+                    .daimon
+                    .as_ref()
+                    .and_then(|profile| profile.model_socket.as_ref())
+                    .is_none()
             {
                 return Err("Hestia runtime correlation requires a selected Daimon model endpoint");
-            }
-            validate_path(&hestia.socket)?;
-            if hestia.runtime_bindings.is_empty() || hestia.runtime_bindings.len() > 16 {
-                return Err("Hestia requires 1–16 explicit runtime bindings");
             }
             for (index, binding) in hestia.runtime_bindings.iter().enumerate() {
                 validate_hex_identifier(&binding.provider_id, "Hestia provider binding")?;
@@ -1282,6 +1290,21 @@ mod tests {
             "runtime_id":"08080808080808080808080808080808"}]}
         }"#;
         assert!(WorkspaceProfile::parse(unbound, Path::new(".")).is_err());
+
+        let artifact_only = br#"{
+          "version":1,"name":"Hestia artifacts","surfaces":["hestia"],
+          "hestia":{"socket":"hestia.sock","artifact_catalog":true}
+        }"#;
+        let profile = WorkspaceProfile::parse(artifact_only, Path::new("/tmp/workbench")).unwrap();
+        let hestia = profile.hestia.unwrap();
+        assert!(hestia.artifact_catalog);
+        assert!(hestia.runtime_bindings.is_empty());
+
+        let empty = br#"{
+          "version":1,"name":"Empty Hestia","surfaces":["hestia"],
+          "hestia":{"socket":"hestia.sock"}
+        }"#;
+        assert!(WorkspaceProfile::parse(empty, Path::new(".")).is_err());
     }
 
     #[test]

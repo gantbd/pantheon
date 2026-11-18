@@ -99,13 +99,22 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   incarnation 3 at the Daimon invocation gate and through headless parity.
   Restart persistence/orphan reconciliation, stronger artifact/resource/control
   enforcement and Aegis authority remain open.
-- The next Hestia product slice is a separately authorized model-artifact
-  catalog and acquisition workflow. It must disclose source, license, size,
-  digest/signature, compatibility, storage destination and projected resource
-  impact before download; verify before admission; and keep acquire, instantiate,
-  qualify and invoke as distinct receipts. Devstral is the first intended
-  dogfood artifact. OpenRouter is a later Daimon provider-integration backlog
-  item rather than a Hestia lifecycle shortcut.
+- Hestia commit `903c98b` adds the first separately authorized model-artifact
+  catalog and acquisition owner slice. It discloses the exact source revision,
+  license, format, expected size and SHA-256; streams through a private bounded
+  adapter into an owner-private partial file; verifies before atomic admission;
+  and keeps acquisition distinct from instantiation, qualification and use.
+  Pantheon now supports artifact-only and mixed Hestia profiles, switches its
+  Hestia tab between runtime and artifact panes, routes keys and minibuffer
+  commands through the same semantic facade, and reports owner evidence
+  headlessly. The real tmux qualification exercises the human gate, admits a
+  23-byte fixture, and proves that payload bytes never enter the repository.
+  Live registry search, signatures, compatibility/resource impact, restart
+  reconciliation, cancellation, multi-file manifests, retirement and the
+  artifact-to-runtime bridge remain open. Devstral is the first intended real
+  dogfood artifact after an explicit storage/license/resource decision.
+  OpenRouter is a later Daimon provider-integration backlog item rather than a
+  Hestia lifecycle shortcut.
 - Live Pantheon/Chronos dogfood admitted four owner-visible Ready items at board
   revision 6: priority-9 `hestia-model-artifact-acquisition-devstral`, priority-2
   `daimon-openrouter-provider-integration`, priority-5

@@ -1740,13 +1740,29 @@ ordinary observe/start/drain/shutdown access to the same owner. The reusable
 and require review, arm and one-shot confirmation for start/restart/drain; keys
 and command-palette actions share one behavior path. A real tmux journey proves
 incarnation transitions, Daimon correlation and headless/TUI parity. Persistence
-across abrupt daemon loss, orphan reconciliation, artifact/executable digest
-verification, enforced resource/sandbox preflight and Aegis-backed lifecycle
+across abrupt daemon loss and orphan reconciliation remain open.
+
+Hestia now also publishes a separately authorized, bounded static artifact
+catalog through its ordinary client. Its private adapter streams one selected
+source into an owner-private partial file under a hard expected-size ceiling,
+verifies SHA-256, and atomically admits only the verified artifact. Pantheon's
+Hestia tab can operate artifact-only or mixed profiles; `Tab` switches runtime
+and artifact panes, while keys and minibuffer commands share the same behavior
+facade. The acquisition sheet discloses model, registry, source revision,
+license, format, expected bytes and digest, then requires review → license
+acceptance/arm → one confirmation. Headless output independently carries the
+same owner-published catalog evidence. A real tmux qualification admits a
+bounded fixture, proves TUI/headless parity, and verifies that payload bytes
+remain outside the Pantheon repository. Admission explicitly grants no
+instantiation, qualification, invocation or scheduling authority.
+
+Live registry search, signature/compatibility/resource-impact evidence,
+restart reconciliation of partial transfers, cancellation, multi-file
+manifests, update/retirement, runtime instantiation from an admitted artifact,
+enforced resource/sandbox preflight and Aegis-backed artifact/lifecycle
 authority remain required before this is a complete operational hosting
-product. A separately authorized artifact catalog must add registry discovery,
-license/source/size/digest disclosure, bounded download, verification,
-admission and retirement; Devstral is the first intended dogfood acquisition.
-Filesystem permissions are the current
+product. Devstral remains the first intended real dogfood acquisition, subject
+to an explicit human storage/license/resource gate. Filesystem permissions are the current
 local deployment boundary, not an Aegis-backed authorization claim.
 
 #### Individual use cases

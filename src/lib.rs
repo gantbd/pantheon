@@ -140,6 +140,7 @@ pub fn draw_shell(
             daimon_prompt: None,
             daimon_control: None,
             hestia: None,
+            hestia_artifact: None,
             hermes: None,
             hermes_compaction: None,
             hermes_disclosure: None,
@@ -178,6 +179,7 @@ pub struct PeerViews<'a> {
     pub daimon_prompt: Option<&'a daimon_tui::AgentPromptComposer>,
     pub daimon_control: Option<&'a daimon_tui::AgentControlBatchComponent>,
     pub hestia: Option<&'a hestia_tui::Component>,
+    pub hestia_artifact: Option<&'a hestia_tui::ArtifactComponent>,
     pub hermes: Option<&'a hermes_tui::Component>,
     pub hermes_compaction: Option<&'a hermes_tui::CompactionComponent>,
     pub hermes_disclosure: Option<&'a hermes_tui::DisclosureComponent>,
@@ -278,6 +280,7 @@ pub fn draw_shell_with_moira(
         daimon_prompt,
         daimon_control,
         hestia,
+        hestia_artifact,
         hermes,
         hermes_compaction,
         hermes_disclosure,
@@ -448,7 +451,7 @@ pub fn draw_shell_with_moira(
                 agora: agora.is_some(),
                 moira: moira.is_some() || moira_participation.is_some(),
                 daimon: daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
-                hestia: hestia.is_some(),
+                hestia: hestia.is_some() || hestia_artifact.is_some(),
                 hermes: hermes.is_some(),
                 aegis: aegis.is_some(),
                 tellus: tellus.is_some(),
@@ -555,6 +558,9 @@ pub fn draw_shell_with_moira(
                 .block(theme::card(" DAIMON · LOCAL MODEL ", theme::GREEN)),
                 body,
             );
+        }
+        Surface::Hestia if hestia_artifact.is_some() => {
+            frame.render_widget(hestia_artifact.expect("matched above"), body);
         }
         Surface::Hestia if hestia.is_some() => {
             frame.render_widget(hestia.expect("matched above"), body);
@@ -2156,6 +2162,7 @@ mod tests {
                             daimon_prompt: None,
                             daimon_control: None,
                             hestia: None,
+                            hestia_artifact: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,
@@ -2225,6 +2232,7 @@ mod tests {
                             daimon_prompt: None,
                             daimon_control: None,
                             hestia: None,
+                            hestia_artifact: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,
@@ -2292,6 +2300,7 @@ mod tests {
                             daimon_prompt: None,
                             daimon_control: None,
                             hestia: None,
+                            hestia_artifact: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,
@@ -2358,6 +2367,7 @@ mod tests {
                             daimon_prompt: None,
                             daimon_control: None,
                             hestia: None,
+                            hestia_artifact: None,
                             hermes: None,
                             hermes_compaction: None,
                             hermes_disclosure: None,

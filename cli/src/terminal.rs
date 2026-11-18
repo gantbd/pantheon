@@ -2111,6 +2111,7 @@ fn workbench_commands(
     daimon_control: bool,
     daimon_execution: bool,
     hestia: bool,
+    hestia_artifacts: bool,
     hermes: bool,
     hermes_operator: bool,
     hermes_disclosure: bool,
@@ -2321,6 +2322,54 @@ fn workbench_commands(
             command
         } else {
             command.unavailable("Hestia is not configured")
+        });
+    }
+    for command in [
+        CommandSpec::available(
+            "hestia.artifact.refresh",
+            "Refresh Hestia artifact catalog",
+            "Ask Hestia for its bounded artifact catalog and current admission evidence.",
+            "Hestia",
+            Some("r"),
+            CommandKind::Observe,
+        ),
+        CommandSpec::available(
+            "hestia.artifact.acquire",
+            "Propose acquiring selected artifact",
+            "Review the exact source revision, license, size, and digest without downloading yet.",
+            "Hestia",
+            Some("a"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.artifact.arm",
+            "Accept license and arm acquisition",
+            "Accept the disclosed license and arm or disarm this exact proposal.",
+            "Hestia",
+            Some("c"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.artifact.confirm",
+            "Confirm Hestia artifact acquisition",
+            "Submit one armed acquisition to Hestia; admission grants no runtime or execution authority.",
+            "Hestia",
+            Some("Enter"),
+            CommandKind::Guarded,
+        ),
+        CommandSpec::available(
+            "hestia.artifact.cancel",
+            "Cancel artifact acquisition review",
+            "Discard the unsent artifact acquisition proposal.",
+            "Hestia",
+            Some("Esc"),
+            CommandKind::Guarded,
+        ),
+    ] {
+        commands.push(if hestia_artifacts {
+            command
+        } else {
+            command.unavailable("Hestia artifact catalog is not configured")
         });
     }
     let focus = CommandSpec::available(
@@ -3190,6 +3239,36 @@ enum HestiaAction {
     Cancel,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum HestiaPane {
+    Runtimes,
+    Artifacts,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum HestiaArtifactAction {
+    Refresh,
+    Previous,
+    Next,
+    ProposeAcquire,
+    ToggleArm,
+    Confirm,
+    Cancel,
+}
+
+impl HestiaArtifactAction {
+    fn from_command(action: &str) -> Option<Self> {
+        match action {
+            "hestia.artifact.refresh" => Some(Self::Refresh),
+            "hestia.artifact.acquire" => Some(Self::ProposeAcquire),
+            "hestia.artifact.arm" => Some(Self::ToggleArm),
+            "hestia.artifact.confirm" => Some(Self::Confirm),
+            "hestia.artifact.cancel" => Some(Self::Cancel),
+            _ => None,
+        }
+    }
+}
+
 impl HestiaAction {
     fn from_command(action: &str) -> Option<Self> {
         match action {
@@ -3248,6 +3327,39 @@ fn apply_hestia_action(
     (level, notice)
 }
 
+fn apply_hestia_artifact_action(
+    component: &mut hestia_tui::ArtifactComponent,
+    action: HestiaArtifactAction,
+) -> (ActivityLevel, String) {
+    match action {
+        HestiaArtifactAction::Refresh => component.refresh(),
+        HestiaArtifactAction::Previous => component.previous(),
+        HestiaArtifactAction::Next => component.next(),
+        HestiaArtifactAction::ProposeAcquire => match fresh_identity().map(HestiaOperationIdV1) {
+            Ok(operation) => component.propose_acquire(operation),
+            Err(reason) => return (ActivityLevel::Warning, format!("REFUSED · {reason}")),
+        },
+        HestiaArtifactAction::ToggleArm => component.toggle_arm(),
+        HestiaArtifactAction::Confirm => component.confirm(),
+        HestiaArtifactAction::Cancel => component.cancel(),
+    }
+    let notice = component.notice().to_owned();
+    let level = if notice.starts_with("ACCEPTED") || notice.starts_with("IDENTITY") {
+        ActivityLevel::Success
+    } else if notice.starts_with("OUTCOME UNKNOWN") {
+        ActivityLevel::Uncertain
+    } else if notice.starts_with("REFUSED")
+        || notice.starts_with("NOT SENT")
+        || notice.starts_with("UNAVAILABLE")
+        || notice.starts_with("MISSING")
+    {
+        ActivityLevel::Warning
+    } else {
+        ActivityLevel::Info
+    };
+    (level, notice)
+}
+
 #[allow(clippy::too_many_arguments)]
 fn execute_workbench_action<T: ServicePort>(
     action: &str,
@@ -3281,6 +3393,8 @@ fn execute_workbench_action<T: ServicePort>(
     daimon_permission_composer: &mut Option<daimon_tui::AgentPermissionComposer>,
     daimon_control: &mut Option<daimon_tui::AgentControlBatchComponent>,
     hestia: &mut Option<hestia_tui::Component>,
+    hestia_artifact: &mut Option<hestia_tui::ArtifactComponent>,
+    hestia_pane: &mut HestiaPane,
     hermes: &mut Option<hermes_tui::Component>,
     hermes_operator_socket: Option<&Path>,
     hermes_compaction: &mut Option<hermes_tui::CompactionComponent>,
@@ -3325,6 +3439,20 @@ fn execute_workbench_action<T: ServicePort>(
             return (ActivityLevel::Warning, "hestia", "Not configured".into());
         };
         let (level, message) = apply_hestia_action(component, hestia_action);
+        *hestia_pane = HestiaPane::Runtimes;
+        let _ = shell.activate(Surface::Hestia);
+        return (level, "hestia", message);
+    }
+    if let Some(hestia_action) = HestiaArtifactAction::from_command(action) {
+        let Some(component) = hestia_artifact.as_mut() else {
+            return (
+                ActivityLevel::Warning,
+                "hestia",
+                "Artifact catalog not configured".into(),
+            );
+        };
+        let (level, message) = apply_hestia_artifact_action(component, hestia_action);
+        *hestia_pane = HestiaPane::Artifacts;
         let _ = shell.activate(Surface::Hestia);
         return (level, "hestia", message);
     }
@@ -4238,6 +4366,8 @@ fn execute_workbench_action<T: ServicePort>(
             daimon,
             daimon_agent,
             hestia,
+            hestia_artifact,
+            *hestia_pane,
             hermes,
             aegis,
             tellus,
@@ -4253,6 +4383,8 @@ fn execute_workbench_action<T: ServicePort>(
             daimon,
             daimon_agent,
             hestia,
+            hestia_artifact,
+            *hestia_pane,
             hermes,
             aegis,
             tellus,
@@ -4426,6 +4558,8 @@ fn refresh_current<T: ServicePort>(
     daimon: &mut Option<daimon_tui::Component>,
     daimon_agent: &mut Option<daimon_tui::AgentSetComponent>,
     hestia: &mut Option<hestia_tui::Component>,
+    hestia_artifact: &mut Option<hestia_tui::ArtifactComponent>,
+    hestia_pane: HestiaPane,
     hermes: &mut Option<hermes_tui::Component>,
     aegis: &mut Option<aegis_tui::Component>,
     tellus: &mut Option<tellus::Component>,
@@ -4459,6 +4593,9 @@ fn refresh_current<T: ServicePort>(
             if let Some(component) = hestia {
                 component.refresh();
             }
+            if let Some(component) = hestia_artifact {
+                component.refresh();
+            }
             if let Some(component) = hermes {
                 component.update(hermes_tui::Input::Refresh, true);
             }
@@ -4485,6 +4622,8 @@ fn refresh_current<T: ServicePort>(
             daimon,
             daimon_agent,
             hestia,
+            hestia_artifact,
+            hestia_pane,
             hermes,
             aegis,
             tellus,
@@ -4548,16 +4687,37 @@ fn refresh_current<T: ServicePort>(
                 refresh_peer(daimon.as_mut(), daimon_tui::Input::Refresh, "daimon")
             }
         }
-        Surface::Hestia => match hestia {
-            Some(component) => {
-                component.refresh();
-                (
-                    ActivityLevel::Info,
+        Surface::Hestia => match hestia_pane {
+            HestiaPane::Runtimes => match hestia {
+                Some(component) => {
+                    component.refresh();
+                    (
+                        ActivityLevel::Info,
+                        "hestia",
+                        "Runtime refresh queued".into(),
+                    )
+                }
+                None => (
+                    ActivityLevel::Warning,
                     "hestia",
-                    "Runtime refresh queued".into(),
-                )
-            }
-            None => (ActivityLevel::Warning, "hestia", "Not configured".into()),
+                    "Runtime lifecycle not configured".into(),
+                ),
+            },
+            HestiaPane::Artifacts => match hestia_artifact {
+                Some(component) => {
+                    component.refresh();
+                    (
+                        ActivityLevel::Info,
+                        "hestia",
+                        "Artifact catalog refresh queued".into(),
+                    )
+                }
+                None => (
+                    ActivityLevel::Warning,
+                    "hestia",
+                    "Artifact catalog not configured".into(),
+                ),
+            },
         },
         Surface::Hermes => refresh_peer(hermes.as_mut(), hermes_tui::Input::Refresh, "hermes"),
         Surface::Aegis => refresh_peer(aegis.as_mut(), aegis_tui::Input::Refresh, "aegis"),
@@ -7630,7 +7790,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         .as_ref()
         .and_then(|profile| profile.hestia.as_ref())
     {
-        Some(profile) => {
+        Some(profile) if !profile.runtime_bindings.is_empty() => {
             let bindings = profile
                 .runtime_bindings
                 .iter()
@@ -7646,6 +7806,21 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             Some(component)
         }
         None => None,
+        Some(_) => None,
+    };
+    let mut hestia_artifact = current_profile
+        .as_ref()
+        .and_then(|profile| profile.hestia.as_ref())
+        .filter(|profile| profile.artifact_catalog)
+        .map(|profile| {
+            let mut component = hestia_tui::ArtifactComponent::new(profile.socket.clone());
+            component.refresh();
+            component
+        });
+    let mut hestia_pane = if hestia.is_some() {
+        HestiaPane::Runtimes
+    } else {
+        HestiaPane::Artifacts
     };
     let commands = workbench_commands(
         &shell,
@@ -7672,6 +7847,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             && daimon_agent_control_socket.is_some()
             && daimon_execution_policy.is_some(),
         hestia.is_some(),
+        hestia_artifact.is_some(),
         hermes.is_some(),
         hermes_operator_socket.is_some(),
         hermes_disclosure_socket.is_some(),
@@ -7746,6 +7922,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         ("daimon", "presence", daimon.is_some()),
         ("daimon", "sessions/events", daimon_agent.is_some()),
         ("hestia", "runtime/lifecycle", hestia.is_some()),
+        ("hestia", "artifact/catalog", hestia_artifact.is_some()),
         ("hermes", "ledger/cursors", hermes.is_some()),
         ("aegis", "authority", aegis.is_some()),
         ("tellus", "provenance", tellus.is_some()),
@@ -7773,6 +7950,29 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 };
                 notice = component.notice().into();
                 instrumentation.record("hestia.lifecycle.result", "hestia", level, elapsed);
+                activity.push(level, "hestia", notice.clone());
+            }
+            if let Some((success, elapsed)) = hestia_artifact
+                .as_mut()
+                .and_then(hestia_tui::ArtifactComponent::poll)
+            {
+                let component = hestia_artifact
+                    .as_ref()
+                    .expect("settled Hestia artifact component exists");
+                let level = if success {
+                    ActivityLevel::Success
+                } else if component.uncertain() {
+                    ActivityLevel::Uncertain
+                } else {
+                    ActivityLevel::Warning
+                };
+                notice = component.notice().into();
+                instrumentation.record("hestia.artifact.result", "hestia", level, elapsed);
+                health.settle(
+                    "hestia",
+                    "artifact/catalog",
+                    Some(if success { Ok(()) } else { Err(()) }),
+                );
                 activity.push(level, "hestia", notice.clone());
             }
             if let Some((level, elapsed)) = task_conversation_workflow
@@ -9227,6 +9427,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     .is_some_and(daimon_tui::AgentSetComponent::request_pending),
             );
             health.observing(
+                "hestia",
+                "artifact/catalog",
+                hestia_artifact
+                    .as_ref()
+                    .is_some_and(hestia_tui::ArtifactComponent::busy),
+            );
+            health.observing(
                 "hermes",
                 "ledger/cursors",
                 hermes
@@ -9292,7 +9499,12 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some())
                 }
-                "hestia" => hestia.as_ref().is_some_and(hestia_tui::Component::busy),
+                "hestia" => {
+                    hestia.as_ref().is_some_and(hestia_tui::Component::busy)
+                        || hestia_artifact
+                            .as_ref()
+                            .is_some_and(hestia_tui::ArtifactComponent::busy)
+                }
                 "hermes" => {
                     hermes
                         .as_ref()
@@ -9359,9 +9571,14 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         .as_ref()
                         .is_some_and(|workflow| workflow.phase == DaimonSessionOpenPhase::Fenced)
                 }
-                "hestia" => hestia
-                    .as_ref()
-                    .is_some_and(hestia_tui::Component::uncertain),
+                "hestia" => {
+                    hestia
+                        .as_ref()
+                        .is_some_and(hestia_tui::Component::uncertain)
+                        || hestia_artifact
+                            .as_ref()
+                            .is_some_and(hestia_tui::ArtifactComponent::uncertain)
+                }
                 "hermes" => {
                     hermes_compaction.as_ref().is_some_and(|control| {
                         control.disposition() == hermes_tui::CompactionDisposition::OutcomeUnknown
@@ -9413,7 +9630,12 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         daimon_permission: daimon_permission_composer.as_ref(),
                         daimon_prompt: daimon_prompt_composer.as_ref(),
                         daimon_control: daimon_control.as_ref(),
-                        hestia: hestia.as_ref(),
+                        hestia: (hestia_pane == HestiaPane::Runtimes)
+                            .then_some(hestia.as_ref())
+                            .flatten(),
+                        hestia_artifact: (hestia_pane == HestiaPane::Artifacts)
+                            .then_some(hestia_artifact.as_ref())
+                            .flatten(),
                         hermes: hermes.as_ref(),
                         hermes_compaction: hermes_compaction.as_ref(),
                         hermes_disclosure: hermes_disclosure.as_ref(),
@@ -10015,6 +10237,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut daimon_permission_composer,
                         &mut daimon_control,
                         &mut hestia,
+                        &mut hestia_artifact,
+                        &mut hestia_pane,
                         &mut hermes,
                         hermes_operator_socket.as_deref(),
                         &mut hermes_compaction,
@@ -11642,39 +11866,92 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     if key.kind != KeyEventKind::Press {
                         continue;
                     }
-                    if let Some(component) = &mut hestia {
-                        let action = match (key.code, key.modifiers) {
-                            (KeyCode::Up, KeyModifiers::NONE) => Some(HestiaAction::Previous),
-                            (KeyCode::Down, KeyModifiers::NONE) => Some(HestiaAction::Next),
-                            (KeyCode::Char('r'), KeyModifiers::NONE) => Some(HestiaAction::Refresh),
-                            (KeyCode::Char('s'), KeyModifiers::NONE) => {
-                                Some(HestiaAction::ProposeStart)
-                            }
-                            (KeyCode::Char('d'), KeyModifiers::NONE) => {
-                                Some(HestiaAction::ProposeDrain)
-                            }
-                            (KeyCode::Char('c'), KeyModifiers::NONE) => {
-                                Some(HestiaAction::ToggleArm)
-                            }
-                            (KeyCode::Enter, KeyModifiers::NONE) => Some(HestiaAction::Confirm),
-                            (KeyCode::Esc, KeyModifiers::NONE) => Some(HestiaAction::Cancel),
-                            _ => None,
+                    if key.code == KeyCode::Tab
+                        && key.modifiers == KeyModifiers::NONE
+                        && hestia.is_some()
+                        && hestia_artifact.is_some()
+                    {
+                        hestia_pane = match hestia_pane {
+                            HestiaPane::Runtimes => HestiaPane::Artifacts,
+                            HestiaPane::Artifacts => HestiaPane::Runtimes,
                         };
-                        if let Some(action) = action {
-                            let started = Instant::now();
-                            let (level, message) = apply_hestia_action(component, action);
-                            if action == HestiaAction::Confirm {
-                                instrumentation.record(
-                                    "hestia.lifecycle.dispatch",
-                                    "hestia",
-                                    level,
-                                    started.elapsed(),
-                                );
-                            }
-                            notice = message;
-                            activity.push(level, "hestia", notice.clone());
+                        notice = match hestia_pane {
+                            HestiaPane::Runtimes => "Hestia runtime lifecycle",
+                            HestiaPane::Artifacts => "Hestia artifact catalog and acquisition",
                         }
-                    } else {
+                        .into();
+                        activity.push(ActivityLevel::Info, "hestia", notice.clone());
+                        continue;
+                    }
+                    let started = Instant::now();
+                    let outcome = match hestia_pane {
+                        HestiaPane::Runtimes => hestia.as_mut().and_then(|component| {
+                            let action = match (key.code, key.modifiers) {
+                                (KeyCode::Up, KeyModifiers::NONE) => Some(HestiaAction::Previous),
+                                (KeyCode::Down, KeyModifiers::NONE) => Some(HestiaAction::Next),
+                                (KeyCode::Char('r'), KeyModifiers::NONE) => {
+                                    Some(HestiaAction::Refresh)
+                                }
+                                (KeyCode::Char('s'), KeyModifiers::NONE) => {
+                                    Some(HestiaAction::ProposeStart)
+                                }
+                                (KeyCode::Char('d'), KeyModifiers::NONE) => {
+                                    Some(HestiaAction::ProposeDrain)
+                                }
+                                (KeyCode::Char('c'), KeyModifiers::NONE) => {
+                                    Some(HestiaAction::ToggleArm)
+                                }
+                                (KeyCode::Enter, KeyModifiers::NONE) => Some(HestiaAction::Confirm),
+                                (KeyCode::Esc, KeyModifiers::NONE) => Some(HestiaAction::Cancel),
+                                _ => None,
+                            }?;
+                            Some((
+                                action == HestiaAction::Confirm,
+                                apply_hestia_action(component, action),
+                            ))
+                        }),
+                        HestiaPane::Artifacts => hestia_artifact.as_mut().and_then(|component| {
+                            let action = match (key.code, key.modifiers) {
+                                (KeyCode::Up, KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::Previous)
+                                }
+                                (KeyCode::Down, KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::Next)
+                                }
+                                (KeyCode::Char('r'), KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::Refresh)
+                                }
+                                (KeyCode::Char('a'), KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::ProposeAcquire)
+                                }
+                                (KeyCode::Char('c'), KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::ToggleArm)
+                                }
+                                (KeyCode::Enter, KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::Confirm)
+                                }
+                                (KeyCode::Esc, KeyModifiers::NONE) => {
+                                    Some(HestiaArtifactAction::Cancel)
+                                }
+                                _ => None,
+                            }?;
+                            Some((
+                                action == HestiaArtifactAction::Confirm,
+                                apply_hestia_artifact_action(component, action),
+                            ))
+                        }),
+                    };
+                    if let Some((dispatched, (level, message))) = outcome {
+                        if dispatched {
+                            let operation = match hestia_pane {
+                                HestiaPane::Runtimes => "hestia.lifecycle.dispatch",
+                                HestiaPane::Artifacts => "hestia.artifact.dispatch",
+                            };
+                            instrumentation.record(operation, "hestia", level, started.elapsed());
+                        }
+                        notice = message;
+                        activity.push(level, "hestia", notice.clone());
+                    } else if hestia.is_none() && hestia_artifact.is_none() {
                         notice = Surface::Hestia
                             .gap()
                             .unwrap_or("Hestia presentation is unavailable")
@@ -13531,6 +13808,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
             true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+            true,
         );
         for expected in [
             "navigate.overview",
@@ -13543,6 +13821,11 @@ mod tests {
             "hestia.runtime.arm",
             "hestia.runtime.confirm",
             "hestia.runtime.cancel",
+            "hestia.artifact.refresh",
+            "hestia.artifact.acquire",
+            "hestia.artifact.arm",
+            "hestia.artifact.confirm",
+            "hestia.artifact.cancel",
             "moira.participation.open.prepare",
             "moira.participation.worker.run",
             "view.refresh",
@@ -13663,7 +13946,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false, false,
+            false, false, false, false, false,
         );
         let save = commands
             .iter()
@@ -13698,6 +13981,19 @@ mod tests {
         assert_eq!(notice, "REFUSED · Refresh before proposing start.");
         let (_, cancelled) = apply_hestia_action(&mut component, HestiaAction::Cancel);
         assert_eq!(cancelled, "CANCELLED · No lifecycle request was sent.");
+
+        let mut artifact = hestia_tui::ArtifactComponent::new("/tmp/nonexistent-hestia.sock");
+        assert_eq!(
+            HestiaArtifactAction::from_command("hestia.artifact.acquire"),
+            Some(HestiaArtifactAction::ProposeAcquire)
+        );
+        let (level, notice) =
+            apply_hestia_artifact_action(&mut artifact, HestiaArtifactAction::ProposeAcquire);
+        assert_eq!(level, ActivityLevel::Warning);
+        assert_eq!(notice, "REFUSED · Refresh before proposing acquisition.");
+        let (_, cancelled) =
+            apply_hestia_artifact_action(&mut artifact, HestiaArtifactAction::Cancel);
+        assert_eq!(cancelled, "CANCELLED · No acquisition request was sent.");
     }
 
     #[test]

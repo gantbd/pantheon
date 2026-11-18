@@ -1,4 +1,4 @@
-.PHONY: check fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-task-conversation
+.PHONY: check hygiene fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-task-conversation qualify-hestia-artifact
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -28,7 +28,13 @@ qualify-moira-participation:
 qualify-task-conversation:
 	./tests/live/task_conversation.sh
 
-check: fmt lint test doc
+qualify-hestia-artifact:
+	./tests/live/hestia_artifact_acquisition.sh
+
+check: hygiene fmt lint test doc
+
+hygiene:
+	./scripts/check-repository-hygiene.sh
 
 fmt:
 	cargo fmt --all -- --check

@@ -1882,6 +1882,38 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
 }
 
 #[test]
+fn hestia_artifact_gate_proves_human_review_owner_admission_and_repository_hygiene() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/hestia_artifact_acquisition.sh"))
+        .expect("Hestia artifact gate");
+    for required in [
+        "artifact_catalog",
+        "HESTIA · ACQUISITION",
+        "source revision    revision-1",
+        "license            Apache-2.0",
+        "expected bytes     23",
+        "human gate",
+        "lifecycle          Admitted",
+        "headless --workspace-profile",
+        "does not instantiate, qualify, invoke, or schedule",
+        "-name '*.gguf'",
+        "private to the owner store",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Hestia artifact gate omits {required}"
+        );
+    }
+    let profile = fs::read_to_string(root.join("cli/src/profile.rs")).expect("profile source");
+    assert!(profile.contains("artifact_catalog"));
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
+    assert!(headless.contains("artifacts.catalog.v1"));
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    assert!(terminal.contains("hestia.artifact.acquire"));
+    assert!(terminal.contains("apply_hestia_artifact_action"));
+}
+
+#[test]
 fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =

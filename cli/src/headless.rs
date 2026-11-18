@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use agora_client::v2::ClientV2 as AgoraClientV2;
 use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::Workstream;
+use hestia_local_client::LocalClient as HestiaLocalClient;
 use moira_client::{AgentParticipationReadOnlyClient, SagaReadOnlyClient};
 use moira_protocol::{SagaOutcomeV1, SagaReplyV1, agent_participation as participation};
 use sha2::{Digest, Sha256};
@@ -255,82 +256,119 @@ fn observe_hestia(
     profile: HestiaProfile,
     daimon_owner: Option<&DaimonHostProfile>,
 ) -> (serde_json::Value, bool) {
-    let Some(owner) = daimon_owner else {
-        return (
-            serde_json::json!({
-                "peer": "hestia",
-                "capability": "runtimes.observe.v1",
-                "status": "configuration_refused",
-                "next_action": "select the exact Daimon owner used by the Hestia provider bindings",
-            }),
-            false,
-        );
-    };
-    let catalog = match provider_catalog(&owner.executable, &owner.config) {
-        Ok(catalog) => catalog,
-        Err(detail) => {
-            return (
-                serde_json::json!({
-                    "peer": "hestia",
-                    "capability": "runtimes.observe.v1",
-                    "status": "provider_catalog_refused",
-                    "detail": detail,
-                }),
-                false,
-            );
-        }
-    };
     let mut runtimes = Vec::new();
     let mut current = true;
-    for binding in &profile.runtime_bindings {
-        let Some(provider) = catalog
-            .providers
-            .iter()
-            .find(|provider| provider.provider_id == binding.provider_id)
-        else {
-            current = false;
-            runtimes.push(serde_json::json!({
-                "provider_id": binding.provider_id,
-                "runtime_id": binding.runtime_id,
-                "status": "provider_missing",
-            }));
-            continue;
-        };
-        let Some(model) = provider.model.as_deref() else {
-            current = false;
-            runtimes.push(serde_json::json!({
-                "provider_id": binding.provider_id,
-                "runtime_id": binding.runtime_id,
-                "status": "model_missing",
-            }));
-            continue;
-        };
-        match observe_provider_runtime(&profile, &binding.provider_id, model) {
-            Ok(evidence) => {
-                current &= evidence.invocation_eligible;
+    if !profile.runtime_bindings.is_empty() {
+        let catalog = match daimon_owner {
+            Some(owner) => match provider_catalog(&owner.executable, &owner.config) {
+                Ok(catalog) => Some(catalog),
+                Err(detail) => {
+                    current = false;
+                    runtimes.push(serde_json::json!({
+                        "status": "provider_catalog_refused",
+                        "detail": detail,
+                    }));
+                    None
+                }
+            },
+            None => {
+                current = false;
                 runtimes.push(serde_json::json!({
-                    "status": if evidence.invocation_eligible { "ready" } else { "not_ready" },
-                    "evidence": evidence,
+                    "status": "configuration_refused",
+                    "next_action": "select the exact Daimon owner used by the Hestia provider bindings",
                 }));
+                None
             }
-            Err(detail) => {
+        };
+        for binding in catalog.iter().flat_map(|_| profile.runtime_bindings.iter()) {
+            let Some(provider) = catalog
+                .as_ref()
+                .expect("binding iteration requires provider catalog")
+                .providers
+                .iter()
+                .find(|provider| provider.provider_id == binding.provider_id)
+            else {
                 current = false;
                 runtimes.push(serde_json::json!({
                     "provider_id": binding.provider_id,
                     "runtime_id": binding.runtime_id,
-                    "status": "observation_refused",
-                    "detail": detail,
+                    "status": "provider_missing",
                 }));
+                continue;
+            };
+            let Some(model) = provider.model.as_deref() else {
+                current = false;
+                runtimes.push(serde_json::json!({
+                    "provider_id": binding.provider_id,
+                    "runtime_id": binding.runtime_id,
+                    "status": "model_missing",
+                }));
+                continue;
+            };
+            match observe_provider_runtime(&profile, &binding.provider_id, model) {
+                Ok(evidence) => {
+                    current &= evidence.invocation_eligible;
+                    runtimes.push(serde_json::json!({
+                        "status": if evidence.invocation_eligible { "ready" } else { "not_ready" },
+                        "evidence": evidence,
+                    }));
+                }
+                Err(detail) => {
+                    current = false;
+                    runtimes.push(serde_json::json!({
+                        "provider_id": binding.provider_id,
+                        "runtime_id": binding.runtime_id,
+                        "status": "observation_refused",
+                        "detail": detail,
+                    }));
+                }
             }
         }
     }
+
+    let artifacts = if profile.artifact_catalog {
+        match HestiaLocalClient::new(profile.socket.clone()).catalog_artifacts() {
+            Ok(catalog) => serde_json::json!({
+                "status": "current",
+                "catalog": catalog,
+                "boundary": "artifact admission does not instantiate, qualify, invoke, or schedule a model",
+            }),
+            Err(error) => {
+                current = false;
+                serde_json::json!({
+                    "status": "observation_refused",
+                    "detail": format!("{error:?}"),
+                })
+            }
+        }
+    } else {
+        serde_json::Value::Null
+    };
+    hestia_observation(&profile, runtimes, artifacts, current)
+}
+
+fn hestia_observation(
+    profile: &HestiaProfile,
+    runtimes: Vec<serde_json::Value>,
+    artifacts: serde_json::Value,
+    current: bool,
+) -> (serde_json::Value, bool) {
     (
         serde_json::json!({
             "peer": "hestia",
-            "capability": "runtimes.observe.v1",
+            "capability": if profile.runtime_bindings.is_empty() {
+                "artifacts.catalog.v1"
+            } else {
+                "runtimes.observe.v1"
+            },
+            "capabilities": {
+                "runtimes.observe.v1": !profile.runtime_bindings.is_empty(),
+                "artifacts.catalog.v1": profile.artifact_catalog,
+            },
             "status": if current { "current" } else { "partial" },
             "runtimes": runtimes,
-            "boundary": "Hestia publishes runtime lifecycle/readiness; Daimon separately publishes provider qualification/execution",
+            "artifacts": artifacts,
+            "boundary": "Hestia publishes runtime lifecycle and artifact admission; Daimon separately publishes provider qualification and execution",
         }),
         current,
     )
