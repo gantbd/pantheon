@@ -2259,6 +2259,7 @@ fn moira_agent_worker_is_opaque_participation_bound_and_separate_from_preparatio
         "owner worker output exceeded 4096 bytes",
         "Dispatch refused: review and durably prepare",
         "MoiraAgentWorkerSettlement::FencedUnknown",
+        "release_for_dispatch",
     ] {
         assert!(terminal.contains(required), "worker route omits {required}");
     }
@@ -2270,5 +2271,17 @@ fn moira_agent_worker_is_opaque_participation_bound_and_separate_from_preparatio
         "participation_revision",
     ] {
         assert!(owner.contains(required), "owner receipt omits {required}");
+    }
+    let live =
+        fs::read_to_string(root.join("qualification/moira-participation/live_owner_worker.sh"))
+            .expect("owner-worker live qualification");
+    for required in [
+        "headless-before",
+        "dispatch prepared moira agent session",
+        "Moira owner worker Observed participation revision 3",
+        "headless-after",
+        "owner_worker_fixture",
+    ] {
+        assert!(live.contains(required), "live worker gate omits {required}");
     }
 }

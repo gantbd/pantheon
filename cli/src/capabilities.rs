@@ -310,6 +310,7 @@ pub const GUARDED_CONTROL_CAPABILITIES: &[(&str, &[&str])] = &[
         "moira",
         &[
             "agent.open.prepare.v1",
+            "agent.worker.step.v1",
             "sagas.reconciliation.confirmation.v1",
             "sagas.reconciliation.confirm.v1",
             "sagas.reconciliation.recovery.v1",
@@ -417,6 +418,11 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
     GuardedControlRoute {
         peer: "moira",
         capability: "agent.open.prepare.v1",
+        command: "workbench",
+    },
+    GuardedControlRoute {
+        peer: "moira",
+        capability: "agent.worker.step.v1",
         command: "workbench",
     },
     GuardedControlRoute {

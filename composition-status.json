@@ -317,7 +317,7 @@
       "mutation": "qualified",
       "mutationCapabilities": {
         "agent.open.prepare.v1": "qualified",
-        "agent.worker.step.v1": "implemented",
+        "agent.worker.step.v1": "qualified",
         "sagas.reconciliation.confirmation.v1": "qualified",
         "sagas.reconciliation.confirm.v1": "qualified",
         "sagas.reconciliation.recovery.v1": "qualified"
@@ -331,7 +331,7 @@
         "agent.worker.step.v1": {
           "state": "composed",
           "when": "an exact Open is durably prepared and an opaque one-step Moira owner-worker profile is selected",
-          "evidence": ["moira/apps/moira-agent-local/src/lib.rs", "pantheon/cli/src/terminal.rs"]
+          "evidence": ["moira/apps/moira-agent-local/src/lib.rs", "pantheon/cli/src/terminal.rs", "pantheon/qualification/moira-participation/live_owner_worker.sh"]
         }
       },
       "uncomposedPeerCapabilities": {

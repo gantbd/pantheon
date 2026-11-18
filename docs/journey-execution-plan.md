@@ -297,6 +297,18 @@ owner.
   boundary changes, acceptance commands, context-manifest identity, budget and
   required human review. Chronos's content-minimized task record is not enough
   input for a smaller model by itself.
+- The delivery operating contract is now a linked Vellum artifact and defines
+  per-turn goal reconciliation, continual TUI/headless dogfooding, friction
+  remediation, stakeholder-equitable human gates, evidence-based model fit,
+  overnight safety, and UI-accessible MBR/QBR reviews with an accountable
+  executive sponsor. Vellum durably saved the maintenance annotation through
+  Pantheon's guarded TUI path. The same pass exposed three Vellum UX gaps:
+  oversized-root refusal lacks size/limit/remediation facts, large paste lacks
+  an explicit partial-workset receipt, and edit backpressure can return
+  `EditorUnavailable` without retry orientation. Together with the implicit
+  Moira saga-endpoint dependency, these were admitted through Pantheon's live
+  Chronos batch composer as four prioritized capability-tagged tasks at durable
+  revision 4 (25 total tasks, 11 Ready and 14 Blocked).
 
 ## Milestone 0 — stabilize the product contract
 
@@ -453,8 +465,14 @@ outcome and retained revision; Pantheon bounds output, refuses a mismatched
 participation, keeps failure/uncertainty visible and refreshes owner state after
 a definitive result. The owner repository's real-process test crosses Moira and
 Daimon sockets and commits Ready observation; Pantheon's receipt/profile tests
-are green. A single composed live TUI gate and capability-matrix promotion are
-still required before this sub-slice is called qualified.
+are green. The composed qualification now observes Admitted through headless
+mode, drives Open preparation and the real owner worker through the TUI,
+crosses Moira and Daimon sockets, observes the exact revision-3 receipt in the
+activity surface, and proves Ready through both a second headless observation
+and direct durable reopen. The live pass also exposed and fixed a real serial-
+owner deadlock: the Open review now deterministically releases its authenticated
+owner session before the separate worker connects, then Pantheon reconnects a
+fresh participation observer. `agent.worker.step.v1` is therefore qualified.
 
 The earlier observation-only profile copy was a presentation-boundary leak.
 The aggregate headless observer now validates requirements against the complete

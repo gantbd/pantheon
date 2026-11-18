@@ -11,3 +11,9 @@ Run:
 ```sh
 sh qualification/moira-participation/qualify.sh
 ```
+
+The qualification also observes the exact participation through Pantheon
+headless mode, drives the prepared Open and real `moira-agent-local` process
+through an isolated tmux TUI, crosses real Moira and Daimon Unix sockets,
+checks the visible activity receipt, observes Ready again through headless
+mode, and reopens the durable owner database directly.

@@ -213,8 +213,7 @@ fn owner_derived_open_prepares_once_and_survives_restart() {
         ParticipationClientLimitsV1::default(),
     )
     .unwrap();
-    let mut control =
-        moira_tui::OpenControlComponent::new(port, p::ParticipationIdV1([2; 16]));
+    let mut control = moira_tui::OpenControlComponent::new(port, p::ParticipationIdV1([2; 16]));
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {
         control.poll();
@@ -383,13 +382,7 @@ fn render_open(control: &moira_tui::OpenControlComponent) -> String {
         .draw(|frame| {
             let mut peers = peer_views_empty();
             peers.moira_open = Some(control);
-            draw_shell_with_moira(
-                frame,
-                &shell,
-                peers,
-                Focus::Chronos,
-                control.notice(),
-            );
+            draw_shell_with_moira(frame, &shell, peers, Focus::Chronos, control.notice());
         })
         .unwrap();
     terminal

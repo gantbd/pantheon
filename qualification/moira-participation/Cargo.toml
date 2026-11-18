@@ -18,6 +18,10 @@ moira-service = { path = "../../../moira/crates/moira-service" }
 moira-sqlite = { path = "../../../moira/adapters/moira-sqlite" }
 moira-tui = { path = "../../../moira-tui" }
 moira-wire = { path = "../../../moira/crates/moira-wire" }
+daimon-host = { path = "../../../daimon/crates/daimon-host" }
+daimon-local-daemon = { path = "../../../daimon/crates/daimon-local-daemon" }
+daimon-protocol = { path = "../../../daimon/crates/daimon-protocol" }
+daimon-wire = { path = "../../../daimon/crates/daimon-wire" }
 ratatui = { version = "=0.30.2", default-features = false }
 serde_json = "1"
 

@@ -390,8 +390,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "daimon-harness"
+version = "0.0.1"
+
+[[package]]
+name = "daimon-host"
+version = "0.1.0"
+dependencies = [
+ "daimon-protocol",
+]
+
+[[package]]
+name = "daimon-local-daemon"
+version = "0.1.0"
+dependencies = [
+ "daimon-client",
+ "daimon-host",
+ "daimon-protocol",
+ "daimon-service",
+ "daimon-wire",
+]
+
+[[package]]
 name = "daimon-protocol"
 version = "0.1.0"
+
+[[package]]
+name = "daimon-service"
+version = "0.1.0"
+dependencies = [
+ "daimon-harness",
+ "daimon-host",
+ "daimon-protocol",
+ "sha2",
+]
 
 [[package]]
 name = "daimon-tui"
@@ -1098,6 +1130,10 @@ dependencies = [
 name = "pantheon-moira-participation-qualification"
 version = "0.0.0"
 dependencies = [
+ "daimon-host",
+ "daimon-local-daemon",
+ "daimon-protocol",
+ "daimon-wire",
  "moira-client",
  "moira-core",
  "moira-local-daemon",

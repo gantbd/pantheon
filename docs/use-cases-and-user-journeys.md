@@ -3362,3 +3362,9 @@ repository evidence includes `agora-federation`, `vellum-federation`, Chronos's
 `docs/federation-integration-v1.md`, and the remote/federation qualification
 notes in Aegis, Moira, Daimon and Hermes. Those owner documents remain
 authoritative when this blueprint and an implementation detail diverge.
+
+Pantheon's active delivery and goal-reconciliation rules are maintained in
+[`delivery-operating-contract.md`](delivery-operating-contract.md). That linked
+Vellum artifact is normative for how this blueprint is executed, reviewed and
+evolved; it may strengthen this blueprint from evidence but may not narrow or
+replace its promised operational journeys.

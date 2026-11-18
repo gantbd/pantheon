@@ -1200,12 +1200,21 @@ impl MoiraAgentWorkerControl {
         }
     }
 
-    fn start(&mut self, config: MoiraAgentWorkerConfig) -> Result<(), &'static str> {
+    fn start_refusal(&self) -> Option<&'static str> {
         if self.pending {
-            return Err("Moira owner worker is already pending");
+            return Some("Moira owner worker is already pending");
         }
         if self.uncertain {
-            return Err("Moira owner worker is fenced; inspect the participation before any retry");
+            return Some(
+                "Moira owner worker is fenced; inspect the participation before any retry",
+            );
+        }
+        None
+    }
+
+    fn start(&mut self, config: MoiraAgentWorkerConfig) -> Result<(), &'static str> {
+        if let Some(reason) = self.start_refusal() {
+            return Err(reason);
         }
         let (sender, receiver) = sync_channel(1);
         std::thread::spawn(move || {
@@ -3152,6 +3161,20 @@ fn execute_workbench_action<T: ServicePort>(
                     ActivityLevel::Warning,
                     "moira",
                     "Dispatch refused: review and durably prepare this participation Open first"
+                        .into(),
+                );
+            }
+            if let Some(reason) = moira_agent_worker.start_refusal() {
+                return (ActivityLevel::Warning, "moira", reason.into());
+            }
+            let released = moira_open
+                .take()
+                .is_some_and(moira_tui::OpenControlComponent::release_for_dispatch);
+            if !released {
+                return (
+                    ActivityLevel::Warning,
+                    "moira",
+                    "Dispatch refused: prepared Moira review could not release its owner session"
                         .into(),
                 );
             }
@@ -5916,9 +5939,30 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 notice = moira_agent_worker.notice.clone();
                 activity.push(level, "moira", notice.clone());
                 if outcome != MoiraAgentWorkerSettlement::FencedUnknown
-                    && let Some(control) = &mut moira_open
+                    && let Some((socket, participation)) = &moira_participation_control
                 {
-                    control.update(moira_tui::OpenControlInput::Refresh, true);
+                    match moira_client::unix::AgentParticipationUnixPort::connect(
+                        socket,
+                        moira_client::unix::ParticipationClientLimitsV1::default(),
+                    ) {
+                        Ok(port) => {
+                            moira_participation = Some(
+                                moira_tui::ParticipationComponent::new(port, *participation),
+                            );
+                            activity.push(
+                                ActivityLevel::Info,
+                                "moira",
+                                "Reconnected a fresh participation observer after owner-worker settlement",
+                            );
+                        }
+                        Err(error) => activity.push(
+                            ActivityLevel::Warning,
+                            "moira",
+                            format!(
+                                "Owner worker settled, but participation observer reconnect was refused: {error:?}"
+                            ),
+                        ),
+                    }
                 }
             }
             if let Some(reconciliation) = &mut moira_reconciliation {
@@ -9678,6 +9722,7 @@ mod tests {
                 route.capability,
                 "messages.speak.v2"
                     | "agent.open.prepare.v1"
+                    | "agent.worker.step.v1"
                     | "agents.session.prompt.v1"
                     | "agents.session.permission.v1"
                     | "agents.session.reattach.v1"
@@ -9688,6 +9733,7 @@ mod tests {
                 let composed_id = match route.capability {
                     "messages.speak.v2" => "agora.message.compose",
                     "agent.open.prepare.v1" => "moira.participation.open.prepare",
+                    "agent.worker.step.v1" => "moira.participation.worker.run",
                     "agents.session.prompt.v1" => "daimon.session.prompt",
                     "agents.session.permission.v1" => "daimon.session.permission",
                     "agents.session.reattach.v1" => "daimon.session.reattach",
