@@ -1807,7 +1807,9 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
         "MODEL ENDPOINT ATTACHED",
         "qwen/qwen3-coder-next",
         "openai_chat_completions",
-        "explicit configured-not-qualified boundary",
+        "guarded owner-retained qualification",
+        "headless/TUI receipt parity",
+        "one provider call",
         "hosted_shutdown",
         "disposition\": \"clean",
     ] {
@@ -1822,6 +1824,26 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
     let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
     assert!(headless.contains("connect_model"));
     assert!(headless.contains("no execution, provider health, qualification, or authority"));
+    let provider =
+        fs::read_to_string(root.join("cli/src/provider.rs")).expect("provider facade source");
+    assert!(provider.contains("--qualify-provider"));
+    assert!(provider.contains("PROVIDER_QUALIFICATION_TIMEOUT"));
+    assert!(provider.contains("validate_provider_qualification"));
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    assert!(terminal.contains("models.provider.qualify.v1"));
+    assert!(terminal.contains("review → arm → confirm"));
+    assert!(terminal.contains("tool-continuation conformance"));
+    let live = fs::read_to_string(root.join("tests/live/daimon_model_lmstudio.sh"))
+        .expect("LM Studio live gate");
+    for required in [
+        "PANTHEON_LMSTUDIO_LIVE",
+        "qwen/qwen3-coder-next",
+        "qualified_completion",
+        "tool continuation    not_exercised",
+        "assert \"output\" not in qualification",
+    ] {
+        assert!(live.contains(required), "LM Studio gate omits {required}");
+    }
 }
 
 #[test]

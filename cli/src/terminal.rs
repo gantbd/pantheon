@@ -42,8 +42,9 @@ use crate::provider::{
     ContextCatalogProjection, TaskBindingCatalogProjection, validate_provider_catalog,
 };
 use crate::provider::{
-    ProviderCatalogEntryProjection, ProviderCatalogProjection, invoke_provider_owner,
-    provider_catalog, valid_digest, valid_id, valid_provider_catalog_entry,
+    ProviderCatalogEntryProjection, ProviderCatalogProjection, ProviderQualificationProjection,
+    invoke_provider_owner, provider_catalog, qualify_provider, valid_digest, valid_id,
+    valid_provider_catalog_entry, validate_provider_qualification,
 };
 use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
@@ -99,6 +100,7 @@ enum WorkbenchOverlay {
     Configuration,
     LocalProviders,
     ProviderEdit,
+    ProviderQualification,
     AcpSessions,
     AgoraRooms,
     Reconfiguration,
@@ -112,6 +114,7 @@ enum KeyBehavior {
     SafeExit,
     CommandPaletteInput,
     ProviderEditInput,
+    ProviderQualificationInput,
     ReconfigurationInput,
     DismissOverlay,
     Suppress,
@@ -145,6 +148,16 @@ impl BehaviorFacade {
                     KeyBehavior::DismissOverlay
                 } else {
                     KeyBehavior::ProviderEditInput
+                };
+            }
+            WorkbenchOverlay::ProviderQualification => {
+                return if is_key(key, KeyCode::Esc, KeyModifiers::NONE)
+                    || is_key(key, KeyCode::F(1), KeyModifiers::NONE)
+                    || is_control_char(key, 'g')
+                {
+                    KeyBehavior::DismissOverlay
+                } else {
+                    KeyBehavior::ProviderQualificationInput
                 };
             }
             WorkbenchOverlay::LocalProviders
@@ -1922,6 +1935,7 @@ fn workbench_commands(
     moira_agent_worker: bool,
     moira_control: bool,
     daimon: bool,
+    daimon_model: bool,
     daimon_control: bool,
     daimon_execution: bool,
     hermes: bool,
@@ -2314,6 +2328,23 @@ fn workbench_commands(
             "Daimon agent control connection was not selected for this session"
         } else {
             "A selected Daimon agent session is not configured"
+        })
+    });
+    let qualify_model = CommandSpec::available(
+        "models.provider.qualify.v1",
+        "Qualify selected local model provider",
+        "Review the exact redacted profile, then arm one owner-retained, non-retried completion-conformance request; tool continuation remains a separate qualification.",
+        "Daimon",
+        None,
+        CommandKind::Guarded,
+    );
+    commands.push(if daimon_model {
+        qualify_model
+    } else {
+        qualify_model.unavailable(if daimon {
+            "The selected Daimon route is not a hosted local-model owner"
+        } else {
+            "Daimon local-model is not configured"
         })
     });
     let permission = CommandSpec::available(
@@ -2815,6 +2846,7 @@ fn workbench_commands(
                         | "agents.session.prompt.v1"
                         | "agents.session.permission.v1"
                         | "agents.session.reattach.v1"
+                        | "models.provider.qualify.v1"
                         | "ledger.acknowledge.v1"
                         | "ledger.events.disclose.v1"
                         | "ledger.compact.v1"
@@ -4259,6 +4291,325 @@ struct ProviderInspection {
     started: Instant,
 }
 
+#[derive(Clone)]
+struct ProviderQualificationPlan {
+    owner: String,
+    document_digest: String,
+    provider: ProviderCatalogEntryProjection,
+}
+
+enum ProviderQualificationWorkerResult {
+    Planned(ProviderQualificationPlan),
+    Qualified(ProviderQualificationProjection),
+}
+
+struct ProviderQualificationWorker {
+    updates: Receiver<Result<ProviderQualificationWorkerResult, String>>,
+    started: Instant,
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ProviderQualificationPhase {
+    Planning,
+    Reviewing,
+    Qualifying,
+    Complete,
+}
+
+struct ProviderQualificationWorkflow {
+    phase: ProviderQualificationPhase,
+    plan: Option<ProviderQualificationPlan>,
+    receipt: Option<ProviderQualificationProjection>,
+    armed: bool,
+    notice: String,
+    worker: Option<ProviderQualificationWorker>,
+}
+
+impl ProviderQualificationWorkflow {
+    fn new(profile: Option<WorkspaceProfile>) -> Self {
+        let mut workflow = Self {
+            phase: ProviderQualificationPhase::Planning,
+            plan: None,
+            receipt: None,
+            armed: false,
+            notice: "PLANNING · Asking Daimon for the exact redacted local-model profile; no provider request has occurred."
+                .into(),
+            worker: None,
+        };
+        workflow.begin_plan(profile);
+        workflow
+    }
+
+    fn begin_plan(&mut self, profile: Option<WorkspaceProfile>) {
+        let Some(host) = profile
+            .and_then(|profile| profile.daimon)
+            .filter(|daimon| daimon.model_socket.is_some())
+            .and_then(|daimon| daimon.host)
+        else {
+            self.phase = ProviderQualificationPhase::Complete;
+            self.notice = "REFUSED · No hosted Daimon local-model owner is selected · Next: configure and preflight one local-model owner, restart once, then retry."
+                .into();
+            return;
+        };
+        let (sender, updates) = sync_channel(1);
+        std::thread::spawn(move || {
+            let result = (|| {
+                let catalog = provider_catalog(&host.executable, &host.config)?;
+                if catalog.owner != "daimon-local-model" || catalog.providers.len() != 1 {
+                    return Err(
+                        "selected owner does not publish one local-model qualification target"
+                            .into(),
+                    );
+                }
+                let provider = catalog.providers[0].clone();
+                if provider.model.is_none()
+                    || provider.wire.as_deref() != Some("openai_chat_completions")
+                {
+                    return Err("selected owner returned an unsupported model profile".into());
+                }
+                Ok(ProviderQualificationWorkerResult::Planned(
+                    ProviderQualificationPlan {
+                        owner: catalog.owner,
+                        document_digest: catalog.document_digest,
+                        provider,
+                    },
+                ))
+            })();
+            let _ = sender.send(result);
+        });
+        self.phase = ProviderQualificationPhase::Planning;
+        self.worker = Some(ProviderQualificationWorker {
+            updates,
+            started: Instant::now(),
+        });
+    }
+
+    fn key(&mut self, key: KeyEvent, profile: Option<WorkspaceProfile>) {
+        match self.phase {
+            ProviderQualificationPhase::Reviewing => {
+                if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) {
+                    self.armed = true;
+                    self.notice = "ARMED · Enter sends exactly one bounded completion-conformance request through the selected Daimon owner; transport uncertainty will not be retried."
+                        .into();
+                } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) && self.armed {
+                    self.begin_qualification(profile);
+                } else if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) {
+                    self.plan = None;
+                    self.receipt = None;
+                    self.armed = false;
+                    self.notice =
+                        "PLANNING · Revalidating the owner document before qualification.".into();
+                    self.begin_plan(profile);
+                }
+            }
+            ProviderQualificationPhase::Complete => {
+                if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) {
+                    self.plan = None;
+                    self.receipt = None;
+                    self.armed = false;
+                    self.notice = "PLANNING · Revalidating the owner document; an earlier operation identity will never be redispatched."
+                        .into();
+                    self.begin_plan(profile);
+                }
+            }
+            ProviderQualificationPhase::Planning | ProviderQualificationPhase::Qualifying => {}
+        }
+    }
+
+    fn begin_qualification(&mut self, profile: Option<WorkspaceProfile>) {
+        let Some(host) = profile
+            .and_then(|profile| profile.daimon)
+            .filter(|daimon| daimon.model_socket.is_some())
+            .and_then(|daimon| daimon.host)
+        else {
+            self.notice = "REFUSED · The reviewed local-model owner is no longer selected; no provider request was attempted."
+                .into();
+            self.armed = false;
+            return;
+        };
+        let Some(plan) = self.plan.clone() else {
+            self.notice = "REFUSED · The reviewed owner plan is unavailable · Next: press r to revalidate before qualifying."
+                .into();
+            self.armed = false;
+            return;
+        };
+        let operation_id = match fresh_identity() {
+            Ok(bytes) => bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+            Err(reason) => {
+                self.notice = format!("REFUSED · {reason}");
+                self.armed = false;
+                return;
+            }
+        };
+        let request = serde_json::json!({
+            "version": 1,
+            "operation_id": operation_id,
+            "expected_document_digest": plan.document_digest,
+        });
+        let request = match serde_json::to_vec(&request) {
+            Ok(request) => request,
+            Err(_) => {
+                self.notice =
+                    "REFUSED · Qualification request encoding failed before owner contact.".into();
+                self.armed = false;
+                return;
+            }
+        };
+        let (sender, updates) = sync_channel(1);
+        std::thread::spawn(move || {
+            let result = (|| {
+                let receipt = qualify_provider(&host.executable, &host.config, &request)?;
+                validate_provider_qualification(&receipt, Some(&plan.provider))?;
+                if receipt.operation_id != operation_id
+                    || receipt.document_digest != plan.document_digest
+                {
+                    return Err(
+                        "owner qualification receipt does not bind the reviewed plan".into(),
+                    );
+                }
+                Ok(ProviderQualificationWorkerResult::Qualified(receipt))
+            })();
+            let _ = sender.send(result);
+        });
+        self.phase = ProviderQualificationPhase::Qualifying;
+        self.armed = false;
+        self.notice = "QUALIFYING · Daimon retained the operation marker before one non-retried provider request; the interface remains responsive."
+            .into();
+        self.worker = Some(ProviderQualificationWorker {
+            updates,
+            started: Instant::now(),
+        });
+    }
+
+    fn settle(&mut self) -> Option<(ActivityLevel, Duration)> {
+        let worker = self.worker.as_ref()?;
+        let result = match worker.updates.try_recv() {
+            Ok(result) => result,
+            Err(TryRecvError::Empty) => return None,
+            Err(TryRecvError::Disconnected) => {
+                Err("qualification worker ended without an owner result".into())
+            }
+        };
+        let elapsed = worker.started.elapsed();
+        self.worker = None;
+        match result {
+            Ok(ProviderQualificationWorkerResult::Planned(plan)) => {
+                let retained = plan.provider.qualification.clone();
+                self.plan = Some(plan);
+                self.receipt = retained;
+                self.phase = ProviderQualificationPhase::Reviewing;
+                self.notice = "READY · Review the exact redacted provider and bounded completion-only check; press c to arm."
+                    .into();
+                Some((ActivityLevel::Success, elapsed))
+            }
+            Ok(ProviderQualificationWorkerResult::Qualified(receipt)) => {
+                let level = if receipt.disposition == "qualified_completion" {
+                    ActivityLevel::Success
+                } else {
+                    ActivityLevel::Warning
+                };
+                self.notice = match receipt.disposition.as_str() {
+                    "qualified_completion" => "QUALIFIED · Daimon retained attributed completion, usage and evidence · Tool continuation remains not exercised · Next: inspect the receipt or press r for a fresh reviewed operation.",
+                    "outcome_unknown" => "OUTCOME UNKNOWN · Daimon will not retry this operation identity · Next: inspect the retained receipt and provider before choosing a fresh qualification.",
+                    _ => "NONCONFORMANT · Daimon retained the failed completion check · Next: inspect deviations, correct the provider/profile, then press r for a fresh reviewed operation.",
+                }
+                .into();
+                self.receipt = Some(receipt);
+                self.phase = ProviderQualificationPhase::Complete;
+                Some((level, elapsed))
+            }
+            Err(reason) => {
+                self.notice = format!(
+                    "REFUSED · {reason} · Next: inspect the selected owner/profile and retry only after correction"
+                );
+                self.phase = ProviderQualificationPhase::Complete;
+                Some((ActivityLevel::Warning, elapsed))
+            }
+        }
+    }
+
+    fn lines(&self) -> Vec<String> {
+        let mut lines = vec![
+            "owner               Daimon local-model".into(),
+            "effect              one bounded, non-retried completion-conformance request".into(),
+            "retention           owner marker before dispatch; replay never redispatches".into(),
+            "human gate          review → arm → confirm".into(),
+            String::new(),
+        ];
+        if let Some(plan) = &self.plan {
+            let provider = &plan.provider;
+            lines.extend([
+                format!("owner identity      {}", plan.owner),
+                format!("document digest     {}", plan.document_digest),
+                format!("provider             {}", provider.provider_id),
+                format!("profile              {}", provider.harness_profile_id),
+                format!(
+                    "model                {}",
+                    provider.model.as_deref().unwrap_or("not published")
+                ),
+                format!(
+                    "wire                 {} · {}:{}",
+                    provider.wire.as_deref().unwrap_or("not published"),
+                    provider.endpoint_scope.as_deref().unwrap_or("not published"),
+                    provider.endpoint_port.unwrap_or_default()
+                ),
+                format!(
+                    "policy               structured output {} · structured tools {} · temperature milli {}",
+                    provider.structured_output.unwrap_or(false),
+                    provider.structured_tools.unwrap_or(false),
+                    provider.sampling_temperature_milli.unwrap_or_default()
+                ),
+                format!("profile digest       {}", provider.profile_document_digest),
+            ]);
+        }
+        if let Some(receipt) = &self.receipt {
+            lines.extend([
+                String::new(),
+                "Latest owner-retained qualification".into(),
+                format!("operation            {}", receipt.operation_id),
+                format!("disposition          {}", receipt.disposition),
+                format!("host-observed unix ms {}", receipt.host_observed_at_unix_ms),
+                format!(
+                    "usage                 {} input · {} output tokens · {} output bytes",
+                    receipt.input_tokens, receipt.output_tokens, receipt.output_bytes
+                ),
+                format!(
+                    "evidence              {}",
+                    receipt
+                        .evidence_digest
+                        .as_deref()
+                        .unwrap_or("not available")
+                ),
+                format!("completion           {}", receipt.completion),
+                format!("tool continuation    {}", receipt.tool_continuation),
+                format!("replayed             {}", receipt.replayed),
+            ]);
+            for deviation in &receipt.known_deviations {
+                lines.push(format!("deviation            {deviation}"));
+            }
+        }
+        lines.extend([
+            String::new(),
+            "Boundary: completion qualification is not task invocation, delegation, tool-continuation conformance, workflow completion, or authority.".into(),
+            self.notice.clone(),
+            match self.phase {
+                ProviderQualificationPhase::Reviewing => {
+                    "c arm · Enter confirm when armed · r revalidate · Esc close"
+                }
+                ProviderQualificationPhase::Complete => "r start a fresh reviewed operation · Esc close",
+                ProviderQualificationPhase::Planning | ProviderQualificationPhase::Qualifying => {
+                    "Owner operation in progress · Esc hides but does not cancel"
+                }
+            }
+            .into(),
+        ]);
+        lines
+    }
+}
+
 struct WorkItemBindingInspection {
     result: Receiver<Result<WorkItemBindingEvidence, String>>,
     started: Instant,
@@ -5027,6 +5378,29 @@ fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
                     "not configured"
                 }
             ));
+            if let Some(qualification) = provider.qualification {
+                lines.push(format!(
+                    "   qualification       {} · completion {} · tool continuation {}",
+                    qualification.disposition,
+                    qualification.completion,
+                    qualification.tool_continuation
+                ));
+                lines.push(format!(
+                    "   qualification use   {} input · {} output tokens · {} output bytes · observed {}",
+                    qualification.input_tokens,
+                    qualification.output_tokens,
+                    qualification.output_bytes,
+                    qualification.host_observed_at_unix_ms
+                ));
+                if let Some(evidence) = qualification.evidence_digest {
+                    lines.push(format!("   qualification proof {evidence}"));
+                }
+                for deviation in qualification.known_deviations {
+                    lines.push(format!("   known deviation     {deviation}"));
+                }
+            } else {
+                lines.push("   qualification       not yet run · next: M-x Qualify selected local model provider".into());
+            }
         }
     }
     lines.push(String::new());
@@ -5282,7 +5656,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         moira_participation_control.is_some(),
         moira_agent_worker_config.is_some(),
         moira_control_socket.is_some(),
-        daimon.is_some() || daimon_agent.is_some(),
+        daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
+        daimon_model.is_some(),
         daimon_agent.is_some() && daimon_agent_control_socket.is_some(),
         daimon_agent.is_some()
             && daimon_agent_control_socket.is_some()
@@ -5339,6 +5714,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut provider_inspection: Option<ProviderInspection> = None;
     let mut work_item_binding_inspection: Option<WorkItemBindingInspection> = None;
     let mut provider_edit: Option<ProviderEditWorkflow> = None;
+    let mut provider_qualification: Option<ProviderQualificationWorkflow> = None;
     let acp_configuration_lines = acp_session_configuration(current_profile.as_ref());
     let agora_configuration_lines = agora_room_configuration(current_profile.as_ref());
     let mut reconfiguration = current_profile.clone().map(ReconfigurationWorkflow::new);
@@ -5366,6 +5742,17 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let result = ratatui::run(|terminal| -> Result<(), Box<dyn std::error::Error>> {
         let _input_capture = InputCapture::enable()?;
         loop {
+            if let Some((level, elapsed)) = provider_qualification
+                .as_mut()
+                .and_then(ProviderQualificationWorkflow::settle)
+            {
+                let workflow = provider_qualification
+                    .as_ref()
+                    .expect("settled provider qualification exists");
+                notice = workflow.notice.clone();
+                instrumentation.record("models.provider.qualify.result", "daimon", level, elapsed);
+                activity.push(level, "daimon", notice.clone());
+            }
             if let Some((level, elapsed)) = provider_edit
                 .as_mut()
                 .and_then(ProviderEditWorkflow::settle)
@@ -6527,6 +6914,15 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             );
                         }
                     }
+                    WorkbenchOverlay::ProviderQualification => {
+                        if let Some(workflow) = &provider_qualification {
+                            draw_inspector(
+                                frame,
+                                "Qualify local model provider",
+                                &workflow.lines(),
+                            );
+                        }
+                    }
                     WorkbenchOverlay::AcpSessions => {
                         draw_inspector(
                             frame,
@@ -6656,6 +7052,26 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         pending_ui_feedback =
                             ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
                         overlay = WorkbenchOverlay::ProviderEdit;
+                        continue;
+                    }
+                    if action == "models.provider.qualify.v1" {
+                        if provider_qualification.as_ref().is_some_and(|workflow| {
+                            workflow.worker.is_some()
+                                || workflow.phase == ProviderQualificationPhase::Qualifying
+                        }) {
+                            notice = "QUEUED · A provider qualification is already running · Next: wait for its exact owner receipt; it will not be cancelled or duplicated"
+                                .into();
+                            overlay = WorkbenchOverlay::ProviderQualification;
+                            continue;
+                        }
+                        provider_qualification =
+                            Some(ProviderQualificationWorkflow::new(current_profile.clone()));
+                        notice = "OPENED · Local-model qualification review · Next: wait for the owner plan, inspect exact redacted facts, then press c to arm"
+                            .into();
+                        activity.push(ActivityLevel::Info, "daimon", notice.clone());
+                        pending_ui_feedback =
+                            ui_operation.map(|(operation, _)| (operation, ActivityLevel::Info));
+                        overlay = WorkbenchOverlay::ProviderQualification;
                         continue;
                     }
                     let configuration_overlay = match action {
@@ -7112,6 +7528,16 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         overlay = WorkbenchOverlay::None;
                     }
                 }
+                Event::Key(key)
+                    if key_behavior == Some(KeyBehavior::ProviderQualificationInput) =>
+                {
+                    if let Some(workflow) = &mut provider_qualification {
+                        workflow.key(key, current_profile.clone());
+                        notice = workflow.notice.clone();
+                    } else {
+                        overlay = WorkbenchOverlay::None;
+                    }
+                }
                 Event::Key(key) if key_behavior == Some(KeyBehavior::ReconfigurationInput) => {
                     if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
                         overlay = WorkbenchOverlay::None;
@@ -7239,6 +7665,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         let provider_edit_pending = provider_edit
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some());
+                        let provider_qualification_pending = provider_qualification
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         let vellum_unresolved =
                             vellum_durable_save.as_ref().is_some_and(|control| {
                                 control.request_pending() || control.recovery_required()
@@ -7248,6 +7677,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         if chronos_unresolved
                             || provider_inspection_pending
                             || provider_edit_pending
+                            || provider_qualification_pending
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -8692,8 +9122,12 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         let provider_edit_unresolved = provider_edit
                             .as_ref()
                             .is_some_and(|workflow| workflow.worker.is_some());
+                        let provider_qualification_unresolved = provider_qualification
+                            .as_ref()
+                            .is_some_and(|workflow| workflow.worker.is_some());
                         if chronos_unresolved
                             || provider_edit_unresolved
+                            || provider_qualification_unresolved
                             || vellum_unresolved
                             || agora_unresolved
                             || moira_unresolved
@@ -8919,6 +9353,7 @@ mod tests {
             WorkbenchOverlay::Configuration,
             WorkbenchOverlay::LocalProviders,
             WorkbenchOverlay::ProviderEdit,
+            WorkbenchOverlay::ProviderQualification,
             WorkbenchOverlay::AcpSessions,
             WorkbenchOverlay::AgoraRooms,
             WorkbenchOverlay::Reconfiguration,
@@ -8968,6 +9403,15 @@ mod tests {
                 false,
             ),
             KeyBehavior::ProviderEditInput
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                plain('x'),
+                WorkbenchOverlay::ProviderQualification,
+                Surface::Configuration,
+                false,
+            ),
+            KeyBehavior::ProviderQualificationInput
         );
         assert_eq!(
             BehaviorFacade::key(ctrl('p'), WorkbenchOverlay::None, Surface::Vellum, true),
@@ -9080,6 +9524,7 @@ mod tests {
                 structured_tools: Some(true),
                 sampling_temperature_milli: Some(0),
                 bearer_token_configured: Some(false),
+                qualification: None,
             }],
             task_bindings: vec![TaskBindingCatalogProjection {
                 external_task_key: "55".repeat(16),
@@ -9123,6 +9568,84 @@ mod tests {
         assert!(lines.contains("workspace 1/document 2 @ revision 3"));
         assert!(!lines.contains("host_header"));
         assert!(!lines.contains("OPENAI_API_KEY"));
+    }
+
+    #[test]
+    fn provider_qualification_receipt_is_exact_redacted_and_partial() {
+        let qualification = ProviderQualificationProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            operation_id: "11".repeat(16),
+            document_digest: format!("sha256:{}", "22".repeat(32)),
+            profile_document_digest: format!("sha256:{}", "33".repeat(32)),
+            provider_id: "44".repeat(16),
+            harness_profile_id: "55".repeat(16),
+            model: "qwen/qwen3-coder-next".into(),
+            host_observed_at_unix_ms: 1,
+            disposition: "qualified_completion".into(),
+            completion: true,
+            tool_continuation: "not_exercised".into(),
+            input_tokens: 17,
+            output_tokens: 4,
+            output_bytes: 30,
+            evidence_digest: Some(format!("sha256:{}", "66".repeat(32))),
+            known_deviations: vec!["tool_continuation_not_exercised".into()],
+            replayed: false,
+        };
+        let provider = ProviderCatalogEntryProjection {
+            provider_id: qualification.provider_id.clone(),
+            harness_profile_id: qualification.harness_profile_id.clone(),
+            profile_document_digest: qualification.profile_document_digest.clone(),
+            policy_digest: None,
+            transport: None,
+            isolation: None,
+            executable_available: None,
+            argument_count: None,
+            inherited_environment_name_count: None,
+            authentication_method_configured: None,
+            wire: Some("openai_chat_completions".into()),
+            model: Some(qualification.model.clone()),
+            endpoint_scope: Some("loopback".into()),
+            endpoint_port: Some(1234),
+            structured_output: Some(false),
+            structured_tools: Some(true),
+            sampling_temperature_milli: Some(0),
+            bearer_token_configured: Some(false),
+            qualification: Some(qualification.clone()),
+        };
+        validate_provider_qualification(&qualification, Some(&provider)).unwrap();
+        let mut catalog = ProviderCatalogProjection {
+            version: 1,
+            owner: "daimon-local-model".into(),
+            document_digest: qualification.document_digest.clone(),
+            providers: vec![provider.clone()],
+            task_bindings: vec![TaskBindingCatalogProjection {
+                external_task_key: "77".repeat(16),
+                chronos_task_id: "qualification-task".into(),
+            }],
+            contexts: Vec::new(),
+        };
+        validate_provider_catalog(&catalog).unwrap();
+        catalog.document_digest = format!("sha256:{}", "88".repeat(32));
+        assert!(validate_provider_catalog(&catalog).is_err());
+        let workflow = ProviderQualificationWorkflow {
+            phase: ProviderQualificationPhase::Complete,
+            plan: Some(ProviderQualificationPlan {
+                owner: "daimon-local-model".into(),
+                document_digest: qualification.document_digest.clone(),
+                provider,
+            }),
+            receipt: Some(qualification),
+            armed: false,
+            notice: "QUALIFIED".into(),
+            worker: None,
+        };
+        let lines = workflow.lines().join("\n");
+        assert!(lines.contains("qualified_completion"));
+        assert!(lines.contains("17 input · 4 output tokens · 30 output bytes"));
+        assert!(lines.contains("tool continuation    not_exercised"));
+        assert!(lines.contains("not task invocation"));
+        assert!(!lines.contains("bounded qualification complete"));
     }
 
     #[test]
@@ -9186,6 +9709,7 @@ mod tests {
                 structured_tools: None,
                 sampling_temperature_milli: None,
                 bearer_token_configured: None,
+                qualification: None,
             },
             changed_fields: vec!["policy_digest".into()],
             restart_required: true,
@@ -9529,7 +10053,7 @@ mod tests {
             .expect("valid shell");
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true, true, true, true, true, true, true, true, true, true,
+            true, true, true, true, true, true, true, true, true, true, true,
         );
         for expected in [
             "navigate.overview",
@@ -9576,6 +10100,7 @@ mod tests {
             "moira.reconciliation.admit-succeeded",
             "moira.reconciliation.retry",
             "daimon.session.prompt",
+            "models.provider.qualify.v1",
             "daimon.session.permission",
             "daimon.session.reattach",
             "daimon.session.advance",
@@ -9607,6 +10132,7 @@ mod tests {
                     | "agents.session.prompt.v1"
                     | "agents.session.permission.v1"
                     | "agents.session.reattach.v1"
+                    | "models.provider.qualify.v1"
                     | "ledger.acknowledge.v1"
                     | "ledger.events.disclose.v1"
                     | "ledger.compact.v1"
@@ -9618,6 +10144,7 @@ mod tests {
                     "agents.session.prompt.v1" => "daimon.session.prompt",
                     "agents.session.permission.v1" => "daimon.session.permission",
                     "agents.session.reattach.v1" => "daimon.session.reattach",
+                    "models.provider.qualify.v1" => "models.provider.qualify.v1",
                     _ => route.capability,
                 };
                 assert!(commands.iter().any(|command| {
@@ -9645,6 +10172,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false,
+            false,
         );
         let save = commands
             .iter()

@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 
 const MAX_PROVIDER_CATALOG_BYTES: u64 = 256 * 1024;
 const PROVIDER_CATALOG_TIMEOUT: Duration = Duration::from_secs(3);
+const PROVIDER_QUALIFICATION_TIMEOUT: Duration = Duration::from_secs(300);
 static NEXT_PROVIDER_CATALOG: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -85,6 +86,32 @@ pub(crate) struct ProviderCatalogEntryProjection {
     pub(crate) sampling_temperature_milli: Option<u16>,
     #[serde(default)]
     pub(crate) bearer_token_configured: Option<bool>,
+    #[serde(default)]
+    pub(crate) qualification: Option<ProviderQualificationProjection>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub(crate) struct ProviderQualificationProjection {
+    pub(crate) version: u8,
+    pub(crate) owner: String,
+    pub(crate) operation_id: String,
+    pub(crate) document_digest: String,
+    pub(crate) profile_document_digest: String,
+    pub(crate) provider_id: String,
+    pub(crate) harness_profile_id: String,
+    pub(crate) model: String,
+    pub(crate) host_observed_at_unix_ms: u64,
+    pub(crate) disposition: String,
+    pub(crate) completion: bool,
+    pub(crate) tool_continuation: String,
+    pub(crate) input_tokens: u64,
+    pub(crate) output_tokens: u64,
+    pub(crate) output_bytes: usize,
+    #[serde(default)]
+    pub(crate) evidence_digest: Option<String>,
+    #[serde(default)]
+    pub(crate) known_deviations: Vec<String>,
+    pub(crate) replayed: bool,
 }
 
 pub(crate) fn provider_catalog(
@@ -98,11 +125,45 @@ pub(crate) fn provider_catalog(
     Ok(projection)
 }
 
+pub(crate) fn qualify_provider(
+    executable: &Path,
+    config: &Path,
+    request: &[u8],
+) -> Result<ProviderQualificationProjection, String> {
+    let bytes = invoke_provider_owner_with_timeout(
+        executable,
+        config,
+        "--qualify-provider",
+        Some(request),
+        PROVIDER_QUALIFICATION_TIMEOUT,
+    )?;
+    let projection: ProviderQualificationProjection = serde_json::from_slice(&bytes)
+        .map_err(|_| "owner returned an invalid provider qualification receipt".to_owned())?;
+    validate_provider_qualification(&projection, None)?;
+    Ok(projection)
+}
+
 pub(crate) fn invoke_provider_owner(
     executable: &Path,
     config: &Path,
     command: &str,
     request: Option<&[u8]>,
+) -> Result<Vec<u8>, String> {
+    invoke_provider_owner_with_timeout(
+        executable,
+        config,
+        command,
+        request,
+        PROVIDER_CATALOG_TIMEOUT,
+    )
+}
+
+fn invoke_provider_owner_with_timeout(
+    executable: &Path,
+    config: &Path,
+    command: &str,
+    request: Option<&[u8]>,
+    timeout: Duration,
 ) -> Result<Vec<u8>, String> {
     let root = std::env::temp_dir().join(format!(
         "pantheon-provider-catalog-{}-{}",
@@ -140,7 +201,7 @@ pub(crate) fn invoke_provider_owner(
                 .write_all(request)
                 .map_err(|_| "owner request input could not be written".to_owned())?;
         }
-        let deadline = Instant::now() + PROVIDER_CATALOG_TIMEOUT;
+        let deadline = Instant::now() + timeout;
         let status = loop {
             match child.try_wait() {
                 Ok(Some(status)) => break status,
@@ -201,6 +262,57 @@ pub(crate) fn valid_provider_catalog_entry(provider: &ProviderCatalogEntryProjec
             .endpoint_scope
             .as_deref()
             .is_none_or(|value| valid_projection_text(value, 64))
+        && provider.qualification.as_ref().is_none_or(|qualification| {
+            validate_provider_qualification(qualification, Some(provider)).is_ok()
+        })
+}
+
+pub(crate) fn validate_provider_qualification(
+    qualification: &ProviderQualificationProjection,
+    provider: Option<&ProviderCatalogEntryProjection>,
+) -> Result<(), String> {
+    let disposition_valid = matches!(
+        qualification.disposition.as_str(),
+        "qualified_completion" | "nonconformant" | "outcome_unknown" | "running"
+    );
+    if qualification.version != 1
+        || qualification.owner != "daimon-local-model"
+        || !valid_id(&qualification.operation_id)
+        || !valid_digest(&qualification.document_digest)
+        || !valid_digest(&qualification.profile_document_digest)
+        || !valid_id(&qualification.provider_id)
+        || !valid_id(&qualification.harness_profile_id)
+        || !valid_projection_text(&qualification.model, 1_024)
+        || qualification.host_observed_at_unix_ms == 0
+        || !disposition_valid
+        || qualification.tool_continuation != "not_exercised"
+        || qualification
+            .evidence_digest
+            .as_deref()
+            .is_some_and(|value| !valid_digest(value))
+        || qualification.known_deviations.len() > 16
+        || qualification
+            .known_deviations
+            .iter()
+            .any(|value| !valid_projection_text(value, 256))
+        || (qualification.completion != (qualification.disposition == "qualified_completion"))
+        || (qualification.completion
+            && (qualification.input_tokens == 0
+                || qualification.output_tokens == 0
+                || qualification.output_bytes == 0
+                || qualification.evidence_digest.is_none()))
+    {
+        return Err("owner returned malformed provider qualification facts".into());
+    }
+    if let Some(provider) = provider
+        && (qualification.provider_id != provider.provider_id
+            || qualification.harness_profile_id != provider.harness_profile_id
+            || qualification.profile_document_digest != provider.profile_document_digest
+            || provider.model.as_deref() != Some(qualification.model.as_str()))
+    {
+        return Err("owner qualification does not bind the projected provider".into());
+    }
+    Ok(())
 }
 
 pub(crate) fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> Result<(), String> {
@@ -218,11 +330,15 @@ pub(crate) fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> 
     {
         return Err("owner returned unsupported provider catalogue facts".into());
     }
-    if catalog
-        .providers
-        .iter()
-        .any(|provider| !valid_provider_catalog_entry(provider))
-    {
+    if catalog.providers.iter().any(|provider| {
+        !valid_provider_catalog_entry(provider)
+            || provider
+                .qualification
+                .as_ref()
+                .is_some_and(|qualification| {
+                    qualification.document_digest != catalog.document_digest
+                })
+    }) {
         return Err("owner returned malformed provider catalogue facts".into());
     }
     let mut task_keys = std::collections::BTreeSet::new();

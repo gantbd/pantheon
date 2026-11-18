@@ -165,7 +165,7 @@
         "agents.session-set.inspect.v1": "qualified"
       },
       "client": { "contract": "daimon-client", "connection": "daimon-client", "ownership": "peer" },
-      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "daimon-tui/tests/live/agent_cancel.sh", "daimon-tui/tests/live/agent_close.sh", "daimon-tui/tests/live/agent_reattach.sh", "daimon-tui/tests/live/agent_prompt.sh", "daimon-tui/tests/live/agent_permission.sh", "pantheon/tests/live/daimon_attach.sh", "pantheon/tests/live/daimon_hosted.sh", "pantheon/tests/live/daimon_batch.sh", "pantheon/tests/live/daimon_prompt_batch.sh", "pantheon/tests/live/daimon_permission_batch.sh", "pantheon/tests/live/daimon_reattach_batch.sh", "pantheon/tests/live/daimon_recovery_batch.sh", "pantheon/tests/live/daimon_advance.sh", "pantheon/tests/live/daimon_cancel.sh", "pantheon/tests/live/daimon_close.sh", "pantheon/tests/live/daimon_reattach.sh", "pantheon/tests/live/daimon_prompt.sh", "pantheon/tests/live/daimon_permission.sh"],
+      "evidence": ["daimon-tui/tests/live/real_daemon.sh", "daimon-tui/tests/live/agent_advance.sh", "daimon-tui/tests/live/agent_cancel.sh", "daimon-tui/tests/live/agent_close.sh", "daimon-tui/tests/live/agent_reattach.sh", "daimon-tui/tests/live/agent_prompt.sh", "daimon-tui/tests/live/agent_permission.sh", "pantheon/tests/live/daimon_attach.sh", "pantheon/tests/live/daimon_hosted.sh", "pantheon/tests/live/daimon_batch.sh", "pantheon/tests/live/daimon_prompt_batch.sh", "pantheon/tests/live/daimon_permission_batch.sh", "pantheon/tests/live/daimon_reattach_batch.sh", "pantheon/tests/live/daimon_recovery_batch.sh", "pantheon/tests/live/daimon_advance.sh", "pantheon/tests/live/daimon_cancel.sh", "pantheon/tests/live/daimon_close.sh", "pantheon/tests/live/daimon_reattach.sh", "pantheon/tests/live/daimon_prompt.sh", "pantheon/tests/live/daimon_permission.sh", "pantheon/tests/live/daimon_model_hosted.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
@@ -178,6 +178,7 @@
           { "id": "agents.session-set.prompt.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
           { "id": "agents.session-set.permission.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
           { "id": "agents.session-set.reattach.v1", "plane": "operator", "state": "qualified", "when": "agent-selected+execution-policy" },
+          { "id": "models.provider.qualify.v1", "plane": "control", "state": "qualified", "when": "model-endpoint-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],
@@ -199,7 +200,15 @@
         "agents.session-set.control.v1": "qualified",
         "agents.session-set.prompt.v1": "qualified",
         "agents.session-set.permission.v1": "qualified",
-        "agents.session-set.reattach.v1": "qualified"
+        "agents.session-set.reattach.v1": "qualified",
+        "models.provider.qualify.v1": "qualified"
+      },
+      "interactiveControlComposition": {
+        "models.provider.qualify.v1": {
+          "state": "composed",
+          "when": "one exact Daimon-owned local-model provider is selected",
+          "evidence": ["daimon/apps/daimon-local-model/src/main.rs", "pantheon/cli/src/terminal.rs", "pantheon/tests/live/daimon_model_hosted.sh"]
+        }
       }
     },
     "tellus": {

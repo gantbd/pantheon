@@ -143,7 +143,10 @@ pub fn daimon(
         }
     }
     if mode == Mode::Interactive && model_endpoint {
-        capabilities.push(capability("models.endpoint.attach.v1", Plane::Operator));
+        capabilities.extend([
+            capability("models.endpoint.attach.v1", Plane::Operator),
+            capability("models.provider.qualify.v1", Plane::Control),
+        ]);
     }
     capabilities.push(topology(hosted));
     capabilities
@@ -310,6 +313,7 @@ pub const GUARDED_CONTROL_CAPABILITIES: &[(&str, &[&str])] = &[
             "agents.session.reattach.v1",
             "agents.session.prompt.v1",
             "agents.session.permission.v1",
+            "models.provider.qualify.v1",
         ],
     ),
     (
@@ -413,6 +417,11 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
         peer: "daimon",
         capability: "agents.session.permission.v1",
         command: "daimon-agent-permission",
+    },
+    GuardedControlRoute {
+        peer: "daimon",
+        capability: "models.provider.qualify.v1",
+        command: "workbench",
     },
     GuardedControlRoute {
         peer: "hermes",
