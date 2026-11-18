@@ -1207,6 +1207,17 @@ mature stakeholder ensemble.
   review/arm/confirm, four distinct dispositions, Aegis authorization, exact
   success/refusal evidence and lost-reply recovery. Do not expose the control
   until the complete current decision packet resolves and verifies.
+
+Qualified 2026-11-18 material-reader slice: `moira-vellum` now reuses its
+existing opaque external-document route to select one exact Vellum document,
+read the public snapshot, enforce a bounded packet size and verify both revision
+and SHA-256 before returning human-readable text. Unknown routes, invalid route
+scope, stale revision, changed bytes, refusal and transport failure remain
+distinct; the reader carries no edit or decision authority. Moira commit
+`874e9b4` passed the complete workspace suite. This qualifies the resolution
+behavior but does not complete the checklist above: `HumanGateRequestV1` still
+does not publish the opaque packet reference, and `HumanGateResponseV1` still
+lacks a resolvable rationale artifact reference.
 - [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and

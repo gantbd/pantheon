@@ -2223,7 +2223,12 @@ rather than inviting a human to approve hashes. Before response control is
 enabled, a selected artifact adapter must resolve and verify the complete
 decision packet and retain the attributable rationale; Vellum may present and
 edit that material, while the selected durable artifact owner retains its
-revision/evidence contract.
+revision/evidence contract. The first reader boundary is now qualified in
+`moira-vellum`: an opaque external-document route selects one exact Vellum
+document and refuses unless its public snapshot matches the expected revision,
+SHA-256 and size bound. The gate remains blocked because the current Moira
+request/response schemas do not yet carry the packet and rationale references
+needed to invoke that reader.
 
 ### J5. Produce and review a grounded code/document change
 
