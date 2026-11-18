@@ -45,10 +45,22 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   the fact. The next owner slice must preserve grant, lease, revision and
   evidence semantics without turning worker authority into a bearer protocol.
 - Daimon task invocation retains task, execution, provider, context, usage,
-  disposition and output-digest evidence, but Pantheon cannot yet present the
-  actual contribution for accountable review. Agora delivery and Chronos
-  comment/status linkage remain explicit owner-contract gaps; raw provider HTTP
-  is not an acceptable hidden collaboration path.
+  disposition and output-digest evidence and returns bounded safe text to the
+  authenticated caller. Pantheon already presents a 4,096-character MODEL
+  RESPONSE preview in the guarded workflow. The real gap is durable delivery
+  into Agora plus Chronos comment/status proposals; raw provider HTTP is not an
+  acceptable hidden collaboration path.
+- The explicit LM Studio gate now qualifies Qwen3 Coder Next, creates the exact
+  Chronos task through Pantheon, reviews and confirms one Daimon invocation,
+  presents the response, verifies content-free headless parity and retains exact
+  usage/digest evidence. The reviewed run used 132 input and 1,504 output tokens
+  for 6,642 safe-text bytes with zero effect proposals.
+- The Qwen review correctly preserved non-bearer authority and named-human
+  review, but invented a Solidity EvidenceAdmitter, on-chain mappings,
+  addresses, IPFS, oracles and task/grant/lease APIs absent from the evidence
+  packet. The accountable integrator rejected the proposal. Categorization:
+  model/training-inertia overreach amplified by thin domain grounding; the
+  Pantheon/Daimon harness delivered and attributed the requested work correctly.
 - The same run exposed a presentation-state leak: invoking Create a Chronos task
   from the Execution roster dispatched the behavior but left the roster
   topmost, making the task form invisible and input inert. Chronos-TUI now

@@ -1863,6 +1863,11 @@ fn hosted_local_model_uses_its_distinct_protocol_and_preserves_qualification_bou
         "qualified_completion",
         "tool continuation    not_exercised",
         "assert \"output\" not in qualification",
+        "models.task.invoke.v1",
+        "local-model-review",
+        "MODEL RESPONSE",
+        "assert \"output\" not in invocation",
+        "LOCAL_MODEL_REVIEW_BEGIN",
     ] {
         assert!(live.contains(required), "LM Studio gate omits {required}");
     }
