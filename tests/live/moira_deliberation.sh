@@ -128,4 +128,98 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
-echo "qualified: Pantheon composes exact Moira ensemble standing and settled human-gate evidence in headless and TUI paths"
+kill "$fixture_pid"
+wait "$fixture_pid" 2>/dev/null || true
+fixture_pid=
+
+"$fixture" "$scratch/pending.sock" "$scratch/pending.db" pending \
+  >"$scratch/pending-fixture.out" 2>"$scratch/pending-fixture.err" &
+fixture_pid=$!
+attempt=0
+while [ ! -S "$scratch/pending.sock" ]; do
+  if ! kill -0 "$fixture_pid" 2>/dev/null || [ "$attempt" -eq 400 ]; then
+    sed -n '1,160p' "$scratch/pending-fixture.err" >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+cat >"$scratch/pending-profile.json" <<EOF
+{
+  "version": 1,
+  "name": "Moira pending human gate qualification",
+  "surfaces": ["agenda", "moira"],
+  "moira": {
+    "deliberation_socket": "$scratch/pending.sock",
+    "deliberation": "01010101010101010101010101010101",
+    "requires": ["deliberation.inspect.v1"]
+  }
+}
+EOF
+
+"$workbench" headless --workspace-profile "$scratch/pending-profile.json" \
+  --operation-id moira-pending-gate-live >"$scratch/pending-headless.json"
+python3 - "$scratch/pending-headless.json" <<'PYTHON'
+import json, sys
+value = json.load(open(sys.argv[1]))
+peer = next(item for item in value["peers"] if item["peer"] == "moira-deliberation")
+assert peer["registry_revision"] == 4
+assert peer["deliberation"]["human_gate"]["status"] == "pending"
+entries = value["operator_agenda"]["entries"]
+assert len(entries) == 1
+entry = entries[0]
+assert entry["kind"] == "human_gate"
+assert entry["actionability"] == "blocked"
+assert "no resolvable decision-packet references" in entry["blocker"]
+assert "grants none" in entry["authority"]
+PYTHON
+
+python3 - "$scratch" "$workbench" <<'PYTHON'
+from pathlib import Path
+import shlex, subprocess, sys, time
+
+scratch, binary = sys.argv[1:]
+tmux_socket = str(Path(scratch) / "pending-tmux.sock")
+profile = str(Path(scratch) / "pending-profile.json")
+session = "moira-pending-gate"
+command = shlex.join([binary, "interactive", "--workspace-profile", profile]) + \
+    " 2>" + shlex.quote(str(Path(scratch) / "pending-pantheon.err"))
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", tmux_socket, "-f", "/dev/null", *args],
+        capture_output=True, text=True, check=check, timeout=5,
+    )
+
+def screen():
+    result = tmux("capture-pane", "-p", "-t", session, check=False)
+    if result.returncode:
+        raise AssertionError(Path(scratch, "pending-pantheon.err").read_text(errors="replace"))
+    return result.stdout
+
+def expect(*markers, timeout=30):
+    deadline = time.monotonic() + timeout
+    visible = ""
+    while time.monotonic() < deadline:
+        visible = screen()
+        if all(marker in visible for marker in markers):
+            return visible
+        time.sleep(0.025)
+    raise AssertionError(f"missing {markers!r}:\n{visible}\n" +
+                         Path(scratch, "pending-pantheon.err").read_text(errors="replace"))
+
+try:
+    tmux("new-session", "-d", "-x", "220", "-y", "40", "-s", session, command)
+    expect(
+        "AGENDA",
+        "Named-human deliberation gate",
+        "blocked",
+        "blocked by: Moira publishes binding digests",
+        "agenda presence grants no authority",
+    )
+finally:
+    tmux("kill-server", check=False)
+PYTHON
+
+echo "qualified: Pantheon composes settled Moira gate evidence and visibly blocks unresolved gates without resolvable decision material in headless and TUI paths"

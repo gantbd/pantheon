@@ -1196,6 +1196,17 @@ mature stakeholder ensemble.
   exchange only; it does not yet prove durable multi-turn deliberation,
   adjudication, or owner-applied priority disposition.
 - [x] Publish `HumanGateRequestV1` and exact presentation/response receipts.
+- [ ] Publish owner-resolvable, revision-bound references for the complete human
+  decision packet and response rationale. The packet must let the reviewer see
+  the exact decision, alternatives, evidence, dissent, uncertainty,
+  reversibility and deadline while retaining the existing binding digests;
+  hashing unretained text or asking a human to approve opaque digests is not
+  acceptable evidence. Prefer a selected Vellum/Hestia owner adapter over
+  importing document semantics into Moira.
+- [ ] Compose a separately selected, command-scoped human-response control with
+  review/arm/confirm, four distinct dispositions, Aegis authorization, exact
+  success/refusal evidence and lost-reply recovery. Do not expose the control
+  until the complete current decision packet resolves and verifies.
 - [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and
@@ -1213,7 +1224,11 @@ behavior facade, display settled evidence in both modes, and route only a pendin
 gate into the operator agenda. The real-daemon gate is
 `tests/live/moira_deliberation.sh`. It does not close Dendrite concern routing,
 independent member execution, finding disposition, or the still-missing
-Pantheon control for an Aegis-authorized named-human response.
+Pantheon control for an Aegis-authorized named-human response. The subsequent
+control audit also found that the request's four binding digests have no
+owner-resolvable artifact references and the response retains only a rationale
+digest. Pantheon now classifies such an agenda entry as `blocked` and names both
+missing contracts instead of presenting a misleading approval affordance.
 
 Exit evidence: J33 and acceptance cases 87–95 and 111–113.
 

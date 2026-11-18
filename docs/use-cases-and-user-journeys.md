@@ -2215,7 +2215,15 @@ recording verified authority. Pantheon's TUI and headless surfaces present the
 same settled evidence and place only a pending request on the operator agenda.
 The user still cannot submit that response through Pantheon; adding that control
 requires command-scoped Aegis authorization, owner-native confirmation and
-lost-reply recovery rather than a UI-local decision flag.
+lost-reply recovery rather than a UI-local decision flag. The current request
+binds external material by digest but does not publish an owner-resolvable
+decision-packet reference, and its response binds a rationale digest without a
+resolvable rationale artifact. Pantheon therefore marks the agenda item blocked
+rather than inviting a human to approve hashes. Before response control is
+enabled, a selected artifact adapter must resolve and verify the complete
+decision packet and retain the attributable rationale; Vellum may present and
+edit that material, while the selected durable artifact owner retains its
+revision/evidence contract.
 
 ### J5. Produce and review a grounded code/document change
 

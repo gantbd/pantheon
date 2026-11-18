@@ -2546,6 +2546,8 @@ fn moira_deliberation_gate_proves_exact_ensemble_and_human_gate_evidence_in_both
     let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
     assert!(headless.contains("moira_tui::deliberation_view_json"));
     assert!(headless.contains("Named-human deliberation gate"));
+    assert!(headless.contains("no resolvable decision-packet references"));
+    assert!(headless.contains("AgendaActionability::Blocked"));
     assert!(terminal.contains("operator_agenda_observation"));
     let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
     assert!(makefile.contains("qualify-moira-deliberation"));

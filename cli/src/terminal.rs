@@ -60,12 +60,12 @@ use crate::provider::{
 use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
 use pantheon::{
-    ActivityLevel, ActivityLog, AgendaEntry, AgendaKind, AgendaUrgency, CommandKind,
-    CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus, Instrumentation,
-    KeybindingGuide, OperationsReceiptView, OperationsView, OperatorAgendaView, PaletteOutcome,
-    PeerHealthState, PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput, SuiteHealthView,
-    Surface, decide_exit, draw_activity, draw_command_palette, draw_help, draw_inspector,
-    draw_shell_with_moira, shell_input, surface_tab_at,
+    ActivityLevel, ActivityLog, AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency,
+    CommandKind, CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus,
+    Instrumentation, KeybindingGuide, OperationsReceiptView, OperationsView, OperatorAgendaView,
+    PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews, RoutedInput, Shell, ShellInput,
+    SuiteHealthView, Surface, decide_exit, draw_activity, draw_command_palette, draw_help,
+    draw_inspector, draw_shell_with_moira, shell_input, surface_tab_at,
 };
 
 struct InputCapture {
@@ -1063,6 +1063,8 @@ fn operator_agenda_view(
                     resource_identity: format!("{}#{}", task.task, task.incarnation),
                     kind: AgendaKind::OutcomeUnknown,
                     urgency: AgendaUrgency::Blocking,
+                    actionability: AgendaActionability::Actionable,
+                    blocker: None,
                     title: format!("Uncertain Chronos task · {}", task.task),
                     why_operator: "the owner fenced progress after an uncertain outcome".into(),
                     authority: "agenda presence grants none; Chronos owns task state".into(),
@@ -1087,6 +1089,8 @@ fn operator_agenda_view(
             resource_identity: "selected-participation".into(),
             kind: AgendaKind::GovernedPermission,
             urgency: AgendaUrgency::Blocking,
+            actionability: AgendaActionability::Actionable,
+            blocker: None,
             title: format!("Governed permission · {options} exact option(s)"),
             why_operator: "the governed participation is awaiting an attributable choice".into(),
             authority: "only the Moira/Aegis owner contract can settle this request".into(),
@@ -1107,15 +1111,17 @@ fn operator_agenda_view(
             resource_identity: agenda_identity(observation.request.id.0),
             kind: AgendaKind::HumanGate,
             urgency: AgendaUrgency::Blocking,
+            actionability: AgendaActionability::Blocked,
+            blocker: Some("Moira publishes binding digests but no resolvable decision-packet references, and Pantheon has no selected Aegis-authorized response control".into()),
             title: "Named-human deliberation gate".into(),
             why_operator: format!(
                 "Moira retained an unresolved gate for reviewer {}",
                 agenda_identity(observation.request.reviewer)
             ),
             authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
-            requested_action: "inspect the finding, decision, material revision and policy; then approve, reject, defer, or request changes".into(),
+            requested_action: "resolve and verify the exact decision packet before any human disposition is offered".into(),
             consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
-            next_owner_action: "open Moira deliberation and verify the named reviewer and current material before acting".into(),
+            next_owner_action: "publish owner-resolvable finding, decision, material and policy references; then select and qualify the command-scoped response control".into(),
             route: "navigate.moira.deliberation".into(),
         });
     }

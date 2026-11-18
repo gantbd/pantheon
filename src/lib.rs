@@ -7,7 +7,8 @@ mod theme;
 mod workbench;
 
 pub use agenda::{
-    AgendaEntry, AgendaKind, AgendaUrgency, OperatingReviewReadiness, OperatorAgendaView,
+    AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatingReviewReadiness,
+    OperatorAgendaView,
 };
 pub use shell::{Shell, ShellInput, Surface, shell_input};
 pub use workbench::{
@@ -1136,7 +1137,12 @@ fn draw_operator_agenda(frame: &mut Frame<'_>, area: Rect, view: &OperatorAgenda
                     || entry.source_peer.clone(),
                     |instance| format!("{}/{}", entry.source_peer, instance),
                 );
-                [
+                let actionability = match entry.actionability {
+                    AgendaActionability::Actionable => "actionable",
+                    AgendaActionability::InspectOnly => "inspect only",
+                    AgendaActionability::Blocked => "blocked",
+                };
+                let mut lines = vec![
                     Line::from(vec![
                         Span::styled(
                             format!("{marker} {}", entry.title),
@@ -1150,7 +1156,7 @@ fn draw_operator_agenda(frame: &mut Frame<'_>, area: Rect, view: &OperatorAgenda
                                 .add_modifier(Modifier::BOLD),
                         ),
                         Span::styled(
-                            format!("  {source} @ {}", entry.source_revision),
+                            format!("  {source} @ {} · {actionability}", entry.source_revision),
                             theme::muted(),
                         ),
                     ]),
@@ -1161,7 +1167,14 @@ fn draw_operator_agenda(frame: &mut Frame<'_>, area: Rect, view: &OperatorAgenda
                         ),
                         theme::muted(),
                     ),
-                ]
+                ];
+                if let Some(blocker) = &entry.blocker {
+                    lines.push(Line::styled(
+                        format!("  blocked by: {blocker}"),
+                        Style::default().fg(theme::YELLOW).bg(theme::PANEL),
+                    ));
+                }
+                lines
             })
             .collect()
     };
@@ -1857,6 +1870,8 @@ mod tests {
             resource_identity: "recover-effect#3".into(),
             kind: AgendaKind::OutcomeUnknown,
             urgency: AgendaUrgency::Blocking,
+            actionability: AgendaActionability::Actionable,
+            blocker: None,
             title: "Uncertain Chronos task · recover-effect".into(),
             why_operator: "owner fenced progress".into(),
             authority: "none inferred".into(),
@@ -1880,6 +1895,41 @@ mod tests {
         assert!(rendered.contains("chronos/delivery @ Finite(7)"));
         assert!(rendered.contains("no sovereign work-mode instance owner configured"));
         assert!(rendered.contains("agenda presence grants no authority"));
+    }
+
+    #[test]
+    fn operator_agenda_exposes_blocked_actionability_and_the_exact_missing_contract() {
+        let mut agenda = OperatorAgendaView::default();
+        agenda.push(AgendaEntry {
+            source_peer: "moira-deliberation".into(),
+            source_instance: None,
+            source_revision: "12".into(),
+            resource_identity: "gate-12".into(),
+            kind: AgendaKind::HumanGate,
+            urgency: AgendaUrgency::Blocking,
+            actionability: AgendaActionability::Blocked,
+            blocker: Some("decision packet cannot be resolved through an owner reference".into()),
+            title: "Named-human deliberation gate".into(),
+            why_operator: "named reviewer required".into(),
+            authority: "none inferred".into(),
+            requested_action: "resolve packet".into(),
+            consequence_of_waiting: "decision remains gated".into(),
+            next_owner_action: "publish references".into(),
+            route: "navigate.moira.deliberation".into(),
+        });
+        let mut terminal = Terminal::new(TestBackend::new(120, 24)).unwrap();
+        terminal
+            .draw(|frame| draw_operator_agenda(frame, frame.area(), &agenda))
+            .unwrap();
+        let rendered = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(rendered.contains("blocked"));
+        assert!(rendered.contains("blocked by: decision packet cannot be resolved"));
     }
 
     #[test]

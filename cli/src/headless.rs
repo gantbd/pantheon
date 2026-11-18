@@ -31,7 +31,7 @@ use crate::profile::{
     DaimonHostProfile, HestiaProfile, TaskConversationProfile,
 };
 use crate::provider::provider_catalog;
-use pantheon::{AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
+use pantheon::{AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
 
 pub struct HeadlessRequest {
     pub operation_id: String,
@@ -447,6 +447,8 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                     resource_identity: format!("{task_id}#{incarnation}"),
                     kind: AgendaKind::OutcomeUnknown,
                     urgency: AgendaUrgency::Blocking,
+                    actionability: AgendaActionability::Actionable,
+                    blocker: None,
                     title: format!("Uncertain Chronos task · {task_id}"),
                     why_operator: "the owner fenced progress after an uncertain outcome".into(),
                     authority: "agenda presence grants none; Chronos owns task state".into(),
@@ -478,6 +480,8 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                     resource_identity: identity.into(),
                     kind: AgendaKind::GovernedPermission,
                     urgency: AgendaUrgency::Blocking,
+                    actionability: AgendaActionability::Actionable,
+                    blocker: None,
                     title: format!("Governed permission · {options} exact option(s)"),
                     why_operator: "the governed participation is awaiting an attributable choice"
                         .into(),
@@ -526,12 +530,14 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                 resource_identity: identity.into(),
                 kind: AgendaKind::HumanGate,
                 urgency: AgendaUrgency::Blocking,
+                actionability: AgendaActionability::Blocked,
+                blocker: Some("Moira publishes binding digests but no resolvable decision-packet references, and Pantheon has no selected Aegis-authorized response control".into()),
                 title: "Named-human deliberation gate".into(),
                 why_operator: format!("Moira retained an unresolved gate for reviewer {reviewer}"),
                 authority: "agenda presence grants none; only the command-scoped Moira/Aegis response can settle this exact gate".into(),
-                requested_action: "inspect the finding, decision, material revision and policy; then approve, reject, defer, or request changes".into(),
+                requested_action: "resolve and verify the exact decision packet before any human disposition is offered".into(),
                 consequence_of_waiting: "the exact decision remains human-gated; no agent or timeout may infer a disposition".into(),
-                next_owner_action: "open Moira deliberation and verify the named reviewer and current material before acting".into(),
+                next_owner_action: "publish owner-resolvable finding, decision, material and policy references; then select and qualify the command-scoped response control".into(),
                 route: "navigate.moira.deliberation".into(),
             });
         } else if name == "moira-deliberation" && status != "current" {
@@ -2066,6 +2072,13 @@ mod tests {
         assert_eq!(entry.source_revision, "12");
         assert_eq!(entry.resource_identity, "17".repeat(16));
         assert!(entry.why_operator.contains(&"18".repeat(16)));
+        assert_eq!(entry.actionability, AgendaActionability::Blocked);
+        assert!(
+            entry
+                .blocker
+                .as_deref()
+                .is_some_and(|value| value.contains("no resolvable decision-packet references"))
+        );
         assert!(entry.authority.contains("grants none"));
         assert_eq!(entry.route, "navigate.moira.deliberation");
     }

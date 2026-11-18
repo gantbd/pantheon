@@ -22,6 +22,16 @@ pub enum AgendaUrgency {
     Blocking,
 }
 
+/// Whether Pantheon can honestly route an owner-native action from the facts
+/// currently projected. This is presentation readiness, never authority.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AgendaActionability {
+    Actionable,
+    InspectOnly,
+    Blocked,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct AgendaEntry {
     pub source_peer: String,
@@ -30,6 +40,8 @@ pub struct AgendaEntry {
     pub resource_identity: String,
     pub kind: AgendaKind,
     pub urgency: AgendaUrgency,
+    pub actionability: AgendaActionability,
+    pub blocker: Option<String>,
     pub title: String,
     pub why_operator: String,
     pub authority: String,
@@ -81,6 +93,7 @@ impl OperatorAgendaView {
             right
                 .urgency
                 .cmp(&left.urgency)
+                .then_with(|| right.actionability.cmp(&left.actionability))
                 .then_with(|| left.source_peer.cmp(&right.source_peer))
                 .then_with(|| left.resource_identity.cmp(&right.resource_identity))
         });
@@ -99,6 +112,8 @@ mod tests {
             resource_identity: identity.into(),
             kind: AgendaKind::OutcomeUnknown,
             urgency,
+            actionability: AgendaActionability::Actionable,
+            blocker: None,
             title: "Uncertain task".into(),
             why_operator: "owner requires reconciliation".into(),
             authority: "none inferred".into(),
