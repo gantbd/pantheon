@@ -648,50 +648,68 @@ that every item is required or sufficient:
 
 Required ensemble behavior:
 
-1. **Contextual framing.** Moira frames the exact review question and
+1. **Contextual framing and cohort challenge.** Moira frames the exact review question and
    instantiates the selected Rune-owned method; Dendrite routes both stakeholder
    and technical concerns from the current context. A generic “review this”
-   prompt is insufficient for consequential work.
-2. **Coverage before count.** The plan records required, present, missing,
+   prompt is insufficient for consequential work. One of the first retained
+   questions is **“Do we have the right ensemble?”** The answer is `yes`, `no`
+   or `contested`, names its evidence and assessor, and remains revisable when
+   affected populations, risks or available representatives change. The
+   assembled reviewers cannot establish their own representativeness merely by
+   agreeing that they are sufficient.
+2. **Equity and coverage before count.** The plan records required, present, missing,
    unavailable, conflicted and intentionally excluded lenses with rationale.
    Ten reviewers sharing one concern do not substitute for one missing affected-
-   stakeholder or safety lens.
-3. **Grounded independence.** Each report identifies human/agent principal,
-   stakeholder mandate or persona lens, model/profile where applicable, exact
+   stakeholder or safety lens. Equity means meaningful standing, accessible
+   participation, authorized material, opportunity to challenge framing, and
+   proportionate attention to who bears benefit, cost and risk; it does not
+   mean equal headcount or allow a convenient stakeholder to represent everyone.
+   A `no` answer stops substantive disposition as `WrongEnsemble`; a
+   `contested` answer preserves the dispute and seeks the missing human input or
+   explicit governing response rather than averaging it away.
+3. **Stakeholder standing before persona.** Every member identifies the
+   constituency or technical domain they serve and whether they are an actual
+   stakeholder, authorized representative, agent-modeled stakeholder
+   perspective or technical SME. Actual and authorized representation retains
+   its accountable principal, mandate and conflicts. A persona lens may shape
+   how a member examines the question, but it is never the member's stakeholder
+   identity, constituency, standing or authority.
+4. **Grounded independence.** Each report identifies human/agent principal,
+   stakeholder representation/mandate and persona lens, model/profile where applicable, exact
    grounding, evidence, assumptions and conflicts. Dendrite orthogonality is
    evidence about concern separation, not proof of cognitive independence;
    common models, prompts, data and organizational incentives remain visible.
-4. **Actual stakeholders over simulation.** An agent SME can anticipate questions
+5. **Actual stakeholders over simulation.** An agent SME can anticipate questions
    and expose omissions but cannot claim lived experience, consent, mandate or
    representation. Materially affected people and accountable domain owners can
    contribute, dispute the framing and request human review under disclosure and
    accessibility protections.
-5. **Independent first pass.** Reviewers inspect the same pinned work/evidence
+6. **Independent first pass.** Reviewers inspect the same pinned work/evidence
    before seeing peer conclusions when feasible, reducing anchoring and
    sycophancy. Later rounds may cross-examine claims, synthesize or request tests
    without erasing the first-pass record.
-6. **Bidirectional challenge.** The ensemble must attack the proposed solution
+7. **Bidirectional challenge.** The ensemble must attack the proposed solution
    and the status quo, compare plausible alternatives, identify what is already
    strong and distinguish fatal flaws, bounded risks, preferences and open
    questions.
-7. **Actionable findings.** A finding names affected stakeholder/invariant,
+8. **Actionable findings.** A finding names affected stakeholder/invariant,
    evidence, severity/likelihood or epistemic status, confidence, reproduction
    or falsification method, proposed response and owner. Unsupported role-play,
    duplicate objections and rhetoric are marked rather than vote-counted.
-8. **Dissent preservation.** Moira retains independent reports, rebuttals,
+9. **Dissent preservation.** Moira retains independent reports, rebuttals,
    unresolved conflicts, dominated/non-dominated candidates and bounded non-
    convergence. Consensus is not required; disagreement cannot be averaged into
    confidence or silently summarized away.
-9. **Response and disposition.** The work owner responds to each material
+10. **Response and disposition.** The work owner responds to each material
    finding as accepted, mitigated, tested, deferred, risk-accepted, disputed or
    out of scope with evidence and accountable rationale. Reviewers may challenge
    the disposition; they do not acquire decision or effect authority.
-10. **Risk-proportional gates.** Exploratory work may accumulate review for its
+11. **Risk-proportional gates.** Exploratory work may accumulate review for its
     next promotion boundary. High-impact, irreversible, security/authority,
     external-publication, production or affected-person decisions require the
     selected ensemble before action. Material change invalidates or narrows old
     review and reactivates the affected lenses.
-11. **Human-advocate escalation.** A reviewer acting under the declared human-
+12. **Human-advocate escalation.** A reviewer acting under the declared human-
     advocate lens may request human gating with evidence, affected people,
     consequence and rationale. When the review method admits that request as a
     supported, non-frivolous material finding, Moira pauses the decision and
@@ -701,11 +719,11 @@ Required ensemble behavior:
     out of scope to evade presentation, but it does not grant the advocate veto
     or effect authority. Final production rollout requires this named-human
     presentation and explicit go/no-go unconditionally.
-12. **Observe outcomes.** The ensemble's claims and predicted risks link to
+13. **Observe outcomes.** The ensemble's claims and predicted risks link to
     tests, canary probes, user feedback, incidents and outcome measures. A
     retrospective scores neither reviewer popularity nor objection volume; it
     asks which concerns were useful, missed, wrong or made obsolete by evidence.
-13. **Headless parity.** Versioned TUI/CLI/machine contracts can create or attach
+14. **Headless parity.** Versioned TUI/CLI/machine contracts can create or attach
     to the same review, inspect framing/coverage/reports/dissent, submit an
     authorized report or disposition, detach and later resume by cursor. Client
     exit never resolves, approves, cancels or destroys the deliberation.
@@ -2564,11 +2582,15 @@ source mutation.
 2. Moira admits a bounded plan under the applicable Rune-owned review method and
    claim/evidence/dissent schema. Dendrite folds the context into exact
    stakeholder and technical SME surfaces, reports concern coverage and tests
-   proposed lenses for pairwise orthogonality. The owner sees missing,
-   unavailable, conflicted and excluded concerns before execution.
+   proposed lenses for pairwise orthogonality. Before substantive execution the
+   plan retains the answer to “Do we have the right ensemble?” as `yes`, `no` or
+   `contested`, with affected-population, stakeholder-map, equity/coverage,
+   missing/excluded and assessor evidence. The owner sees missing, unavailable,
+   conflicted, overrepresented and excluded concerns; `no` refuses substantive
+   disposition and `contested` requires explicit resolution or human escalation.
 3. Human stakeholders and independently admitted agent reviewers receive only
    authorized material. Each performs a pinned first pass under an attributed
-   mandate/persona lens before cross-review where feasible. Agent-modeled
+   stakeholder representation and optional persona lens before cross-review where feasible. Agent-modeled
    stakeholder perspectives and agent-produced technical expertise are labeled
    separately; neither can claim lived experience, consent or mandate.
 4. The ensemble steelmans the goal, challenges the proposed work and status quo,

@@ -358,6 +358,21 @@ reachable from a task. The developer had to enter through Daimon's qualification
 seam, and the model received a curated prompt rather than bounded repository
 exploration, iterative challenge, or a typed proposal schema.
 
+Vellum is now part of the dogfood context path rather than a ceremonial output
+target. The same assessment document was opened and edited through the live
+Pantheon TUI and observed through hosted headless Pantheon as exact document,
+revision, witness, byte-count and SHA-256 facts; headless output deliberately
+withholds source text. A tmux-driven raw edit containing `]` exposed global
+surface navigation stealing focused editor input. The behavior facade now gives
+printable brackets to focused Vellum while retaining direct Ctrl/Alt, palette and
+mouse navigation, and the exact failure case passes live. This establishes
+content identity and presentation parity evidence, not yet agent-context parity:
+Daimon must still consume the selected Vellum context reference and prove the
+same digest on the task-bound execution receipt. The run also exposed that a
+persistent TUI connection currently excludes a second headless Vellum client;
+attach/concurrency remains an owner-level gap rather than a reason to fork
+workspace state.
+
 - [ ] Admit a Chronos task with an explicit agent-assisted execution profile.
 - [ ] From the selected task, choose a qualified local provider, declared work
   mode/persona, bounded delegation, grounding depth, tools and budgets through a
@@ -414,8 +429,23 @@ work-mode activation and must never be used to infer delegation or authority.
 
 ## Milestone 4 — J33 human-gated ensemble decisions
 
+The first stakeholder-truth dogfood and categorical no-go assessment is
+retained in
+[`ensemble-dogfood-assessment-2026-11-17.md`](ensemble-dogfood-assessment-2026-11-17.md).
+It proves the bounded owner/runtime foundation while refusing to call a
+single-provider, partly modeled, selected-message-only run an operationally
+mature stakeholder ensemble.
+
 - [ ] Compose the selected Moira deliberation and Dendrite concern-routing
   contracts.
+- [ ] Make stakeholder standing first-class and distinct from persona: retain
+  constituency/domain, representation kind, accountable principal, mandate and
+  conflicts for every member; label modeled perspectives and technical SMEs so
+  neither can impersonate an affected stakeholder.
+- [ ] Ask and retain “Do we have the right ensemble?” before substantive review.
+  Project `yes`, `no` or `contested` with affected-population, equity/coverage,
+  missing/excluded/overrepresented and assessor evidence; refuse substantive
+  disposition on `no` and escalate rather than average away `contested`.
 - [ ] Retain independent first passes, correlation, dissent, material findings
   and owner dispositions.
 - [ ] Publish `HumanGateRequestV1` and exact presentation/response receipts.

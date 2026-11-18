@@ -344,6 +344,15 @@ fn headless_profile_can_host_and_drain_real_chronos_and_vellum() {
     assert_eq!(report["peers"][1]["peer"], "vellum");
     assert_eq!(report["peers"][1]["status"], "current");
     assert_eq!(report["peers"][1]["documents"], 1);
+    assert_eq!(report["peers"][1]["content_disclosure"], "not_published");
+    assert_eq!(report["peers"][1]["context_manifest"][0]["document"], 1);
+    assert_eq!(report["peers"][1]["context_manifest"][0]["revision"], 0);
+    assert_eq!(report["peers"][1]["context_manifest"][0]["witness"], 1);
+    assert_eq!(report["peers"][1]["context_manifest"][0]["bytes"], 13);
+    assert_eq!(
+        report["peers"][1]["context_manifest"][0]["sha256"],
+        "sha256:1c6129de4eed2f9f892dc7c8820e1776bd6d947df114257f2223b7efa52efeb7"
+    );
     assert_eq!(report["management"]["scope"], "single_user_local_machine");
     assert_eq!(
         report["management"]["operation_id"],

@@ -8,6 +8,7 @@ use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServic
 use chronos_tui::Workstream;
 use moira_client::{AgentParticipationReadOnlyClient, SagaReadOnlyClient};
 use moira_protocol::{SagaOutcomeV1, SagaReplyV1, agent_participation as participation};
+use sha2::{Digest, Sha256};
 use vellum_sdk_client::{
     transport::{
         AuthenticatedUnixConnector, FrameExchange, RemoteTransport, TransportError,
@@ -511,7 +512,9 @@ fn daimon_execution_projection(policy: Option<&DaimonExecutionPolicyProfile>) ->
             "attempt_number": policy.task_attempt.attempt_number,
         },
         "context_count": policy.context.len(),
+        "context_references": policy.context,
         "tool_count": policy.tools.len(),
+        "tool_capabilities": policy.tools,
         "budget": {
             "max_elapsed_millis": policy.budget.max_elapsed_millis,
             "max_input_tokens": policy.budget.max_input_tokens,
@@ -1060,13 +1063,54 @@ fn observe_vellum(socket: PathBuf, credential: Option<&PathBuf>) -> (serde_json:
                 .projection()
                 .inventory()
                 .expect("successful inventory refresh publishes inventory");
+            let documents = inventory.documents.clone();
+            let roots = inventory.roots.len();
+            let mut contexts = Vec::with_capacity(documents.len());
+            for document in documents.iter().copied() {
+                if let Err(error) = workspace.select_document(document) {
+                    return (
+                        peer_failure(
+                            "vellum",
+                            capability,
+                            "context_selection_refused",
+                            format!("{error:?}"),
+                        ),
+                        false,
+                    );
+                }
+                if let Err(error) = workspace.refresh_snapshot() {
+                    return (
+                        peer_failure(
+                            "vellum",
+                            capability,
+                            "context_snapshot_refused",
+                            format!("{error:?}"),
+                        ),
+                        false,
+                    );
+                }
+                let snapshot = workspace
+                    .projection()
+                    .snapshot()
+                    .expect("successful snapshot refresh publishes snapshot");
+                let digest: [u8; 32] = Sha256::digest(snapshot.text.as_bytes()).into();
+                contexts.push(serde_json::json!({
+                    "document": document.get(),
+                    "revision": snapshot.revision,
+                    "witness": snapshot.witness.get(),
+                    "bytes": snapshot.text.len(),
+                    "sha256": format!("sha256:{}", hex_bytes(&digest)),
+                }));
+            }
             (
                 serde_json::json!({
                     "peer": "vellum",
                     "capability": capability,
                     "status": "current",
-                    "documents": inventory.documents.len(),
-                    "roots": inventory.roots.len(),
+                    "documents": documents.len(),
+                    "roots": roots,
+                    "context_manifest": contexts,
+                    "content_disclosure": "not_published",
                 }),
                 true,
             )
@@ -1146,6 +1190,8 @@ mod tests {
         assert_eq!(projection["task_attempt"]["task_key"], "14".repeat(16));
         assert_eq!(projection["task_attempt"]["task_incarnation"], 4);
         assert_eq!(projection["task_attempt"]["attempt_number"], 2);
+        assert_eq!(projection["context_references"][0], "12".repeat(16));
+        assert_eq!(projection["tool_capabilities"][0], "13".repeat(16));
         assert_eq!(projection["budget"]["max_tool_calls"], 32);
         assert_eq!(projection["role_work_mode"], "not_published");
         assert_eq!(projection["delegation"], "not_published");

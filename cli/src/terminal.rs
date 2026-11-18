@@ -194,6 +194,13 @@ impl BehaviorFacade {
                 ShellInput::ActivateSurface(surface) => {
                     KeyBehavior::ExecuteCommand(Self::surface_command(surface))
                 }
+                // Vellum is a text workspace. Once it owns focus, printable
+                // bracket characters belong to the document instead of the
+                // workbench rail. Direct Ctrl/Alt surface shortcuts, the
+                // command palette, and mouse navigation remain available.
+                ShellInput::NextSurface | ShellInput::PreviousSurface if vellum_active => {
+                    KeyBehavior::SurfaceLocal
+                }
                 _ => KeyBehavior::Navigate(input),
             }
         } else {
@@ -4351,6 +4358,26 @@ struct ProviderCatalogProjection {
     owner: String,
     document_digest: String,
     providers: Vec<ProviderCatalogEntryProjection>,
+    #[serde(default)]
+    task_bindings: Vec<TaskBindingCatalogProjection>,
+    #[serde(default)]
+    contexts: Vec<ContextCatalogProjection>,
+}
+
+#[derive(Clone, Deserialize)]
+struct TaskBindingCatalogProjection {
+    external_task_key: String,
+    chronos_task_id: String,
+}
+
+#[derive(Clone, Deserialize)]
+struct ContextCatalogProjection {
+    reference: String,
+    kind: String,
+    #[serde(default)]
+    source_digest: Option<String>,
+    #[serde(default)]
+    bytes: Option<usize>,
 }
 
 #[derive(Clone, Deserialize)]
@@ -4620,12 +4647,47 @@ fn validate_provider_catalog(catalog: &ProviderCatalogProjection) -> Result<(), 
         || !valid_digest(&catalog.document_digest)
         || catalog.providers.is_empty()
         || catalog.providers.len() > 64
+        || catalog.task_bindings.is_empty()
+        || catalog.task_bindings.len() > 1_024
+        || catalog.contexts.len() > 1_024
     {
         return Err("owner returned unsupported provider catalogue facts".into());
     }
     for provider in &catalog.providers {
         if !valid_provider_catalog_entry(provider) {
             return Err("owner returned malformed provider catalogue facts".into());
+        }
+    }
+    let mut task_keys = std::collections::BTreeSet::new();
+    for binding in &catalog.task_bindings {
+        if !valid_id(&binding.external_task_key)
+            || !valid_projection_text(&binding.chronos_task_id, 256)
+            || !task_keys.insert(&binding.external_task_key)
+        {
+            return Err("owner returned malformed task-binding catalogue facts".into());
+        }
+    }
+    let mut context_references = std::collections::BTreeSet::new();
+    for context in &catalog.contexts {
+        let static_context = matches!(
+            context.kind.as_str(),
+            "agora_message" | "chronos_work" | "vellum_document"
+        );
+        if !valid_id(&context.reference)
+            || !matches!(
+                context.kind.as_str(),
+                "agora_message" | "chronos_work" | "vellum_document" | "dendrite_grounding"
+            )
+            || !context_references.insert(&context.reference)
+            || (static_context
+                && (context
+                    .source_digest
+                    .as_deref()
+                    .is_none_or(|value| !valid_digest(value))
+                    || context.bytes.is_none_or(|bytes| bytes == 0)))
+            || (!static_context && (context.source_digest.is_some() || context.bytes.is_some()))
+        {
+            return Err("owner returned malformed context catalogue facts".into());
         }
     }
     Ok(())
@@ -4664,6 +4726,8 @@ fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
         format!("owner                {}", catalog.owner),
         format!("owner document       {}", catalog.document_digest),
         format!("providers            {} exact", catalog.providers.len()),
+        format!("task bindings        {} exact", catalog.task_bindings.len()),
+        format!("context references   {} exact", catalog.contexts.len()),
         "boundary             commands, arguments, paths, credential names, and secrets remain redacted by Daimon".into(),
     ];
     for (index, provider) in catalog.providers.into_iter().enumerate() {
@@ -4729,10 +4793,36 @@ fn provider_catalog_lines(catalog: ProviderCatalogProjection) -> Vec<String> {
             ));
         }
     }
+    lines.push(String::new());
+    lines.push("Chronos task bindings".into());
+    for binding in catalog.task_bindings {
+        lines.push(format!(
+            "  {} → {}",
+            binding.external_task_key, binding.chronos_task_id
+        ));
+    }
+    if !catalog.contexts.is_empty() {
+        lines.push(String::new());
+        lines.push("Execution context manifest".into());
+        for context in catalog.contexts {
+            lines.push(format!(
+                "  {} · {} · {} · {} bytes",
+                context.reference,
+                context.kind,
+                context
+                    .source_digest
+                    .as_deref()
+                    .unwrap_or("runtime-resolved"),
+                context
+                    .bytes
+                    .map_or_else(|| "runtime-resolved".into(), |value| value.to_string())
+            ));
+        }
+    }
     lines.extend([
         String::new(),
         "r revalidates the exact owner document · Esc closes".into(),
-        "Editing is not yet published by this owner contract; Pantheon will not fall back to raw JSON mutation.".into(),
+        "Task mappings and context digests are selection evidence, not a claim that work was invoked; Pantheon will not fall back to raw JSON mutation.".into(),
     ]);
     lines
 }
@@ -8312,6 +8402,18 @@ mod tests {
             KeyBehavior::SurfaceLocal
         );
         assert_eq!(
+            BehaviorFacade::key(plain(']'), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain('['), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain(']'), WorkbenchOverlay::None, Surface::Overview, false),
+            KeyBehavior::Navigate(ShellInput::NextSurface)
+        );
+        assert_eq!(
             BehaviorFacade::key(
                 KeyEvent::new(KeyCode::Char('3'), KeyModifiers::ALT),
                 WorkbenchOverlay::None,
@@ -8390,6 +8492,16 @@ mod tests {
                 sampling_temperature_milli: Some(0),
                 bearer_token_configured: Some(false),
             }],
+            task_bindings: vec![TaskBindingCatalogProjection {
+                external_task_key: "55".repeat(16),
+                chronos_task_id: "review-headless-boundary".into(),
+            }],
+            contexts: vec![ContextCatalogProjection {
+                reference: "66".repeat(16),
+                kind: "vellum_document".into(),
+                source_digest: Some(format!("sha256:{}", "77".repeat(32))),
+                bytes: Some(4096),
+            }],
         };
         validate_provider_catalog(&catalog).unwrap();
         let lines = provider_catalog_lines(catalog).join("\n");
@@ -8397,6 +8509,9 @@ mod tests {
         assert!(lines.contains("qwen/qwen3-coder-next"));
         assert!(lines.contains("loopback:1234"));
         assert!(lines.contains("structured tools true"));
+        assert!(lines.contains("review-headless-boundary"));
+        assert!(lines.contains("vellum_document"));
+        assert!(lines.contains("4096 bytes"));
         assert!(!lines.contains("host_header"));
         assert!(!lines.contains("OPENAI_API_KEY"));
     }
