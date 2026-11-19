@@ -2190,9 +2190,12 @@ alignment participants, budget/evidence/dissent/gate references and a named-PM
 Vellum proposal are bounded and freshness-classified without copying content or
 adding an apply path. One proposal is now durably create-only and reopenable in
 an exclusively owned directory register; its closed codec and durable-receipt
-gate refuse malformed, weak or indeterminate state. This closes local durable
-retention, not a hosted public alignment projection, Pantheon presentation,
-automatic grooming, owner mutation, acceptance or human sign-off.
+gate refuse malformed, weak or indeterminate state. An owner-neutral read-only
+Chronos protocol can project the exact content-free proposal, task, cohort,
+evidence and currentness only through an explicit host disclosure decision and
+has no control command. This closes local durable retention and the observation
+shape, not hosted transport, Pantheon presentation, automatic grooming, owner
+mutation, acceptance or human sign-off.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,

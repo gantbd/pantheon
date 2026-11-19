@@ -1232,9 +1232,11 @@ recovery before a human can settle the gate from this surface.
   apply, accept, claim, reprioritize or sign off. Focused tests and strict
   Clippy pass. One immutable proposal can now be durably created and reopened
   through a closed bounded V1 codec and the existing Chronos checkpoint adapter;
-  weak/indeterminate receipts and corrupt prior records refuse. A hosted public
-  projection, Pantheon presentation and owner-routed proposal application remain
-  open before the Chronos alignment prerequisite is closed.
+  weak/indeterminate receipts and corrupt prior records refuse. An owner-neutral
+  read-only Chronos protocol now projects exact content-free alignment state only
+  after an explicit host disclosure decision; it carries no control command. A
+  hosted transport, Pantheon TUI/headless presentation and owner-routed proposal
+  application remain open before the Chronos alignment prerequisite is closed.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
