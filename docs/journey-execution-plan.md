@@ -273,9 +273,22 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   encodes it canonically, migrates legacy registries without inventing review
   history, and restores reports, findings and rebuttals through the fenced
   SQLite owner after restart. Typed review refusals also round-trip over the
-  public wire. Public review mutation/read commands, a real Agora service round
-  trip, outcome correlation and Pantheon TUI/headless projection remain
-  required before the J33 checklist item closes.
+  public wire. The public capability-shaped mutation/read clients now carry
+  begin-review, finding, rebuttal, disposition and exact review observation
+  through the canonical bounded wire and service. A SQLite close/reopen journey
+  proves that the same reports, findings, rebuttals and dispositions survive
+  and remain readable through that public boundary. Named-human approval
+  updates the retained review, exact lost-reply replay returns the same review
+  outcome, and a gated disposition cannot proceed without the admitted
+  approval. A real Agora service round trip, outcome correlation and Pantheon
+  TUI/headless projection remain required before the J33 checklist item closes.
+- Chronos revision 53 atomically admitted three follow-on dogfood discoveries:
+  priority-6 `chronos-complete-paginated-task-search`, priority-5
+  `pantheon-canonical-dogfood-workspace-attachment`, and priority-4
+  `pantheon-last-known-good-development-launch`. They own complete bounded-board
+  search and total/page-cap disclosure, unambiguous reattachment to the active
+  roadmap instead of a fresh default state root, and an explicit qualified
+  binary path when unrelated peer source is temporarily uncompilable.
 - Vellum dogfooding admitted the exact Moira–Agora source file but rejected a
   three-file workspace at its configured limit. More importantly, it retained
   a stale clean snapshot after an external source mutation and offered no
