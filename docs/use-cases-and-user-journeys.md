@@ -2125,6 +2125,16 @@ open, prompt or reattach. Its TUI presentation and Pantheon's observation-only
 headless projection show the same execution, manifest, Vellum reference/source
 digest and byte count without publishing the document content; Moira's public
 projection binds that receipt into its retained provider-evidence digest.
+Pantheon now also re-observes the exact active Chronos workstream and task at
+the invocation boundary. The configured Daimon task key, incarnation and
+attempt must match Chronos's current owner projection, and the task must be
+`Running` with an owner-issued attempt; a merely Ready task refuses before
+Daimon and directs the operator to the configured Moira/trusted-worker journey.
+The review and activity evidence retain the exact workstream, Chronos revision,
+incarnation and attempt. The workstream directory is only a transport locator,
+never task evidence or authority. This closes a stale static-profile leak; it
+does not supply the still-open Moira journey admission, trusted claim/lease or
+evidence-backed settlement.
 Refusal or uncertainty stops the chain. Agora's private-local owner now also
 supports a versioned, bounded create-time cohort, and the hosted lifecycle gate
 bootstraps distinct human and agent participants without granting Pantheon

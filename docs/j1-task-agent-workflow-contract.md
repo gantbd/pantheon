@@ -204,6 +204,14 @@ template, provider, room, human owner or authority choice.
 
 ## Implementation cuts
 
+Current bounded safeguard (2026-11-19): Pantheon re-observes the exact active
+Chronos workstream immediately before Daimon invocation and requires the
+owner-projected task to be Running at the exact configured incarnation and
+attempt. Ready, stale, missing and mismatched tasks refuse before Daimon with a
+Moira/trusted-worker next step. This is a presentation-boundary safety check,
+not workflow instantiation: it creates no attempt, lease, effect, participation
+or session identity and does not settle Chronos.
+
 1. **Moira owner contract:** publish the template catalogue, preview,
    instantiate, observe and exact-replay protocol plus durable store. Reuse the
    existing participation, proposal-saga and worker contracts; do not fork them.

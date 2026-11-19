@@ -35,6 +35,36 @@ does not close an item; input profiles share one behavior facade.
 This ledger records experience gathered while using the component ensemble to
 deliver Pantheon. It is product input, not a substitute for journey acceptance.
 
+### 2026-11-19 — exact Chronos attempt required before agent invocation
+
+- The J1 presentation path previously compared a newly admitted Chronos task
+  with Daimon's static owner catalogue and selected execution profile, then
+  could proceed without proving that Chronos had issued that exact incarnation
+  and attempt. A configured attempt is not owner authorization. Pantheon now
+  re-observes the exact active Chronos workstream and task immediately before
+  the Daimon boundary, requires `Running`, and requires exact incarnation and
+  attempt equality. The reviewed session screen and success activity retain
+  the workstream, revision, incarnation and attempt. A Ready task now refuses
+  before Daimon with an actionable instruction to delegate through the
+  configured Moira/trusted-worker journey. Focused binding and human-gate tests
+  plus strict `pantheon-cli` Clippy pass.
+- Chronos-TUI exposes the active workstream name and private directory to its
+  composition host as an exact transport target. The API explicitly does not
+  restyle that locator as evidence or authority. Its focused behavior-facade
+  test and strict all-target Clippy pass.
+- This closes stale static-attempt invocation only. It does not make a newly
+  created ticket operational: Moira must still own template selection, journey
+  admission, owner-derived effect identities, trusted Chronos claim/lease,
+  Daimon dispatch and evidence-backed settlement. The full workflow remains
+  open under `j1-dynamic-task-participation-routing`; manually completing the
+  Ready Chronos work would erase the very evidence the PM control plane needs.
+- The current profile still does not expose Vellum, so this ledger update used
+  the repository fallback rather than claiming Vellum dogfood. Chronos remains
+  the authoritative alignment plane: the external supervisor, constrained
+  worker and independent PM must reconcile against the same task/attempt,
+  evidence, budget, dissent and human-gate frontier before work is called
+  aligned.
+
 ### 2026-11-19 — PM grounding provenance and partial-attachment drift
 
 - Re-entered the shared Pantheon TUI and confirmed the durable Chronos owner was
