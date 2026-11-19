@@ -2197,8 +2197,16 @@ has no control command. This closes local durable retention and the observation
 shape. A bounded scope-bound wire profile, verified independent owner-socket
 client and one-connection integration handler now establish the hosted read
 seam without merging Vellum state into the Chronos daemon. Production listener
-lifecycle, a configured live proposal, Pantheon presentation, automatic
-grooming, owner mutation, acceptance and human sign-off remain open.
+lifecycle and a configured live proposal remain open. Pantheon can now bind an
+exact workstream, owner directory and scope to that verified endpoint. Its
+interactive **Alignment** tab and observation-only headless route project the
+same bounded proposal, stakeholder cohort, currentness, evidence/dissent/gate
+counts and recommended next tasks; focused tests cover successful orientation,
+endpoint failure, exact binding validation and a real verified local-socket
+exchange. Neither consumer can apply, accept, claim, reprioritize or sign off.
+This closes presentation parity, not the intelligent product manager: automatic
+grooming and challenge, owner mutation, acceptance evidence, production
+listener operation and final human sign-off remain open.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,

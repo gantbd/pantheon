@@ -444,6 +444,17 @@ With Chronos focused, press **5**, select an attempt, and press **x**.
 Moira authorizes its receipt disclosure. Daimon authenticates and authorizes
 a separate inspection when Moira supplies a recorded execution ID.
 
+For independent product-manager alignment, pass
+`--chronos-alignment WORKSTREAM DIRECTORY SCOPE`, where `DIRECTORY` is the
+private Chronos service directory containing `chronos.alignment.sock`. The
+binding must name one exact configured workstream and scope. Interactive mode
+adds that workstream's read-only **8 Alignment** tab; press **r** to refresh.
+Headless mode emits the same bounded, content-free observation. Neither route
+can apply a proposal, accept work, claim tasks, reprioritize the board, or sign
+off for a human. The product manager recommends and challenges through the
+Chronos-owned record; accountable owners and explicit human gates retain those
+decisions.
+
 Run `sh tests/live/dual_service.sh` for local composition qualification.
 It first builds and attaches temporary Agora, Chronos, and Vellum services,
 reopens a saved profile with relative service paths, and uses an isolated tmux

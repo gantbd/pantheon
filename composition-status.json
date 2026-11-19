@@ -139,11 +139,13 @@
           { "id": "tasks.cancel-receipt.v3", "plane": "control", "state": "qualified", "when": "writes=true,cancel-receipts=true" },
           { "id": "attempts.moira.inspect.v1", "plane": "operator", "state": "qualified", "when": "moira-binding-selected" },
           { "id": "attempts.daimon.inspect.v1", "plane": "operator", "state": "qualified", "when": "daimon-binding-selected" },
+          { "id": "product-alignment.observe.v1", "plane": "observation", "state": "qualified", "when": "alignment-binding-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],
         "headless": [
           { "id": "tasks.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "product-alignment.observe.v1", "plane": "observation", "state": "qualified", "when": "alignment-binding-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ]

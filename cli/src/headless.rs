@@ -29,8 +29,9 @@ use crate::capabilities::RequirementDisposition;
 use crate::hestia::observe_provider_runtime;
 use crate::management::PeerRuntime;
 use crate::profile::{
-    AgoraProfile, AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile,
-    DaimonHostProfile, HestiaProfile, MoiraDecisionPacketReaderProfile, TaskConversationProfile,
+    AgoraProfile, AgoraTransportProfile, AlignmentBinding, DaimonAgentOpenProfile,
+    DaimonExecutionPolicyProfile, DaimonHostProfile, HestiaProfile,
+    MoiraDecisionPacketReaderProfile, TaskConversationProfile,
 };
 use crate::provider::provider_catalog;
 use pantheon::{
@@ -69,6 +70,7 @@ pub struct HeadlessRequest {
     pub tellus_endpoint: Option<SocketAddr>,
     pub tellus_token: Option<PathBuf>,
     pub chronos: Vec<Workstream>,
+    pub chronos_alignment: Vec<AlignmentBinding>,
     pub chronos_hosted: bool,
     pub vellum_socket: Option<PathBuf>,
     pub vellum_credential: Option<PathBuf>,
@@ -274,6 +276,17 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
             observation,
             current,
             request.chronos_hosted,
+        );
+    }
+    for binding in request.chronos_alignment {
+        let (observation, current) = observe_chronos_alignment(binding);
+        record_observation(
+            &mut peers,
+            &mut management,
+            &mut complete,
+            observation,
+            current,
+            false,
         );
     }
     if let Some(socket) = request.vellum_socket {
@@ -1821,6 +1834,69 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
     }
 }
 
+fn observe_chronos_alignment(binding: AlignmentBinding) -> (serde_json::Value, bool) {
+    use chronos_client::AlignmentWireClientV1;
+    use chronos_protocol::alignment_v1::{Command, Limits, Outcome, RefusalCode, Request};
+
+    let capability = "product-alignment.observe.v1";
+    let limits = Limits {
+        max_field_bytes: 256,
+        max_evidence: 128,
+        max_next_tasks: 64,
+    };
+    let mut client = chronos_local::alignment::AlignmentLocalClient::new(binding.directory, limits);
+    match client.request_alignment_v1(Request {
+        version: 1,
+        command: Command::Observe {
+            chronos_scope: binding.scope.clone(),
+        },
+    }) {
+        Ok(response) => match response.outcome {
+            Outcome::Observed { observation } => (
+                serde_json::json!({
+                    "peer": "chronos-alignment",
+                    "instance": binding.workstream,
+                    "capability": capability,
+                    "status": "current",
+                    "scope": binding.scope,
+                    "observation": observation,
+                    "boundary": "authorized content-free observation only; no apply, accept, claim, reprioritize, or sign-off authority",
+                }),
+                true,
+            ),
+            Outcome::Refused { code } => (
+                peer_failure(
+                    "chronos-alignment",
+                    capability,
+                    match code {
+                        RefusalCode::InvalidRequest => "invalid_request",
+                        RefusalCode::UnsupportedVersion => "unsupported_version",
+                        RefusalCode::Unauthorized => "unauthorized",
+                        RefusalCode::Unavailable => "unavailable",
+                        RefusalCode::Limit => "limit",
+                        RefusalCode::Capacity => "capacity",
+                    },
+                    format!("alignment observation refused for {}", binding.workstream),
+                ),
+                false,
+            ),
+        },
+        Err(error) => (
+            peer_failure(
+                "chronos-alignment",
+                capability,
+                match error {
+                    chronos_local::CallError::NotSent => "not_sent",
+                    chronos_local::CallError::OutcomeUnknown => "outcome_unknown",
+                    chronos_local::CallError::InvalidResponse => "invalid_reply",
+                },
+                format!("alignment endpoint unavailable for {}", binding.workstream),
+            ),
+            false,
+        ),
+    }
+}
+
 enum VellumConnector {
     Plain(UnixConnector),
     Authenticated(AuthenticatedUnixConnector),
@@ -2123,6 +2199,7 @@ mod tests {
             tellus_endpoint: None,
             tellus_token: None,
             chronos: Vec::new(),
+            chronos_alignment: Vec::new(),
             chronos_hosted: false,
             vellum_socket: None,
             vellum_credential: None,
@@ -2138,6 +2215,61 @@ mod tests {
             observation.not_exercised_profile_requirements[0].capability,
             "messages.read.v2"
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn headless_alignment_uses_the_same_verified_owner_endpoint() {
+        use chronos_protocol::alignment_v1::{Outcome, RefusalCode, Response};
+        use std::{
+            io::{BufRead, BufReader, Write},
+            os::unix::{fs::PermissionsExt, net::UnixListener},
+        };
+
+        let directory = std::path::PathBuf::from("/tmp").join(format!(
+            "pantheon-alignment-headless-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = chronos_local::alignment_socket_path(&directory);
+        let listener = UnixListener::bind(&socket).unwrap();
+        std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut frame = Vec::new();
+            BufReader::new(&stream)
+                .read_until(b'\n', &mut frame)
+                .unwrap();
+            assert!(frame.len() <= chronos_local::MAX_REQUEST_BYTES + 1);
+            assert!(String::from_utf8_lossy(&frame).contains("product-delivery"));
+            serde_json::to_writer(
+                &mut stream,
+                &Response {
+                    version: 1,
+                    outcome: Outcome::Refused {
+                        code: RefusalCode::Unavailable,
+                    },
+                },
+            )
+            .unwrap();
+            stream.write_all(b"\n").unwrap();
+        });
+        let (observation, current) = observe_chronos_alignment(AlignmentBinding {
+            workstream: "Atlas".into(),
+            directory: directory.clone(),
+            scope: "product-delivery".into(),
+        });
+        assert!(!current);
+        assert_eq!(observation["peer"], "chronos-alignment");
+        assert_eq!(observation["status"], "unavailable");
+        server.join().unwrap();
+        std::fs::remove_file(socket).unwrap();
+        std::fs::remove_dir(directory).unwrap();
     }
 
     #[test]

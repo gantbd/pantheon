@@ -220,6 +220,7 @@ pub struct ChronosFeatures {
     pub cancel_receipts: bool,
     pub moira_attempts: bool,
     pub daimon_attempts: bool,
+    pub alignment: bool,
 }
 
 pub fn chronos(mode: Mode, hosted: bool, features: ChronosFeatures) -> Vec<Capability> {
@@ -249,6 +250,12 @@ pub fn chronos(mode: Mode, hosted: bool, features: ChronosFeatures) -> Vec<Capab
         if features.daimon_attempts {
             capabilities.push(capability("attempts.daimon.inspect.v1", Plane::Operator));
         }
+    }
+    if features.alignment {
+        capabilities.push(capability(
+            "product-alignment.observe.v1",
+            Plane::Observation,
+        ));
     }
     capabilities.push(topology(hosted));
     capabilities
@@ -660,6 +667,19 @@ mod tests {
         ] {
             assert!(selected.iter().any(|capability| capability.id == expected));
         }
+        let aligned = chronos(
+            Mode::Headless,
+            false,
+            ChronosFeatures {
+                alignment: true,
+                ..ChronosFeatures::default()
+            },
+        );
+        assert!(
+            aligned
+                .iter()
+                .any(|capability| capability.id == "product-alignment.observe.v1")
+        );
     }
 
     #[test]

@@ -364,6 +364,8 @@ pub struct ChronosProfile {
     pub moira: Vec<MoiraBinding>,
     #[serde(default)]
     pub daimon: Vec<DaimonBinding>,
+    #[serde(default)]
+    pub alignment: Vec<AlignmentBinding>,
     /// Optional private in-process worker retained with one Pantheon-hosted
     /// Chronos owner. It is configuration, not a claim or transferable grant.
     pub trusted_worker: Option<ChronosTrustedWorkerProfile>,
@@ -407,6 +409,14 @@ pub struct MoiraBinding {
 pub struct DaimonBinding {
     pub workstream: String,
     pub socket: PathBuf,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct AlignmentBinding {
+    pub workstream: String,
+    pub directory: PathBuf,
+    pub scope: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -525,6 +535,9 @@ impl WorkspaceProfile {
             }
             for binding in &mut chronos.daimon {
                 binding.socket = resolve(base, &binding.socket);
+            }
+            for binding in &mut chronos.alignment {
+                binding.directory = resolve(base, &binding.directory);
             }
             if let Some(path) = &mut chronos.planning {
                 *path = resolve(base, path);
@@ -1019,7 +1032,10 @@ impl WorkspaceProfile {
             if chronos.workstreams.is_empty() || chronos.workstreams.len() > MAX_WORKSTREAMS {
                 return Err("Chronos workstream count is outside the supported range");
             }
-            if chronos.moira.len() > MAX_BINDINGS || chronos.daimon.len() > MAX_BINDINGS {
+            if chronos.moira.len() > MAX_BINDINGS
+                || chronos.daimon.len() > MAX_BINDINGS
+                || chronos.alignment.len() > MAX_BINDINGS
+            {
                 return Err("Chronos peer binding count is outside the supported range");
             }
             for (index, workstream) in chronos.workstreams.iter().enumerate() {
@@ -1065,6 +1081,24 @@ impl WorkspaceProfile {
                     .any(|other| other.workstream == binding.workstream)
                 {
                     return Err("Daimon workstream bindings must be unique");
+                }
+            }
+            for (index, binding) in chronos.alignment.iter().enumerate() {
+                validate_text(&binding.workstream, "alignment workstream")?;
+                validate_text(&binding.scope, "alignment scope")?;
+                validate_path(&binding.directory)?;
+                validate_binding(
+                    &binding.workstream,
+                    chronos
+                        .workstreams
+                        .iter()
+                        .map(|workstream| &workstream.name),
+                )?;
+                if chronos.alignment[..index]
+                    .iter()
+                    .any(|other| other.workstream == binding.workstream)
+                {
+                    return Err("alignment workstream bindings must be unique");
                 }
             }
             if let Some(worker) = &chronos.trusted_worker {
@@ -1207,6 +1241,8 @@ fn validate_text(value: &str, field: &'static str) -> Result<(), &'static str> {
             "workstream name" => "workstream name is invalid",
             "Moira workstream" => "Moira workstream name is invalid",
             "Moira scope" => "Moira scope is invalid",
+            "alignment workstream" => "alignment workstream name is invalid",
+            "alignment scope" => "alignment scope is invalid",
             "Agora participant" => "Agora participant is invalid",
             _ => "Daimon workstream name is invalid",
         });
@@ -1246,6 +1282,26 @@ mod tests {
           "keybindings":"almost_emacs"
         }"#;
         assert!(WorkspaceProfile::parse(unknown, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn alignment_binding_selects_one_exact_chronos_workstream_and_scope() {
+        let valid = br#"{
+          "version":1,"name":"Alignment","surfaces":["chronos"],
+          "chronos":{"workstreams":[{"name":"Atlas","directory":"chronos"}],
+            "alignment":[{"workstream":"Atlas","directory":"alignment","scope":"product-delivery"}]}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let binding = &profile.chronos.unwrap().alignment[0];
+        assert_eq!(binding.directory, Path::new("/tmp/workbench/alignment"));
+        assert_eq!(binding.scope, "product-delivery");
+
+        let unmatched = br#"{
+          "version":1,"name":"Alignment","surfaces":["chronos"],
+          "chronos":{"workstreams":[{"name":"Atlas","directory":"chronos"}],
+            "alignment":[{"workstream":"Other","directory":"alignment","scope":"product-delivery"}]}
+        }"#;
+        assert!(WorkspaceProfile::parse(unmatched, Path::new(".")).is_err());
     }
 
     #[test]

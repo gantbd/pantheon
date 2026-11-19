@@ -78,6 +78,7 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
                         cancel_receipts: true,
                         moira_attempts: true,
                         daimon_attempts: true,
+                        alignment: true,
                     },
                 ),
             );

@@ -14,9 +14,9 @@ use pantheon_cli::{
         DaimonProcessOptions, HermesProcessOptions, MoiraProcessOptions, NativeHost,
     },
     profile::{
-        AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, ChronosTrustedWorkerProfile,
-        DeploymentMode, HermesAccessProfile, HermesOpenMode, MoiraAgentWorkerProfile,
-        WorkspaceProfile,
+        AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, AlignmentBinding,
+        ChronosTrustedWorkerProfile, DeploymentMode, HermesAccessProfile, HermesOpenMode,
+        MoiraAgentWorkerProfile, WorkspaceProfile,
     },
     registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers_managed_configuration,
@@ -86,6 +86,7 @@ struct Options {
     tellus_endpoint: Option<std::net::SocketAddr>,
     tellus_token: Option<PathBuf>,
     chronos_streams: Vec<Workstream>,
+    alignment_bindings: Vec<AlignmentBinding>,
     vellum_socket: Option<PathBuf>,
     vellum_credential: Option<PathBuf>,
     chronos_writes: bool,
@@ -206,6 +207,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut vellum_credential = None;
     let mut moira_bindings = Vec::new();
     let mut daimon_bindings = Vec::new();
+    let mut alignment_bindings = Vec::new();
     let mut chronos_planning = None;
     let mut agora_requires = Vec::new();
     let mut task_conversation_socket = None;
@@ -399,6 +401,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                 .into_iter()
                 .map(|binding| (binding.workstream, binding.socket))
                 .collect();
+            alignment_bindings = chronos.alignment;
             chronos
                 .workstreams
                 .into_iter()
@@ -491,6 +494,20 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                 .map_err(|_| usage)?;
             let socket = required_arg(&mut args, usage)?.into();
             daimon_bindings.push((name, socket));
+        } else if argument == "--chronos-alignment" {
+            let usage = "--chronos-alignment requires WORKSTREAM DIRECTORY SCOPE";
+            let workstream = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| usage)?;
+            let directory = required_arg(&mut args, usage)?.into();
+            let scope = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| usage)?;
+            alignment_bindings.push(AlignmentBinding {
+                workstream,
+                directory,
+                scope,
+            });
         } else if (argument == "--headless" || argument == "--snapshot")
             && !headless
             && explicit_mode.is_none()
@@ -531,6 +548,26 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     if operation_id.is_some() && !headless {
         return Err("--operation-id is available only in headless mode".into());
     }
+    for (index, binding) in alignment_bindings.iter().enumerate() {
+        if binding.workstream.is_empty()
+            || binding.workstream.len() > 96
+            || binding.workstream.chars().any(char::is_control)
+            || binding.directory.as_os_str().is_empty()
+            || binding.scope.is_empty()
+            || binding.scope.len() > 256
+            || binding.scope.chars().any(char::is_control)
+            || alignment_bindings[..index]
+                .iter()
+                .any(|prior| prior.workstream == binding.workstream)
+            || chronos_streams
+                .iter()
+                .filter(|stream| stream.name == binding.workstream)
+                .count()
+                != 1
+        {
+            return Err("invalid, duplicate, or unmatched --chronos-alignment binding".into());
+        }
+    }
     let mode = if headless {
         Mode::Headless
     } else {
@@ -568,6 +605,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             cancel_receipts: chronos_cancel_receipts,
             moira_attempts: !moira_bindings.is_empty(),
             daimon_attempts: !daimon_bindings.is_empty(),
+            alignment: !alignment_bindings.is_empty(),
         },
     );
     let vellum_capabilities = capabilities::vellum(mode, host_vellum, vellum_credential.is_some());
@@ -579,6 +617,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         cancel_receipts: chronos_cancel_receipts,
         moira_attempts: !moira_bindings.is_empty(),
         daimon_attempts: !daimon_bindings.is_empty(),
+        alignment: !alignment_bindings.is_empty(),
     };
     let mut not_exercised_profile_requirements = Vec::new();
     let mut negotiate_selected_route = |peer: &'static str,
@@ -732,6 +771,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         tellus_endpoint,
         tellus_token,
         chronos_streams,
+        alignment_bindings,
         vellum_socket,
         vellum_credential,
         chronos_writes,
@@ -769,6 +809,7 @@ fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
+        "pantheon alignment option: --chronos-alignment WORKSTREAM DIRECTORY SCOPE\n",
         "pantheon [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\npantheon vellum-durable-save <execute|lookup> SOCKET CREDENTIAL vdo1.OPERATION_HEX DOCUMENT_ORDINAL EXPECTED_REVISION\npantheon agora-create-room SOCKET PARTICIPANT <conversation|composition> ROOM_ID NAME <open|invite-only> EXPECTED_REVISION 'CREATE AGORA ROOM ROOM_ID NAMED NAME ADMISSION <OPEN|INVITE ONLY> AT REVISION EXPECTED_REVISION'\npantheon daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\npantheon daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\npantheon daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\npantheon daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\npantheon daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\npantheon daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\npantheon aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\npantheon aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\npantheon aegis-manage-session SOCKET\npantheon hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\npantheon hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\npantheon hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\npantheon moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\npantheon moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\npantheon moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Pantheon owns service startup and drain. Peer commands reuse their owner guards and application contracts: Agora room creation binds the exact room facts and current revision, uses the actor-bound owner client and does not retry an uncertain outcome; Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. Vellum durable save execute/lookup uses the peer-owned public-client guard and caller-persisted identity; Pantheon grants no authentication, action authority, persistence or retry permission. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
     )
 }
@@ -3690,6 +3731,9 @@ fn interactive(
         for (name, socket) in options.daimon_bindings {
             hub.bind_daimon(&name, socket)?;
         }
+        for binding in options.alignment_bindings {
+            hub.bind_alignment(&binding.workstream, binding.directory, binding.scope)?;
+        }
     }
     let vellum_control = options.vellum_credential.as_ref().and_then(|credential| {
         options
@@ -4268,6 +4312,7 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
                 directory: stream.directory.clone(),
             })
             .collect(),
+        chronos_alignment: options.alignment_bindings.clone(),
         chronos_hosted: options.host_chronos,
         vellum_socket: options.vellum_socket.clone(),
         vellum_credential: options.vellum_credential.clone(),
