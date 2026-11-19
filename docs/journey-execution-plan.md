@@ -353,9 +353,12 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   provider, prompt and evidence-scope dimensions without inferring
   independence. Organization remains explicitly unknown. Focused protocol,
   wire, service, checkpoint and Moira adapter tests plus strict Clippy passed.
-  The publisher/consumer contract is delivered; composing the observed analyzer
-  into live review creation remains acceptance work on
-  `moira-reviewer-correlation-evidence`.
+  Moira commit `0241140` now composes that analyzer into the governed local run
+  after exact member outcomes return, while preserving cohort refusal before
+  plan admission. The full local-harness package, strict Clippy and a Pantheon
+  headless two-document Vellum composition passed. Live review creation still
+  must consume the governed correlation before
+  `moira-reviewer-correlation-evidence` closes.
 - Pantheon TUI dogfood then admitted priority-8
   `chronos-asynchronous-verification-worker` at Chronos revision 12, blocked on
   `j1-worker-process-controller` and `j1-worker-receipt-contract`, with explicit
@@ -1455,9 +1458,8 @@ mature stakeholder ensemble.
   accompanies accepted, refused and replayed publication outcomes through one
   durable adapter facade. Daimon now authoritatively publishes and Moira
   consumes model, provider, prompt and evidence-scope evidence from the exact
-  retained invocation; production composition of that observed analyzer into
-  live review creation remains open, as does authoritative organization
-  evidence.
+  retained invocation. The governed local run now returns those observed facts;
+  live review creation and authoritative organization evidence remain open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
