@@ -4,6 +4,15 @@ Status: active
 
 Governing blueprint: [`use-cases-and-user-journeys.md`](use-cases-and-user-journeys.md)
 
+Accountable Executive Sponsor: **the current human user directing this delivery
+goal**, explicitly declared by that human on 2026-11-19. Agents must not infer a
+legal name or impersonate this sponsor. A formal `BusinessReviewV1`,
+`ProjectProposalV1`, funding decision, stage decision or rollout gate must bind
+the deployment's named human-principal identifier and retain the sovereign
+owner receipt before it can count as sign-off. Sponsorship supplies accountable
+human governance; it is not blanket effect authority, technical acceptance, or
+a replayable production go/no-go.
+
 This plan turns the product journeys into bounded delivery increments. A checked
 item means the named owner contracts, refusal/uncertainty behavior, interactive
 and headless projections, and executable evidence all exist. Presentation alone
