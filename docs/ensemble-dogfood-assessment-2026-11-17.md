@@ -110,6 +110,46 @@ Qualification evidence:
    outputs and owner dispositions. Model reasoning quality remains unassessed
    until that run.
 
+## 2026-11-18 heterogeneous-provider update
+
+The substantive rerun now exists and narrows the no-go without reversing it.
+Moira invoked four distinct LM Studio model/profile identities—Qwen3 Coder
+Next, GPT-OSS 20B, Qwen3.6 35B-A3B and GPT-OSS 120B—against one exact question
+and a read-only Vellum projection carrying the complete source SHA-256 and
+selected line extents. Dendrite grounded the method/concern cohort, Daimon
+invoked each provider independently, every run had zero tool budget, and Moira
+accepted four structurally valid attributed reports in 161.86 seconds while
+leaving resolution absent. The retained raw-response artifact has SHA-256
+`c4544a30f1a5997212407899a602724b3711d5a63f3e7ca1c0579056b3909ff9`.
+
+The reports are useful challenges, not verified findings. Qwen3 Coder Next's
+symlink/path-traversal claim overlooks `symlink_metadata(...).is_file()`
+rejecting symlinks. GPT-OSS 20B's duplicate-worker concern overlooks the single
+worker slot per record. Qwen3.6 correctly identifies weak operator telemetry but
+treats explicit private-directory and bounded-concurrency policy as defects.
+GPT-OSS 120B identifies useful fault-injection work but recasts fail-closed
+worker disconnect behavior as a retry defect without an authored retry policy.
+The run therefore demonstrates a working independently attributed technical
+discussion cohort and meaningful model diversity, while also demonstrating why
+cross-review, falsification, stakeholder standing and human disposition remain
+mandatory.
+
+The Hestia small-model comparison is a sharper role-fit no-go: only SmolLM3's
+response satisfied the member schema, and its substance was contradictory.
+OLMo omitted required evidence fields, Granite appended transport punctuation
+and alleged absent checks that were present, and Qwen2.5 fenced its JSON and
+gave a generic conclusion. The raw-response artifact has SHA-256
+`fae3e15432b1b54921fd0197ad30fda174908af128f4db2e4d8fe2f8ba4c2a0a`.
+These models may still qualify for narrower verifier/triage/ideation tasks; they
+are not interchangeable stakeholder or technical-review seats.
+
+The first question remains “Do we have the right ensemble?” For final rollout,
+the answer remains **no**: the cohort is still statically configured, actual
+affected stakeholders and a named human advocate are absent, Agora does not yet
+carry all first passes/rebuttals, and no human gate response exists. The next
+slice should use this working cohort to generate bounded proposals while Moira
+retains dissent and forces evidence-backed owner or human dispositions.
+
 ## Pause state
 
 The requested review pause ended when the human explicitly said to proceed.

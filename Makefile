@@ -1,4 +1,4 @@
-.PHONY: check hygiene fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-moira-deliberation qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-daimon qualify-hestia-model-bench
+.PHONY: check hygiene fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-daimon qualify-hestia-model-bench
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -27,6 +27,9 @@ qualify-moira-participation:
 
 qualify-moira-deliberation:
 	sh tests/live/moira_deliberation.sh
+
+qualify-moira-local-ensemble:
+	PANTHEON_LOCAL_MODEL_ENSEMBLE=1 ./tests/live/moira_local_ensemble.sh
 
 qualify-task-conversation:
 	./tests/live/task_conversation.sh

@@ -218,6 +218,47 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   calibration failure, not a transport or orchestration failure. Qwen remains
   useful for decomposed candidate work, with deterministic checks and an
   accountable integrator retaining acceptance authority.
+- Moira's heterogeneous live-provider qualifier now invokes four distinct
+  provider/model profiles against one exact question and a provenance-bearing,
+  read-only Vellum projection. The model runs have zero tool budget and no
+  ambient shell/filesystem access; Dendrite supplies the grounded method and
+  concern cohort, Daimon invokes, and Moira retains attributed member responses
+  without resolving them. The first Hestia small-model cohort admitted only one
+  of four reports: SmolLM3 was structurally valid but contradictory, OLMo omitted
+  required provenance fields, Granite appended invalid transport punctuation
+  and alleged absent checks that were present, and Qwen2.5 fenced its JSON and
+  supplied a generic conclusion. Raw evidence SHA-256 is
+  `fae3e15432b1b54921fd0197ad30fda174908af128f4db2e4d8fe2f8ba4c2a0a`.
+  This is a role-fit and output-profile no-go, not a serving or authority
+  failure; those models remain candidates only for narrower qualified work.
+- A second cohort used LM Studio as the retained third-party provider ground:
+  Qwen3 Coder Next, GPT-OSS 20B, Qwen3.6 35B-A3B and GPT-OSS 120B produced four
+  distinct, valid, independently attributed reports in 161.86 seconds. Raw
+  evidence SHA-256 is
+  `c4544a30f1a5997212407899a602724b3711d5a63f3e7ca1c0579056b3909ff9`.
+  The cohort is operationally useful but remains a no-go as decision authority:
+  every report included at least one overreach or policy-as-defect inference,
+  the configured cohort does not yet prove affected-stakeholder equity, and no
+  human disposition was supplied. Moira correctly left the review unresolved.
+  The next slice must preserve independent reports in Agora, add grounded
+  rebuttal/falsification and owner dispositions, and answer “Do we have the
+  right ensemble?” with stakeholder/standing evidence rather than static test
+  configuration.
+- Live Chronos dogfood captured the associated friction/gaps without duplicating
+  existing work: `moira-ensemble-capability-discoverability`,
+  `hestia-artifact-recovery-progress-telemetry`,
+  `hestia-parallel-runtime-start-orchestration`,
+  `vellum-client-attach-readiness-retry-contract`,
+  `tellus-runtime-capability-version-discovery`,
+  `secret-safe-peer-discovery-configuration`,
+  `chronos-batch-mode-transition-input-fencing`,
+  `daimon-provider-uncertain-diagnostic-receipt`,
+  `vellum-bounded-symbol-context-projection`, and
+  `daimon-structured-output-profile-negotiation`. The board reached revision 46
+  with 61 tasks. Tellus also exposed that the long-running Dendrite binary
+  predates its current Tellus route: MCP grounding works, while
+  `tellus.observe.v1` currently falls through with 500 until the owner is safely
+  replaced or capability negotiation refuses the stale instance.
 - Live Pantheon/Chronos dogfood admitted four owner-visible Ready items at board
   revision 6: priority-9 `hestia-model-artifact-acquisition-devstral`, priority-2
   `daimon-openrouter-provider-integration`, priority-5
