@@ -342,6 +342,16 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   55 admits that remaining boundary as priority-8
   `j1-dynamic-task-participation-routing`, requiring Moira-participation,
   Chronos-relationship and Daimon-session capabilities.
+- The owner audit for that task found that Moira's raw participation admission
+  requires workflow, deliberation/member, session/profile, task-attempt,
+  method, grounding and persona identities. Pantheon deriving those values
+  from UI state or opaque worker configuration would duplicate workflow truth.
+  [`j1-task-agent-workflow-contract.md`](j1-task-agent-workflow-contract.md)
+  therefore selects Moira as the durable task-agent journey/template owner,
+  keeps every peer sovereign, and defines preview/instantiate/observe commands,
+  state and recovery laws, Pantheon presentation behavior and executable
+  qualification cuts. The contract is proposed work, not a claim that dynamic
+  instantiation already exists.
 - The same dogfood pass found that Pantheon treated a generic relationship
   `created`/`replayed` reply as sufficient and labeled every transport failure
   `NOT SENT`, even though a bind could have committed before its reply was lost.

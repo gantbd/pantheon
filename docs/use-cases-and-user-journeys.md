@@ -2152,6 +2152,10 @@ real Moira and Daimon sockets, verifies the exact revision-3 receipt, reconnects
 a fresh participation observer and proves Ready through both headless observation
 and durable reopen. `agent.worker.step.v1` is qualified owner-bound J1 evidence;
 dynamic task-to-participation admission and automatic routing remain open.
+The proposed owner-safe implementation boundary is specified in
+[`j1-task-agent-workflow-contract.md`](j1-task-agent-workflow-contract.md): Moira
+owns the durable template/instance and derives workflow identities, while
+Pantheon only previews, confirms, observes and routes owner commands.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
