@@ -2493,6 +2493,23 @@ the PM may interpret the bounded input, but prompting cannot establish worker
 facts. Authenticated external- and constrained-worker publication adapters,
 cross-owner atomicity claims, and recurring composition remain open.
 
+Chronos `96bdd71` closes the first concrete local publication adapter without
+collapsing those owners. A dedicated Agora topic carries one pre-bound worker's
+position; the reader scans a bounded complete history, selects the newest
+matching publication, derives contribution identity from Agora's message ID
+and sequence, and derives Vellum evidence only from owner-returned artifact
+targets. It never falls back to an older valid message when the newest position
+is malformed. Incomplete pagination, withdrawn Vellum targets, wrong
+scope/role/principal and body-supplied identity substitution refuse. A separate
+decorator re-observes the published task snapshot through Chronos and requires
+exact equality before the position reaches the stable two-worker sampler; the
+encoder applies the same domain checks before Agora delivery for earlier user
+feedback. Attempt and lease references remain unverified named-owner evidence
+because Chronos exposes no corresponding public read ports yet. Agora's local
+participant identity is a same-OS-user claim rather than Aegis-authenticated
+identity, so distributed authentication, attempt/lease observation, recurring
+composition and a surfaced configuration flow remain open.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

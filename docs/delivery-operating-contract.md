@@ -162,6 +162,14 @@ worker publication adapters and recurring runtime composition remain
 prospective, so attachment and stable-input validation alone are not an
 operational PM or permission to mutate Chronos.
 
+The first local worker adapter now uses one dedicated Agora topic and owner-
+returned Vellum artifact targets. It derives rather than trusts the Agora
+contribution and Vellum evidence identities, refuses incomplete or stale-
+fallback history, and re-observes any published task snapshot through Chronos.
+This is a same-OS-user dogfood boundary: Agora's participant claim is not Aegis
+authentication, and Chronos task verification does not prove separately named
+attempt or lease references. Those trust and observation gaps remain explicit.
+
 The minimum recurring, owner-bracketed reconciliation cycle is:
 
 1. Observe the exact Vellum goal revision and current Chronos graph, attempts,

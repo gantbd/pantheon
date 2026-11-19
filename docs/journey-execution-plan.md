@@ -1430,9 +1430,15 @@ recovery before a human can settle the gate from this surface.
   Chronos `923ed16` adds a deterministic worker-source port: exact external and
   constrained scope/role/principal bindings must survive two equal complete
   reads, while drift, substitution and role collapse refuse. Concrete
-  authenticated worker publishers, recurring/coalesced PM execution, Agora
-  challenge and separately authorized application remain open, so the
-  priority-10 Chronos task remains blocked rather than being declared complete.
+  publication begins in Chronos `96bdd71`: a bounded Agora-topic reader derives
+  contribution identity from the attributed message and Vellum evidence from
+  owner-returned artifact targets, refuses incomplete history and stale
+  fallback, and requires exact Chronos re-observation of any supplied task
+  snapshot. The local participant claim is not Aegis authentication, and
+  attempt/lease references have no Chronos observation ports yet. Distributed
+  authentication, recurring/coalesced PM execution, Agora challenge and
+  separately authorized application remain open, so the priority-10 Chronos
+  task remains blocked rather than being declared complete.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
