@@ -4,6 +4,7 @@
 pub mod agent_web;
 pub mod capabilities;
 pub mod chronos_task;
+pub mod daimon_observe;
 pub mod headless;
 pub mod hestia;
 mod hosted;

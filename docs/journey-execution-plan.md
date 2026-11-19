@@ -2204,13 +2204,24 @@ Operational means observable completed work, not a configured role name:
   headless snapshot.
 - Agent-tool discovery now reports unavailable component surfaces as explicitly
   non-admissible instead of relying on omission. Agora lacks bounded room/message
-  agent gateways; Daimon lacks standalone exact session/event observation;
-  Hestia lacks exact artifact/serving observation; and Oculus remains a protocol-
-  value skeleton without an owner service, public client, source-catalogue
-  runtime, or query settlement transport. Every entry names its next owner seam
-  and sets `aggregate_fallback=false`. This is intentionally distinct from Aegis
-  and human-gate controls, which are guarded authority surfaces rather than
-  missing autonomous-agent conveniences.
+  agent gateways; Hestia lacks exact artifact/serving observation; and Oculus
+  remains a protocol-value skeleton without an owner service, public client,
+  source-catalogue runtime, or query settlement transport. Every entry names its
+  next owner seam and sets `aggregate_fallback=false`. This is intentionally
+  distinct from Aegis and human-gate controls, which are guarded authority
+  surfaces rather than missing autonomous-agent conveniences.
+- Daimon's unavailable entry is now replaced by an exact
+  `daimon-agent-observe` tool under `agents.session.inspect.v1`. The model may
+  supply one 32-hex session identity; the deployment fixes the owner socket.
+  Pantheon reuses Daimon's qualified stable inspect/events/inspect algorithm and
+  emits session facts plus event cursors/kinds, usage and content-free context
+  evidence without assistant text, thoughts, terminal output, tool detail or
+  file paths. Observed provider capabilities remain facts, not tool, provider,
+  filesystem, terminal, permission, mutation or execution authority.
+  The repeatable live qualification uses Daimon's real Unix fixture and proves
+  revision 12 / `ReattachRequired`, contiguous cursors 1–2, plan byte count,
+  token usage 21/34, and absence of both plan text and a derived plan digest from
+  output. Only digests already issued by Daimon for file/output receipts remain.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The

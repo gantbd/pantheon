@@ -55,13 +55,19 @@ The initial authorities are distinct:
 - `ledger.events.disclose.v1`: bounded Hermes event disclosure for one stream,
   start and limit, retaining the command's exact disclosure confirmation.
   Acknowledgement and compaction remain separately guarded and unadmitted.
+- `agents.session.inspect.v1`: the `pantheon daimon-agent-observe` gateway for
+  one exact agent-session identity against a deployment-fixed Daimon socket. It
+  reuses Daimon's stable inspect/events/inspect owner algorithm and discloses
+  only session facts plus content-free bounded event metadata. Assistant text,
+  thoughts, terminal output, tool details and file paths remain undisclosed;
+  observed provider capabilities grant no execution or tool authority.
 
 The catalogue describes independently admissible commands, not a default role
 bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
-Agora, Daimon, Hestia, and Oculus are currently named there with the missing
+Agora, Hestia, and Oculus are currently named there with the missing
 owner/client boundary and next admissible seam. `aggregate_fallback=false` is
 normative: neither an agent nor a launcher may replace a missing component tool
 with Pantheon's aggregate headless observation. Aegis authority and human-gate
@@ -92,6 +98,14 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
       "allow_additional_arguments": true
     },
     {
+      "command": "daimon-agent-observe",
+      "capability": "44444444444444444444444444444444",
+      "semantic_capability": "agents.session.inspect.v1",
+      "program": "/absolute/pantheon",
+      "argument_prefix": ["daimon-agent-observe", "/absolute/daimon-agent.sock"],
+      "allow_additional_arguments": true
+    },
+    {
       "command": "web",
       "capability": "22222222222222222222222222222222",
       "semantic_capability": "agent.web.fetch.v1",
@@ -101,7 +115,7 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
     }
   ],
   "environment_names": [],
-  "max_handles": 3,
+  "max_handles": 4,
   "max_output_bytes": 1048576
 }
 ```

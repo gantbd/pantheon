@@ -1263,7 +1263,7 @@ fn daimon_execution_projection(policy: Option<&DaimonExecutionPolicyProfile>) ->
     })
 }
 
-fn observe_daimon_agent(
+pub(crate) fn observe_daimon_agent(
     socket: PathBuf,
     agent_session: daimon_protocol::AgentSessionIdV1,
 ) -> (serde_json::Value, bool) {
@@ -1297,12 +1297,7 @@ fn observe_daimon_agent(
                 .events
                 .entries
                 .iter()
-                .map(|record| {
-                    serde_json::json!({
-                        "cursor": record.cursor,
-                        "kind": daimon_agent_event_kind(&record.event),
-                    })
-                })
+                .map(daimon_agent_event_projection)
                 .collect::<Vec<_>>();
             (
                 serde_json::json!({
@@ -1394,6 +1389,81 @@ fn daimon_agent_event_kind(event: &daimon_protocol::agent::AgentEventV1) -> &'st
         AgentEventV1::Usage { .. } => "usage",
         AgentEventV1::TurnFinished { .. } => "turn_finished",
     }
+}
+
+fn daimon_agent_event_projection(
+    record: &daimon_protocol::agent::AgentEventRecordV1,
+) -> serde_json::Value {
+    use daimon_protocol::agent::AgentEventV1;
+    let evidence = match &record.event {
+        AgentEventV1::AssistantMessage { bytes }
+        | AgentEventV1::Thought { bytes }
+        | AgentEventV1::Plan { bytes } => content_shape(bytes),
+        AgentEventV1::ToolCall { title, detail } => serde_json::json!({
+            "title": content_shape(title),
+            "detail": content_shape(detail),
+        }),
+        AgentEventV1::Terminal { stream, bytes } => serde_json::json!({
+            "stream": content_shape(stream),
+            "output": content_shape(bytes),
+        }),
+        AgentEventV1::Permission(request) => serde_json::json!({
+            "request": hex_bytes(&request.request.into_bytes()),
+            "turn": hex_bytes(&request.turn.into_bytes()),
+            "capability": content_shape(&request.capability),
+            "options": request.options.iter().map(|option| serde_json::json!({
+                "id": hex_bytes(&option.id.into_bytes()),
+                "kind": format!("{:?}", option.kind).to_ascii_lowercase(),
+                "label": content_shape(&option.label),
+            })).collect::<Vec<_>>(),
+        }),
+        AgentEventV1::FileChange {
+            path,
+            content_digest,
+        } => serde_json::json!({
+            "path": content_shape(path),
+            "content_digest": format!("sha256:{}", hex_bytes(&content_digest.into_bytes())),
+        }),
+        AgentEventV1::FileRead {
+            path,
+            content_digest,
+            content_bytes,
+        } => serde_json::json!({
+            "path": content_shape(path),
+            "content_digest": format!("sha256:{}", hex_bytes(&content_digest.into_bytes())),
+            "content_bytes": content_bytes,
+        }),
+        AgentEventV1::Usage {
+            input_tokens,
+            output_tokens,
+        } => serde_json::json!({
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+        }),
+        AgentEventV1::TurnFinished {
+            turn,
+            disposition,
+            stop_reason,
+            output_digest,
+        } => serde_json::json!({
+            "turn": hex_bytes(&turn.into_bytes()),
+            "disposition": format!("{disposition:?}").to_ascii_lowercase(),
+            "stop_reason": format!("{stop_reason:?}").to_ascii_lowercase(),
+            "output_digest": output_digest.map(|digest| format!("sha256:{}", hex_bytes(&digest.into_bytes()))),
+        }),
+    };
+    serde_json::json!({
+        "cursor": record.cursor,
+        "kind": daimon_agent_event_kind(&record.event),
+        "evidence": evidence,
+    })
+}
+
+fn content_shape(bytes: &[u8]) -> serde_json::Value {
+    serde_json::json!({
+        "bytes": bytes.len(),
+        "content": "not_disclosed",
+    })
 }
 
 fn hex_bytes(bytes: &[u8]) -> String {
@@ -2239,6 +2309,26 @@ fn peer_failure(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn daimon_agent_event_projection_is_useful_without_disclosing_content() {
+        let record = daimon_protocol::agent::AgentEventRecordV1 {
+            cursor: 7,
+            event: daimon_protocol::agent::AgentEventV1::Terminal {
+                stream: b"stderr-secret".to_vec(),
+                bytes: b"provider-secret-output".to_vec(),
+            },
+        };
+        let projection = daimon_agent_event_projection(&record);
+        let encoded = serde_json::to_string(&projection).unwrap();
+        assert_eq!(projection["cursor"], 7);
+        assert_eq!(projection["kind"], "terminal");
+        assert_eq!(projection["evidence"]["stream"]["bytes"], 13);
+        assert_eq!(projection["evidence"]["output"]["bytes"], 22);
+        assert!(!encoded.contains("stderr-secret"));
+        assert!(!encoded.contains("provider-secret-output"));
+        assert!(!encoded.contains("sha256:"));
+    }
 
     #[test]
     fn daimon_execution_projection_preserves_task_and_bounds_without_inventing_participation() {

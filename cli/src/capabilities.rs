@@ -457,6 +457,12 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         model_arguments: "one_exact_task_or_conversation_reference",
     },
     AgentToolRoute {
+        component: "daimon",
+        capability: "agents.session.inspect.v1",
+        command: "daimon-agent-observe",
+        model_arguments: "exactly_one_agent_session_id",
+    },
+    AgentToolRoute {
         component: "hermes",
         capability: "ledger.events.disclose.v1",
         command: "hermes-disclose-events",
@@ -478,11 +484,6 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
         component: "agora",
         missing: "bounded room/message observation and addressed-message submission gateways",
         next_boundary: "compose Agora's public owner client with exact room, revision, participant, disclosure, and mutation confirmation contracts",
-    },
-    AgentToolGap {
-        component: "daimon",
-        missing: "standalone exact session and event observation gateways",
-        next_boundary: "project one selected owner session and bounded event cursor without reusing the aggregate headless snapshot",
     },
     AgentToolGap {
         component: "hestia",
