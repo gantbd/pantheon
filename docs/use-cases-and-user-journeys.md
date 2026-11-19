@@ -2213,6 +2213,14 @@ adapter remains open: it must re-read exact Chronos, Vellum and evidence-owner
 state rather than treating a retained proposal as current. Automatic grooming
 and challenge, owner mutation, acceptance evidence, that production composition,
 and final human sign-off remain open.
+The first owner-client audit found a concrete prerequisite rather than papering
+over it: Chronos can boundedly re-observe the exact control task, but Vellum's
+current snapshot follows mutable editor-view selection and is therefore not a
+safe exact-document grounding read for an ambient PM. Chronos revision 67 now
+retains `vellum-exact-document-version-observation` as a ready backlog item.
+The PM host must not select or disturb the human's active document to manufacture
+currentness; it needs a separately authorized, non-mutating exact-document
+version observation contract.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
