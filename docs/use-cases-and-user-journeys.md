@@ -2220,7 +2220,15 @@ safe exact-document grounding read for an ambient PM. Chronos revision 67 now
 retains `vellum-exact-document-version-observation` as a ready backlog item.
 The PM host must not select or disturb the human's active document to manufacture
 currentness; it needs a separately authorized, non-mutating exact-document
-version observation contract.
+version observation contract. Vellum now supplies that owner contract as the
+closed `ObserveDocumentVersion` command: it accepts one live workspace document
+identity and returns only that identity and its current revision under
+`ReadSource` authority. The canonical wire profile is fixed-width and the
+service test keeps a different human document active while independently
+observing and editing the target, proving no view selection, witness allocation
+or source-byte disclosure. PM configuration still must bind the retained Vellum
+source identity to the exact authorized live workspace document and consume
+this read as one part of the full multi-owner frontier.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
