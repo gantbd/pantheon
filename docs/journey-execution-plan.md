@@ -1423,8 +1423,14 @@ recovery before a human can settle the gate from this surface.
   against a freshly supplied alignment basis, classifies
   goal/work/cohort/evidence drift, independently revalidates the anti-overreach
   laws and exposes no control command. Chronos protocol, wire, remote-client and
-  alignment-integration suites plus strict Clippy pass. Live worker-frontier
-  readers, the local endpoint, recurring/coalesced PM execution, Agora
+  alignment-integration suites plus strict Clippy pass. Chronos `d3b0e8b` adds
+  an independently owned local listener and typed client for that exact read-
+  only profile, qualified through the durable record, fresh alignment frontier,
+  host, socket and client plus wrong-scope, drain and replacement-fence cases.
+  Chronos `923ed16` adds a deterministic worker-source port: exact external and
+  constrained scope/role/principal bindings must survive two equal complete
+  reads, while drift, substitution and role collapse refuse. Concrete
+  authenticated worker publishers, recurring/coalesced PM execution, Agora
   challenge and separately authorized application remain open, so the
   priority-10 Chronos task remains blocked rather than being declared complete.
 - The cyclic review contract now also requires evidence-grounded inventory of

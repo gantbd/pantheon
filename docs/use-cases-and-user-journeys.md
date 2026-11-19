@@ -2481,6 +2481,18 @@ frontier readers, recurring/coalesced PM composition, attributed Agora
 challenge and operator presentation remain open; the new endpoint cannot
 manufacture or continuously refresh worker truth.
 
+Chronos `923ed16` closes the deterministic worker-acquisition contract without
+claiming a live publisher. The external source is pre-bound to the alignment
+cohort's exact frontier-supervisor principal; the constrained source is a
+separate configured principal that cannot collapse into the supervisor,
+product manager or external advocate. Both receive the exact Chronos scope,
+role and principal, and only two equal complete reads from both sources produce
+a stable input. Drift, role/principal substitution and malformed owner
+references refuse. This guards model inertia and PM overreach at the substrate:
+the PM may interpret the bounded input, but prompting cannot establish worker
+facts. Authenticated external- and constrained-worker publication adapters,
+cross-owner atomicity claims, and recurring composition remain open.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

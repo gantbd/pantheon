@@ -153,10 +153,14 @@ pending gate. The contract refuses role collapse, invented evidence and false
 record through a closed bounded codec and strong-acknowledgement register;
 weak, indeterminate, malformed and overwrite attempts refuse. Public projection
 now exists as a closed, scope-bound, observation-only Chronos protocol with
-explicit goal/work/cohort/evidence currentness and no control command. The
-local endpoint, live worker-frontier readers and runtime composition remain
-prospective, so durability/projection alone is not an operational PM or
-permission to mutate Chronos.
+explicit goal/work/cohort/evidence currentness and no control command. A
+separately owned local listener and typed client make that profile attachable
+without adding control authority. A deterministic worker-source port also pre-
+binds the external and constrained positions to exact scope, role and principal
+and requires two equal complete reads from both sources. Concrete authenticated
+worker publication adapters and recurring runtime composition remain
+prospective, so attachment and stable-input validation alone are not an
+operational PM or permission to mutate Chronos.
 
 The minimum recurring, owner-bracketed reconciliation cycle is:
 
