@@ -2194,8 +2194,11 @@ gate refuse malformed, weak or indeterminate state. An owner-neutral read-only
 Chronos protocol can project the exact content-free proposal, task, cohort,
 evidence and currentness only through an explicit host disclosure decision and
 has no control command. This closes local durable retention and the observation
-shape, not hosted transport, Pantheon presentation, automatic grooming, owner
-mutation, acceptance or human sign-off.
+shape. A bounded scope-bound wire profile, verified independent owner-socket
+client and one-connection integration handler now establish the hosted read
+seam without merging Vellum state into the Chronos daemon. Production listener
+lifecycle, a configured live proposal, Pantheon presentation, automatic
+grooming, owner mutation, acceptance and human sign-off remain open.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
