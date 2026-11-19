@@ -33,7 +33,10 @@ use crate::profile::{
     DaimonHostProfile, HestiaProfile, MoiraDecisionPacketReaderProfile, TaskConversationProfile,
 };
 use crate::provider::provider_catalog;
-use pantheon::{AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView};
+use pantheon::{
+    AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView,
+    chronos_attention_entry,
+};
 
 pub struct HeadlessRequest {
     pub operation_id: String,
@@ -459,25 +462,29 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                     .get("incarnation")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or("unknown");
-                agenda.push(AgendaEntry {
-                    source_peer: "chronos".into(),
-                    source_instance: Some(instance.into()),
-                    source_revision: revision.into(),
-                    resource_identity: format!("{task_id}#{incarnation}"),
-                    kind: AgendaKind::OutcomeUnknown,
-                    urgency: AgendaUrgency::Blocking,
-                    actionability: AgendaActionability::Actionable,
-                    blocker: None,
-                    title: format!("Uncertain Chronos task · {task_id}"),
-                    why_operator: "the owner fenced progress after an uncertain outcome".into(),
-                    authority: "agenda presence grants none; Chronos owns task state".into(),
-                    requested_action: "inspect owner evidence and choose a permitted recovery"
-                        .into(),
-                    consequence_of_waiting: "the task remains fenced; no blind retry is safe"
-                        .into(),
-                    next_owner_action: "open Chronos and inspect the exact task revision".into(),
-                    route: "navigate.chronos".into(),
-                });
+                let phase = task
+                    .get("phase")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("unknown");
+                let dependency_count = task
+                    .get("dependency_count")
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(0);
+                let priority = task
+                    .get("priority")
+                    .and_then(serde_json::Value::as_i64)
+                    .unwrap_or(0);
+                if let Some(entry) = chronos_attention_entry(
+                    instance,
+                    revision,
+                    task_id,
+                    incarnation,
+                    phase,
+                    priority,
+                    dependency_count,
+                ) {
+                    agenda.push(entry);
+                }
             }
         } else if name == "moira-participation" && status == "current" {
             let options = peer
@@ -1752,13 +1759,24 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
             let agenda_items = view
                 .entries
                 .iter()
-                .filter(|entry| matches!(entry.snapshot.phase, chronos_protocol::Phase::Uncertain))
+                .filter(|entry| {
+                    matches!(
+                        entry.snapshot.phase,
+                        chronos_protocol::Phase::Blocked | chronos_protocol::Phase::Uncertain
+                    )
+                })
                 .map(|entry| {
+                    let phase = match entry.snapshot.phase {
+                        chronos_protocol::Phase::Blocked => "blocked",
+                        chronos_protocol::Phase::Uncertain => "uncertain",
+                        _ => unreachable!("agenda filter admits only blocked or uncertain tasks"),
+                    };
                     serde_json::json!({
                         "task": entry.reference.task,
                         "incarnation": entry.reference.incarnation,
-                        "phase": "uncertain",
+                        "phase": phase,
                         "priority": entry.snapshot.priority,
+                        "dependency_count": entry.snapshot.dependency_count,
                     })
                 })
                 .collect::<Vec<_>>();
@@ -2163,18 +2181,42 @@ mod tests {
                 "task": "recover-effect",
                 "incarnation": "3",
                 "phase": "uncertain",
-                "priority": 8
+                "priority": 8,
+                "dependency_count": 0
+            }, {
+                "task": "align-product",
+                "incarnation": "4",
+                "phase": "blocked",
+                "priority": 10,
+                "dependency_count": 6
             }]
         })];
         let agenda = project_operator_agenda(&peers);
-        assert_eq!(agenda.entries.len(), 1);
-        assert_eq!(agenda.entries[0].source_peer, "chronos");
-        assert_eq!(
-            agenda.entries[0].source_instance.as_deref(),
-            Some("delivery")
+        assert_eq!(agenda.entries.len(), 2);
+        let uncertain = agenda
+            .entries
+            .iter()
+            .find(|entry| entry.resource_identity == "recover-effect#3")
+            .unwrap();
+        assert_eq!(uncertain.source_peer, "chronos");
+        assert_eq!(uncertain.source_instance.as_deref(), Some("delivery"));
+        assert_eq!(uncertain.source_revision, "Finite(7)");
+        assert_eq!(uncertain.kind, AgendaKind::OutcomeUnknown);
+        assert_eq!(uncertain.actionability, AgendaActionability::Actionable);
+        let blocked = agenda
+            .entries
+            .iter()
+            .find(|entry| entry.resource_identity == "align-product#4")
+            .unwrap();
+        assert_eq!(blocked.kind, AgendaKind::DependencyBlocked);
+        assert_eq!(blocked.actionability, AgendaActionability::InspectOnly);
+        assert!(
+            blocked
+                .blocker
+                .as_deref()
+                .is_some_and(|value| value.contains('6'))
         );
-        assert_eq!(agenda.entries[0].source_revision, "Finite(7)");
-        assert_eq!(agenda.entries[0].resource_identity, "recover-effect#3");
+        assert!(blocked.next_owner_action.contains("Dependencies"));
         assert!(!agenda.operating_reviews.owner_configured);
     }
 

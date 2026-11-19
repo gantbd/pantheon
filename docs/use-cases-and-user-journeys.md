@@ -2168,6 +2168,23 @@ The proposed owner-safe implementation boundary is specified in
 owns the durable template/instance and derives workflow identities, while
 Pantheon only previews, confirms, observes and routes owner commands.
 
+Chronos revision 66 also makes the priority-10 product-manager alignment task
+and its six prerequisites inspectable through the live dependency graph. The
+host operator agenda now imports both dependency-blocked and uncertain owner
+facts instead of hiding blocked alignment work behind manual board search.
+Blocked entries retain the Chronos revision, task/incarnation, owner priority
+and prerequisite count, are explicitly inspect-only, and route to the Chronos
+dependency surface; uncertain entries retain their distinct recovery semantics.
+This is operational alignment visibility, not an autonomous product manager,
+goal rewrite, task claim, prerequisite completion or acceptance receipt.
+An isolated live gate admits a real P10 dependency-blocked task, verifies the
+same inspect-only agenda entry through the TUI and a concurrently attached
+headless Pantheon client, and proves clean hosted-owner drain. The long-running
+revision-66 dogfood owner later returned repeated `not_sent` attachment results
+while its original TUI remained current, so canonical multi-client attachment
+stability is again an open operational finding rather than being inferred from
+the isolated qualification.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

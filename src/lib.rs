@@ -8,7 +8,7 @@ mod workbench;
 
 pub use agenda::{
     AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatingReviewReadiness,
-    OperatorAgendaView,
+    OperatorAgendaView, chronos_attention_entry,
 };
 pub use shell::{Shell, ShellInput, Surface, shell_input};
 pub use workbench::{

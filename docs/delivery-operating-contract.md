@@ -118,6 +118,41 @@ conversational narration.
 - Review completion requires an inspectable sign-off or refusal. Silence,
   timeout, relabeling, and agent impersonation cannot satisfy a human gate.
 
+## Product alignment control loop
+
+An intelligent product manager is a first-class stakeholder between the
+external human advocate and any Pantheon-constrained frontier supervisor. The
+role continuously reconciles the governing goal revision, acceptance evidence,
+priority, dependency state, work leases, drift, grooming history and pending
+sign-off. It may propose decomposition, sequencing, acceptance criteria and
+priority changes; it may not silently rewrite the goal, accept its own work,
+suppress stakeholder dissent, or assume executive, product-owner or rollout
+authority.
+
+Chronos is the authoritative scheduling and alignment index. Rich objective,
+acceptance and review content remains in Vellum under exact artifact references;
+Agora carries attributed challenge; Tellus carries grounding/provenance; Oculus
+carries observed behavior; Moira retains the selected ensemble and deliberation;
+and Aegis carries effect authority and human gates. A reconciliation must name
+the exact owner revision it observed and distinguish a proposal from an applied
+owner mutation.
+
+Pantheon's operator agenda imports current owner-published dependency-blocked
+and uncertain Chronos work. Blocked work is inspect-only: it shows owner
+priority and prerequisite count and routes the operator to the exact Chronos
+dependency view. Uncertain work remains a separate recovery condition. Agenda
+presence never changes priority, completes a prerequisite, grants a lease or
+accepts an outcome. This attention projection is the first operational PM
+surface; autonomous grooming and acceptance remain unavailable until the
+owner-bound worker, task-linked conversation, model-role-fit and stakeholder-
+ensemble contracts are qualified.
+
+Qualification must cover both the interactive agenda and a concurrently
+attached headless client against the same owner. A passing isolated fixture does
+not erase a live owner's attachment refusal; the product manager treats that
+disagreement as drift requiring explicit follow-up, not as permission to use a
+cached projection.
+
 ## Cyclic capability, boundary and learning review
 
 Every meaningful turn reconciliation, MBR and QBR includes a productive

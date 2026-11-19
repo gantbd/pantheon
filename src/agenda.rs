@@ -10,6 +10,7 @@ pub const MAX_AGENDA_ENTRIES: usize = 128;
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AgendaKind {
+    DependencyBlocked,
     OutcomeUnknown,
     GovernedPermission,
     HumanGate,
@@ -100,6 +101,76 @@ impl OperatorAgendaView {
     }
 }
 
+/// Maps one bounded owner-published Chronos fact into host attention semantics.
+/// Unknown phases are not agenda items. This never changes task state or
+/// infers authority from priority, dependencies, or agenda presence.
+pub fn chronos_attention_entry(
+    workstream: &str,
+    revision: &str,
+    task: &str,
+    incarnation: &str,
+    phase: &str,
+    priority: i64,
+    dependency_count: u64,
+) -> Option<AgendaEntry> {
+    let blocked = match phase {
+        "blocked" => true,
+        "uncertain" => false,
+        _ => return None,
+    };
+    Some(AgendaEntry {
+        source_peer: "chronos".into(),
+        source_instance: Some(workstream.into()),
+        source_revision: revision.into(),
+        resource_identity: format!("{task}#{incarnation}"),
+        kind: if blocked {
+            AgendaKind::DependencyBlocked
+        } else {
+            AgendaKind::OutcomeUnknown
+        },
+        urgency: AgendaUrgency::Blocking,
+        actionability: if blocked {
+            AgendaActionability::InspectOnly
+        } else {
+            AgendaActionability::Actionable
+        },
+        blocker: blocked.then(|| {
+            format!("{dependency_count} owner-published prerequisite(s) remain incomplete")
+        }),
+        title: if blocked {
+            format!("Blocked Chronos work · {task} · P{priority}")
+        } else {
+            format!("Uncertain Chronos task · {task}")
+        },
+        why_operator: if blocked {
+            "the owner reports admitted work cannot become eligible yet"
+        } else {
+            "the owner fenced progress after an uncertain outcome"
+        }
+        .into(),
+        authority: "agenda presence grants none; Chronos owns task state".into(),
+        requested_action: if blocked {
+            "inspect the exact dependency graph and align the executable next slice"
+        } else {
+            "inspect owner evidence and choose a permitted recovery"
+        }
+        .into(),
+        consequence_of_waiting: if blocked {
+            "the admitted outcome remains blocked and may drift from current priority"
+        } else {
+            "the task remains fenced; no blind retry is safe"
+        }
+        .into(),
+        next_owner_action: if blocked {
+            "open Chronos Dependencies; follow an incomplete prerequisite"
+        } else {
+            "open Chronos and inspect the exact task revision"
+        }
+        .into(),
+        route: "navigate.chronos".into(),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -143,5 +214,27 @@ mod tests {
         }
         assert_eq!(view.entries.len(), MAX_AGENDA_ENTRIES);
         assert_eq!(view.truncated_sources, ["host"]);
+    }
+
+    #[test]
+    fn chronos_attention_distinguishes_blocked_from_uncertain() {
+        let blocked =
+            chronos_attention_entry("delivery", "7", "align", "2", "blocked", 10, 6).unwrap();
+        assert_eq!(blocked.kind, AgendaKind::DependencyBlocked);
+        assert_eq!(blocked.actionability, AgendaActionability::InspectOnly);
+        assert!(blocked.title.contains("P10"));
+        assert!(
+            blocked
+                .blocker
+                .as_deref()
+                .is_some_and(|value| value.contains('6'))
+        );
+
+        let uncertain =
+            chronos_attention_entry("delivery", "8", "effect", "3", "uncertain", 0, 0).unwrap();
+        assert_eq!(uncertain.kind, AgendaKind::OutcomeUnknown);
+        assert_eq!(uncertain.actionability, AgendaActionability::Actionable);
+        assert!(uncertain.blocker.is_none());
+        assert!(chronos_attention_entry("delivery", "9", "ready", "4", "ready", 0, 0).is_none());
     }
 }

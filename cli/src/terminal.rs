@@ -70,8 +70,9 @@ use pantheon::{
     CommandKind, CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus,
     HumanGatePacketView, Instrumentation, KeybindingGuide, OperationsReceiptView, OperationsView,
     OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews, RoutedInput,
-    Shell, ShellInput, SuiteHealthView, Surface, decide_exit, draw_activity, draw_command_palette,
-    draw_help, draw_inspector, draw_shell_with_moira, shell_input, surface_tab_at,
+    Shell, ShellInput, SuiteHealthView, Surface, chronos_attention_entry, decide_exit,
+    draw_activity, draw_command_palette, draw_help, draw_inspector, draw_shell_with_moira,
+    shell_input, surface_tab_at,
 };
 
 struct InputCapture {
@@ -1083,25 +1084,17 @@ fn operator_agenda_view(
                 agenda.truncated_sources.push(source);
             }
             for task in observation.tasks {
-                agenda.push(AgendaEntry {
-                    source_peer: "chronos".into(),
-                    source_instance: Some(observation.workstream.clone()),
-                    source_revision: observation.revision.clone(),
-                    resource_identity: format!("{}#{}", task.task, task.incarnation),
-                    kind: AgendaKind::OutcomeUnknown,
-                    urgency: AgendaUrgency::Blocking,
-                    actionability: AgendaActionability::Actionable,
-                    blocker: None,
-                    title: format!("Uncertain Chronos task · {}", task.task),
-                    why_operator: "the owner fenced progress after an uncertain outcome".into(),
-                    authority: "agenda presence grants none; Chronos owns task state".into(),
-                    requested_action: "inspect owner evidence and choose a permitted recovery"
-                        .into(),
-                    consequence_of_waiting: "the task remains fenced; no blind retry is safe"
-                        .into(),
-                    next_owner_action: "open Chronos and inspect the exact task revision".into(),
-                    route: "navigate.chronos".into(),
-                });
+                if let Some(entry) = chronos_attention_entry(
+                    &observation.workstream,
+                    &observation.revision,
+                    &task.task,
+                    &task.incarnation,
+                    task.phase,
+                    i64::from(task.priority),
+                    task.dependency_count as u64,
+                ) {
+                    agenda.push(entry);
+                }
             }
         }
     }
