@@ -316,6 +316,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   capabilities. Its separation from the revision-53 roadmap is further direct
   evidence for `pantheon-canonical-dogfood-workspace-attachment`, not a second
   roadmap authority.
+- The same owner reached revision 10 after a TUI backlog-reconciliation pass
+  admitted priority-5 `vellum-search-repeat-and-incremental-isearch` with
+  Vellum-editor, Keystone-keybinding and Pantheon-presentation capabilities.
+  This is the independently executable owner gap behind the observed missing
+  repeat-next-match behavior and the documented non-incremental `C-s` search.
+  The pass deliberately did not duplicate the still-open correlation producers
+  or review-item publication linkage: both remain acceptance work on the
+  reopened `moira-reviewer-correlation-evidence` task.
 - Vellum dogfooding admitted the exact Moira–Agora source file but rejected a
   three-file workspace at its configured limit. More importantly, it retained
   a stale clean snapshot after an external source mutation and offered no
