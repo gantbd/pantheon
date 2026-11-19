@@ -35,8 +35,8 @@ use crate::profile::{
 };
 use crate::provider::provider_catalog;
 use pantheon::{
-    AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView,
-    alignment_drift_entry, alignment_human_gate_entry, chronos_attention_entry,
+    AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, ChronosAttentionFact,
+    OperatorAgendaView, alignment_drift_entry, alignment_human_gate_entry, chronos_attention_entry,
 };
 
 pub struct HeadlessRequest {
@@ -490,8 +490,12 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                     .get("incarnation")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or("unknown");
-                let phase = task
-                    .get("phase")
+                let status = task
+                    .get("status")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or("unknown");
+                let execution_phase = task
+                    .get("execution_phase")
                     .and_then(serde_json::Value::as_str)
                     .unwrap_or("unknown");
                 let dependency_count = task
@@ -502,15 +506,16 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                     .get("priority")
                     .and_then(serde_json::Value::as_i64)
                     .unwrap_or(0);
-                if let Some(entry) = chronos_attention_entry(
-                    instance,
+                if let Some(entry) = chronos_attention_entry(ChronosAttentionFact {
+                    workstream: instance,
                     revision,
-                    task_id,
+                    task: task_id,
                     incarnation,
-                    phase,
+                    status,
+                    execution_phase,
                     priority,
                     dependency_count,
-                ) {
+                }) {
                     agenda.push(entry);
                 }
             }
@@ -951,12 +956,7 @@ fn observe_hermes(
                 true,
             ),
             Err(error) => (
-                peer_failure(
-                    "hermes",
-                    "ledger.consumer.observe.v1",
-                    "unavailable",
-                    error,
-                ),
+                peer_failure("hermes", "ledger.consumer.observe.v1", "unavailable", error),
                 false,
             ),
         };
@@ -1894,7 +1894,8 @@ fn observe_agora(profile: AgoraProfile) -> (serde_json::Value, bool) {
 }
 
 fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
-    use chronos_client::observer::{Observer, ObserverLimits, RefreshError};
+    use chronos_client::workflow::{Observer, ObserverLimits, RefreshError};
+    use chronos_protocol::workflow_v9::{ExecutionPhase, Status};
     let capability = chronos_tui::CAPABILITIES.headless[0];
 
     let mut observer = Observer::new(ObserverLimits {
@@ -1914,23 +1915,36 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
                 .entries
                 .iter()
                 .filter(|entry| {
-                    matches!(
-                        entry.snapshot.phase,
-                        chronos_protocol::Phase::Blocked | chronos_protocol::Phase::Uncertain
-                    )
+                    entry.snapshot.status == Status::Blocked
+                        || (entry.snapshot.status == Status::InProgress
+                            && entry.snapshot.execution_phase == ExecutionPhase::Uncertain)
                 })
                 .map(|entry| {
-                    let phase = match entry.snapshot.phase {
-                        chronos_protocol::Phase::Blocked => "blocked",
-                        chronos_protocol::Phase::Uncertain => "uncertain",
-                        _ => unreachable!("agenda filter admits only blocked or uncertain tasks"),
-                    };
                     serde_json::json!({
                         "task": entry.reference.task,
                         "incarnation": entry.reference.incarnation,
-                        "phase": phase,
+                        "status": entry.snapshot.status,
+                        "execution_phase": entry.snapshot.execution_phase,
                         "priority": entry.snapshot.priority,
                         "dependency_count": entry.snapshot.dependency_count,
+                        "blocker": entry.snapshot.blocker,
+                    })
+                })
+                .collect::<Vec<_>>();
+            let tasks = view
+                .entries
+                .iter()
+                .map(|entry| {
+                    serde_json::json!({
+                        "task": entry.reference.task,
+                        "incarnation": entry.reference.incarnation,
+                        "status": entry.snapshot.status,
+                        "execution_phase": entry.snapshot.execution_phase,
+                        "attempt_number": entry.snapshot.attempt_number,
+                        "priority": entry.snapshot.priority,
+                        "dependency_count": entry.snapshot.dependency_count,
+                        "required_capability_count": entry.snapshot.required_capability_count,
+                        "blocker": entry.snapshot.blocker,
                     })
                 })
                 .collect::<Vec<_>>();
@@ -1941,7 +1955,8 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
                     "capability": capability,
                     "status": "current",
                     "revision": format!("{:?}", view.revision),
-                    "tasks": view.entries.len(),
+                    "task_count": view.entries.len(),
+                    "tasks": tasks,
                     "agenda_items": agenda_items,
                     "truncated": false,
                 }),
@@ -2454,13 +2469,15 @@ mod tests {
             "agenda_items": [{
                 "task": "recover-effect",
                 "incarnation": "3",
-                "phase": "uncertain",
+                "status": "in_progress",
+                "execution_phase": "uncertain",
                 "priority": 8,
                 "dependency_count": 0
             }, {
                 "task": "align-product",
                 "incarnation": "4",
-                "phase": "blocked",
+                "status": "blocked",
+                "execution_phase": "dependency_wait",
                 "priority": 10,
                 "dependency_count": 6
             }]

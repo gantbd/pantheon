@@ -237,7 +237,7 @@ fn one_process_owns_all_three_peers_and_serves_real_agora_client() {
             name: "Atlas".into(),
             directory: chronos.clone(),
         }],
-        chronos_requires: vec!["tasks.observe.v1".into()],
+        chronos_requires: vec!["tasks.workflow.observe.v9".into()],
         chronos_hosted: true,
         vellum_socket: Some(vellum.clone()),
         vellum_credential: None,

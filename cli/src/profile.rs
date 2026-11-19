@@ -1446,7 +1446,7 @@ mod tests {
           "agora": {"socket":"agora.sock", "participant":"alice", "requires":["rooms.read.v2"]},
           "chronos": {
             "workstreams": [{"name":"Atlas", "directory":"chronos"}],
-            "requires": ["tasks.observe.v1"],
+            "requires": ["tasks.workflow.observe.v9"],
             "moira": [{"workstream":"Atlas", "socket":"moira.sock", "scope":"atlas"}],
             "daimon": [],
             "planning": "plan.json"

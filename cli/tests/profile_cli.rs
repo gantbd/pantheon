@@ -31,7 +31,7 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
         "agora: observation=rooms.read.v2 operator=messages.read.v2 management=topology.attach.v1",
         "moira: observation=sagas.inspect.v1 operator=sagas.reconciliation.v1,sagas.evidence.v1,sagas.operator-receipts.v1 management=topology.attach.v1",
         "daimon: observation=agents.presence.v1 operator=agents.session.inspect.v1,agents.session-set.inspect.v1,agents.session-set.control.v1,agents.session-set.prompt.v1,agents.session-set.permission.v1,agents.session-set.reattach.v1 management=topology.attach.v1",
-        "chronos: observation=tasks.observe.v1 operator=attempts.moira.inspect.v1,attempts.daimon.inspect.v1 management=topology.attach.v1",
+        "chronos: observation=tasks.workflow.observe.v9 operator=attempts.moira.inspect.v1,attempts.daimon.inspect.v1 management=topology.attach.v1",
         "vellum: observation=workspace.inventory.v1 operator=workspace.edit.v1 control=workspace.save.v1 management=topology.attach.v1",
     ] {
         assert!(
@@ -158,7 +158,7 @@ fn chronos_control_requirements_follow_selected_launch_features() {
     ));
     fs::write(
         &path,
-        r#"{"version":1,"name":"Chronos route","surfaces":["workspace"],"agora":null,"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.observe.v1","tasks.mutate.v1","scheduling.mutate.v5"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
+        r#"{"version":1,"name":"Chronos route","surfaces":["workspace"],"agora":null,"chronos":{"workstreams":[{"name":"Chronos","directory":"chronos"}],"requires":["tasks.workflow.observe.v9","tasks.mutate.v1","scheduling.mutate.v5"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
     )
     .unwrap();
 
@@ -318,7 +318,7 @@ fn headless_profile_can_host_and_drain_real_chronos_and_vellum() {
     let profile = scratch.join("workspace.json");
     fs::write(
         &profile,
-        r#"{"version":1,"name":"Hosted","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}"#,
+        r#"{"version":1,"name":"Hosted","surfaces":["workspace"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.workflow.observe.v9"],"moira":[],"daimon":[],"planning":null},"vellum":{"deployment":"hosted","socket":"vellum.sock","credential":null,"roots":["source.txt"],"requires":["workspace.inventory.v1"]}}"#,
     )
     .unwrap();
 
@@ -405,7 +405,7 @@ fn management_session_observes_live_host_and_drains_on_command() {
     let profile = scratch.join("workspace.json");
     fs::write(
         &profile,
-        r#"{"version":1,"name":"Managed","surfaces":["overview"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
+        r#"{"version":1,"name":"Managed","surfaces":["overview"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos"}],"requires":["tasks.workflow.observe.v9"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
     )
     .unwrap();
 
@@ -488,7 +488,7 @@ fn management_session_retains_and_projects_private_trusted_chronos_worker() {
     let profile = scratch.join("workspace.json");
     fs::write(
         &profile,
-        r#"{"version":1,"name":"Managed worker","surfaces":["operations"],"chronos":{"deployment":"hosted","workstreams":[{"name":"Product","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"trusted_worker":{"workstream":"Product","agent":"product-manager","grant_validity_seconds":60,"lease_duration_seconds":30},"planning":null}}"#,
+        r#"{"version":1,"name":"Managed worker","surfaces":["operations"],"chronos":{"deployment":"hosted","workstreams":[{"name":"Product","directory":"chronos"}],"requires":["tasks.workflow.observe.v9"],"moira":[],"daimon":[],"trusted_worker":{"workstream":"Product","agent":"product-manager","grant_validity_seconds":60,"lease_duration_seconds":30},"planning":null}}"#,
     )
     .unwrap();
 
@@ -555,12 +555,12 @@ fn management_session_preflights_drains_and_execs_a_replacement_profile() {
     let second = scratch.join("second profile.json");
     fs::write(
         &first,
-        r#"{"version":1,"name":"First","surfaces":["overview"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos-a"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
+        r#"{"version":1,"name":"First","surfaces":["overview"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Atlas","directory":"chronos-a"}],"requires":["tasks.workflow.observe.v9"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
     )
     .unwrap();
     fs::write(
         &second,
-        r#"{"version":1,"name":"Second","surfaces":["overview"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Borealis","directory":"chronos-b"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
+        r#"{"version":1,"name":"Second","surfaces":["overview"],"agora":null,"chronos":{"deployment":"hosted","workstreams":[{"name":"Borealis","directory":"chronos-b"}],"requires":["tasks.workflow.observe.v9"],"moira":[],"daimon":[],"planning":null},"vellum":null}"#,
     )
     .unwrap();
 

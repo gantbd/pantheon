@@ -72,12 +72,13 @@ use crate::reconfiguration::{self, ReconfigurationPlan};
 use crate::registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown};
 use pantheon::{
     ActivityLevel, ActivityLog, AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency,
-    CommandKind, CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus,
-    HumanGatePacketView, Instrumentation, KeybindingGuide, OperationsReceiptView, OperationsView,
-    OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews, RoutedInput,
-    Shell, ShellInput, SuiteHealthView, Surface, alignment_drift_entry, alignment_human_gate_entry,
-    chronos_attention_entry, decide_exit, draw_activity, draw_command_palette, draw_help,
-    draw_inspector, draw_shell_with_moira, shell_input, surface_tab_at,
+    ChronosAttentionFact, CommandKind, CommandPalette, CommandSpec, DaimonModelView, ExitDecision,
+    Focus, HumanGatePacketView, Instrumentation, KeybindingGuide, OperationsReceiptView,
+    OperationsView, OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews,
+    RoutedInput, Shell, ShellInput, SuiteHealthView, Surface, alignment_drift_entry,
+    alignment_human_gate_entry, chronos_attention_entry, decide_exit, draw_activity,
+    draw_command_palette, draw_help, draw_inspector, draw_shell_with_moira, shell_input,
+    surface_tab_at,
 };
 
 struct InputCapture {
@@ -1092,15 +1093,16 @@ fn operator_agenda_view(
                 agenda.truncated_sources.push(source);
             }
             for task in observation.tasks {
-                if let Some(entry) = chronos_attention_entry(
-                    &observation.workstream,
-                    &observation.revision,
-                    &task.task,
-                    &task.incarnation,
-                    task.phase,
-                    i64::from(task.priority),
-                    task.dependency_count as u64,
-                ) {
+                if let Some(entry) = chronos_attention_entry(ChronosAttentionFact {
+                    workstream: &observation.workstream,
+                    revision: &observation.revision,
+                    task: &task.task,
+                    incarnation: &task.incarnation,
+                    status: task.status,
+                    execution_phase: task.execution_phase,
+                    priority: i64::from(task.priority),
+                    dependency_count: task.dependency_count as u64,
+                }) {
                     agenda.push(entry);
                 }
             }
@@ -7771,8 +7773,7 @@ fn spawn_work_item_binding_inspection(
 ) -> WorkItemBindingInspection {
     let (sender, result) = sync_channel(1);
     std::thread::spawn(move || {
-        let inspected =
-            inspect_work_item_binding(profile.as_ref(), &workstream, &task_id, target);
+        let inspected = inspect_work_item_binding(profile.as_ref(), &workstream, &task_id, target);
         let _ = sender.send(inspected);
     });
     WorkItemBindingInspection {
@@ -7834,13 +7835,8 @@ fn inspect_work_item_binding(
         }
     };
     let current_task = observe_current_chronos_task(workstream, task_id)?;
-    let mut evidence = validate_work_item_binding(
-        &catalog,
-        task_id,
-        &expected_attempt,
-        &current_task,
-        target,
-    )?;
+    let mut evidence =
+        validate_work_item_binding(&catalog, task_id, &expected_attempt, &current_task, target)?;
     if let Some(model) = &mut evidence.model
         && let Some(hestia) = profile.and_then(|profile| profile.hestia.as_ref())
     {
@@ -7908,9 +7904,7 @@ fn validate_work_item_binding(
     if current_task.task_incarnation != expected_attempt.task_incarnation {
         return Err(format!(
             "the owner-bound task incarnation {} is stale; Chronos currently reports incarnation {} at revision {}",
-            expected_attempt.task_incarnation,
-            current_task.task_incarnation,
-            current_task.revision,
+            expected_attempt.task_incarnation, current_task.task_incarnation, current_task.revision,
         ));
     }
     if current_task.attempt_number != Some(expected_attempt.attempt_number) {
@@ -14890,9 +14884,9 @@ mod tests {
         assert!(workflow.armed);
         assert!(workflow.worker.is_none());
         let lines = workflow.lines().join("\n");
-        assert!(lines.contains(
-            "Chronos task          Product/chronos-task#3 · attempt 2 · revision 7"
-        ));
+        assert!(
+            lines.contains("Chronos task          Product/chronos-task#3 · attempt 2 · revision 7")
+        );
         assert!(lines.contains("owner                 daimon-local-agent"));
         assert!(lines.contains("human gate            review → arm → confirm once"));
         assert!(lines.contains("does not submit the work prompt"));

@@ -7,8 +7,9 @@ mod theme;
 mod workbench;
 
 pub use agenda::{
-    AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatingReviewReadiness,
-    OperatorAgendaView, alignment_drift_entry, alignment_human_gate_entry, chronos_attention_entry,
+    AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, ChronosAttentionFact,
+    OperatingReviewReadiness, OperatorAgendaView, alignment_drift_entry,
+    alignment_human_gate_entry, chronos_attention_entry,
 };
 pub use shell::{Shell, ShellInput, Surface, shell_input};
 pub use workbench::{

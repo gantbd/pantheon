@@ -75,7 +75,7 @@
         "directory": "../state/chronos-atlas"
       }
     ],
-    "requires": ["tasks.observe.v1"],
+    "requires": ["tasks.workflow.observe.v9"],
     "moira": [
       {
         "workstream": "Atlas / Delivery",

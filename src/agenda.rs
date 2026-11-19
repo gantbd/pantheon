@@ -103,22 +103,40 @@ impl OperatorAgendaView {
 }
 
 /// Maps one bounded owner-published Chronos fact into host attention semantics.
-/// Unknown phases are not agenda items. This never changes task state or
+/// Unknown statuses are not agenda items. Execution phase is subordinate
+/// evidence and never a second task status. This never changes task state or
 /// infers authority from priority, dependencies, or agenda presence.
-pub fn chronos_attention_entry(
-    workstream: &str,
-    revision: &str,
-    task: &str,
-    incarnation: &str,
-    phase: &str,
-    priority: i64,
-    dependency_count: u64,
-) -> Option<AgendaEntry> {
-    let blocked = match phase {
-        "blocked" => true,
-        "uncertain" => false,
-        _ => return None,
-    };
+pub struct ChronosAttentionFact<'a> {
+    pub workstream: &'a str,
+    pub revision: &'a str,
+    pub task: &'a str,
+    pub incarnation: &'a str,
+    pub status: &'a str,
+    pub execution_phase: &'a str,
+    pub priority: i64,
+    pub dependency_count: u64,
+}
+
+pub fn chronos_attention_entry(fact: ChronosAttentionFact<'_>) -> Option<AgendaEntry> {
+    let ChronosAttentionFact {
+        workstream,
+        revision,
+        task,
+        incarnation,
+        status,
+        execution_phase,
+        priority,
+        dependency_count,
+    } = fact;
+    let blocked = status == "blocked";
+    // TUI projections use human-readable labels while headless JSON retains
+    // serde's stable snake_case enum spelling. They are two projections of the
+    // same authoritative status, never distinct status fields.
+    let uncertain =
+        matches!(status, "in progress" | "in_progress") && execution_phase == "uncertain";
+    if !blocked && !uncertain {
+        return None;
+    }
     Some(AgendaEntry {
         source_peer: "chronos".into(),
         source_instance: Some(workstream.into()),
@@ -284,8 +302,17 @@ mod tests {
 
     #[test]
     fn chronos_attention_distinguishes_blocked_from_uncertain() {
-        let blocked =
-            chronos_attention_entry("delivery", "7", "align", "2", "blocked", 10, 6).unwrap();
+        let blocked = chronos_attention_entry(ChronosAttentionFact {
+            workstream: "delivery",
+            revision: "7",
+            task: "align",
+            incarnation: "2",
+            status: "blocked",
+            execution_phase: "dependency wait",
+            priority: 10,
+            dependency_count: 6,
+        })
+        .unwrap();
         assert_eq!(blocked.kind, AgendaKind::DependencyBlocked);
         assert_eq!(blocked.actionability, AgendaActionability::InspectOnly);
         assert!(blocked.title.contains("P10"));
@@ -296,12 +323,33 @@ mod tests {
                 .is_some_and(|value| value.contains('6'))
         );
 
-        let uncertain =
-            chronos_attention_entry("delivery", "8", "effect", "3", "uncertain", 0, 0).unwrap();
+        let uncertain = chronos_attention_entry(ChronosAttentionFact {
+            workstream: "delivery",
+            revision: "8",
+            task: "effect",
+            incarnation: "3",
+            status: "in_progress",
+            execution_phase: "uncertain",
+            priority: 0,
+            dependency_count: 0,
+        })
+        .unwrap();
         assert_eq!(uncertain.kind, AgendaKind::OutcomeUnknown);
         assert_eq!(uncertain.actionability, AgendaActionability::Actionable);
         assert!(uncertain.blocker.is_none());
-        assert!(chronos_attention_entry("delivery", "9", "ready", "4", "ready", 0, 0).is_none());
+        assert!(
+            chronos_attention_entry(ChronosAttentionFact {
+                workstream: "delivery",
+                revision: "9",
+                task: "ready",
+                incarnation: "4",
+                status: "open",
+                execution_phase: "ready",
+                priority: 0,
+                dependency_count: 0,
+            })
+            .is_none()
+        );
     }
 
     #[test]

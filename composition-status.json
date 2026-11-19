@@ -122,7 +122,7 @@
     "chronos": {
       "owner": "chronos",
       "presentation": "chronos-tui",
-      "readCapability": "tasks.observe.v1",
+      "readCapability": "tasks.workflow.observe.v9",
       "client": { "contract": "chronos-client", "connection": "chronos-local", "ownership": "peer" },
       "evidence": ["chronos-tui/tests/live/headless.sh", "pantheon/tests/live/dual_service.sh", "pantheon/tests/live/chronos_mutation.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
@@ -130,7 +130,7 @@
       "host": { "interactive": "qualified", "headless": "qualified" },
       "pantheonRoutes": {
         "interactive": [
-          { "id": "tasks.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tasks.workflow.observe.v9", "plane": "observation", "state": "qualified" },
           { "id": "tasks.mutate.v1", "plane": "control", "state": "qualified", "when": "writes=true" },
           { "id": "scheduling.observe.v5", "plane": "operator", "state": "qualified", "when": "scheduling=true" },
           { "id": "scheduling.mutate.v5", "plane": "control", "state": "qualified", "when": "writes=true,scheduling=true" },
@@ -144,7 +144,7 @@
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],
         "headless": [
-          { "id": "tasks.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tasks.workflow.observe.v9", "plane": "observation", "state": "qualified" },
           { "id": "product-alignment.observe.v1", "plane": "observation", "state": "qualified", "when": "alignment-binding-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }

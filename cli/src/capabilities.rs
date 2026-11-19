@@ -199,10 +199,7 @@ pub fn hermes(mode: Mode, hosted: bool, selected_cursor: bool) -> Vec<Capability
                 Plane::Operator
             },
         ));
-        capabilities.push(capability(
-            "ledger.consumer.observe.v1",
-            Plane::Observation,
-        ));
+        capabilities.push(capability("ledger.consumer.observe.v1", Plane::Observation));
     }
     capabilities.push(topology(hosted));
     capabilities
@@ -235,7 +232,7 @@ pub struct ChronosFeatures {
 }
 
 pub fn chronos(mode: Mode, hosted: bool, features: ChronosFeatures) -> Vec<Capability> {
-    let mut capabilities = vec![capability("tasks.observe.v1", Plane::Observation)];
+    let mut capabilities = vec![capability("tasks.workflow.observe.v9", Plane::Observation)];
     if mode == Mode::Interactive {
         if features.writes {
             capabilities.push(capability("tasks.mutate.v1", Plane::Control));

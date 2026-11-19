@@ -280,18 +280,23 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
     assert_eq!(peers["moira"]["host"]["interactive"], "qualified");
     assert_eq!(peers["moira"]["host"]["headless"], "qualified");
     assert_eq!(peers["moira"]["client"]["ownership"], "peer");
-    assert!(peers["moira"]["pantheonRoutes"]["headless"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|route| route["id"] == "deliberation.inspect.v1"
-            && route["plane"] == "observation"));
-    assert!(peers["moira"]["pantheonRoutes"]["interactive"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|route| route["id"] == "deliberation.human-gate.respond.v1"
-            && route["plane"] == "control"));
+    assert!(
+        peers["moira"]["pantheonRoutes"]["headless"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(
+                |route| route["id"] == "deliberation.inspect.v1" && route["plane"] == "observation"
+            )
+    );
+    assert!(
+        peers["moira"]["pantheonRoutes"]["interactive"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|route| route["id"] == "deliberation.human-gate.respond.v1"
+                && route["plane"] == "control")
+    );
     assert_eq!(
         peers["moira"]["mutationCapabilities"]["deliberation.human-gate.respond.v1"],
         "qualified"
