@@ -157,3 +157,43 @@ The no-go remains authoritative for mature stakeholder-ensemble rollout, while
 bounded implementation and qualification may continue. Any final rollout or
 other reasonably contestable material decision still requires the named-human
 gate described in the governing journey plan.
+
+## 2026-11-19 Hestia structured-output and testing update
+
+The current Hestia-owned four-model cohort passed its locked graph, formatting,
+and all-target compile preflight before any model started. Hestia admitted and
+served SmolLM3 3B, OLMo2 1B, Granite 4 H Tiny, and Qwen2.5 Coder 1.5B, then
+cleaned up every endpoint after the run. With Daimon plain-text responses,
+Moira received four independently attributed raw outputs but admitted zero:
+SmolLM split required claim fields across objects and contradicted itself,
+OLMo emitted malformed JSON without required provenance, Granite appended
+trailing punctuation, and Qwen wrapped an otherwise parseable object in
+forbidden Markdown. The retained raw-response artifact has SHA-256
+`b31c0a2859107be02b47b1de296bf4445e8d46da816b2897c7db6681904c7af8`.
+
+A controlled rerun changed only those providers to Daimon's existing strict
+JSON-schema response mode. All four runtimes again became Ready, but the first
+provider returned `OutcomeUnknown` before Moira could retain a report. Daimon's
+host contract currently exposes only `Receipt` or `OutcomeUnknown`, while the
+OpenAI-compatible adapter erases transport, HTTP-status, schema, and parse
+causes into the same outcome. The experiment was reverted rather than leaving
+a failing qualification or weakening Moira's parser. This is evidence for the
+existing `daimon-provider-uncertain-diagnostic-receipt` and
+`daimon-structured-output-profile-negotiation` tasks, not evidence that every
+provider supports one generic structured-output profile.
+
+Categorically, model hosting, cleanup, locked graph resolution, and compilation
+passed. Plain-text serialization failed for all four small models; the raw
+substance also showed contradiction, missing grounding, or overconfidence.
+Strict structured-output interoperability remains unknown because the adapter
+discarded the failure cause. No report is decision evidence, no model is
+qualified for these stakeholder seats, and no rollout disposition changed.
+
+Chronos revision 59 now also admits
+`grounded-instrumented-tdd-evidence-loop` with Tellus-grounding,
+Dendrite-context, Oculus-telemetry, and test-evidence capabilities. Its intended
+boundary is explicit: deterministic tests remain authoritative; Tellus retains
+sources, assumptions, freshness, and the falsifiable invariant; Dendrite
+supplies bounded context; Oculus correlates red, green, regression, and
+surprise evidence. Grounding may explain why a test exists and what could
+falsify it, but a model interpretation cannot become the assertion.

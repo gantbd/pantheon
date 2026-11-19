@@ -259,6 +259,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   predates its current Tellus route: MCP grounding works, while
   `tellus.observe.v1` currently falls through with 500 until the owner is safely
   replaced or capability negotiation refuses the stale instance.
+- The 2026-11-19 Hestia-owned rerun and its strict-output control experiment are
+  retained in
+  [`ensemble-dogfood-assessment-2026-11-17.md`](ensemble-dogfood-assessment-2026-11-17.md).
+  Locked graph and compile preflight, four-provider startup, cleanup, raw report
+  admission, model-role fit, structured-output interoperability and Daimon's
+  diagnostic boundary are assessed separately; no model report became decision
+  evidence. Live Chronos revision 58 admitted
+  `overview-model-operational-status`, and revision 59 admitted
+  `grounded-instrumented-tdd-evidence-loop` without duplicating the existing
+  structured-output negotiation or uncertain-diagnostic tasks. The bounded
+  assessment was edited and saved through Pantheon/Vellum, then reopened through
+  hosted headless Pantheon as content-withheld exact digest/size evidence with
+  clean owner shutdown. The 119 KiB governing plan remains outside Vellum's
+  current bounded workspace profile and is still owned by the existing workspace
+  capacity/diagnostic backlog rather than silently truncated.
 - The next J33 slice now has an executable Moira review-exchange foundation.
   It admits review only after every independent first pass, retains exact
   findings and evidence, requires a different admitted member for rebuttal,
