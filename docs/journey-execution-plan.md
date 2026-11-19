@@ -1237,9 +1237,21 @@ recovery before a human can settle the gate from this surface.
   after an explicit host disclosure decision; it carries no control command. A
   bounded scope-bound request/response framing, verified owner-socket client and
   one-connection integration handler now exist without merging Vellum state into
-  the Chronos daemon. Production listener lifecycle, a configured live proposal,
-  Pantheon TUI/headless presentation and owner-routed proposal application remain
-  open before the Chronos alignment prerequisite is closed.
+  the Chronos daemon. The independently locked listener lifecycle and matching
+  Pantheon TUI/headless observation now exist. A configured live multi-owner
+  composition, automatic PM proposal production and owner-routed proposal
+  application remain open before the Chronos alignment prerequisite is closed.
+  The live frontier now also has a concrete Moira cohort reader. It binds the
+  three alignment positions to explicitly configured stakeholder principals in
+  one exact deliberation, brackets the read with stable Moira revisions, and
+  refuses contested admission, missing stakeholders, reopen-required state and
+  scope/cohort drift. It deliberately does not infer roles from persona or
+  model. Moira exposes observed dissent digests but not the stronger fact that a
+  particular dissent remains unresolved, so the complete evidence frontier and
+  packaged composition remain open rather than weakening Chronos's contract.
+  Chronos revision 68 retains that owner gap as the priority-9 ready task
+  `moira-unresolved-dissent-frontier-projection`, verified through the shared
+  Pantheon TUI's exact task search.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

@@ -2238,8 +2238,23 @@ be predeclared by it. Concrete readers now cover the exact Chronos task and a
 host-bound Vellum workspace document under the closed
 `vellum-workspace-source-revision-v1` evidence domain, including byte length.
 The remaining production boundary is explicit configuration/resolution of that
-live document binding plus concrete cohort and evidence-owner readers; none may
-be replaced by the retained proposal or a presentation cache.
+live document binding plus the complete evidence-owner reader; neither may be
+replaced by the retained proposal or a presentation cache. The concrete cohort
+reader now uses Moira's public read-only deliberation client: explicit host
+configuration maps the external advocate, product manager and frontier
+supervisor to three distinct Moira stakeholder principals in one exact
+deliberation. Moira status revisions bracket every read, and the adapter refuses
+concurrent change, reopen-required state, a contested/non-admitted ensemble,
+missing principals, scope drift or retained-cohort drift. It does not infer a
+stakeholder role from persona lens, model, provider or member order. Moira's
+current view exposes report dissent digests but does not establish which of
+those items remain unresolved; the PM frontier therefore refuses to relabel all
+observed dissent as `unresolved_dissent`. That stronger owner projection or a
+separate bounded resolver remains a prerequisite for production composition.
+Chronos revision 68 records that exact gap as the priority-9 ready task
+`moira-unresolved-dissent-frontier-projection`; the shared Pantheon TUI
+re-observed the admitted task by exact search while reporting that another task
+page remained available.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
