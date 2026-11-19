@@ -2462,8 +2462,11 @@ bind a Vellum rationale and judgment to the sampled alignment basis, but every
 conflict must resolve to supplied owner evidence and every human escalation
 must name an exact pending gate. Role collapse, invented evidence, a claim
 without an exact task and false `Aligned` judgment are refused. This is a
-qualified data contract, not yet a durable/public ledger or recurring
-intelligent PM; those runtime and presentation cuts remain on the blocked task.
+qualified data contract with an immutable durable record: a closed bounded
+codec and strong-acknowledgement register reopen the exact reconciliation after
+restart and refuse malformed, weak, indeterminate or overwrite attempts. It is
+not yet publicly projected or a recurring intelligent PM; those owner-reader,
+runtime and presentation cuts remain on the blocked task.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,

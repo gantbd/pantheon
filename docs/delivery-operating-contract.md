@@ -149,8 +149,11 @@ contribution and evidence references. The PM may bind a judgment and Vellum
 rationale to that shared alignment basis, but every cited conflict must already
 resolve to sampled owner evidence and every human escalation must name an exact
 pending gate. The contract refuses role collapse, invented evidence and false
-`Aligned` status. Its durable/public/runtime composition remains prospective;
-the type alone is not an operational PM or permission to mutate Chronos.
+`Aligned` status. Chronos now durably retains and exactly reopens that immutable
+record through a closed bounded codec and strong-acknowledgement register;
+weak, indeterminate, malformed and overwrite attempts refuse. Public projection
+and runtime composition remain prospective, so durability alone is not an
+operational PM or permission to mutate Chronos.
 
 The minimum recurring, owner-bracketed reconciliation cycle is:
 

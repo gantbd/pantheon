@@ -1414,10 +1414,14 @@ recovery before a human can settle the gate from this surface.
   the same owner-sampled alignment basis. The contract refuses a claim without
   an exact task, role collapse, invented conflict/gate references and a false
   `Aligned` judgment while conflict or gate evidence remains. Three focused
-  tests and strict Clippy pass. Durable encoding, the owner readers/public
-  projection, recurring/coalesced PM execution, Agora challenge and separately
-  authorized application remain open, so the priority-10 Chronos task remains
-  blocked rather than being declared complete.
+  tests and strict Clippy pass. Chronos now also retains the immutable ledger
+  through a closed bounded codec and checkpoint-backed register: exact reopen
+  survives restart, while unknown versions, truncation, tails, weak or
+  indeterminate acknowledgement and overwrite attempts refuse. The complete
+  alignment package passes 58 executed tests and strict all-target Clippy.
+  Owner readers/public projection, recurring/coalesced PM execution, Agora
+  challenge and separately authorized application remain open, so the
+  priority-10 Chronos task remains blocked rather than being declared complete.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
