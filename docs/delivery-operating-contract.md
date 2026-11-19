@@ -170,6 +170,12 @@ This is a same-OS-user dogfood boundary: Agora's participant claim is not Aegis
 authentication, and Chronos task verification does not prove separately named
 attempt or lease references. Those trust and observation gaps remain explicit.
 
+PM judgment is structurally separate from worker facts. Its model-facing input
+contains no task, attempt, lease, contribution or worker-evidence fields; those
+come only from the stable owner-source pair. The join revalidates every role,
+conflict and human-gate law, preventing interpretation from becoming an
+implicit evidence rewrite.
+
 The minimum recurring, owner-bracketed reconciliation cycle is:
 
 1. Observe the exact Vellum goal revision and current Chronos graph, attempts,

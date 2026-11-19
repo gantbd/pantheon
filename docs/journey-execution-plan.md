@@ -1439,6 +1439,11 @@ recovery before a human can settle the gate from this surface.
   authentication, recurring/coalesced PM execution, Agora challenge and
   separately authorized application remain open, so the priority-10 Chronos
   task remains blocked rather than being declared complete.
+  Chronos `535cc53` also removes worker fields from the PM decision payload;
+  reconciliation joins only attributed judgment/rationale/conflict/gate input
+  to the already stable owner pair and reruns all anti-overreach laws. This
+  closes model-side worker-fact substitution, not the remaining runtime,
+  identity or attempt/lease observation gaps.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

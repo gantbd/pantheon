@@ -2510,6 +2510,14 @@ participant identity is a same-OS-user claim rather than Aegis-authenticated
 identity, so distributed authentication, attempt/lease observation, recurring
 composition and a surfaced configuration flow remain open.
 
+Chronos `535cc53` closes the PM-payload overreach seam. A PM decision contains
+only its attributed principal, Vellum rationale, judgment, cited conflicts and
+an optional existing human-gate reference; it has no worker-position fields.
+Reconciliation can be formed only by joining that decision to the stable owner-
+sampled pair and rerunning the role, evidence, conflict and gate laws. A model
+may therefore interpret or challenge the facts but has no structural route for
+replacing either worker's task, lease, contribution or evidence frontier.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.
