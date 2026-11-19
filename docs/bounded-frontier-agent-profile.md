@@ -36,6 +36,13 @@ The initial authorities are distinct:
 - `agent.web.fetch.v1`: the `pantheon agent-web-fetch` gateway with the policy
   path fixed in the command prefix. Only the URL is model-supplied, and the
   gateway revalidates it against exact hosts and bounds.
+- `workspace.snapshot.v1`: the `pantheon vellum-document-read` gateway with the
+  socket, optional credential and byte ceiling fixed in the command prefix.
+  Only one locator and an optional UTF-8 byte range are model-supplied. Vellum resolves it against current
+  workspace membership, coalesces absent and foreign locators, selects and
+  snapshots the exact document, then releases the witness before Pantheon
+  emits bounded content. The locator and witness are never returned; ranged
+  reads retain whole-document revision, byte length and digest evidence.
 
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):
 
@@ -53,6 +60,14 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
       "allow_additional_arguments": true
     },
     {
+      "command": "vellum-read",
+      "capability": "33333333333333333333333333333333",
+      "semantic_capability": "workspace.snapshot.v1",
+      "program": "/absolute/pantheon",
+      "argument_prefix": ["vellum-document-read", "/absolute/vellum.sock", "/absolute/vellum.credential", "262144"],
+      "allow_additional_arguments": true
+    },
+    {
       "command": "web",
       "capability": "22222222222222222222222222222222",
       "semantic_capability": "agent.web.fetch.v1",
@@ -62,13 +77,13 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
     }
   ],
   "environment_names": [],
-  "max_handles": 2,
+  "max_handles": 3,
   "max_output_bytes": 1048576
 }
 ```
 
 The compatibility scope capability must still be a valid configured tool but
-does not authorize either command when command-specific capabilities are
+does not authorize any command when command-specific capabilities are
 present. Deployments retain the mapping from each opaque Aegis/Daimon tool ID
 to its stable component capability ID; wildcard peer names and aggregate
 `pantheon` grants are invalid profile shapes.

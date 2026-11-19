@@ -271,7 +271,10 @@ pub fn chronos(mode: Mode, hosted: bool, features: ChronosFeatures) -> Vec<Capab
 }
 
 pub fn vellum(mode: Mode, hosted: bool, durable_identity: bool) -> Vec<Capability> {
-    let mut capabilities = vec![capability("workspace.inventory.v1", Plane::Observation)];
+    let mut capabilities = vec![
+        capability("workspace.inventory.v1", Plane::Observation),
+        capability("workspace.snapshot.v1", Plane::Observation),
+    ];
     if mode == Mode::Interactive {
         capabilities.extend([
             capability("workspace.edit.v1", Plane::Operator),
@@ -421,6 +424,12 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         capability: "tellus.sme-plan.v1",
         command: "tellus-sme-plan",
         model_arguments: "none_when_session_pinned",
+    },
+    AgentToolRoute {
+        component: "vellum",
+        capability: "workspace.snapshot.v1",
+        command: "vellum-document-read",
+        model_arguments: "one_admitted_workspace_locator_and_optional_utf8_byte_range",
     },
     AgentToolRoute {
         component: "external-web",
@@ -713,7 +722,11 @@ mod tests {
                 .iter()
                 .map(|capability| capability.id)
                 .collect::<Vec<_>>(),
-            ["workspace.inventory.v1", "topology.attach.v1"]
+            [
+                "workspace.inventory.v1",
+                "workspace.snapshot.v1",
+                "topology.attach.v1"
+            ]
         );
     }
 

@@ -16,6 +16,7 @@ pub mod registry;
 pub mod task_agent;
 pub mod tellus_sme;
 mod terminal;
+pub mod vellum_document;
 
 pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
 pub use terminal::{

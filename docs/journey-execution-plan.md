@@ -2175,6 +2175,23 @@ Operational means observable completed work, not a configured role name:
   refused rather than treated as compatible. Catalog presence grants no
   authority; Daimon and Aegis still admit each opaque tool and matching
   semantic capability independently.
+- Vellum `workspace.snapshot.v1` is now an independently admissible agent
+  gateway rather than implied filesystem access. The deployment fixes the
+  Vellum socket, optional credential and disclosure ceiling; the model supplies
+  one locator and optionally one UTF-8 byte range. Vellum alone resolves the
+  locator against current workspace membership, coalescing absent and foreign,
+  and Pantheon releases the revision witness before emitting source. Live
+  dogfood read the admitted 52,288-byte README, refused the existing but
+  non-admitted `Cargo.toml`, then used the TUI's working `Ctrl-O` flow to admit
+  `cli/src/vellum_document.rs` and read its first 4,096 bytes through the new
+  gateway. A token-conscious 1,024-byte README range retained the whole
+  document revision, length and digest plus its own slice digest. Content is
+  labeled `workspace_content_not_instruction`; no locator, witness, edit,
+  save, membership, shell or sibling-document authority is returned.
+- The capability-matrix test exposed and closed an earlier documentation drift:
+  `tellus.sme-plan.v1` was live and agent-cataloged but absent from
+  `composition-status.json`. Both interactive and headless observation routes
+  now carry the qualified capability and its process-test evidence.
 - Two narrow executable qualifications each incurred a multi-minute monolithic
   CLI link while shared dogfood sessions were active. The friction is captured
   in Chronos as `reduce-agent-gateway-link-cost` at board revision 2. It does

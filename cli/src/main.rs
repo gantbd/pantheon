@@ -833,6 +833,7 @@ fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
         "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\npantheon chronos-task-observe SERVICE_DIRECTORY TASK\n",
+        "pantheon vellum-document-read SOCKET CREDENTIAL_OR_- MAX_BYTES LOCATOR [START END]\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
         "pantheon tellus-sme-plan LOOPBACK_HOST:PORT REQUEST_JSON [--token-file PATH]\n",
         "pantheon alignment option: --chronos-alignment WORKSTREAM DIRECTORY SCOPE\n",
@@ -1088,6 +1089,12 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "vellum-document-read")
+    {
+        return pantheon_cli::vellum_document::read(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "agent-tools")

@@ -232,17 +232,19 @@
       "presentation": "tellus",
       "readCapability": "tellus.observe.v1",
       "client": { "contract": "tellus", "connection": "tellus-local-client", "ownership": "presentation-deferred" },
-      "evidence": ["tellus/tests/live/real_dendrite.sh", "pantheon/tests/live/tellus_attach.sh"],
+      "evidence": ["tellus/tests/live/real_dendrite.sh", "pantheon/tests/live/tellus_attach.sh", "pantheon/cli/tests/tellus_sme_command.rs"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "not-applicable", "headless": "not-applicable" },
       "pantheonRoutes": {
         "interactive": [
           { "id": "tellus.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tellus.sme-plan.v1", "plane": "observation", "state": "qualified" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
         ],
         "headless": [
           { "id": "tellus.observe.v1", "plane": "observation", "state": "qualified" },
+          { "id": "tellus.sme-plan.v1", "plane": "observation", "state": "qualified" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
         ]
       },
@@ -399,6 +401,7 @@
       "pantheonRoutes": {
         "interactive": [
           { "id": "workspace.inventory.v1", "plane": "observation", "state": "qualified" },
+          { "id": "workspace.snapshot.v1", "plane": "observation", "state": "qualified", "when": "exact workspace member" },
           { "id": "workspace.edit.v1", "plane": "operator", "state": "qualified" },
           { "id": "workspace.save.v1", "plane": "control", "state": "qualified" },
           { "id": "workspace.durable-save.execute.v1", "plane": "control", "state": "qualified", "when": "credential configured" },
@@ -408,6 +411,7 @@
         ],
         "headless": [
           { "id": "workspace.inventory.v1", "plane": "observation", "state": "qualified" },
+          { "id": "workspace.snapshot.v1", "plane": "observation", "state": "qualified", "when": "exact workspace member" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ]

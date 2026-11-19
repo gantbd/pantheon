@@ -32,7 +32,7 @@ fn example_workspace_profile_passes_bounded_check_without_connecting() {
         "moira: observation=sagas.inspect.v1 operator=sagas.reconciliation.v1,sagas.evidence.v1,sagas.operator-receipts.v1 management=topology.attach.v1",
         "daimon: observation=agents.presence.v1 operator=agents.session.inspect.v1,agents.session-set.inspect.v1,agents.session-set.control.v1,agents.session-set.prompt.v1,agents.session-set.permission.v1,agents.session-set.reattach.v1 management=topology.attach.v1",
         "chronos: observation=tasks.workflow.observe.v9 operator=attempts.moira.inspect.v1,attempts.daimon.inspect.v1 management=topology.attach.v1",
-        "vellum: observation=workspace.inventory.v1 operator=workspace.edit.v1 control=workspace.save.v1 management=topology.attach.v1",
+        "vellum: observation=workspace.inventory.v1,workspace.snapshot.v1 operator=workspace.edit.v1 control=workspace.save.v1 management=topology.attach.v1",
     ] {
         assert!(
             report.contains(expected),
