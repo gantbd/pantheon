@@ -307,6 +307,21 @@ fn verification_role_reuses_the_daimon_native_governed_test_catalog() {
             .iter()
             .any(|gap| gap["component"] == "moira" && gap["surface"] == "tests.result.publish.v1")
     );
+    assert!(
+        plan["structural_blockers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|gap| gap["component"] == "task-to-session-runtime"
+                && gap["surface"] == "verification-worker.compose.v1")
+    );
+    assert!(
+        plan["structural_blockers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|gap| gap["surface"] != "verification-worker.schedule.v1")
+    );
     assert_eq!(plan["operational"], false);
 }
 

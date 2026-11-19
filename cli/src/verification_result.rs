@@ -132,7 +132,7 @@ pub fn validate(
             },
             "request_digest": request_digest,
             "published": false,
-            "next_action": "submit this exact digest and facts through the qualified Moira verification-result adapter, then observe its owner receipt before proposing any Chronos transition",
+            "next_action": "submit this exact digest and facts only through a qualified Moira verification-result composition, then observe its owner receipt before proposing any Chronos transition",
             "boundary": "closed semantic validation only; supplied owner references remain unverified until their owners are re-observed, and validation grants no execution, publication, task settlement, acceptance, release, or rollout authority",
         }))?
     );

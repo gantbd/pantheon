@@ -81,8 +81,10 @@ The initial authorities are distinct:
   insecure links/permissions, wrong owners, zero identities and inconsistent
   pass/fail claims refuse before any owner connection. Success is explicitly
   `validated_not_published`: supplied references remain claims until their
-  owners are re-observed, and only the pending Moira adapter may create the
-  durable result receipt.
+  owners are re-observed. The pending Moira composition must either govern the
+  test from dispatch through its existing continuation/output lifecycle or
+  admit a distinct versioned external-Daimon receipt; it may not manufacture
+  provenance by replaying an already executed test as a new continuation.
 - `moira.task-agent.catalogue.v1` and `moira.task-agent.observe.v1`: separate
   read-only Moira gateways. The deployment fixes the owner socket; the former
   takes no model argument and the latter takes one opaque owner identity and
@@ -175,7 +177,9 @@ changed Vellum-backed proposal authoring remains unavailable. Frontier
 workers retain their provider continuation and Aegis gaps. The verification
 worker now reuses Daimon's allowlisted exact-argv runner and has a closed
 pre-publication result envelope, but still lacks the Moira publication adapter
-and asynchronous scheduling. These are executable
+and the replay-safe task-to-session composition that drives Pantheon's already
+retained Moira/Chronos worker. Chronos scheduling, grant, lease, completion and
+uncertainty mechanics are not missing and must not be reimplemented. These are executable
 blocker inventories, not claims that named roles are running.
 
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):

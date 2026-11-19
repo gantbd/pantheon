@@ -654,14 +654,14 @@ const VERIFICATION_GAPS: &[AgentRoleGap] = &[
     AgentRoleGap {
         component: "moira",
         surface: "tests.result.publish.v1",
-        missing: "a qualified adapter that publishes the validated verification envelope through Moira's replay-safe tool-continuation and content-addressed output owners",
-        next_boundary: "bind the exact validated request digest to Moira's attempt, gate, execution, profile evidence, output receipt, and storage revision; validation, terminal exit, or agent narration is not publication evidence",
+        missing: "a qualified owner composition that either governs test dispatch through Moira or admits a versioned external Daimon verification receipt without rewriting execution history",
+        next_boundary: "select one honest owner path: run the test under Moira's attempt/gate/profile/output lifecycle, or add a distinct Moira receipt bound to the exact validated Daimon evidence; never relabel a post-hoc continuation as provenance",
     },
     AgentRoleGap {
-        component: "chronos",
-        surface: "verification-worker.schedule.v1",
-        missing: "asynchronous eligibility, claim/lease, cancellation, retry, and terminal settlement for a separately scheduled verification attempt",
-        next_boundary: "qualify the Chronos verification-worker lifecycle independently from the build line",
+        component: "task-to-session-runtime",
+        surface: "verification-worker.compose.v1",
+        missing: "a replay-safe runtime that supplies owner-derived task identity and revision to Pantheon's retained Moira/Chronos worker, then binds the exact verification execution and result before settlement",
+        next_boundary: "reuse the existing private worker claim/bind/settle lifecycle; add operation identity, lost-reply lookup, cancellation and restart receipts instead of creating another scheduler",
     },
     WORKER_LIFECYCLE_GAP,
 ];

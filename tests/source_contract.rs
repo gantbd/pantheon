@@ -2923,7 +2923,7 @@ fn verification_result_validation_is_closed_private_and_not_publication() {
         "verification.test.run.v1",
         "validated_not_published",
         "published\": false",
-        "qualified Moira verification-result adapter",
+        "qualified Moira verification-result composition",
         "grants no execution, publication, task settlement, acceptance, release, or rollout authority",
     ] {
         assert!(
@@ -2943,4 +2943,25 @@ fn verification_result_validation_is_closed_private_and_not_publication() {
     let agora = fs::read_to_string(root.join("cli/src/agora_publish.rs"))
         .expect("Agora actor publication adapter");
     assert!(agora.contains("private_document::read"));
+
+    let host = fs::read_to_string(root.join("cli/src/native_host.rs"))
+        .expect("Pantheon native host");
+    for required in [
+        "start_managed_chronos_worker",
+        "moira_chronos_worker::TrustedWorkerV1",
+        "managed_chronos_worker_status",
+    ] {
+        assert!(host.contains(required), "retained worker omits {required}");
+    }
+    let worker = fs::read_to_string(root.join("../moira/adapters/moira-chronos-worker/src/lib.rs"))
+        .expect("Moira Chronos worker adapter");
+    for required in [
+        "pub fn claim",
+        "pub fn bind_result",
+        "pub fn settle",
+        "EvidenceMismatch",
+        "OutcomeUnknown",
+    ] {
+        assert!(worker.contains(required), "worker adapter omits {required}");
+    }
 }

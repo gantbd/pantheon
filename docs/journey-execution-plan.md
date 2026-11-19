@@ -2358,9 +2358,13 @@ Operational means observable completed work, not a configured role name:
   canonical workspace/program, per-command Aegis reauthorization, clean
   allowlisted environment and bounded-output enforcement. The verification
   role planner accepts this semantic capability and no longer reports test
-  execution itself as missing. Result publication, asynchronous Chronos
-  scheduling, role activation and worker lifecycle remain real blockers, so
-  the role still reports `operational: false`.
+  execution itself as missing. Result publication, task-to-session composition,
+  role activation and worker lifecycle remain real blockers, so the role still
+  reports `operational: false`. Chronos scheduling itself is not missing:
+  Pantheon already retains Moira's private exact-revision claim/bind/settle
+  worker with grant, lease, completion and uncertainty semantics. The missing
+  runtime must add operation identity, lost-reply lookup, cancellation and
+  restart receipts while reusing that owner capability.
 - `verification-result-validate` now closes the semantic handoff before result
   publication. One owner-private, non-symlinked, single-link document binds the
   exact task attempt, Vellum source revision/digest, governed test profile,
@@ -2368,10 +2372,13 @@ Operational means observable completed work, not a configured role name:
   disposition/exit code. The command exposes no model-selected path when used
   from the deployment catalogue, shares its hardened private-document loader
   with Agora publication, and reports `validated_not_published`. This narrows
-  the remaining result blocker to a qualified Moira adapter that must bind the
-  exact request digest to Moira's retained attempt, Aegis gate, process-profile
-  evidence, content-addressed output receipt and storage revision. Validation
-  alone cannot move Chronos, accept work or authorize release.
+  the remaining result blocker to an explicit owner-path decision. Either
+  Moira governs the test from dispatch and naturally retains attempt, Aegis
+  gate, process-profile evidence, content-addressed output and storage revision,
+  or Moira gains a distinct versioned external-Daimon receipt bound to the
+  validated digest. Replaying an already executed Daimon test through generic
+  tool continuation would rewrite execution history and is forbidden.
+  Validation alone cannot move Chronos, accept work or authorize release.
 - The same dogfood pass exposed an attach/read parity gap: the live hosted
   Vellum presentation reported `Service Current` and rendered its admitted
   documents, while an independently bounded `vellum-document-read` against the
