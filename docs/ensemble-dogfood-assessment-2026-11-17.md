@@ -206,3 +206,69 @@ sources, assumptions, freshness, and the falsifiable invariant; Dendrite
 supplies bounded context; Oculus correlates red, green, regression, and
 surprise evidence. Grounding may explain why a test exists and what could
 falsify it, but a model interpretation cannot become the assertion.
+
+## 2026-11-19 Chronos grooming admission and routing finding
+
+A compact Vellum-read packet contained 60 visible task identities from a Chronos
+TUI that reported 64. The incomplete source was identified in the question and
+was suitable only for asking whether the cohort was fit to groom the board. The
+compact source has SHA-256
+`8c8138e91da5eb669640d5195d2997216843386d6a8f0f4fa048ca3e2f4a77c0`.
+All four Hestia providers became Ready and Moira dispatched one independent
+review per provider. Moira admitted one of four reports. SmolLM3 satisfied the
+closed schema but repeated the placeholder assessment rather than performing
+useful analysis. OLMo2 constructed the wrong schema. Granite appended trailing
+punctuation and incorrectly claimed the digest proved packet completeness.
+Qwen2.5 Coder fenced its JSON in Markdown and asserted that the cohort was right
+without resolving the explicitly named missing stakeholders. The retained raw
+responses have SHA-256
+`dd831bccc4dcdedfa779fb6388d4fbbfeca2b75a505a0c3083cb08af2cced5a2`.
+
+This is a no-go for using this small-model cohort as a stakeholder-judgment or
+board-prioritization ensemble. It is not evidence that more prompting or more
+context will make the cohort fit: model inertia and role fit are real. Small
+models remain promising for bounded mechanical enrichment with measurable
+error modes, reversible outputs, and explicit escalation. A swarm of ill-fitted
+models is not a substitute for one capable model.
+
+The target operating model is progressive enrichment. Hermes events trigger
+typed stages; deterministic code performs normalization, schema checks,
+deduplication, ordering, aging, and invariant enforcement; fitted small models
+may classify, extract, summarize, or propose routing; frontier models may
+synthesize, decompose, and challenge provenance; humans retain sponsorship,
+priority, contested-tradeoff, and rollout gates. Chronos retains the evolving
+work identity, Tellus retains sources and assumptions, Dendrite supplies bounded
+context, Moira admits only the right stakeholder/SME cohort, Daimon routes by
+capability and cost, Oculus measures quality/cost/escalation, and Aegis gates
+effects.
+
+The deterministic substrate must not rest on prompting or test examples alone.
+Its state transitions and enrichment laws should be algebraically specified and
+proven through Rune where expressible, including admissibility, monotonicity,
+idempotence, ordering, and non-escalation. Keystone persistence and wire forms
+must preserve those identities and refuse reinterpretation; property, mutation,
+replay, and fault-injection tests connect proof to implementation. Models may
+propose inputs to this substrate but cannot establish its truth. Bool/proof,
+explicit mu, model interpretation, frontier synthesis, and human authority stay
+separate.
+
+Existing Chronos work already owns the next boundaries:
+`right-ensemble-grounded-stakeholder-selection`,
+`local-model-specialist-ensemble-evaluation`,
+`model-role-fit-selection-policy`,
+`chronos-recurring-schedule-without-ticket-churn`, and
+`chronos-complete-paginated-task-search`. No duplicate tasks were created. Chronos revision 60 then admitted five new owner-bound items: `chronos-goal-alignment-grooming-contract` at priority 8, `vellum-document-switch-discoverability` at priority 5, `moira-vellum-projection-bound-diagnostic` at priority 6, `hermes-progressive-enrichment-routing` at priority 8, and `rune-enrichment-law-proof-contract` at priority 9. Hermes routing is blocked on the Rune proof contract by an explicit graph dependency.
+
+The logical end of progressive enrichment is a long-running frontier supervisor
+inside Pantheon, paired with an external human-facing Codex as advocate,
+auditor, bootstrapper, and escalation path. Scoped Codex, Claude, Gemini, Muse,
+or other frontier sessions receive well-formed Chronos leases; small local
+models handle measured mechanical stages. Inside and outside supervisors share
+durable Agora context but do not share implicit authority. A typed handoff binds
+the goal revision, evidence frontier, unresolved dissent, budget policy,
+authority ceiling, and human gates. Single-writer leases prevent competing
+effects while allowing independent challenge. Chronos revision 61 admitted
+`pantheon-frontier-supervisor-operating-model` at priority 9 with trusted-worker,
+ACP-privacy, dynamic-routing, and goal-alignment prerequisites and with
+frontier-supervision, ACP-session, Chronos-delegation, Agora-context, and
+human-gate capabilities. Before work began, the user clarified that the insider must be constrained to Pantheon-provided capabilities. Revision 62 therefore cancelled that incarnation; revision 63 admitted pantheon-frontier-capability-sandbox at priority 10; and revision 64 admitted pantheon-frontier-supervisor-operating-model-v2 at priority 9 with the sandbox as an explicit prerequisite. The successor is limited to Pantheon-mediated Vellum, Chronos, Agora, Tellus, Dendrite, Daimon, Hestia, Hermes, Oculus, and Aegis capabilities. It cannot use unconstrained shell access, ambient network access, inherited environment, raw secrets, or undeclared MCP or tool access; unsupported work must stop with an actionable Pantheon capability-gap escalation.

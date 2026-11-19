@@ -252,7 +252,7 @@ PYTHON
   index=$((index + 1))
 done
 
-question='Does Hestia retained-artifact restart recovery preserve its admission boundary without introducing unsafe trust or unusable operator friction? Identify concrete defects, missing evidence, and the smallest next action; do not approve rollout.'
+question=${PANTHEON_ENSEMBLE_QUESTION:-"Does Hestia retained-artifact restart recovery preserve its admission boundary without introducing unsafe trust or unusable operator friction? Identify concrete defects, missing evidence, and the smallest next action; do not approve rollout."}
 make -C "$workspace/moira" qualify-methodical-workflow-live-ensemble \
   MOIRA_METHODICAL_LIVE_DENDRITE_PORT="$dendrite_port" \
   MOIRA_METHODICAL_LIVE_ENSEMBLE_CONTEXT_FILE="$context" \
