@@ -418,6 +418,24 @@ pub struct AgentToolGap {
     pub next_boundary: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AgentRoleGap {
+    pub component: &'static str,
+    pub surface: &'static str,
+    pub missing: &'static str,
+    pub next_boundary: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AgentRoleProfile {
+    pub role: &'static str,
+    pub objective: &'static str,
+    pub required_tools: &'static [&'static str],
+    pub gaps: &'static [AgentRoleGap],
+    pub human_gates: &'static [&'static str],
+    pub forbidden_authorities: &'static [&'static str],
+}
+
 /// Closed gateways qualified for bounded agent profiles. This is intentionally
 /// smaller than the human/operator command surface: absence is non-admission.
 pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
@@ -528,6 +546,241 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
     missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
     next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
 }];
+
+const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
+    component: "role-activation",
+    surface: "versioned-owner-runtime",
+    missing: "a sovereign activation owner with current and prior activation, principal, scope, delegation, budgets, grounding, policy epoch, accountable human, rationale, and expiry",
+    next_boundary: "select and qualify the role-activation owner; a role name or candidate tool set grants no authority",
+};
+
+const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {
+    component: "daimon",
+    surface: "persistent-role-worker-lifecycle",
+    missing: "an owner-bound start, stop, reattach, schedule, and completed-work receipt for the activated role",
+    next_boundary: "compose a frozen provider/profile and exact Running Chronos attempt through Daimon and retain owner receipts",
+};
+
+const PRODUCT_MANAGER_GAPS: &[AgentRoleGap] = &[
+    ROLE_ACTIVATION_GAP,
+    AgentRoleGap {
+        component: "chronos",
+        surface: "alignment-frontier.observe.v1",
+        missing: "one bounded current goal, graph, attempt, lease, dependency, prior-grooming, and dual-frontier sample",
+        next_boundary: "publish an owner-native alignment sample gateway; exact-task observation cannot be promoted to portfolio truth",
+    },
+    AgentRoleGap {
+        component: "moira",
+        surface: "stakeholder-ensemble.observe.v1",
+        missing: "the selected stakeholder ensemble, coverage/equity, standing, dissent, and pending human disposition as an agent-admissible observation",
+        next_boundary: "expose the qualified Moira deliberation projection through a bounded read-only agent gateway",
+    },
+    AgentRoleGap {
+        component: "vellum",
+        surface: "workspace.proposal.publish.v1",
+        missing: "owner-returned immutable proposal publication with author, source revision, digest, and recovery receipt",
+        next_boundary: "add a Vellum-owned proposal staging/publication boundary rather than arbitrary filesystem write",
+    },
+    AgentRoleGap {
+        component: "moira",
+        surface: "human-gate.request.observe.v1",
+        missing: "an exact pending named-human decision packet for material goal, priority, acceptance, or rollout changes",
+        next_boundary: "admit observation of owner-published pending gates while retaining response authority for the named human",
+    },
+    WORKER_LIFECYCLE_GAP,
+];
+
+const SRE_GAPS: &[AgentRoleGap] = &[
+    ROLE_ACTIVATION_GAP,
+    AgentRoleGap {
+        component: "oculus",
+        surface: "owner-query-runtime",
+        missing: "owner service, public client, populated source catalogue, bounded query settlement transport, and source/cursor/gap/sampling projections",
+        next_boundary: "finish and qualify the sovereign Oculus catalogue/query owner; Hermes events or shell output are not a substitute",
+    },
+    AgentRoleGap {
+        component: "hermes",
+        surface: "event-trigger-subscription.v1",
+        missing: "a durable bounded trigger cursor with coalescing, schedule, replay, and delivery evidence",
+        next_boundary: "add owner-bound event/schedule triggering; bounded disclosure alone is not a persistent worker subscription",
+    },
+    AgentRoleGap {
+        component: "chronos",
+        surface: "incident-admission.propose.v1",
+        missing: "a typed proposal that links recurring evidence to existing work or prepares a new admission without setting priority or declaring an incident",
+        next_boundary: "publish a Chronos-owned proposal contract and keep task admission plus priority human/owner gated",
+    },
+    WORKER_LIFECYCLE_GAP,
+];
+
+const FRONTIER_GAPS: &[AgentRoleGap] = &[
+    ROLE_ACTIVATION_GAP,
+    AgentRoleGap {
+        component: "daimon",
+        surface: "provider-host-tool-continuation.v1",
+        missing: "a real provider-specific host-tool continuation with callback authorization, denial matrix, restart, and content-safe telemetry evidence",
+        next_boundary: "qualify one Codex or Claude provider journey end to end; ACP evidence is not portable by analogy",
+    },
+    AgentRoleGap {
+        component: "aegis",
+        surface: "command-binding-evidence.v1",
+        missing: "current opaque per-command grants bound to the same semantic capabilities, task attempt, principal, policy epoch, and expiry",
+        next_boundary: "revalidate every tool callback through Aegis and retain the owner decision without disclosing bearer material",
+    },
+    WORKER_LIFECYCLE_GAP,
+];
+
+const VERIFICATION_GAPS: &[AgentRoleGap] = &[
+    ROLE_ACTIVATION_GAP,
+    AgentRoleGap {
+        component: "verification",
+        surface: "tests.allowlisted.execute.v1",
+        missing: "a deployment-pinned test catalogue and bounded execution gateway with no shell, arbitrary arguments, or ambient filesystem authority",
+        next_boundary: "admit exact test targets independently and return bounded process plus artifact evidence",
+    },
+    AgentRoleGap {
+        component: "verification",
+        surface: "tests.result.publish.v1",
+        missing: "an attributed, replay-safe verification result linked to the exact task attempt, source revision, test profile, and retained evidence",
+        next_boundary: "publish results through an owner contract; terminal exit or agent narration is not acceptance evidence",
+    },
+    AgentRoleGap {
+        component: "chronos",
+        surface: "verification-worker.schedule.v1",
+        missing: "asynchronous eligibility, claim/lease, cancellation, retry, and terminal settlement for a separately scheduled verification attempt",
+        next_boundary: "qualify the Chronos verification-worker lifecycle independently from the build line",
+    },
+    WORKER_LIFECYCLE_GAP,
+];
+
+pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
+    AgentRoleProfile {
+        role: "product-manager",
+        objective: "sample current owner facts, coalesce unchanged alignment, and publish attributed recommendations without applying material decisions",
+        required_tools: &[
+            "tasks.workflow.observe.v9",
+            "tellus.sme-plan.v1",
+            "workspace.snapshot.v1",
+            "moira.task-agent.observe.v1",
+            "rooms.read.v2",
+            "messages.read.v2",
+            "messages.actor-publication.observe.v1",
+            "messages.actor-publication.execute.v1",
+            "task-conversation.v1",
+            "ledger.events.disclose.v1",
+            "agents.session.inspect.v1",
+        ],
+        gaps: PRODUCT_MANAGER_GAPS,
+        human_gates: &[
+            "goal_or_scope_change",
+            "priority_or_acceptance_change",
+            "rollout_or_stage_decision",
+            "ensemble_adequacy_dispute",
+        ],
+        forbidden_authorities: &[
+            "apply_own_recommendation",
+            "mutate_chronos",
+            "approve_or_sign_off",
+            "transfer_task_lease",
+            "grant_tools_or_role_authority",
+        ],
+    },
+    AgentRoleProfile {
+        role: "sre",
+        objective: "observe bounded ELMT evidence, coalesce repeats, and propose an existing-work link or new admission packet without declaring or closing an incident",
+        required_tools: &[
+            "tasks.workflow.observe.v9",
+            "tellus.sme-plan.v1",
+            "workspace.snapshot.v1",
+            "rooms.read.v2",
+            "messages.read.v2",
+            "messages.actor-publication.observe.v1",
+            "messages.actor-publication.execute.v1",
+            "task-conversation.v1",
+            "ledger.events.disclose.v1",
+            "agents.session.inspect.v1",
+        ],
+        gaps: SRE_GAPS,
+        human_gates: &[
+            "incident_declaration_or_page",
+            "priority_or_scope_change",
+            "risk_acceptance",
+            "work_closure",
+        ],
+        forbidden_authorities: &[
+            "infer_oculus_from_logs_or_shell",
+            "declare_incident",
+            "page_human",
+            "set_priority",
+            "close_work",
+        ],
+    },
+    AgentRoleProfile {
+        role: "frontier-collaborator",
+        objective: "perform one complex owner-bound task attempt using only independently admitted Pantheon component gateways",
+        required_tools: &[
+            "tasks.workflow.observe.v9",
+            "tellus.sme-plan.v1",
+            "workspace.snapshot.v1",
+            "rooms.read.v2",
+            "messages.read.v2",
+            "messages.actor-publication.observe.v1",
+            "messages.actor-publication.execute.v1",
+            "task-conversation.v1",
+            "agents.session.inspect.v1",
+            "runtimes.observe.v1",
+            "artifacts.observe.v1",
+            "artifacts.catalog.v1",
+            "agent.web.fetch.v1",
+        ],
+        gaps: FRONTIER_GAPS,
+        human_gates: &[
+            "authority_escalation",
+            "material_scope_or_acceptance_change",
+            "rollout_or_irreversible_effect",
+        ],
+        forbidden_authorities: &[
+            "shell_or_interpreter",
+            "ambient_filesystem",
+            "ambient_network",
+            "inherited_secrets",
+            "undeclared_mcp_or_pantheon_aggregate",
+        ],
+    },
+    AgentRoleProfile {
+        role: "verification-worker",
+        objective: "asynchronously execute an exact allowlisted verification profile and publish evidence against one source revision and task attempt",
+        required_tools: &[
+            "tasks.workflow.observe.v9",
+            "workspace.snapshot.v1",
+            "messages.actor-publication.observe.v1",
+            "messages.actor-publication.execute.v1",
+            "task-conversation.v1",
+            "agents.session.inspect.v1",
+            "runtimes.observe.v1",
+            "artifacts.observe.v1",
+        ],
+        gaps: VERIFICATION_GAPS,
+        human_gates: &[
+            "acceptance_disposition",
+            "test_scope_expansion",
+            "release_or_rollout_decision",
+        ],
+        forbidden_authorities: &[
+            "arbitrary_test_command",
+            "shell_or_package_manager",
+            "accept_own_result",
+            "mutate_source",
+            "close_work",
+        ],
+    },
+];
+
+pub fn agent_role_profile(role: &str) -> Option<&'static AgentRoleProfile> {
+    AGENT_ROLE_PROFILES
+        .iter()
+        .find(|profile| profile.role == role)
+}
 
 /// Concrete local CLI routes for separately guarded controls. Shared commands
 /// retain their peer-owned subcommand or administrative-session semantics.
@@ -704,6 +957,46 @@ mod tests {
                 route.component == gap.component && route.capability == gap.surface
             }));
         }
+    }
+
+    #[test]
+    fn agent_role_profiles_are_least_authority_and_reference_real_tools() {
+        let catalogued = AGENT_TOOL_ROUTES
+            .iter()
+            .map(|route| route.capability)
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut roles = std::collections::BTreeSet::new();
+        for profile in AGENT_ROLE_PROFILES {
+            assert!(roles.insert(profile.role));
+            assert!(!profile.objective.is_empty());
+            assert!(!profile.required_tools.is_empty());
+            assert!(!profile.gaps.is_empty());
+            assert!(!profile.human_gates.is_empty());
+            assert!(!profile.forbidden_authorities.is_empty());
+            let mut requirements = std::collections::BTreeSet::new();
+            for requirement in profile.required_tools {
+                assert!(catalogued.contains(requirement));
+                assert!(requirements.insert(requirement));
+                assert!(!requirement.starts_with("pantheon."));
+            }
+            let mut gaps = std::collections::BTreeSet::new();
+            for gap in profile.gaps {
+                assert!(gaps.insert((gap.component, gap.surface)));
+                assert!(!gap.missing.is_empty());
+                assert!(!gap.next_boundary.is_empty());
+            }
+        }
+        assert_eq!(
+            roles,
+            [
+                "frontier-collaborator",
+                "product-manager",
+                "sre",
+                "verification-worker",
+            ]
+            .into_iter()
+            .collect()
+        );
     }
 
     #[test]

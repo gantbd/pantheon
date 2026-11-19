@@ -2795,3 +2795,37 @@ fn moira_deliberation_gate_proves_exact_ensemble_and_human_gate_evidence_in_both
     let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
     assert!(makefile.contains("qualify-moira-deliberation"));
 }
+
+#[test]
+fn operations_agent_roles_fail_closed_at_component_boundaries() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let capabilities = fs::read_to_string(root.join("cli/src/capabilities.rs"))
+        .expect("Pantheon capability catalogue");
+    for required in [
+        "AGENT_ROLE_PROFILES",
+        "product-manager",
+        "sre",
+        "frontier-collaborator",
+        "verification-worker",
+        "versioned-owner-runtime",
+        "owner-query-runtime",
+        "provider-host-tool-continuation.v1",
+        "tests.allowlisted.execute.v1",
+        "persistent-role-worker-lifecycle",
+    ] {
+        assert!(
+            capabilities.contains(required),
+            "agent role profiles omit {required}"
+        );
+    }
+    let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
+    for required in [
+        "agent-role-plan",
+        "blocked_by_owner_surfaces",
+        "candidate_tools_overbroad",
+        "aggregate or wildcard candidate capability",
+        "grants no tool, role, delegation",
+    ] {
+        assert!(main.contains(required), "role planner omits {required}");
+    }
+}

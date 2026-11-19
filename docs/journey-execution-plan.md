@@ -2279,6 +2279,17 @@ Operational means observable completed work, not a configured role name:
   refusal. This also corrected a fixture-selection error: the ordinary real
   daemon fixture intentionally serves conversation transport, while durable
   actor publication is a distinct composition profile.
+- Pantheon now evaluates the immediate Operations team through
+  `agent-role-plan` rather than equating a role name with a bundle of catalogued
+  commands. Product manager, SRE, frontier collaborator and verification worker
+  each publish their exact minimum semantic tools, human gates, forbidden
+  authorities and missing owner surfaces. The evaluator rejects unknown,
+  duplicate, wildcard and aggregate capabilities and identifies known but
+  extraneous tools as a least-authority violation. A candidate containing every
+  SRE tool still reports `operational: false` and
+  `blocked_by_owner_surfaces`, naming Oculus, Hermes trigger, Chronos proposal,
+  role-activation and Daimon worker-lifecycle gaps. This is executable admission
+  planning and honest orientation, not worker activation or completed work.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The

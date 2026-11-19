@@ -110,6 +110,34 @@ controls, not autonomous-agent conveniences.
 An unavailable entry is keyed by both `component` and `surface`; it does not
 withdraw or weaken independently admitted sibling surfaces on that component.
 
+## Role admission planning
+
+`pantheon agent-role-plan ROLE [SEMANTIC_CAPABILITY ...]` evaluates a candidate
+least-authority tool set for the four immediate Operations workers:
+`product-manager`, `sre`, `frontier-collaborator`, and `verification-worker`.
+The arguments are semantic capability identifiers from `agent-tools`, not
+opaque grants. Unknown, duplicate, wildcard and aggregate `pantheon*`
+capabilities refuse; known capabilities outside the selected role's minimum
+set remain visibly extraneous rather than silently broadening the role.
+
+The result separately reports missing candidate tools and structural owner
+surfaces. It is a complete plan evaluation, never an activation receipt:
+`operational` remains false even when every semantic tool is present. Actual
+operation still requires a sovereign versioned role activation, current opaque
+Aegis/Daimon command grants, one exact Running Chronos attempt, an owner-bound
+worker lifecycle and a completed-work receipt. Human gates and authorities the
+role must never exercise are machine-readable parts of each profile.
+
+The current profiles intentionally fail closed. In particular, the SRE still
+requires Oculus's catalogue/query owner, a durable Hermes trigger subscription,
+a typed Chronos incident-admission proposal and the shared role/worker owners;
+Hermes disclosure, shell output or Pantheon aggregate observation cannot stand
+in for Oculus. The product manager still requires owner-native alignment,
+stakeholder-ensemble, Vellum proposal and named-human gate surfaces. Frontier
+and verification workers likewise retain their provider continuation, Aegis,
+allowlisted-test, result-publication and scheduling gaps. These are executable
+blocker inventories, not claims that named roles are running.
+
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):
 
 ```json

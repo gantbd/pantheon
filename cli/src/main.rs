@@ -164,7 +164,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     };
     if first == "--help" {
         println!(
-            "pantheon controls\npantheon agent-tools\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
+            "pantheon controls\npantheon agent-tools\npantheon agent-role-plan <product-manager|sre|frontier-collaborator|verification-worker> [SEMANTIC_CAPABILITY ...]\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
             usage()
         );
         std::process::exit(0);
@@ -947,6 +947,132 @@ fn agent_tool_catalog(
     Ok(())
 }
 
+fn agent_role_plan(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let usage = "pantheon agent-role-plan <product-manager|sre|frontier-collaborator|verification-worker> [SEMANTIC_CAPABILITY ...]";
+    let role = args
+        .next()
+        .ok_or(usage)?
+        .into_string()
+        .map_err(|_| "agent role must be UTF-8")?;
+    let profile = capabilities::agent_role_profile(&role).ok_or_else(|| {
+        format!(
+            "unknown agent role {role:?}; expected product-manager, sre, frontier-collaborator, or verification-worker"
+        )
+    })?;
+
+    let known = capabilities::AGENT_TOOL_ROUTES
+        .iter()
+        .map(|route| (route.capability, route))
+        .collect::<BTreeMap<_, _>>();
+    let mut candidates = std::collections::BTreeSet::new();
+    for argument in args {
+        let capability = argument
+            .into_string()
+            .map_err(|_| "candidate semantic capabilities must be UTF-8")?;
+        if capability.contains('*')
+            || capability == "pantheon"
+            || capability.starts_with("pantheon.")
+        {
+            return Err(format!(
+                "aggregate or wildcard candidate capability {capability:?} is forbidden"
+            )
+            .into());
+        }
+        if !known.contains_key(capability.as_str()) {
+            return Err(format!(
+                "candidate capability {capability:?} is not an independently admissible agent tool"
+            )
+            .into());
+        }
+        if !candidates.insert(capability) {
+            return Err("candidate semantic capabilities must be unique".into());
+        }
+    }
+
+    let required_tools = profile
+        .required_tools
+        .iter()
+        .map(|capability| {
+            let route = known
+                .get(capability)
+                .expect("role profiles reference catalogued agent tools");
+            let admitted = candidates.contains(*capability);
+            serde_json::json!({
+                "component": route.component,
+                "semantic_capability": capability,
+                "command": route.command,
+                "model_arguments": route.model_arguments,
+                "candidate_disposition": if admitted { "included" } else { "missing" },
+                "authority": "not_granted_by_plan",
+            })
+        })
+        .collect::<Vec<_>>();
+    let missing_candidate_tools = profile
+        .required_tools
+        .iter()
+        .filter(|capability| !candidates.contains(**capability))
+        .copied()
+        .collect::<Vec<_>>();
+    let extraneous_candidate_tools = candidates
+        .iter()
+        .filter(|capability| !profile.required_tools.contains(&capability.as_str()))
+        .cloned()
+        .collect::<Vec<_>>();
+    let structural_blockers = profile
+        .gaps
+        .iter()
+        .map(|gap| {
+            serde_json::json!({
+                "component": gap.component,
+                "surface": gap.surface,
+                "status": "owner_surface_unavailable",
+                "missing": gap.missing,
+                "next_boundary": gap.next_boundary,
+                "aggregate_fallback": false,
+            })
+        })
+        .collect::<Vec<_>>();
+    let candidate_admission_complete = missing_candidate_tools.is_empty();
+    let candidate_least_authority = extraneous_candidate_tools.is_empty();
+    let status = if !profile.gaps.is_empty() {
+        "blocked_by_owner_surfaces"
+    } else if !candidate_admission_complete {
+        "candidate_tools_incomplete"
+    } else if !candidate_least_authority {
+        "candidate_tools_overbroad"
+    } else {
+        "awaiting_owner_receipts"
+    };
+
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "mode": "bounded_agent_role_plan",
+            "complete": true,
+            "role": profile.role,
+            "objective": profile.objective,
+            "status": status,
+            "operational": false,
+            "candidate_admission_complete": candidate_admission_complete,
+            "candidate_least_authority": candidate_least_authority,
+            "required_tools": required_tools,
+            "missing_candidate_tools": missing_candidate_tools,
+            "extraneous_candidate_tools": extraneous_candidate_tools,
+            "structural_blockers": structural_blockers,
+            "human_gates": profile.human_gates,
+            "forbidden_authorities": profile.forbidden_authorities,
+            "next_safe_action": profile.gaps.first().map(|gap| gap.next_boundary).unwrap_or(
+                "bind the exact semantic tools to opaque Aegis and Daimon capabilities, activate the role through its sovereign owner, and qualify one completed-work receipt"
+            ),
+            "boundary": "this validates a least-authority semantic candidate only; it grants no tool, role, delegation, task lease, provider session, human disposition, or rollout authority, and it cannot report operational until owner activation, opaque command grants, a Running Chronos attempt, worker lifecycle, and completed-work receipts are qualified",
+        }))?
+    );
+    Ok(())
+}
+
 fn reconfiguration_plan(
     mut args: impl Iterator<Item = std::ffi::OsString>,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -1170,6 +1296,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "agent-tools")
     {
         return agent_tool_catalog(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agent-role-plan")
+    {
+        return agent_role_plan(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)

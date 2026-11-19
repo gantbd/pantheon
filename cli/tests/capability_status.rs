@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
 use pantheon_cli::capabilities::{
-    self, AGENT_TOOL_GAPS, AGENT_TOOL_ROUTES, Capability, ChronosFeatures,
+    self, AGENT_ROLE_PROFILES, AGENT_TOOL_GAPS, AGENT_TOOL_ROUTES, Capability, ChronosFeatures,
     GUARDED_CONTROL_CAPABILITIES, GUARDED_CONTROL_ROUTES, Mode,
 };
 
@@ -188,6 +188,91 @@ fn bounded_agent_tools_are_machine_discoverable_and_individually_admissible() {
         assert_eq!(entry["missing"], gap.missing);
         assert_eq!(entry["next_boundary"], gap.next_boundary);
         assert_eq!(entry["aggregate_fallback"], false);
+    }
+}
+
+#[test]
+fn role_plans_fail_closed_on_missing_tools_and_owner_surfaces() {
+    for profile in AGENT_ROLE_PROFILES {
+        let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+            .args(["agent-role-plan", profile.role])
+            .output()
+            .expect("run bounded agent role plan");
+        assert!(output.status.success());
+        let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(plan["mode"], "bounded_agent_role_plan");
+        assert_eq!(plan["role"], profile.role);
+        assert_eq!(plan["complete"], true);
+        assert_eq!(plan["operational"], false);
+        assert_eq!(plan["candidate_admission_complete"], false);
+        assert_eq!(plan["candidate_least_authority"], true);
+        assert_eq!(plan["status"], "blocked_by_owner_surfaces");
+        assert_eq!(
+            plan["missing_candidate_tools"].as_array().unwrap().len(),
+            profile.required_tools.len()
+        );
+        assert_eq!(
+            plan["structural_blockers"].as_array().unwrap().len(),
+            profile.gaps.len()
+        );
+        assert!(
+            plan["boundary"]
+                .as_str()
+                .unwrap()
+                .contains("grants no tool")
+        );
+    }
+}
+
+#[test]
+fn complete_semantic_candidate_still_does_not_claim_an_operational_sre() {
+    let profile = capabilities::agent_role_profile("sre").unwrap();
+    let mut command = Command::new(env!("CARGO_BIN_EXE_pantheon"));
+    command.args(["agent-role-plan", profile.role]);
+    command.args(profile.required_tools);
+    let output = command.output().expect("run complete SRE candidate plan");
+    assert!(output.status.success());
+    let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(plan["candidate_admission_complete"], true);
+    assert_eq!(plan["candidate_least_authority"], true);
+    assert_eq!(plan["operational"], false);
+    assert_eq!(plan["status"], "blocked_by_owner_surfaces");
+    assert!(
+        plan["structural_blockers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|gap| gap["component"] == "oculus"
+                && gap["surface"] == "owner-query-runtime"
+                && gap["aggregate_fallback"] == false)
+    );
+}
+
+#[test]
+fn role_plan_exposes_overbroad_candidates_and_rejects_aggregate_authority() {
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+        .args([
+            "agent-role-plan",
+            "verification-worker",
+            "agent.web.fetch.v1",
+        ])
+        .output()
+        .expect("run overbroad verification plan");
+    assert!(output.status.success());
+    let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(plan["candidate_least_authority"], false);
+    assert_eq!(
+        plan["extraneous_candidate_tools"],
+        serde_json::json!(["agent.web.fetch.v1"])
+    );
+
+    for forbidden in ["pantheon", "pantheon.*", "tasks.*"] {
+        let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+            .args(["agent-role-plan", "product-manager", forbidden])
+            .output()
+            .expect("run forbidden aggregate plan");
+        assert!(!output.status.success());
+        assert!(String::from_utf8_lossy(&output.stderr).contains("forbidden"));
     }
 }
 
