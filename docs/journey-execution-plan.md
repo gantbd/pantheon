@@ -1365,6 +1365,23 @@ recovery before a human can settle the gate from this surface.
   priority-9 ready task `tellus-scope-bound-grounding-evidence-frontier`; the PM
   must not substitute either all registry loads or a host-maintained allowlist
   for an owner-published complete applicable frontier.
+- Chronos `39c2349` packages the first bounded product-alignment composition
+  root and qualifies it against real Vellum, Chronos, Moira and authenticated
+  Tellus/Dendrite processes. Authority separation is explicit: a one-purpose
+  client admits the exact control task, while the PM runtime can only sample,
+  create or exactly reopen its immutable proposal, and serve one disclosed
+  read-only observation. The public result was current for `pm-control`
+  incarnation 0/revision 1, preserved three independently attributed
+  stakeholders, exposed the complete owner evidence and pending human gate, and
+  recommended `escalate_human` without applying or approving anything. The 53
+  focused tests and strict Clippy are green; the separately provisioned live
+  receipt test remains explicitly ignored. The gate corrected three useful
+  assumptions: incarnation 0 is valid owner state, protocol compatibility
+  cannot be inferred from a live stale Vellum binary, and short-lived Vellum
+  clients require explicit disconnect to avoid exhausting bounded owner leases.
+  Recurring/coalesced scheduling, Agora challenge, authorized proposal
+  application and operator configuration remain open and must not be inferred
+  from the successful one-shot process gate.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

@@ -2346,8 +2346,37 @@ deliberation owner reopened the exact persisted capacity envelope, while a
 looser mismatched envelope was refused, and the real headless Moira TUI observed
 fitness `Yes`, exact grounding, all three reports and the pending gate at
 registry revision 6. Vellum goal/policy processes, the exact Chronos control
-task, the bound alignment listener and recurring PM scheduling are still
-required before this is an operational intelligent product manager.
+task, the bound alignment listener and recurring PM scheduling were the next
+composition boundary rather than facts inferred from these two fixtures.
+
+Chronos `39c2349` now closes the bounded one-shot composition and process gate.
+A separate single-purpose authority client admits the exact control task; the
+PM runtime itself remains read-only. It observes the Vellum-owned goal and PM
+proposal without selecting a human view, twice samples the exact Chronos task,
+Moira cohort/deliberation, Tellus grounding and Vellum budget frontier, and
+creates or reopens only the identical immutable proposal. A conflicting or
+unreadable retained proposal refuses rather than being overwritten. In the real
+four-owner qualification, the public Chronos observation returned current task
+`pm-control` incarnation 0 at revision 1, the separately attributed external
+advocate, product manager and frontier supervisor, the Vellum budget policy,
+the complete Moira/Tellus evidence frontier, one pending human gate and the
+PM-authored `escalate_human` recommendation. The PM did not satisfy that gate
+or mutate Chronos. All 53 focused tests pass, the one separately provisioned
+live-receipt test remains explicitly ignored, and strict Clippy is clean.
+
+The live gate also corrected three boundary assumptions. Chronos incarnation 0
+is valid owner-native state and cannot be rejected by host convention. A stale
+Pantheon-local Vellum executable could connect and resolve a locator but refused
+the newer exact-document observation; the process gate must build and identify
+the current owner binary rather than treating endpoint liveness as protocol
+compatibility. Finally, short-lived authenticated Vellum reads must explicitly
+disconnect: relying on process-language drop semantics exhausted the owner's
+bounded client leases and made a later public observation appear unavailable.
+The composition now closes those leases deterministically instead of increasing
+the owner limit. Recurring event/cadence activation, unchanged-frontier
+coalescing, attributed Agora challenge, separately authorized application and
+operator configuration remain required before claiming a continuously
+operational intelligent product manager.
 
 The same live pass exposed three presentation/operation findings without
 changing the owner result. Emacs `C-u` did not clear the Chronos numeric-priority
