@@ -627,8 +627,13 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   project only workstream plus idle/active/fenced state; grants, leases, task
   keys and result evidence remain private. The focused live gate starts and
   drains the real owner through management, restarts it in an isolated tmux TUI,
-  and proves both projections plus clean exit. This closes capability retention
-  and operational visibility, not owner-derived claim: Moira must still supply
+  proves both projections, attaches a second headless Pantheon client to the
+  exact live owner, and exits cleanly. The canonical revision-66 dogfood owner
+  independently returned a complete 93-task headless observation. This closes
+  live-owner readiness for an exact directory; the earlier `not_sent` was an
+  implicit/wrong-workspace selection failure and remains owned by the separate
+  canonical-workspace attachment item. This closes capability retention and
+  operational visibility, not owner-derived claim: Moira must still supply
   the exact external task key and expected Chronos revision before the
   task-to-session runtime may use the worker. The shared canonical session also
   exposed that its Vellum tab is present while the Vellum service is absent;

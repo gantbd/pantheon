@@ -84,10 +84,21 @@ def expect(*markers, timeout=30):
 try:
     tmux("new-session", "-d", "-x", "160", "-y", "36", "-s", "trusted-worker", command)
     expect("OPERATIONS", "LOCAL TOPOLOGY", "trusted worker idle", "private capability")
+    attached = subprocess.run(
+        [pantheon, "headless", str(scratch / "chronos"),
+         "--operation-id", "trusted-worker-live-attach"],
+        text=True, capture_output=True, check=True, timeout=20,
+    )
+    observation = json.loads(attached.stdout)
+    assert observation["complete"] is True, observation
+    assert observation["hosted_shutdown"] is None, observation
+    assert observation["peers"][0]["status"] == "current", observation
+    assert observation["management"]["peers"][0]["deployment"] == "attached", observation
+    assert observation["management"]["peers"][0]["lifecycle"] == "external", observation
     tmux("send-keys", "-t", "trusted-worker", "C-q")
     expect("[trusted-worker-exit:0]", timeout=10)
 finally:
     tmux("kill-server", check=False)
 
-print("PASS: trusted Chronos worker is retained privately and visible in management/TUI status")
+print("PASS: trusted worker is private/visible and a second headless client attaches to the live TUI owner")
 PYTHON
