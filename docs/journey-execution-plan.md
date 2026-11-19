@@ -285,8 +285,11 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   publishes three independently receipted addressed messages, and observes the
   same bodies and recipients from Agora's owner. That journey exposed and fixed
   canonical recipient ordering; duplicate recipients now refuse before
-  dispatch. Outcome correlation and Pantheon TUI/headless projection remain
-  required before the J33 checklist item closes.
+  dispatch. A review-specific recovery journey then discards the first real
+  Agora success reply, recreates the durable publisher and proves exact request
+  replay returns the retained receipt without a second room message. Typed
+  review-item-to-publication outcome correlation and Pantheon TUI/headless
+  projection remain required before the J33 checklist item closes.
 - Chronos revision 53 atomically admitted three follow-on dogfood discoveries:
   priority-6 `chronos-complete-paginated-task-search`, priority-5
   `pantheon-canonical-dogfood-workspace-attachment`, and priority-4
@@ -1368,9 +1371,10 @@ mature stakeholder ensemble.
   and owner dispositions. Moira now has a replay-safe, registry-revisioned and
   SQLite-restored review exchange for first-pass admission, cross-member
   rebuttal, findings, seven explicit owner dispositions and exact human-gate
-  response binding, plus an addressed Agora projection. Public review
-  mutation/read commands, correlation, real room publication/recovery and
-  Pantheon presentation remain open.
+  response binding, plus public capability-shaped review mutation/read commands
+  and an addressed Agora projection. Real `ServiceV2` publication and
+  discarded-reply recovery are qualified. Typed review-item-to-publication
+  correlation and Pantheon presentation remain open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
