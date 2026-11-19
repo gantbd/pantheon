@@ -17,15 +17,46 @@ cleanup() {
       wait "$pid" 2>/dev/null || true
     fi
   done
-  rm -rf "$scratch"
+  if [ "${PANTHEON_KEEP_J1_SCRATCH:-0}" = 1 ]; then
+    echo "J1 scratch retained for diagnosis: $scratch" >&2
+  else
+    rm -rf "$scratch"
+  fi
 }
 trap cleanup EXIT HUP INT TERM
 chmod 700 "$scratch"
 mkdir "$scratch/chronos"
 chmod 700 "$scratch/chronos"
 
-cargo build --manifest-path "$workspace/daimon-tui/Cargo.toml" \
-  --package daimon-tui-cli --example agent_open_journey_fixture --locked --offline
+qualified_daimon_fixture=${PANTHEON_DAIMON_JOURNEY_FIXTURE:-}
+if [ -n "$qualified_daimon_fixture" ]; then
+  expected_digest=${PANTHEON_DAIMON_JOURNEY_FIXTURE_SHA256:-}
+  provenance=${PANTHEON_DAIMON_JOURNEY_FIXTURE_PROVENANCE:-}
+  if [ -z "$expected_digest" ] || [ -z "$provenance" ]; then
+    echo 'FAIL: qualified Daimon fixture requires exact SHA-256 and provenance' >&2
+    exit 1
+  fi
+  if [ ! -f "$qualified_daimon_fixture" ] || [ ! -x "$qualified_daimon_fixture" ]; then
+    echo "FAIL: qualified Daimon fixture is not an executable file: $qualified_daimon_fixture" >&2
+    exit 1
+  fi
+  actual_digest=$(shasum -a 256 "$qualified_daimon_fixture" | awk '{print $1}')
+  if [ "$actual_digest" != "$expected_digest" ]; then
+    echo "FAIL: qualified Daimon fixture digest mismatch: expected $expected_digest, observed $actual_digest" >&2
+    exit 1
+  fi
+  fixture=$qualified_daimon_fixture
+  echo "QUALIFIED ARTIFACT: Daimon fixture sha256:$actual_digest · $provenance"
+else
+  if ! cargo build --manifest-path "$workspace/daimon-tui/Cargo.toml" \
+    --package daimon-tui-cli --example agent_open_journey_fixture --locked --offline; then
+    echo 'FAIL: Daimon fixture owner locked graph is not buildable.' >&2
+    echo 'Pantheon did not update or bypass the peer lockfile.' >&2
+    echo 'Next: reconcile daimon-tui/Cargo.lock in its owner repository, then rerun make qualify-j1.' >&2
+    exit 1
+  fi
+  fixture="$workspace/daimon-tui/target/debug/examples/agent_open_journey_fixture"
+fi
 cargo build --manifest-path "$workspace/agora-tui/Cargo.toml" \
   --package agora-tui-cli --example real_daemon_fixture --locked --offline
 cargo build --manifest-path "$workspace/agora-chronos-adapter/Cargo.toml" \
@@ -68,11 +99,31 @@ start_link() {
   wait_socket "$scratch/task-conversation.sock" "$link_pid" "$scratch/link.err"
 }
 
+drain_link() {
+  python3 - "$scratch/task-conversation.sock" <<'PY'
+import json, socket, sys
+with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stream:
+    stream.settimeout(3)
+    stream.connect(sys.argv[1])
+    stream.sendall(json.dumps({"operation": "drain"}).encode() + b"\n")
+    reply = json.loads(stream.makefile("rb").readline(65537))
+assert reply["complete"] and reply["status"] == "draining"
+PY
+  wait "$link_pid"
+  link_pid=
+}
+
 inspect_relationship() {
-  "$workbench" task-conversation-inspect \
-    "$scratch/task-conversation.sock" conversation local-agent-task - | python3 -c '
+  report="$scratch/task-conversation-inspection.json"
+  if ! "$workbench" task-conversation-inspect \
+    "$scratch/task-conversation.sock" conversation local-agent-task - >"$report"; then
+    echo 'FAIL: exact task-conversation owner inspection was unavailable' >&2
+    sed -n '1,160p' "$scratch/link.err" >&2
+    exit 1
+  fi
+  python3 -c '
 import json, sys
-report = json.load(sys.stdin)
+report = json.load(open(sys.argv[1]))
 assert report["version"] == 1
 assert report["mode"] == "task_conversation_exact_observation"
 assert report["owner"] == "task-conversation.v1"
@@ -90,7 +141,7 @@ assert link["conversation"] == {"room": "local-agent-task", "thread_root": None}
 assert len(link["operation_id"]) == 32 and len(link["principal_id"]) == 32
 assert link["chronos_revision"] and link["agora_revision"] > 0
 assert "not task progress" in report["boundary"]
-'
+' "$report"
 }
 
 cat >"$scratch/provider-catalog.json" <<'EOF'
@@ -306,7 +357,7 @@ try:
     )
     keys("c", "Enter")
     expect(
-        "BOUND · Owner created relationship",
+        "BOUND · Owner created and exact readback verified relationship",
         "Agora room local-agent-task durably created",
         "DONE · Local-agent turn accepted",
         timeout=20,
@@ -364,9 +415,7 @@ finally:
 PYTHON
 
 inspect_relationship
-kill -TERM "$link_pid"
-wait "$link_pid" || true
-link_pid=
+drain_link
 start_link
 inspect_relationship
 

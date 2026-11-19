@@ -2292,6 +2292,11 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "provider_catalog_open_owner.sh",
         "return to the kanban board",
         "agent_open_journey_fixture",
+        "PANTHEON_DAIMON_JOURNEY_FIXTURE_SHA256",
+        "PANTHEON_DAIMON_JOURNEY_FIXTURE_PROVENANCE",
+        "QUALIFIED ARTIFACT: Daimon fixture",
+        "Pantheon did not update or bypass the peer lockfile",
+        "drain_link",
         "Open fresh Daimon session for Chronos task",
         "human-gated fresh Daimon session",
         "Create Agora room",
@@ -2309,6 +2314,16 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
             "work-item journey omits {required}"
         );
     }
+    assert!(
+        !journey.contains("kill -TERM \"$link_pid\""),
+        "work-item journey bypasses the relationship owner's drain contract"
+    );
+
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Pantheon Makefile");
+    assert!(
+        makefile.contains("qualify-j1:\n\t./tests/live/work_item_agent_journey.sh"),
+        "Makefile omits the focused J1 qualification target"
+    );
 }
 
 #[test]
