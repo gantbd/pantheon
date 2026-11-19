@@ -7,6 +7,7 @@ pub mod chronos_task;
 pub mod daimon_observe;
 pub mod headless;
 pub mod hestia;
+pub mod hestia_observe;
 mod hosted;
 pub mod management;
 pub mod native_host;

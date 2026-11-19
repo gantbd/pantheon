@@ -320,6 +320,34 @@
         "ledger.events.disclose.v1": "qualified"
       }
     },
+    "hestia": {
+      "owner": "hestia",
+      "presentation": "hestia-tui",
+      "readCapability": "runtimes.observe.v1",
+      "readCapabilities": ["runtimes.observe.v1", "artifacts.observe.v1", "artifacts.catalog.v1"],
+      "client": { "contract": "hestia-protocol", "connection": "hestia-local-client", "ownership": "peer" },
+      "evidence": ["pantheon/tests/live/hestia_artifact_acquisition.sh", "pantheon/tests/live/hestia_real_model.sh", "pantheon/tests/live/hestia_agent_observe.sh"],
+      "standalone": { "interactive": "qualified", "headless": "qualified" },
+      "attach": { "interactive": "qualified", "headless": "qualified" },
+      "host": { "interactive": "absent", "headless": "absent" },
+      "pantheonRoutes": {
+        "interactive": [
+          { "id": "runtimes.observe.v1", "plane": "observation", "state": "qualified", "when": "runtime-selected" },
+          { "id": "artifacts.observe.v1", "plane": "observation", "state": "qualified", "when": "artifact-selected" },
+          { "id": "artifacts.catalog.v1", "plane": "observation", "state": "qualified", "when": "artifact-catalog=true" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" }
+        ],
+        "headless": [
+          { "id": "runtimes.observe.v1", "plane": "observation", "state": "qualified", "when": "runtime-selected" },
+          { "id": "artifacts.observe.v1", "plane": "observation", "state": "qualified", "when": "artifact-selected" },
+          { "id": "artifacts.catalog.v1", "plane": "observation", "state": "qualified", "when": "artifact-catalog=true" },
+          { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" }
+        ]
+      },
+      "mutation": "qualified",
+      "mutationBoundary": "Artifact acquisition and runtime start/drain remain separately human-gated owner commands; these agent routes are observation-only.",
+      "remaining": ["Pantheon-hosted Hestia owner lifecycle; Hestia-hosted inference runtimes do not imply Pantheon hosts the sovereign owner"]
+    },
     "moira": {
       "owner": "moira",
       "presentation": "moira-tui",

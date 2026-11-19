@@ -463,6 +463,24 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         model_arguments: "exactly_one_agent_session_id",
     },
     AgentToolRoute {
+        component: "hestia",
+        capability: "runtimes.observe.v1",
+        command: "hestia-runtime-observe",
+        model_arguments: "exactly_one_runtime_id",
+    },
+    AgentToolRoute {
+        component: "hestia",
+        capability: "artifacts.observe.v1",
+        command: "hestia-artifact-observe",
+        model_arguments: "exactly_one_artifact_id",
+    },
+    AgentToolRoute {
+        component: "hestia",
+        capability: "artifacts.catalog.v1",
+        command: "hestia-artifact-catalog",
+        model_arguments: "none_when_owner_socket_pinned",
+    },
+    AgentToolRoute {
         component: "hermes",
         capability: "ledger.events.disclose.v1",
         command: "hermes-disclose-events",
@@ -484,11 +502,6 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
         component: "agora",
         missing: "bounded room/message observation and addressed-message submission gateways",
         next_boundary: "compose Agora's public owner client with exact room, revision, participant, disclosure, and mutation confirmation contracts",
-    },
-    AgentToolGap {
-        component: "hestia",
-        missing: "exact model-artifact and serving-instance observation gateways",
-        next_boundary: "project owner-issued artifact, placement, readiness, provenance, and resource-budget evidence without lifecycle authority",
     },
     AgentToolGap {
         component: "oculus",

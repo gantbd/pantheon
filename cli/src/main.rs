@@ -833,6 +833,9 @@ fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
         "pantheon daimon-agent-observe SOCKET AGENT_SESSION_HEX\n",
+        "pantheon hestia-runtime-observe SOCKET RUNTIME_HEX\n",
+        "pantheon hestia-artifact-observe SOCKET ARTIFACT_ID\n",
+        "pantheon hestia-artifact-catalog SOCKET\n",
         "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\npantheon chronos-task-observe SERVICE_DIRECTORY TASK\n",
         "pantheon vellum-document-read SOCKET CREDENTIAL_OR_- MAX_BYTES LOCATOR [START END]\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
@@ -1103,6 +1106,24 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "hestia-runtime-observe")
+    {
+        return pantheon_cli::hestia_observe::runtime(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "hestia-artifact-observe")
+    {
+        return pantheon_cli::hestia_observe::artifact(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "hestia-artifact-catalog")
+    {
+        return pantheon_cli::hestia_observe::catalog(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "daimon-agent-observe")

@@ -108,7 +108,8 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
     assert_eq!(
         peers.keys().map(String::as_str).collect::<BTreeSet<_>>(),
         BTreeSet::from([
-            "aegis", "agora", "chronos", "daimon", "tellus", "hermes", "moira", "vellum",
+            "aegis", "agora", "chronos", "daimon", "tellus", "hermes", "hestia", "moira",
+            "vellum",
         ])
     );
     for peer in peers.values() {
@@ -1933,6 +1934,35 @@ fn hestia_artifact_gate_proves_human_review_owner_admission_and_repository_hygie
     let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
     assert!(terminal.contains("hestia.artifact.acquire"));
     assert!(terminal.contains("apply_hestia_artifact_action"));
+}
+
+#[test]
+fn hestia_agent_observation_gate_is_exact_bounded_and_private() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/hestia_agent_observe.sh"))
+        .expect("Hestia agent-observation gate");
+    for required in [
+        "hestia-artifact-catalog",
+        "hestia-artifact-observe",
+        "hestia-runtime-observe",
+        "artifacts.catalog.v1",
+        "artifacts.observe.v1",
+        "runtimes.observe.v1",
+        "missing-artifact",
+        "not_found",
+        "tcp_accept",
+        "loopback",
+        "assert str(scratch) not in raw",
+        "'\"executable\"' not in raw",
+        "'\"storage_path\"' not in raw",
+        "drain",
+        "shutdown",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Hestia agent-observation gate omits {required}"
+        );
+    }
 }
 
 #[test]

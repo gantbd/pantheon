@@ -61,13 +61,22 @@ The initial authorities are distinct:
   only session facts plus content-free bounded event metadata. Assistant text,
   thoughts, terminal output, tool details and file paths remain undisclosed;
   observed provider capabilities grant no execution or tool authority.
+- `runtimes.observe.v1`, `artifacts.observe.v1`, and `artifacts.catalog.v1`:
+  separate Hestia gateways for one exact runtime, one exact artifact, or the
+  deployment catalogue capped at 128 entries. They preserve owner revision,
+  incarnation, lifecycle, readiness basis/time, placement posture, model
+  identity, immutable source revision, license, expected size/digest and
+  admission progress while withholding executable paths, arguments,
+  environment, registry locators, downloader details, storage paths and process
+  handles. Observation grants no acquisition, start, drain, provider
+  qualification, inference, or task authority.
 
 The catalogue describes independently admissible commands, not a default role
 bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
-Agora, Hestia, and Oculus are currently named there with the missing
+Agora and Oculus are currently named there with the missing
 owner/client boundary and next admissible seam. `aggregate_fallback=false` is
 normative: neither an agent nor a launcher may replace a missing component tool
 with Pantheon's aggregate headless observation. Aegis authority and human-gate
@@ -106,6 +115,30 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
       "allow_additional_arguments": true
     },
     {
+      "command": "hestia-runtime-observe",
+      "capability": "55555555555555555555555555555555",
+      "semantic_capability": "runtimes.observe.v1",
+      "program": "/absolute/pantheon",
+      "argument_prefix": ["hestia-runtime-observe", "/absolute/hestia.sock"],
+      "allow_additional_arguments": true
+    },
+    {
+      "command": "hestia-artifact-observe",
+      "capability": "66666666666666666666666666666666",
+      "semantic_capability": "artifacts.observe.v1",
+      "program": "/absolute/pantheon",
+      "argument_prefix": ["hestia-artifact-observe", "/absolute/hestia.sock"],
+      "allow_additional_arguments": true
+    },
+    {
+      "command": "hestia-artifact-catalog",
+      "capability": "77777777777777777777777777777777",
+      "semantic_capability": "artifacts.catalog.v1",
+      "program": "/absolute/pantheon",
+      "argument_prefix": ["hestia-artifact-catalog", "/absolute/hestia.sock"],
+      "allow_additional_arguments": false
+    },
+    {
       "command": "web",
       "capability": "22222222222222222222222222222222",
       "semantic_capability": "agent.web.fetch.v1",
@@ -115,7 +148,7 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
     }
   ],
   "environment_names": [],
-  "max_handles": 4,
+  "max_handles": 7,
   "max_output_bytes": 1048576
 }
 ```

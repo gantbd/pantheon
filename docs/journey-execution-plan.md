@@ -2222,6 +2222,34 @@ Operational means observable completed work, not a configured role name:
   revision 12 / `ReattachRequired`, contiguous cursors 1–2, plan byte count,
   token usage 21/34, and absence of both plan text and a derived plan digest from
   output. Only digests already issued by Daimon for file/output receipts remain.
+- Hestia's unavailable entry is now replaced by three owner-native observation
+  tools: exact runtime, exact artifact, and a catalogue capped at 128 entries
+  with no partial overflow response. The projections preserve lifecycle,
+  revision/incarnation, readiness basis/time, endpoint scope, resource/isolation
+  posture, model identity, immutable source revision, license, expected
+  size/digest and acquisition progress. Hestia's public protocol and Pantheon
+  projection expose no executable path, arguments, environment, registry
+  locator, downloader, storage path or process handle. Acquisition, start,
+  drain, shutdown, Daimon provider qualification, inference and task authority
+  remain unavailable through these tools.
+  The composition audit also found that Hestia was operational but absent from
+  `composition-status.json`, while one remembered evidence name referred to a
+  nonexistent `hestia_model_hosted.sh`. Hestia now has an explicit qualified
+  observation matrix and the evidence points to the real-model and new bounded
+  observation gates. Release-source provenance remains a separate gap: the
+  sibling Hestia checkout is clean at `a0a9a16` but has no configured Git remote,
+  so it was not silently added to the remotely qualified source manifest.
+  The matrix also distinguishes Hestia hosting inference runtimes from Pantheon
+  hosting the sovereign Hestia owner: standalone and attach are qualified, but
+  Pantheon-hosted owner lifecycle remains explicitly absent.
+  The repeatable live gate used one private Hestia daemon, a one-entry artifact
+  catalogue and one loopback runtime. It proved catalogue and exact-artifact
+  observation, exact `not_found` refusal without substitution, runtime `ready`
+  with `tcp_accept`/loopback evidence, absence of private configuration keys or
+  values from every projection, then exact drain and clean owner shutdown. An
+  initial leakage assertion rejected the explanatory words “storage path”;
+  replacing that false positive with exact forbidden-key/value checks preserved
+  the privacy intent without weakening the boundary.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The

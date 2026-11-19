@@ -3,10 +3,12 @@
 
 use hestia_local_client::LocalClient;
 use hestia_protocol::{
+    ArtifactFailureV1, ArtifactFormatV1, ArtifactLifecycleV1, ArtifactObservationV1,
     ControlPostureV1, EndpointScopeV1, ReadinessBasisV1, ReadinessDispositionV1, RuntimeIdV1,
-    RuntimeLifecycleV1,
+    RuntimeLifecycleV1, RuntimeObservationV1,
 };
 use serde::Serialize;
+use serde_json::{Value, json};
 
 use crate::profile::HestiaProfile;
 
@@ -102,6 +104,66 @@ pub fn observe_provider_runtime(
     })
 }
 
+pub fn runtime_observation_projection(observation: &RuntimeObservationV1) -> Value {
+    json!({
+        "authority": hex(&observation.authority.0),
+        "runtime": hex(&observation.runtime.0),
+        "revision": observation.revision,
+        "incarnation": observation.incarnation,
+        "lifecycle": lifecycle(observation.lifecycle),
+        "hosting_profile": observation.hosting_profile.as_str(),
+        "model": model_projection(&observation.model),
+        "resources": {
+            "memory_bytes": observation.resources.memory_bytes,
+            "accelerator": observation.resources.accelerator.as_str(),
+            "threads": observation.resources.threads,
+            "concurrency": observation.resources.concurrency,
+        },
+        "sandbox": posture(observation.sandbox),
+        "egress": posture(observation.egress),
+        "readiness": {
+            "disposition": readiness(observation.readiness.disposition),
+            "observed_at_unix_ms": observation.readiness.observed_at_unix_ms,
+            "basis": observation.readiness.basis.map(readiness_basis),
+            "endpoint": observation.readiness.endpoint.as_ref().map(|endpoint| json!({
+                "reference": endpoint.reference.as_str(),
+                "scope": endpoint_scope(endpoint.scope),
+            })),
+        },
+        "fenced": observation.fenced,
+    })
+}
+
+pub fn artifact_observation_projection(observation: &ArtifactObservationV1) -> Value {
+    json!({
+        "authority": hex(&observation.authority.0),
+        "artifact": observation.entry.artifact.as_str(),
+        "revision": observation.revision,
+        "lifecycle": artifact_lifecycle(observation.lifecycle),
+        "operation": observation.operation.map(|operation| hex(&operation.0)),
+        "observed_bytes": observation.observed_bytes,
+        "failure": observation.failure.map(artifact_failure),
+        "entry": {
+            "model": model_projection(&observation.entry.model),
+            "registry": observation.entry.registry.as_str(),
+            "source_revision": observation.entry.source_revision.as_str(),
+            "license": observation.entry.license.as_str(),
+            "format": artifact_format(observation.entry.format),
+            "expected_size_bytes": observation.entry.expected_size_bytes,
+            "expected_digest": format!("sha256:{}", hex(&observation.entry.expected_digest.0)),
+        },
+    })
+}
+
+fn model_projection(model: &hestia_protocol::ModelArtifactV1) -> Value {
+    json!({
+        "identity": model.identity.as_str(),
+        "digest": model.digest.map(|digest| format!("sha256:{}", hex(&digest.0))),
+        "quantization": model.quantization.as_ref().map(|value| value.as_str()),
+        "context_tokens": model.context_tokens,
+    })
+}
+
 fn decode_fixed_hex<const N: usize>(value: &str) -> Option<[u8; N]> {
     if value.len() != N * 2 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         return None;
@@ -161,14 +223,117 @@ const fn posture(value: ControlPostureV1) -> &'static str {
     }
 }
 
+const fn artifact_lifecycle(value: ArtifactLifecycleV1) -> &'static str {
+    match value {
+        ArtifactLifecycleV1::Cataloged => "cataloged",
+        ArtifactLifecycleV1::Acquiring => "acquiring",
+        ArtifactLifecycleV1::Verifying => "verifying",
+        ArtifactLifecycleV1::Admitted => "admitted",
+        ArtifactLifecycleV1::Failed => "failed",
+        ArtifactLifecycleV1::OutcomeUnknown => "outcome_unknown",
+    }
+}
+
+const fn artifact_failure(value: ArtifactFailureV1) -> &'static str {
+    match value {
+        ArtifactFailureV1::SourceUnavailable => "source_unavailable",
+        ArtifactFailureV1::SizeMismatch => "size_mismatch",
+        ArtifactFailureV1::DigestMismatch => "digest_mismatch",
+        ArtifactFailureV1::StorageRefused => "storage_refused",
+        ArtifactFailureV1::AdapterFailed => "adapter_failed",
+    }
+}
+
+const fn artifact_format(value: ArtifactFormatV1) -> &'static str {
+    match value {
+        ArtifactFormatV1::Gguf => "gguf",
+        ArtifactFormatV1::Mlx => "mlx",
+        ArtifactFormatV1::Safetensors => "safetensors",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hestia_protocol::{
+        AcceleratorV1, ArtifactCatalogEntryV1, ArtifactFormatV1, ArtifactIdV1, ArtifactLifecycleV1,
+        HostAuthorityIdV1, LicenseIdV1, ModelArtifactV1, ModelDigestV1, ModelIdentityV1,
+        QuantizationV1, RegistryIdV1, SourceRevisionV1,
+    };
 
     #[test]
     fn fixed_identity_decode_is_closed() {
         assert_eq!(decode_fixed_hex::<2>("01aF"), Some([1, 175]));
         assert_eq!(decode_fixed_hex::<2>("01"), None);
         assert_eq!(decode_fixed_hex::<2>("01zz"), None);
+    }
+
+    #[test]
+    fn artifact_projection_preserves_provenance_without_private_host_material() {
+        let observation = ArtifactObservationV1 {
+            authority: HostAuthorityIdV1([1; 16]),
+            entry: ArtifactCatalogEntryV1 {
+                artifact: ArtifactIdV1::new("devstral-q4").unwrap(),
+                model: ModelArtifactV1 {
+                    identity: ModelIdentityV1::new("devstral").unwrap(),
+                    digest: Some(ModelDigestV1([2; 32])),
+                    quantization: Some(QuantizationV1::new("Q4_K_M").unwrap()),
+                    context_tokens: 32_768,
+                },
+                registry: RegistryIdV1::new("reviewed-registry").unwrap(),
+                source_revision: SourceRevisionV1::new("revision-1").unwrap(),
+                license: LicenseIdV1::new("Apache-2.0").unwrap(),
+                format: ArtifactFormatV1::Gguf,
+                expected_size_bytes: 42,
+                expected_digest: ModelDigestV1([2; 32]),
+            },
+            revision: 3,
+            lifecycle: ArtifactLifecycleV1::Admitted,
+            operation: None,
+            observed_bytes: 42,
+            failure: None,
+        };
+        let projection = artifact_observation_projection(&observation);
+        let encoded = serde_json::to_string(&projection).unwrap();
+        assert_eq!(projection["artifact"], "devstral-q4");
+        assert_eq!(projection["lifecycle"], "admitted");
+        assert_eq!(projection["entry"]["expected_size_bytes"], 42);
+        assert!(!encoded.contains("/private/model.gguf"));
+        assert!(!encoded.contains("executable"));
+        assert!(!encoded.contains("arguments"));
+        assert!(!encoded.contains("environment"));
+    }
+
+    #[test]
+    fn runtime_projection_keeps_readiness_separate_from_provider_qualification() {
+        let observation = RuntimeObservationV1 {
+            authority: HostAuthorityIdV1([1; 16]),
+            runtime: RuntimeIdV1([3; 16]),
+            revision: 4,
+            incarnation: 2,
+            lifecycle: RuntimeLifecycleV1::Ready,
+            hosting_profile: hestia_protocol::HostingProfileIdV1::new("llama-cpp").unwrap(),
+            model: ModelArtifactV1 {
+                identity: ModelIdentityV1::new("devstral").unwrap(),
+                digest: Some(ModelDigestV1([2; 32])),
+                quantization: None,
+                context_tokens: 32_768,
+            },
+            resources: hestia_protocol::ResourceExpectationsV1 {
+                memory_bytes: 1024,
+                accelerator: AcceleratorV1::new("metal").unwrap(),
+                threads: 4,
+                concurrency: 1,
+            },
+            sandbox: ControlPostureV1::Enforced,
+            egress: ControlPostureV1::Inherited,
+            readiness: hestia_protocol::RuntimeReadinessV1::unknown(),
+            fenced: false,
+        };
+        let projection = runtime_observation_projection(&observation);
+        assert_eq!(projection["lifecycle"], "ready");
+        assert_eq!(projection["readiness"]["disposition"], "unknown");
+        assert!(projection.get("provider_qualified").is_none());
+        assert!(projection.get("invocation_eligible").is_none());
     }
 }
