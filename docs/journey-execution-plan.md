@@ -374,18 +374,17 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   contract pass. Commit `135dab2` adds focused `make qualify-j1` and keeps
   the default locked owner-source build fail-closed while permitting an explicit
   executable only when its exact SHA-256 and provenance are supplied and
-  verified. The current `daimon-tui/Cargo.lock` still lacks Daimon's newly
-  declared `sha2` dependency edge, so default reproducible source qualification
-  remains open. An isolated offline mirror of clean Daimon `7e2757b` and
-  Daimon TUI `86443d2` produced an attributed fixture and lock digest; the full
-  J1 gate then passed task admission, human-gated session/prompt work, Agora
-  conversation and addressed follow-up, Kanban return, exact relationship
-  inspection, owner drain, restart and reinspection. This proves current runtime
-  compatibility, not peer lockfile reproducibility. The existing priority-4
-  `pantheon-last-known-good-development-launch` task owns that remaining
-  boundary; Pantheon changed no peer lockfile and accepted no unattributed
-  binary. The run also removed a raw-SIGTERM recovery shortcut: owner drain is
-  now required so a stale Unix socket cannot masquerade as restart readiness.
+  verified. An isolated offline mirror first proved current runtime compatibility
+  without mutating peer state. Daimon TUI commit `ecd9e45` then reconciled only
+  Daimon's newly declared `sha2` dependency edge in the clean owner lockfile.
+  The ordinary `make qualify-j1` locked-source path now passes task admission,
+  human-gated session/prompt work, Agora conversation and addressed follow-up,
+  Kanban return, exact relationship inspection, owner drain, restart and
+  reinspection without an artifact override. The broader priority-4
+  `pantheon-last-known-good-development-launch` task remains open for explicit
+  development-launch selection beyond this one fixture. The run also removed a
+  raw-SIGTERM recovery shortcut: owner drain is now required so a stale Unix
+  socket cannot masquerade as restart readiness.
 - Shared-session dogfooding found no existing multi-user presentation item.
   Canonical Chronos revision 56 therefore admits priority-4
   `pantheon-multi-user-presentation-operating-model` with identity,
