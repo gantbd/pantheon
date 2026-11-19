@@ -60,7 +60,7 @@ value = json.load(open(sys.argv[1]))
 peer = next(item for item in value["peers"] if item["peer"] == "moira-deliberation")
 assert peer["capability"] == "deliberation.inspect.v1"
 assert peer["status"] == "current"
-assert peer["registry_revision"] == 5
+assert peer["registry_revision"] == 7
 assert peer["deliberation"]["admission"]["fitness"] == "yes"
 stakeholder = peer["deliberation"]["members"][0]["stakeholder"]
 assert stakeholder["representation"] == "authorized_representative"
@@ -77,7 +77,17 @@ assert gate["response"]["disposition"] == "changes_requested"
 assert gate["response"]["rationale"]["owner_route"] == "40" * 16
 assert gate["response"]["rationale"]["expected_revision"] == 66
 assert gate["response"]["authority"]["subject"] == "31" * 16
+review = peer["review"]
+assert review["independence"] == "not_established"
+assert review["correlation"]["first_pass"]["committed_before_cross_review"] == 1
+dimensions = {item["dimension"]: item for item in review["correlation"]["dimensions"]}
+assert dimensions["execution_principal"]["status"] == "observed"
+assert dimensions["grounding"]["status"] == "observed"
+assert dimensions["provider"]["status"] == "unknown"
+assert review["findings"][0]["id"] == "44" * 16
+assert review["findings"][0]["finding_digest"] == "46" * 32
 assert "infers no ensemble fitness" in peer["boundary"]
+assert "do not establish independence" in peer["boundary"]
 PYTHON
 
 python3 - "$scratch" "$workbench" <<'PYTHON'
@@ -127,7 +137,13 @@ try:
         "human gate packet:",
         "human gate rationale artifact:",
         "human gate authority:",
+        "review correlation: NotEstablished members=1",
+        "first pass: committed-before-cross-review=1",
+        "correlation execution_principal: observed",
+        "correlation provider: unknown",
     )
+    tmux("send-keys", "-t", session, *(["Down"] * 40))
+    expect("finding 44444444", "finding evidence:", "human-gate=false")
     tmux("send-keys", "-t", session, "C-p", "C-u")
     tmux("send-keys", "-t", session, "-l", "open moira deliberation")
     expect("Open Moira deliberation")

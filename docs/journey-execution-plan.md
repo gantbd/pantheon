@@ -296,8 +296,13 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   and restores it through SQLite. Missing dimensions remain zero-observation
   disclosures; distinct values never become an independence claim. Legacy v1
   reviews migrate as explicitly undisclosed rather than receiving invented
-  evidence. Typed review-item-to-publication outcome correlation and Pantheon
-  TUI/headless projection remain required before the J33 checklist item closes.
+  evidence. The reusable Moira presentation now reads deliberation and review
+  under one stable registry-revision bracket. Pantheon headless emits the exact
+  disclosure and its tmux TUI shows first-pass counts plus every observed or
+  unknown dimension. A real SQLite-backed owner qualifies both surfaces with
+  observed execution-principal/grounding evidence and unknown provider evidence
+  while retaining `not_established`. Typed review-item-to-publication outcome
+  correlation remains required before the J33 checklist item closes.
 - Chronos revision 53 atomically admitted three follow-on dogfood discoveries:
   priority-6 `chronos-complete-paginated-task-search`, priority-5
   `pantheon-canonical-dogfood-workspace-attachment`, and priority-4
@@ -1248,8 +1253,9 @@ operators. The review owner now retains those facts alongside explicit unknown
 model, provider, prompt, evidence-scope and organization dimensions and
 first-pass exposure. Shared observed values are `correlated`, while distinct
 values remain `not_established` rather than becoming an independence claim.
-Authoritative producers for the still-unknown dimensions and Pantheon
-presentation remain open; missing evidence is no longer hidden.
+Authoritative producers for the still-unknown dimensions remain open. The
+shared Moira TUI/JSON projection and Pantheon headless/tmux composition now
+present the same retained disclosure; missing evidence is no longer hidden.
 
 - [x] Admit one exact Chronos task and prove its owner-published binding to the
   already selected agent-assisted execution profile before prompt preparation.
@@ -1395,9 +1401,8 @@ mature stakeholder ensemble.
   stays `correlated`, distinct evidence stays `not_established`, and missing
   evidence stays visible. Real `ServiceV2` publication and discarded-reply
   recovery are qualified. Authoritative population of the currently unknown
-  model/provider/prompt/evidence-scope/organization dimensions, typed
-  review-item-to-publication outcome correlation and Pantheon presentation
-  remain open.
+  model/provider/prompt/evidence-scope/organization dimensions and typed
+  review-item-to-publication outcome correlation remain open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue

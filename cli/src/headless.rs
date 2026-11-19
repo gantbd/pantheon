@@ -1473,6 +1473,7 @@ fn observe_moira_deliberation(
         moira_tui::DeliberationObservation::Current {
             registry_revision,
             view,
+            review,
         } => {
             let packet_reference = view
                 .human_gate_request
@@ -1486,7 +1487,8 @@ fn observe_moira_deliberation(
                 "accountable_owner": "moira",
                 "registry_revision": registry_revision,
                 "deliberation": moira_tui::deliberation_view_json(*view),
-                "boundary": "read-only evidence and stakeholder standing; Pantheon infers no ensemble fitness, frontier, authority, or human disposition",
+                "review": review.map(|value| moira_tui::review_view_json(*value)),
+                "boundary": "read-only owner evidence and stakeholder standing; distinct correlation values do not establish independence, and Pantheon infers no ensemble fitness, frontier, authority, or human disposition",
                 }),
                 true,
                 packet_reference,
