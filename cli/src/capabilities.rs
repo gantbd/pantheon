@@ -399,6 +399,37 @@ pub struct GuardedControlRoute {
     pub command: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AgentToolRoute {
+    pub component: &'static str,
+    pub capability: &'static str,
+    pub command: &'static str,
+    pub model_arguments: &'static str,
+}
+
+/// Closed gateways qualified for bounded agent profiles. This is intentionally
+/// smaller than the human/operator command surface: absence is non-admission.
+pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
+    AgentToolRoute {
+        component: "chronos",
+        capability: "tasks.workflow.observe.v9",
+        command: "chronos-task-observe",
+        model_arguments: "exactly_one_task_id",
+    },
+    AgentToolRoute {
+        component: "tellus",
+        capability: "tellus.sme-plan.v1",
+        command: "tellus-sme-plan",
+        model_arguments: "none_when_session_pinned",
+    },
+    AgentToolRoute {
+        component: "external-web",
+        capability: "agent.web.fetch.v1",
+        command: "agent-web-fetch",
+        model_arguments: "exactly_one_https_url",
+    },
+];
+
 /// Concrete local CLI routes for separately guarded controls. Shared commands
 /// retain their peer-owned subcommand or administrative-session semantics.
 pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
@@ -552,6 +583,17 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn agent_tools_are_operation_specific_and_non_aggregate() {
+        let mut capabilities = std::collections::BTreeSet::new();
+        for route in AGENT_TOOL_ROUTES {
+            assert_ne!(route.component, "pantheon");
+            assert!(!route.capability.starts_with("pantheon."));
+            assert_ne!(route.command, "headless");
+            assert!(capabilities.insert(route.capability));
+        }
+    }
 
     #[test]
     fn observation_negotiation_preserves_but_does_not_exercise_workspace_controls() {

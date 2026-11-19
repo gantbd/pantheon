@@ -164,7 +164,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     };
     if first == "--help" {
         println!(
-            "pantheon controls\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
+            "pantheon controls\npantheon agent-tools\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
             usage()
         );
         std::process::exit(0);
@@ -832,7 +832,7 @@ fn negotiate_capabilities(
 fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
-        "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\n",
+        "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\npantheon chronos-task-observe SERVICE_DIRECTORY TASK\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
         "pantheon tellus-sme-plan LOOPBACK_HOST:PORT REQUEST_JSON [--token-file PATH]\n",
         "pantheon alignment option: --chronos-alignment WORKSTREAM DIRECTORY SCOPE\n",
@@ -886,6 +886,39 @@ fn guarded_control_catalog(
             "mode": "guarded_control_catalog",
             "scope": "single_user_local_machine",
             "controls": controls,
+        }))?
+    );
+    Ok(())
+}
+
+fn agent_tool_catalog(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if args.next().is_some() {
+        return Err("pantheon agent-tools accepts no arguments".into());
+    }
+    let tools = capabilities::AGENT_TOOL_ROUTES
+        .iter()
+        .map(|route| {
+            serde_json::json!({
+                "component": route.component,
+                "semantic_capability": route.capability,
+                "command": route.command,
+                "model_arguments": route.model_arguments,
+                "aggregate_route": false,
+                "authority": "operation_specific",
+                "default_admission": "denied",
+            })
+        })
+        .collect::<Vec<_>>();
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "mode": "bounded_agent_tool_catalog",
+            "complete": true,
+            "tools": tools,
+            "boundary": "catalogue presence grants nothing; Daimon and Aegis must admit each opaque tool and matching semantic capability independently",
         }))?
     );
     Ok(())
@@ -1055,6 +1088,18 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agent-tools")
+    {
+        return agent_tool_catalog(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "chronos-task-observe")
+    {
+        return pantheon_cli::chronos_task::observe(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "agent-web-fetch")

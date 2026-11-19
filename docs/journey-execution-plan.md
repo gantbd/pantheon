@@ -2148,8 +2148,8 @@ Operational means observable completed work, not a configured role name:
   host gateway: operator-pinned transport digest and exact hosts, HTTPS-only,
   no redirects, cleared environment, bounded time/bytes, UTF-8-only output,
   content SHA-256 and an explicit untrusted-content label. The provider still
-  has no ambient network or filesystem authority. A Pantheon owner-operation
-  gateway, live Codex session receipt, Claude host-tool continuation and the
+  has no ambient network or filesystem authority. Additional component owner
+  gateways, a live Codex session receipt, Claude host-tool continuation and the
   combined denial matrix remain required before the frontier-worker row is
   operational.
 - The capability catalogue is component-granular, not an omnibus `Pantheon`
@@ -2161,6 +2161,25 @@ Operational means observable completed work, not a configured role name:
   component capability beside each opaque enforcement ID and command label,
   while withholding the executable, arguments, paths and environment. It
   rejects aggregate `pantheon*` labels and wildcard shapes.
+- Pantheon's executable catalogue now makes the currently qualified bounded
+  subset inspectable through `pantheon agent-tools`: Chronos exact-task
+  observation, a session-pinned Tellus SME plan, and allowlisted web retrieval
+  are separate default-denied entries with distinct semantic capabilities and
+  model-argument contracts. The initial Chronos documentation leak was caught
+  during dogfooding: mapping task observation to aggregate `headless` could
+  disclose sibling components and tasks. `chronos-task-observe` now fixes one
+  service directory in the deployment prefix, accepts exactly one task ID and
+  returns only its content-minimized V9 snapshot. A live owner call observed
+  `migrate-chronos-board-authoritative-status` at finite revision 1 as `open`
+  and `ready`; a stale shared service returned an invalid V9 reply and was
+  refused rather than treated as compatible. Catalog presence grants no
+  authority; Daimon and Aegis still admit each opaque tool and matching
+  semantic capability independently.
+- Two narrow executable qualifications each incurred a multi-minute monolithic
+  CLI link while shared dogfood sessions were active. The friction is captured
+  in Chronos as `reduce-agent-gateway-link-cost` at board revision 2. It does
+  not block this slice, but repeated recurrence should trigger a smaller
+  gateway binary/crate boundary rather than routine full-CLI linking.
 - The gateway's real HTTPS qualification pinned the current `/usr/bin/curl`
   digest `b636262803922ee1dd0fbf614818473ffa53c811e44fd3278c2270d3af4759d3`,
   admitted only `example.com`, returned 577 UTF-8 bytes with content digest

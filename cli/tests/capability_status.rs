@@ -1,7 +1,8 @@
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
 use pantheon_cli::capabilities::{
-    self, Capability, ChronosFeatures, GUARDED_CONTROL_CAPABILITIES, GUARDED_CONTROL_ROUTES, Mode,
+    self, AGENT_TOOL_ROUTES, Capability, ChronosFeatures, GUARDED_CONTROL_CAPABILITIES,
+    GUARDED_CONTROL_ROUTES, Mode,
 };
 
 fn status() -> serde_json::Value {
@@ -151,6 +152,30 @@ fn guarded_controls_are_machine_discoverable_with_concrete_routes() {
         assert_eq!(entry["plane"], "control");
         assert_eq!(entry["aggregate_route"], false);
         assert_eq!(entry["authority"], "peer_owned");
+    }
+}
+
+#[test]
+fn bounded_agent_tools_are_machine_discoverable_and_individually_admissible() {
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+        .arg("agent-tools")
+        .output()
+        .expect("run bounded agent tool catalog");
+    assert!(output.status.success());
+    let catalog: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(catalog["mode"], "bounded_agent_tool_catalog");
+    let tools = catalog["tools"].as_array().unwrap();
+    assert_eq!(tools.len(), AGENT_TOOL_ROUTES.len());
+    for route in AGENT_TOOL_ROUTES {
+        let entry = tools
+            .iter()
+            .find(|entry| entry["semantic_capability"] == route.capability)
+            .unwrap_or_else(|| panic!("catalog omits {}", route.capability));
+        assert_eq!(entry["component"], route.component);
+        assert_eq!(entry["command"], route.command);
+        assert_eq!(entry["model_arguments"], route.model_arguments);
+        assert_eq!(entry["aggregate_route"], false);
+        assert_eq!(entry["default_admission"], "denied");
     }
 }
 

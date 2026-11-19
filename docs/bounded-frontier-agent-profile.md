@@ -45,12 +45,12 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
   "boundary_program": "/absolute/daimon-process-boundary",
   "commands": [
     {
-      "command": "pantheon-status",
+      "command": "chronos-task",
       "capability": "11111111111111111111111111111111",
       "semantic_capability": "tasks.workflow.observe.v9",
       "program": "/absolute/pantheon",
-      "argument_prefix": ["headless", "--workspace-profile", "/absolute/profile.json"],
-      "allow_additional_arguments": false
+      "argument_prefix": ["chronos-task-observe", "/absolute/chronos-service"],
+      "allow_additional_arguments": true
     },
     {
       "command": "web",
@@ -72,6 +72,12 @@ does not authorize either command when command-specific capabilities are
 present. Deployments retain the mapping from each opaque Aegis/Daimon tool ID
 to its stable component capability ID; wildcard peer names and aggregate
 `pantheon` grants are invalid profile shapes.
+
+The Chronos entry deliberately invokes `chronos-task-observe`, not Pantheon's
+aggregate `headless` snapshot. Its only model-supplied argument is one task ID;
+the service directory is deployment-fixed and the response cannot disclose the
+board or sibling tasks. An aggregate headless route is a human/operator
+overview, not an admissible component tool.
 
 ## Web policy
 
