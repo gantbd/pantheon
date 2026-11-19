@@ -67,6 +67,13 @@ seed a different workspace.
 Ctrl-O and Chronos `n` are therefore functional in the default run target, not
 merely advertised by an unconfigured surface.
 
+To inspect the existing journey-development TUI from another shell, run
+`make attach`. It attaches that terminal to the exact `pantheon-j1-next` tmux
+session and does not start, replace, or rediscover any Pantheon or peer owner.
+Select another explicitly known presentation session with
+`make attach PANTHEON_TMUX_SESSION=<name>`. From inside tmux the same target
+switches the current client, avoiding a nested session.
+
 With an exact Hermes stream and consumer selected, the Hermes surface can also
 acknowledge an exact operator-selected range from the current cursor through
 the observed published edge via Hermes's owner guard. The sheet requires

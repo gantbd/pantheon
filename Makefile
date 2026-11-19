@@ -1,9 +1,10 @@
-.PHONY: check hygiene fmt lint test doc run tui-demo qualify-emacs qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-daimon qualify-hestia-model-bench
+.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-daimon qualify-hestia-model-bench
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
 PANTHEON_RUN_VELLUM_SOCKET ?= $(PANTHEON_RUN_ROOT)/vellum.sock
 PANTHEON_RUN_VELLUM_ROOT ?= $(CURDIR)/README.md
+PANTHEON_TMUX_SESSION ?= pantheon-j1-next
 
 run:
 	mkdir -p $(PANTHEON_RUN_DIRECTORY) $(PANTHEON_RUN_ROOT)
@@ -13,6 +14,18 @@ run:
 		--vellum-service $(PANTHEON_RUN_VELLUM_SOCKET) --host-vellum \
 		--vellum-root $(PANTHEON_RUN_VELLUM_ROOT) --vellum-allow-edit \
 		--vellum-allow-save --vellum-allow-add-file
+
+attach:
+	@tmux has-session -t "$(PANTHEON_TMUX_SESSION)" 2>/dev/null || { \
+		echo "Pantheon tmux session '$(PANTHEON_TMUX_SESSION)' is not running." >&2; \
+		echo "Select an exact session with PANTHEON_TMUX_SESSION=<name>." >&2; \
+		exit 1; \
+	}
+	@if [ -n "$$TMUX" ]; then \
+		tmux switch-client -t "$(PANTHEON_TMUX_SESSION)"; \
+	else \
+		exec tmux attach-session -t "$(PANTHEON_TMUX_SESSION)"; \
+	fi
 
 tui-demo:
 	./tests/live/tui_breadth.sh
