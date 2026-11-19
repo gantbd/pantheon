@@ -2188,9 +2188,11 @@ The reusable relationship contract now exists in Chronos's Vellum-capture
 integration: exact goal source, control-task observation, three distinct
 alignment participants, budget/evidence/dissent/gate references and a named-PM
 Vellum proposal are bounded and freshness-classified without copying content or
-adding an apply path. This closes the deterministic contract shape, not durable
-alignment hosting, Pantheon presentation, automatic grooming, owner mutation,
-acceptance or human sign-off.
+adding an apply path. One proposal is now durably create-only and reopenable in
+an exclusively owned directory register; its closed codec and durable-receipt
+gate refuse malformed, weak or indeterminate state. This closes local durable
+retention, not a hosted public alignment projection, Pantheon presentation,
+automatic grooming, owner mutation, acceptance or human sign-off.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
