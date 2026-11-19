@@ -164,6 +164,7 @@ fn peer_identity(peer: &HostedPeerId) -> (&'static str, Option<String>) {
         HostedPeerId::Aegis => ("aegis", None),
         HostedPeerId::Tellus => ("tellus", None),
         HostedPeerId::Chronos(instance) => ("chronos", Some(instance.clone())),
+        HostedPeerId::ChronosAlignment(instance) => ("chronos-alignment", Some(instance.clone())),
         HostedPeerId::Vellum => ("vellum", None),
     }
 }

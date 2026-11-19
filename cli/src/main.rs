@@ -10,13 +10,14 @@ use pantheon_cli::{
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     management::LocalManagementSnapshot,
     native_host::{
-        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, ChronosTrustedWorkerOptions,
-        DaimonProcessOptions, HermesProcessOptions, MoiraProcessOptions, NativeHost,
+        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions,
+        ChronosProductAlignmentProcessOptions, ChronosTrustedWorkerOptions, DaimonProcessOptions,
+        HermesProcessOptions, MoiraProcessOptions, NativeHost,
     },
     profile::{
         AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, AlignmentBinding,
-        ChronosTrustedWorkerProfile, DeploymentMode, HermesAccessProfile, HermesOpenMode,
-        MoiraAgentWorkerProfile, WorkspaceProfile,
+        ChronosProductAlignmentProfile, ChronosTrustedWorkerProfile, DeploymentMode,
+        HermesAccessProfile, HermesOpenMode, MoiraAgentWorkerProfile, WorkspaceProfile,
     },
     registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers_managed_configuration,
@@ -97,6 +98,7 @@ struct Options {
     chronos_planning: Option<PathBuf>,
     chronos_cancel_receipts: bool,
     chronos_trusted_worker: Option<ChronosTrustedWorkerProfile>,
+    chronos_product_alignment: Option<ChronosProductAlignmentProfile>,
     host_chronos: bool,
     host_vellum: bool,
     vellum_roots: Vec<PathBuf>,
@@ -214,6 +216,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut task_conversation_requires = Vec::new();
     let mut chronos_requires = Vec::new();
     let mut chronos_trusted_worker = None;
+    let mut chronos_product_alignment = None;
     let mut host_chronos = false;
     let mut host_vellum = false;
     let mut vellum_roots = Vec::new();
@@ -390,6 +393,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             host_chronos = chronos.deployment == DeploymentMode::Hosted;
             chronos_requires = chronos.requires;
             chronos_trusted_worker = chronos.trusted_worker;
+            chronos_product_alignment = chronos.product_alignment;
             chronos_planning = chronos.planning;
             moira_bindings = chronos
                 .moira
@@ -782,6 +786,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         chronos_planning,
         chronos_cancel_receipts,
         chronos_trusted_worker,
+        chronos_product_alignment,
         host_chronos,
         host_vellum,
         vellum_roots,
@@ -3342,6 +3347,9 @@ fn finish_headless(
                         HostedPeerId::Aegis => ("aegis", None),
                         HostedPeerId::Tellus => ("tellus", None),
                         HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
+                        HostedPeerId::ChronosAlignment(instance) => {
+                            ("chronos-alignment", Some(instance))
+                        }
                         HostedPeerId::Vellum => ("vellum", None),
                     };
                     serde_json::json!({
@@ -3396,6 +3404,7 @@ fn finish_headless(
 fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn std::error::Error>> {
     if !options.host_chronos
         && !options.host_vellum
+        && options.chronos_product_alignment.is_none()
         && options.agora_host.is_none()
         && options.moira_host.is_none()
         && options.daimon_host.is_none()
@@ -3479,6 +3488,24 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     if let Some(agora) = &options.agora_host {
         host.start_agora_process(agora.clone())
             .map_err(|failure| format!("hosted Agora startup refused: {failure:?}"))?;
+    }
+    if let Some(product_alignment) = &options.chronos_product_alignment {
+        let listener_directory = options
+            .alignment_bindings
+            .iter()
+            .find(|binding| binding.workstream == product_alignment.workstream)
+            .expect("workspace profile validates product-alignment binding")
+            .directory
+            .clone();
+        host.start_chronos_product_alignment_process(ChronosProductAlignmentProcessOptions {
+            workstream: product_alignment.workstream.clone(),
+            executable: product_alignment.executable.clone(),
+            config: product_alignment.config.clone(),
+            listener_directory,
+        })
+        .map_err(|failure| {
+            format!("hosted Chronos product-alignment startup refused: {failure:?}")
+        })?;
     }
     host.seal()
         .map_err(|error| format!("hosted topology seal refused: {error:?}"))?;
@@ -4188,6 +4215,7 @@ fn hosted_peer_identity(peer: &HostedPeerId) -> (&'static str, Option<&str>) {
         HostedPeerId::Aegis => ("aegis", None),
         HostedPeerId::Tellus => ("tellus", None),
         HostedPeerId::Chronos(instance) => ("chronos", Some(instance)),
+        HostedPeerId::ChronosAlignment(instance) => ("chronos-alignment", Some(instance)),
         HostedPeerId::Vellum => ("vellum", None),
     }
 }

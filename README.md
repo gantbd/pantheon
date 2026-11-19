@@ -455,6 +455,31 @@ off for a human. The product manager recommends and challenges through the
 Chronos-owned record; accountable owners and explicit human gates retain those
 decisions.
 
+A workspace profile may also supervise that read-only composition by adding a
+`product_alignment` object to `chronos`. It must select exactly one configured
+workstream that already has an `alignment` binding:
+
+```json
+{
+  "chronos": {
+    "workstreams": [{"name":"Product","directory":"../state/chronos"}],
+    "alignment": [{"workstream":"Product","directory":"../run/alignment","scope":"product-delivery"}],
+    "product_alignment": {
+      "workstream":"Product",
+      "executable":"../bin/chronos-product-alignment-local",
+      "config":"../config/product-alignment.json"
+    }
+  }
+}
+```
+
+Pantheon passes only `--supervised` and the opaque config path to the owner
+binary, waits for the public alignment socket, and sends the owner's private
+drain token during reverse topology shutdown. The config retains all owner
+endpoints, credentials and stakeholder bindings; Pantheon neither parses it nor
+gains proposal/task authority. Management and headless output identify this
+lifecycle separately as `chronos-alignment/WORKSTREAM`.
+
 Run `sh tests/live/dual_service.sh` for local composition qualification.
 It first builds and attaches temporary Agora, Chronos, and Vellum services,
 reopens a saved profile with relative service paths, and uses an isolated tmux

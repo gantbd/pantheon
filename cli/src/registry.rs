@@ -15,6 +15,7 @@ pub enum HostedPeerId {
     Aegis,
     Tellus,
     Chronos(String),
+    ChronosAlignment(String),
     Vellum,
 }
 

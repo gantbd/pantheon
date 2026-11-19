@@ -1193,6 +1193,7 @@ fn hosted_peer_label(peer: &HostedPeerId) -> String {
         HostedPeerId::Aegis => "aegis".into(),
         HostedPeerId::Tellus => "tellus".into(),
         HostedPeerId::Chronos(instance) => format!("chronos/{instance}"),
+        HostedPeerId::ChronosAlignment(instance) => format!("chronos-alignment/{instance}"),
         HostedPeerId::Vellum => "vellum".into(),
     }
 }
@@ -1206,6 +1207,7 @@ const fn hosted_peer_metric_label(peer: &HostedPeerId) -> &'static str {
         HostedPeerId::Aegis => "aegis",
         HostedPeerId::Tellus => "tellus",
         HostedPeerId::Chronos(_) => "chronos",
+        HostedPeerId::ChronosAlignment(_) => "chronos-alignment",
         HostedPeerId::Vellum => "vellum",
     }
 }

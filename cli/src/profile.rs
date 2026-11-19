@@ -369,6 +369,9 @@ pub struct ChronosProfile {
     /// Optional private in-process worker retained with one Pantheon-hosted
     /// Chronos owner. It is configuration, not a claim or transferable grant.
     pub trusted_worker: Option<ChronosTrustedWorkerProfile>,
+    /// Optional sovereign product-alignment process. Pantheon owns only its
+    /// lifecycle; the opaque config retains all owner bindings and credentials.
+    pub product_alignment: Option<ChronosProductAlignmentProfile>,
     pub planning: Option<PathBuf>,
 }
 
@@ -379,6 +382,14 @@ pub struct ChronosTrustedWorkerProfile {
     pub agent: String,
     pub grant_validity_seconds: u64,
     pub lease_duration_seconds: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ChronosProductAlignmentProfile {
+    pub workstream: String,
+    pub executable: PathBuf,
+    pub config: PathBuf,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
@@ -538,6 +549,10 @@ impl WorkspaceProfile {
             }
             for binding in &mut chronos.alignment {
                 binding.directory = resolve(base, &binding.directory);
+            }
+            if let Some(product_alignment) = &mut chronos.product_alignment {
+                product_alignment.executable = resolve(base, &product_alignment.executable);
+                product_alignment.config = resolve(base, &product_alignment.config);
             }
             if let Some(path) = &mut chronos.planning {
                 *path = resolve(base, path);
@@ -1126,6 +1141,31 @@ impl WorkspaceProfile {
                     return Err("Chronos trusted worker durations must be non-zero seconds");
                 }
             }
+            if let Some(product_alignment) = &chronos.product_alignment {
+                validate_text(
+                    &product_alignment.workstream,
+                    "product-alignment workstream",
+                )?;
+                validate_path(&product_alignment.executable)?;
+                validate_path(&product_alignment.config)?;
+                if chronos
+                    .workstreams
+                    .iter()
+                    .filter(|workstream| workstream.name == product_alignment.workstream)
+                    .count()
+                    != 1
+                    || chronos
+                        .alignment
+                        .iter()
+                        .filter(|binding| binding.workstream == product_alignment.workstream)
+                        .count()
+                        != 1
+                {
+                    return Err(
+                        "product alignment must select one exact workstream with an alignment binding",
+                    );
+                }
+            }
             if let Some(path) = &chronos.planning {
                 validate_path(path)?;
             }
@@ -1243,6 +1283,7 @@ fn validate_text(value: &str, field: &'static str) -> Result<(), &'static str> {
             "Moira scope" => "Moira scope is invalid",
             "alignment workstream" => "alignment workstream name is invalid",
             "alignment scope" => "alignment scope is invalid",
+            "product-alignment workstream" => "product-alignment workstream name is invalid",
             "Agora participant" => "Agora participant is invalid",
             _ => "Daimon workstream name is invalid",
         });
@@ -1302,6 +1343,31 @@ mod tests {
             "alignment":[{"workstream":"Other","directory":"alignment","scope":"product-delivery"}]}
         }"#;
         assert!(WorkspaceProfile::parse(unmatched, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn hosted_product_alignment_requires_one_presented_workstream_binding() {
+        let valid = br#"{
+          "version":1,"name":"Alignment owner","surfaces":["chronos"],
+          "chronos":{"workstreams":[{"name":"Product","directory":"chronos"}],
+            "alignment":[{"workstream":"Product","directory":"alignment","scope":"product-delivery"}],
+            "product_alignment":{"workstream":"Product","executable":"bin/chronos-product-alignment-local","config":"alignment.json"}}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let alignment = profile.chronos.unwrap().product_alignment.unwrap();
+        assert_eq!(alignment.workstream, "Product");
+        assert_eq!(
+            alignment.executable,
+            Path::new("/tmp/workbench/bin/chronos-product-alignment-local")
+        );
+        assert_eq!(alignment.config, Path::new("/tmp/workbench/alignment.json"));
+
+        let missing_binding = br#"{
+          "version":1,"name":"Alignment owner","surfaces":["chronos"],
+          "chronos":{"workstreams":[{"name":"Product","directory":"chronos"}],
+            "product_alignment":{"workstream":"Product","executable":"alignment-owner","config":"alignment.json"}}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_binding, Path::new(".")).is_err());
     }
 
     #[test]

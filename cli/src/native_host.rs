@@ -209,6 +209,18 @@ pub struct ChronosTrustedWorkerOptions {
     pub lease_duration: Duration,
 }
 
+/// Opaque deployment inputs for Chronos's read-only product-alignment
+/// composition. Pantheon owns readiness and drain only; owner connections,
+/// credentials, stakeholder bindings and disclosure stay in the config.
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ChronosProductAlignmentProcessOptions {
+    pub workstream: String,
+    pub executable: PathBuf,
+    pub config: PathBuf,
+    pub listener_directory: PathBuf,
+}
+
 /// Explicit deployment inputs for a Pantheon-owned, sovereign Hermes daemon.
 #[cfg(unix)]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -511,6 +523,37 @@ impl NativeHost {
                     .map_err(|error| format!("Chronos owner thread refused: {error}"))?;
                 Ok((client, chronos_shutdown(writer, owner)))
             })
+    }
+
+    /// Starts the sovereign read-only product-alignment composition unchanged.
+    /// The public listener is the readiness boundary; Pantheon never parses the
+    /// opaque owner configuration or gains proposal/task mutation authority.
+    #[cfg(unix)]
+    pub fn start_chronos_product_alignment_process(
+        &mut self,
+        options: ChronosProductAlignmentProcessOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        let peer = HostedPeerId::ChronosAlignment(options.workstream.clone());
+        self.registry.start_or_rollback(peer, || {
+            let socket = chronos_local::alignment_socket_path(&options.listener_directory);
+            let prior_socket = socket_identity(&socket);
+            let mut child = Command::new(&options.executable)
+                .arg("--supervised")
+                .arg(&options.config)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::null())
+                .stderr(Stdio::piped())
+                .spawn()
+                .map_err(|error| format!("Chronos alignment process start refused: {error}"))?;
+            if let Err(error) =
+                wait_for_process_ready(&mut child, &socket, "Chronos alignment", prior_socket)
+            {
+                stop_failed_process_start(&mut child);
+                return Err(error);
+            }
+            let mut input = child.stdin.take();
+            Ok(((), move || stop_supervised_process(&mut child, &mut input)))
+        })
     }
 
     /// Starts an Agora owner supplied by the deployment and returns its
