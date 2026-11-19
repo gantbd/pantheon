@@ -2518,6 +2518,17 @@ sampled pair and rerunning the role, evidence, conflict and gate laws. A model
 may therefore interpret or challenge the facts but has no structural route for
 replacing either worker's task, lease, contribution or evidence frontier.
 
+Chronos `dd5e219` closes the deterministic unchanged-frontier decision without
+claiming a recurring runtime. Before PM model invocation or proposal
+publication, the caller can compare a complete stable owner sample with the
+last durable reconciliation. Exact equality across the alignment basis and
+both attributed worker frontiers yields `Unchanged`; a missing prior record or
+any owner-fact change yields `Reconcile`. PM-authored rationale and judgment do
+not participate in that comparison, and `Unchanged` does not extend evidence
+freshness. Source refusal/instability remains an incomplete run. Event/cadence
+activation, durable multi-record history, invocation, Agora challenge and
+authorized application are still required for an operational intelligent PM.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

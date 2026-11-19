@@ -1444,6 +1444,24 @@ recovery before a human can settle the gate from this surface.
   to the already stable owner pair and reruns all anti-overreach laws. This
   closes model-side worker-fact substitution, not the remaining runtime,
   identity or attempt/lease observation gaps.
+  Chronos `dd5e219` adds the first recurring-run decision seam: only an exact
+  equality match across the retained alignment basis and both owner-sampled
+  worker frontiers produces `Unchanged`; a missing retained record or any owner
+  fact change produces `Reconcile`. PM prose is excluded from the comparison,
+  and unchanged does not extend freshness. Focused tests and strict Clippy pass.
+  Cadence/event activation, durable multi-record sequencing, model invocation,
+  attributed challenge and authorized application remain open.
+- A fresh revision-73 shared-session dogfood pass reproduced the existing
+  `chronos-live-owner-headless-attach-readiness` defect after rebuilding the
+  headless client: operation `pantheon-27016-18e9774420351708` attached to the
+  configured directory but reported Chronos `not_sent`/`not_ready` while the
+  TUI continued to observe revision 73. The same profile exposed Chronos but no
+  Vellum service, and its effective footer advertised `Ctrl-P` while the
+  documented Emacs `M-x` route did not open the palette. These are evidence for
+  the existing attachment/configuration/keymap owners, not new tasks. A PM must
+  mark this frontier incomplete and orient the operator to effective
+  configuration; it may not reconcile from the live TUI or cached documents
+  alone.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

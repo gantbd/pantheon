@@ -176,6 +176,15 @@ come only from the stable owner-source pair. The join revalidates every role,
 conflict and human-gate law, preventing interpretation from becoming an
 implicit evidence rewrite.
 
+Before invoking a PM model or publishing another proposal, Chronos compares the
+complete stable owner sample with the last durable reconciliation. Exact
+equality of the alignment basis and both attributed worker frontiers yields an
+observable `Unchanged` disposition and does not refresh the retained evidence;
+any owner-fact change yields `Reconcile`. Unavailable, unstable, malformed or
+role-collapsed inputs remain incomplete/refused rather than being treated as
+unchanged. This deterministic gate saves model tokens and proposal churn
+without turning PM-authored rationale into evidence that work changed.
+
 The minimum recurring, owner-bracketed reconciliation cycle is:
 
 1. Observe the exact Vellum goal revision and current Chronos graph, attempts,
