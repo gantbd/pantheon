@@ -361,15 +361,19 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   review creation. A real Dendrite-grounded, Daimon-executed four-member run
   reopened the SQLite review with all four model/provider/prompt/evidence-scope
   observations retained. Stale checkpoints refuse, review and resolution cannot
-  share one run, active review suppresses ready-to-resolve, and tool-continuation
-  review refuses until multi-turn evidence aggregation exists. Organization
-  and that multi-turn evidence remain acceptance work on
-  `moira-reviewer-correlation-evidence`. Moira commit `76295c5` additionally
+  share one run, and active review suppresses ready-to-resolve. Moira commit
+  `76295c5` additionally
   derives first-pass exposure from harness-owned sequencing only after the
   complete no-tool cohort is durably committed: the live review reopens with
   four committed-before-cross-review members, zero early exposures and zero
-  unknowns. Partial and continuation runs retain unknown exposure and cannot use
-  this path.
+  unknowns. Moira commit `be1df26` then closes the continuation boundary with
+  ordered, member-bounded invocation lineages. Repeated provider/model identities
+  remain shared while changed prompt/context/evidence lineages stay visible;
+  missing turn evidence makes that member unknown. A live Dendrite, Aegis,
+  Chronos, Daimon, durable-tool-output and SQLite journey resumes one member,
+  begins review only after all four reports commit, and reopens four observed
+  provider members plus complete first-pass evidence. Organization remains the
+  acceptance gap on `moira-reviewer-correlation-evidence`.
 - Pantheon TUI dogfood then admitted priority-8
   `chronos-asynchronous-verification-worker` at Chronos revision 12, blocked on
   `j1-worker-process-controller` and `j1-worker-receipt-contract`, with explicit
@@ -1471,9 +1475,10 @@ mature stakeholder ensemble.
   consumes model, provider, prompt and evidence-scope evidence from the exact
   retained invocation. The governed local run now returns those observed facts
   and explicit live review creation retains them through SQLite reopen. Exact
-  first-pass exposure is also retained for a complete no-tool cohort from
-  harness-owned sequencing. Authoritative organization evidence and correlation
-  across tool-continuation invocations remain open.
+  first-pass exposure is also retained for a complete governed cohort from
+  harness-owned sequencing. Tool-continuation runs retain ordered
+  per-member invocation lineages without letting turn count exceed cohort
+  cardinality. Authoritative organization evidence remains open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
