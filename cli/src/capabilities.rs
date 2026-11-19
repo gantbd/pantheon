@@ -494,6 +494,12 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         model_arguments: "one_owner_id_and_one_journey_sequence",
     },
     AgentToolRoute {
+        component: "moira",
+        capability: "moira.deliberation.observe.v1",
+        command: "moira-deliberation-observe",
+        model_arguments: "exactly_one_deliberation_id",
+    },
+    AgentToolRoute {
         component: "task-conversation",
         capability: "task-conversation.v1",
         command: "task-conversation-inspect",
@@ -568,12 +574,6 @@ const PRODUCT_MANAGER_GAPS: &[AgentRoleGap] = &[
         surface: "alignment-frontier.observe.v1",
         missing: "one bounded current goal, graph, attempt, lease, dependency, prior-grooming, and dual-frontier sample",
         next_boundary: "publish an owner-native alignment sample gateway; exact-task observation cannot be promoted to portfolio truth",
-    },
-    AgentRoleGap {
-        component: "moira",
-        surface: "stakeholder-ensemble.observe.v1",
-        missing: "the selected stakeholder ensemble, coverage/equity, standing, dissent, and pending human disposition as an agent-admissible observation",
-        next_boundary: "expose the qualified Moira deliberation projection through a bounded read-only agent gateway",
     },
     AgentRoleGap {
         component: "vellum",
@@ -662,6 +662,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "tellus.sme-plan.v1",
             "workspace.snapshot.v1",
             "moira.task-agent.observe.v1",
+            "moira.deliberation.observe.v1",
             "rooms.read.v2",
             "messages.read.v2",
             "messages.actor-publication.observe.v1",

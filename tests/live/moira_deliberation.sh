@@ -76,6 +76,13 @@ EOF
 
 "$workbench" headless --workspace-profile "$scratch/profile.json" \
   --operation-id moira-deliberation-live >"$scratch/headless.json"
+"$workbench" moira-deliberation-observe "$scratch/deliberation.sock" \
+  01010101010101010101010101010101 >"$scratch/agent-observation.json"
+if "$workbench" moira-deliberation-observe "$scratch/deliberation.sock" \
+  02020202020202020202020202020202 >"$scratch/agent-not-found.json" 2>"$scratch/agent-not-found.err"; then
+  echo "FAIL: absent exact deliberation unexpectedly succeeded" >&2
+  exit 1
+fi
 python3 - "$scratch/headless.json" <<'PYTHON'
 import json, sys
 value = json.load(open(sys.argv[1]))
@@ -110,6 +117,27 @@ assert review["findings"][0]["id"] == "44" * 16
 assert review["findings"][0]["finding_digest"] == "46" * 32
 assert "infers no ensemble fitness" in peer["boundary"]
 assert "do not establish independence" in peer["boundary"]
+PYTHON
+python3 - "$scratch/agent-observation.json" <<'PYTHON'
+import json, sys
+value = json.load(open(sys.argv[1]))
+assert value["capability"] == "moira.deliberation.observe.v1"
+assert value["status"] == "current" and value["complete"] is True
+assert value["owner"]["registry_revision"] == 7
+deliberation = value["owner"]["deliberation"]
+assert deliberation["admission"]["fitness"] == "yes"
+assert deliberation["members"][0]["stakeholder"]["representation"] == "authorized_representative"
+assert deliberation["reports"][0]["dissent_digests"] == ["2c" * 32]
+assert value["owner"]["review"]["independence"] == "not_established"
+assert "grants no ensemble fitness inference" in value["boundary"]
+assert "response authority" in value["boundary"]
+PYTHON
+python3 - "$scratch/agent-not-found.json" <<'PYTHON'
+import json, sys
+value = json.load(open(sys.argv[1]))
+assert value["status"] == "not_found" and value["complete"] is False
+assert value["owner"]["registry_revision"] == 7
+assert "do not substitute another ensemble" in value["next_action"]
 PYTHON
 
 python3 - "$scratch" "$workbench" <<'PYTHON'

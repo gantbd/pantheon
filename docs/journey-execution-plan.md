@@ -2299,17 +2299,28 @@ Operational means observable completed work, not a configured role name:
   `blocked_by_owner_surfaces`, naming Oculus, Hermes trigger, Chronos proposal,
   role-activation and Daimon worker-lifecycle gaps. This is executable admission
   planning and honest orientation, not worker activation or completed work.
+- The product-manager plan no longer lists stakeholder-ensemble observation as
+  a missing surface. `moira-deliberation-observe` reuses the same
+  status/deliberation/review/status owner algorithm as aggregate headless mode,
+  accepts one exact deliberation identity, and exposes Moira's qualified
+  standing, coverage/equity, grounding, dissent, correlation and human-gate
+  facts as a separately default-denied agent tool. Exact absence refuses and
+  names verification of the owner-issued identity as the next action; it never
+  substitutes another ensemble. This closes a PM read boundary only: it grants
+  no independence inference, gate response, role activation, task mutation,
+  approval, sign-off or rollout authority.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The
   documented revision-21 admission remains historical evidence, but is not a
   current actionable task receipt; migration/compatibility must be addressed
   before claiming the item is managed by the current board.
-- Two narrow executable qualifications each incurred a multi-minute monolithic
-  CLI link while shared dogfood sessions were active. The friction is captured
-  in Chronos as `reduce-agent-gateway-link-cost` at board revision 2. It does
-  not block this slice, but repeated recurrence should trigger a smaller
-  gateway binary/crate boundary rather than routine full-CLI linking.
+- Repeated narrow executable qualifications incur a multi-minute monolithic CLI
+  link while shared dogfood sessions are active: the focused role-profile unit
+  linked for 4m19s and the Moira agent-read live gate linked for 4m20s. The
+  friction is captured in Chronos as `reduce-agent-gateway-link-cost` at board
+  revision 2. The recurrence now justifies a smaller gateway binary/crate
+  boundary; it does not justify skipping owner-live qualification meanwhile.
 - The gateway's real HTTPS qualification pinned the current `/usr/bin/curl`
   digest `b636262803922ee1dd0fbf614818473ffa53c811e44fd3278c2270d3af4759d3`,
   admitted only `example.com`, returned 577 UTF-8 bytes with content digest

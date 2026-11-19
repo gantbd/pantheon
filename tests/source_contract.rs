@@ -2829,3 +2829,27 @@ fn operations_agent_roles_fail_closed_at_component_boundaries() {
         assert!(main.contains(required), "role planner omits {required}");
     }
 }
+
+#[test]
+fn bounded_moira_deliberation_agent_read_reuses_owner_projection() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let adapter = fs::read_to_string(root.join("cli/src/moira_deliberation.rs"))
+        .expect("Moira deliberation agent adapter");
+    for required in [
+        "moira.deliberation.observe.v1",
+        "moira_tui::observe_deliberation",
+        "moira_tui::deliberation_view_json",
+        "moira_tui::review_view_json",
+        "do not substitute another ensemble",
+        "response authority",
+    ] {
+        assert!(adapter.contains(required), "agent adapter omits {required}");
+    }
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
+    assert!(headless.contains("crate::moira_deliberation::observe"));
+    assert!(!headless.contains("DeliberationReadOnlyClient"));
+    let live = fs::read_to_string(root.join("tests/live/moira_deliberation.sh"))
+        .expect("Moira deliberation live gate");
+    assert!(live.contains("moira-deliberation-observe"));
+    assert!(live.contains("agent-not-found.json"));
+}

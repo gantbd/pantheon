@@ -70,6 +70,14 @@ The initial authorities are distinct:
   takes no model argument and the latter takes one opaque owner identity and
   journey sequence. Neither admits preview, instantiation, progression, peer
   effects or reconciliation.
+- `moira.deliberation.observe.v1`: one exact Moira stakeholder deliberation and
+  its revision-stable review. The deployment fixes the owner socket and the
+  model supplies one opaque deliberation identity. It discloses the
+  owner-published stakeholder standing, coverage/equity, grounding, evidence,
+  dissent, correlation and pending or settled human-gate facts. It grants no
+  ensemble-fitness inference, independence claim, gate response, role
+  activation, task mutation, agent execution, approval, sign-off or rollout
+  authority. Absence refuses without selecting a different ensemble.
 - `task-conversation.v1`: the exact relationship-observation gateway. The
   deployment fixes the adapter socket and the model supplies either one task
   reference or one conversation reference. Its result is relationship truth;
@@ -133,7 +141,8 @@ requires Oculus's catalogue/query owner, a durable Hermes trigger subscription,
 a typed Chronos incident-admission proposal and the shared role/worker owners;
 Hermes disclosure, shell output or Pantheon aggregate observation cannot stand
 in for Oculus. The product manager still requires owner-native alignment,
-stakeholder-ensemble, Vellum proposal and named-human gate surfaces. Frontier
+Vellum proposal and named-human gate surfaces; its stakeholder-ensemble read is
+now independently admissible through Moira. Frontier
 and verification workers likewise retain their provider continuation, Aegis,
 allowlisted-test, result-publication and scheduling gaps. These are executable
 blocker inventories, not claims that named roles are running.

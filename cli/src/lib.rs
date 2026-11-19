@@ -12,6 +12,7 @@ pub mod hestia;
 pub mod hestia_observe;
 mod hosted;
 pub mod management;
+pub mod moira_deliberation;
 pub mod native_host;
 pub mod profile;
 mod provider;

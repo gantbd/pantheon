@@ -2103,6 +2103,11 @@ projection. A real read-only daemon gate proves ensemble admission, assessor and
 coverage/equity digests, authorized-representative standing, accountable
 principal, mandate, conflict, evidence and dissent in both paths; see
 [`tests/live/moira_deliberation.sh`](../tests/live/moira_deliberation.sh). The
+same revision-stable owner algorithm is now independently agent-admissible as
+`moira.deliberation.observe.v1` for one exact deliberation. It exposes the
+qualified stakeholder and review evidence without granting a gate response,
+role activation, task mutation, independence claim or ensemble-fitness
+inference; exact absence refuses without substituting another ensemble. The
 same owner contract now projects the exact named reviewer, finding, decision,
 material revision, policy, four-way human disposition and injected authority.
 Only an unresolved request appears in Pantheon's shared operator agenda, where

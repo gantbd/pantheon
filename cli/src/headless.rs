@@ -8,9 +8,7 @@ use agora_client::v2::ClientV2 as AgoraClientV2;
 use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServicePort};
 use chronos_tui::Workstream;
 use hestia_local_client::LocalClient as HestiaLocalClient;
-use moira_client::{
-    AgentParticipationReadOnlyClient, DeliberationReadOnlyClient, SagaReadOnlyClient,
-};
+use moira_client::{AgentParticipationReadOnlyClient, SagaReadOnlyClient};
 use moira_protocol::{
     SagaOutcomeV1, SagaReplyV1, agent_participation as participation,
     deliberation as deliberation_protocol,
@@ -1681,51 +1679,27 @@ fn observe_moira_deliberation(
     Option<deliberation_protocol::HumanGateMaterialRefV1>,
 ) {
     let capability = "deliberation.inspect.v1";
-    let port = match moira_tui_local_client::LocalDeliberationPort::connect(
-        socket,
-        moira_tui_local_client::ClientLimits::default(),
-    ) {
-        Ok(port) => port,
-        Err(error) => {
-            return (
-                peer_failure(
-                    "moira-deliberation",
-                    capability,
-                    "connect_refused",
-                    format!("{error:?}"),
-                ),
-                false,
-                None,
-            );
-        }
-    };
-    let mut client = DeliberationReadOnlyClient::new(port);
-    match moira_tui::observe_deliberation(&mut client, id) {
-        moira_tui::DeliberationObservation::Current {
+    match crate::moira_deliberation::observe(socket, id) {
+        crate::moira_deliberation::Observation::Current {
             registry_revision,
-            view,
+            deliberation,
             review,
-        } => {
-            let packet_reference = view
-                .human_gate_request
-                .filter(|_| view.human_gate_response.is_none())
-                .map(|request| request.decision_packet);
-            (
-                serde_json::json!({
-                "peer": "moira-deliberation",
-                "capability": capability,
-                "status": "current",
-                "accountable_owner": "moira",
-                "registry_revision": registry_revision,
-                "deliberation": moira_tui::deliberation_view_json(*view),
-                "review": review.map(|value| moira_tui::review_view_json(*value)),
-                "boundary": "read-only owner evidence and stakeholder standing; distinct correlation values do not establish independence, and Pantheon infers no ensemble fitness, frontier, authority, or human disposition",
-                }),
-                true,
-                packet_reference,
-            )
-        }
-        moira_tui::DeliberationObservation::NotFound { registry_revision } => (
+            pending_packet,
+        } => (
+            serde_json::json!({
+            "peer": "moira-deliberation",
+            "capability": capability,
+            "status": "current",
+            "accountable_owner": "moira",
+            "registry_revision": registry_revision,
+            "deliberation": deliberation,
+            "review": review,
+            "boundary": "read-only owner evidence and stakeholder standing; distinct correlation values do not establish independence, and Pantheon infers no ensemble fitness, frontier, authority, or human disposition",
+            }),
+            true,
+            pending_packet,
+        ),
+        crate::moira_deliberation::Observation::NotFound { registry_revision } => (
             serde_json::json!({
                 "peer": "moira-deliberation",
                 "capability": capability,
@@ -1735,48 +1709,8 @@ fn observe_moira_deliberation(
             false,
             None,
         ),
-        moira_tui::DeliberationObservation::Stale => (
-            peer_failure(
-                "moira-deliberation",
-                capability,
-                "stale",
-                "registry revision changed during observation",
-            ),
-            false,
-            None,
-        ),
-        moira_tui::DeliberationObservation::NeedsReopen => (
-            peer_failure(
-                "moira-deliberation",
-                capability,
-                "needs_reopen",
-                "owner store requires reopen",
-            ),
-            false,
-            None,
-        ),
-        moira_tui::DeliberationObservation::Refused(reason) => (
-            peer_failure("moira-deliberation", capability, "refused", reason),
-            false,
-            None,
-        ),
-        moira_tui::DeliberationObservation::InvalidReply => (
-            peer_failure(
-                "moira-deliberation",
-                capability,
-                "invalid_reply",
-                "unexpected owner reply",
-            ),
-            false,
-            None,
-        ),
-        moira_tui::DeliberationObservation::Transport => (
-            peer_failure(
-                "moira-deliberation",
-                capability,
-                "transport_unavailable",
-                "owner transport unavailable",
-            ),
+        crate::moira_deliberation::Observation::Failure { status, detail } => (
+            peer_failure("moira-deliberation", capability, status, detail),
             false,
             None,
         ),
