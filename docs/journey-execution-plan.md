@@ -356,9 +356,15 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Moira commit `0241140` now composes that analyzer into the governed local run
   after exact member outcomes return, while preserving cohort refusal before
   plan admission. The full local-harness package, strict Clippy and a Pantheon
-  headless two-document Vellum composition passed. Live review creation still
-  must consume the governed correlation before
-  `moira-reviewer-correlation-evidence` closes.
+  headless two-document Vellum composition passed. Moira commit `ada8469` then
+  binds that exact governed checkpoint and correlation into explicit live
+  review creation. A real Dendrite-grounded, Daimon-executed four-member run
+  reopened the SQLite review with all four model/provider/prompt/evidence-scope
+  observations retained. Stale checkpoints refuse, review and resolution cannot
+  share one run, active review suppresses ready-to-resolve, and tool-continuation
+  review refuses until multi-turn evidence aggregation exists. Organization,
+  first-pass exposure and that multi-turn evidence remain acceptance work on
+  `moira-reviewer-correlation-evidence`.
 - Pantheon TUI dogfood then admitted priority-8
   `chronos-asynchronous-verification-worker` at Chronos revision 12, blocked on
   `j1-worker-process-controller` and `j1-worker-receipt-contract`, with explicit
@@ -1458,8 +1464,10 @@ mature stakeholder ensemble.
   accompanies accepted, refused and replayed publication outcomes through one
   durable adapter facade. Daimon now authoritatively publishes and Moira
   consumes model, provider, prompt and evidence-scope evidence from the exact
-  retained invocation. The governed local run now returns those observed facts;
-  live review creation and authoritative organization evidence remain open.
+  retained invocation. The governed local run now returns those observed facts
+  and explicit live review creation retains them through SQLite reopen. Exact
+  first-pass exposure, authoritative organization evidence and correlation
+  across tool-continuation invocations remain open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
