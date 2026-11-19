@@ -331,6 +331,17 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   The pass deliberately did not duplicate the still-open correlation producers
   or review-item publication linkage: both remain acceptance work on the
   reopened `moira-reviewer-correlation-evidence` task.
+- A source-to-owner audit then decomposed the remaining producer work at
+  revision 11 into priority-7
+  `daimon-model-invocation-correlation-evidence`, with Daimon-model,
+  Moira–Daimon and Moira-deliberation capabilities. Moira currently receives
+  execution principal/profile, requested context references and grounding, but
+  Daimon's public model result omits the provider profile/document, model
+  identity and assembled message/prompt evidence that its service actually
+  used. Those values must be projected from Daimon's retained invocation rather
+  than inferred from output or local configuration. Organization stays
+  explicitly unknown until a named identity/organization owner supplies that
+  relationship; neither provider nor principal identity is a valid substitute.
 - Vellum dogfooding admitted the exact Moira–Agora source file but rejected a
   three-file workspace at its configured limit. More importantly, it retained
   a stale clean snapshot after an external source mutation and offered no
