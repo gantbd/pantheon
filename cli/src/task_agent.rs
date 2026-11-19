@@ -375,7 +375,26 @@ fn preview_json(value: &journey::PreviewViewV1) -> Value {
     json!({
         "owner": hex(&value.id.owner.0), "sequence": value.id.sequence,
         "owner_revision": value.owner_revision, "observed_at": value.observed_at,
-        "expires_at": value.expires_at, "accountable_human": hex(&value.request.accountable_human.0),
+        "expires_at": value.expires_at,
+        "template": {
+            "id": hex(&value.request.template.id.0),
+            "version": value.request.template.version,
+            "digest": hex(&value.request.template.digest),
+        },
+        "task": {
+            "external_task_key": hex(&value.request.task.task.external_task_key),
+            "incarnation": value.request.task.task.incarnation,
+            "chronos_revision": value.request.task.chronos_revision,
+            "evidence_digest": hex(&value.request.task.evidence_digest),
+        },
+        "profile": hex(&value.request.profile.0),
+        "room_policy": format!("{:?}", value.request.room_policy),
+        "initiating_principal": hex(&value.request.initiating_principal.0),
+        "accountable_human": hex(&value.request.accountable_human.0),
+        "objective_digest": hex(&value.request.objective_digest),
+        "acceptance_digest": hex(&value.request.acceptance_digest),
+        "current_evidence_digest": hex(&value.request.current_evidence_digest),
+        "preview_operation": hex(&value.request.operation.0),
         "work_mode": format!("{:?}", value.work_mode), "budget": {
             "max_context_bytes": value.budget.max_context_bytes,
             "max_output_tokens": value.budget.max_output_tokens,
@@ -392,7 +411,26 @@ fn journey_json(value: &journey::JourneyViewV1) -> Value {
         "owner": hex(&value.id.owner.0), "sequence": value.id.sequence,
         "workflow_owner": hex(&value.workflow.owner.0), "workflow_sequence": value.workflow.sequence,
         "revision": value.revision, "phase": format!("{:?}", value.phase),
-        "confirmed_at": value.confirmed_at, "preview": preview_json(&value.preview),
+        "confirmed_at": value.confirmed_at,
+        "admission": {
+            "operation": hex(&value.admission.operation.0),
+            "expected_owner_revision": value.admission.expected_owner_revision,
+            "confirmed_preview_owner": hex(&value.admission.confirmation.preview.owner.0),
+            "confirmed_preview_sequence": value.admission.confirmation.preview.sequence,
+            "accountable_human": hex(&value.admission.confirmation.accountable_human.0),
+            "consequence_digest": hex(&value.admission.confirmation.consequence_digest),
+        },
+        "preview": preview_json(&value.preview),
+        "activation": {
+            "status": "not_published",
+            "aegis_delegation": null,
+            "chronos_attempt": null,
+            "participation": null,
+            "daimon_session": null,
+            "expires_at": null,
+            "completed_work_receipt": null,
+            "boundary": "admission retains intent and human confirmation but starts no peer effect",
+        },
     })
 }
 

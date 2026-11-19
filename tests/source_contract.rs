@@ -2695,6 +2695,27 @@ fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
             "J1 owner contract omits required boundary: {required}"
         );
     }
+
+    let observer =
+        fs::read_to_string(root.join("cli/src/task_agent.rs")).expect("task-agent observer source");
+    for required in [
+        "external_task_key",
+        "chronos_revision",
+        "initiating_principal",
+        "objective_digest",
+        "acceptance_digest",
+        "preview_operation",
+        r#""status": "not_published""#,
+        r#""aegis_delegation": null"#,
+        r#""chronos_attempt": null"#,
+        r#""daimon_session": null"#,
+        r#""completed_work_receipt": null"#,
+    ] {
+        assert!(
+            observer.contains(required),
+            "task-agent observation omits retained admission or explicit activation absence: {required}"
+        );
+    }
 }
 
 #[test]

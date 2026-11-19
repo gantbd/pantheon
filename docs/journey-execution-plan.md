@@ -2310,6 +2310,16 @@ Operational means observable completed work, not a configured role name:
   progression receipt binding the admitted journey to a current Aegis
   delegation, expiry, exact Chronos attempt and Daimon worker/session; admission
   alone still starts no peer effect.
+- The bounded task-agent observer now exposes that retained admission basis
+  rather than reducing it to a phase label. Its additive projection includes
+  the exact task evidence, template/version/digest, profile and room policy,
+  initiating principal, accountable human, objective/acceptance/current-
+  evidence digests, preview and instantiate operation identities, confirmation
+  consequence, budgets and policy digests. A separate structured activation
+  block remains `not_published` with null Aegis delegation, Chronos attempt,
+  participation, Daimon session, expiry and completed-work receipt. This makes
+  the current boundary usable for bounded PM/SRE/frontier supervision without
+  pretending that admission progressed or that Pantheon owns those facts.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
