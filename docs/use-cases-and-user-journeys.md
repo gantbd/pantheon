@@ -2237,10 +2237,17 @@ dissent and gates to invalidate an older proposal instead of requiring them to
 be predeclared by it. Concrete readers now cover the exact Chronos task and a
 host-bound Vellum workspace document under the closed
 `vellum-workspace-source-revision-v1` evidence domain, including byte length.
-The remaining production boundary is explicit configuration/resolution of that
-live document binding plus the complete evidence-owner reader; neither may be
-replaced by the retained proposal or a presentation cache. The concrete cohort
-reader now uses Moira's public read-only deliberation client: explicit host
+The remaining production boundary is the complete evidence-owner reader and
+packaged multi-owner composition; neither may be replaced by the retained
+proposal or a presentation cache. Live goal resolution now reuses Vellum's
+existing exact `ResolveLocator` join on every sample rather than persisting a
+process-local document ID. It then performs the non-view-mutating exact version
+observation. The owner-native evidence token binds live workspace ID, document
+ID and revision, so rebinding the same locator to a document with the same
+revision and byte length still changes the frontier; a Vellum restart also
+conservatively invalidates the prior proposal. The configured locator is not
+retained in the Chronos alignment record. The concrete cohort reader now uses
+Moira's public read-only deliberation client: explicit host
 configuration maps the external advocate, product manager and frontier
 supervisor to three distinct Moira stakeholder principals in one exact
 deliberation. Moira status revisions bracket every read, and the adapter refuses
