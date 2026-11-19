@@ -219,16 +219,20 @@ and canonical checkpoint/reopen. It deliberately exposes only `Admitted`; the
 transactional store/service/transport and every peer-effect transition remain
 required before Pantheon may compose this path.
 
-Moira `dacd31c` adds the first deterministic progression law without exposing a
-client mutation. `derive_task_attempt_binding` accepts only a trusted Chronos
-claim receipt whose task key and incarnation exactly equal the admitted journey,
-whose attempt is nonzero and whose Chronos revision is strictly newer than the
-admission evidence. Alias, incarnation drift, attempt zero, equal revision and
-older evidence refuse. Its typed output binds the expected journey revision but
-is explicitly not a persisted phase, lease, delegation or authority grant. The
-next owner cut must retain that binding with replay/conflict and crash recovery
-before projecting `TaskAttemptReady`; Pantheon must not serialize the pure
-result as if persistence already occurred.
+Moira `dacd31c` added the deterministic exact-claim law; `9ddb85f` now closes
+its durable owner transition without exposing a client mutation. The trusted
+Chronos worker claims once and immediately submits the exact receipt to the
+journey store. Moira transactionally advances `Admitted` to
+`TaskAttemptReady`, retains task key, zero-based incarnation, attempt and newer
+Chronos revision, and projects that evidence through its read-only protocol.
+Matching replay does not advance storage; altered evidence conflicts. If
+persistence conflicts or becomes indeterminate after the Chronos claim, the
+error retains the successful claim and a bind-only recovery path reuses it
+without a second Chronos mutation. Canonical checkpoint V2 reopens the phase
+and upgrades admitted V1 checkpoints. A real Chronos server plus SQLite test
+proves normal progression, restart, conflict recovery and zero additional
+worker requests during rebind. This remains claim evidence, not a lease bearer,
+Aegis delegation, participation, session, provider invocation or completion.
 
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
@@ -249,9 +253,12 @@ only when that challenge matches, and observe the durable journey. Every JSON
 result carries owner/storage revisions, replay or uncertainty disposition,
 boundary language and an actionable next step. A process-level qualification
 runs the real Pantheon binary against a restarted Moira SQLite owner for every
-step. This completes cut 1 and the headless admission portion of cut 3; trusted
-peer-evidence adapters, owner-derived progression beyond `Admitted`, aggregate
-profile configuration, operator-agenda projection and TUI parity remain open.
+step. Its observer now renders `TaskAttemptReady` and the exact retained claim
+when Moira publishes it, while keeping Aegis delegation, participation, Daimon
+session and completion explicitly absent. This completes cut 1, the headless
+admission portion of cut 3 and the first trusted evidence transition. Current
+Aegis delegation, later owner-derived effects, aggregate profile configuration,
+operator-agenda projection and TUI parity remain open.
 
 ### Reuse boundary
 

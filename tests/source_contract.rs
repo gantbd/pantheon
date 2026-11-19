@@ -2727,6 +2727,10 @@ fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
         "receipt.attempt_number() == 0",
         "receipt.chronos_revision() <= journey.preview.request.task.chronos_revision",
         "not itself a persisted phase transition",
+        "TaskAttemptReady",
+        "bind_task_attempt",
+        "task_attempt: Option<TaskAttemptBindingV1>",
+        "TaskAttemptConflict",
     ] {
         assert!(
             progression.contains(required),
@@ -2743,9 +2747,10 @@ fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
         "objective_digest",
         "acceptance_digest",
         "preview_operation",
-        r#""status": "not_published""#,
+        "task_attempt_ready",
+        "task_attempt_json",
         r#""aegis_delegation": null"#,
-        r#""chronos_attempt": null"#,
+        r#""chronos_attempt": chronos_attempt"#,
         r#""daimon_session": null"#,
         r#""completed_work_receipt": null"#,
     ] {

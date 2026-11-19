@@ -407,6 +407,18 @@ fn preview_json(value: &journey::PreviewViewV1) -> Value {
 }
 
 fn journey_json(value: &journey::JourneyViewV1) -> Value {
+    let chronos_attempt = value.task_attempt.map(task_attempt_json);
+    let (activation_status, activation_boundary) = if chronos_attempt.is_some() {
+        (
+            "task_attempt_ready",
+            "Moira durably retained one exact Chronos claim; no Aegis delegation, participation, Daimon session, provider call, or completed-work receipt is implied",
+        )
+    } else {
+        (
+            "not_published",
+            "admission retains intent and human confirmation but starts no peer effect",
+        )
+    };
     json!({
         "owner": hex(&value.id.owner.0), "sequence": value.id.sequence,
         "workflow_owner": hex(&value.workflow.owner.0), "workflow_sequence": value.workflow.sequence,
@@ -421,16 +433,30 @@ fn journey_json(value: &journey::JourneyViewV1) -> Value {
             "consequence_digest": hex(&value.admission.confirmation.consequence_digest),
         },
         "preview": preview_json(&value.preview),
+        "task_attempt": chronos_attempt.clone(),
         "activation": {
-            "status": "not_published",
+            "status": activation_status,
             "aegis_delegation": null,
-            "chronos_attempt": null,
+            "chronos_attempt": chronos_attempt,
             "participation": null,
             "daimon_session": null,
             "expires_at": null,
             "completed_work_receipt": null,
-            "boundary": "admission retains intent and human confirmation but starts no peer effect",
+            "boundary": activation_boundary,
         },
+    })
+}
+
+fn task_attempt_json(value: journey::TaskAttemptBindingV1) -> Value {
+    json!({
+        "journey_owner": hex(&value.journey.owner.0),
+        "journey_sequence": value.journey.sequence,
+        "expected_journey_revision": value.expected_journey_revision,
+        "external_task_key": hex(&value.task.external_task_key),
+        "incarnation": value.task.incarnation,
+        "attempt_number": value.attempt_number,
+        "chronos_revision": value.chronos_revision,
+        "boundary": "exact retained claim evidence only; this is not a lease bearer, Aegis delegation, session, provider invocation, or completion receipt",
     })
 }
 
@@ -616,6 +642,48 @@ mod tests {
         assert!(text.contains("OWNER REVISION 3"));
         assert!(text.contains("0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c"));
         assert!(text.ends_with(&"12".repeat(32)));
+
+        let id = journey::JourneyIdV1 {
+            owner: preview.id.owner,
+            sequence: 0,
+        };
+        let projected = journey_json(&journey::JourneyViewV1 {
+            id,
+            workflow: journey::WorkflowRefV1 {
+                owner: id.owner,
+                sequence: id.sequence,
+            },
+            revision: 1,
+            phase: journey::PhaseV1::TaskAttemptReady,
+            admission: journey::InstantiateRequestV1 {
+                operation: journey::InstantiateOperationIdV1([19; 16]),
+                preview: preview.id,
+                expected_owner_revision: preview.owner_revision,
+                confirmation: journey::HumanConfirmationV1 {
+                    preview: preview.id,
+                    accountable_human: preview.request.accountable_human,
+                    consequence_digest: preview.consequence_digest,
+                },
+            },
+            confirmed_at: 101,
+            preview,
+            task_attempt: Some(journey::TaskAttemptBindingV1 {
+                journey: id,
+                expected_journey_revision: 0,
+                task: preview.request.task.task,
+                attempt_number: 2,
+                chronos_revision: 9,
+            }),
+        });
+        assert_eq!(projected["phase"], "TaskAttemptReady");
+        assert_eq!(projected["activation"]["status"], "task_attempt_ready");
+        assert_eq!(projected["task_attempt"]["attempt_number"], 2);
+        assert_eq!(
+            projected["activation"]["chronos_attempt"],
+            projected["task_attempt"]
+        );
+        assert!(projected["activation"]["aegis_delegation"].is_null());
+        assert!(projected["activation"]["daimon_session"].is_null());
     }
 
     #[test]

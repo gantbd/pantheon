@@ -2186,14 +2186,17 @@ The proposed owner-safe implementation boundary is specified in
 owns the durable template/instance and derives workflow identities, while
 Pantheon only previews, confirms, observes and routes owner commands.
 
-Moira now also publishes a deterministic internal law for the first progression
-edge. An admitted journey and a trusted Chronos claim receipt yield an exact
-task-attempt binding only when task key and incarnation match, attempt is
-nonzero, and the claim revision is strictly newer than admission. The law
-refuses aliases and stale evidence, but intentionally does not persist a phase
-or imply a lease, delegation, session or authority grant. Durable replay-safe
-retention of that binding remains required before `TaskAttemptReady` can be
-projected to Pantheon.
+Moira now publishes and durably retains the first progression edge. An admitted
+journey and the trusted worker's exact Chronos claim receipt advance to
+`TaskAttemptReady` only when task key and incarnation match, attempt is nonzero,
+and the claim revision is strictly newer than admission. Zero is a valid
+Chronos incarnation and is preserved rather than rejected by a foreign identity
+convention. Matching replay does not advance storage; changed evidence
+conflicts. If persistence fails after claim, bind-only recovery reuses the
+retained active claim without claiming Chronos again. Canonical checkpoint
+reopen and the read-only owner protocol expose the same exact binding. It
+implies no lease bearer, Aegis delegation, participation, session, provider call
+or completion.
 
 The first headless-first admission slice is now qualified. Moira `72b87bb`
 persists canonical task-agent checkpoints transactionally and `c7fe06d` exposes
@@ -2202,10 +2205,12 @@ bounded private Unix service. Pantheon uses those capability-shaped clients for
 four explicit JSON commands: catalogue, size-limited versioned preview, exact
 named-human confirmation/instantiate and observe. A real Pantheon process run
 restarts the SQLite-backed Moira owner between every command and retains the
-same owner-issued preview and journey. Admission remains only `Admitted`: no
-room, participation, session, provider call, peer effect or Chronos disposition
-is inferred. Trusted peer-evidence adapters, progression, aggregate profile and
-agenda composition remain ahead of TUI parity.
+same owner-issued preview and journey. Admission remains only `Admitted` until
+the trusted worker/store transition; Pantheon can then observe
+`TaskAttemptReady` without inferring a room, participation, session, provider
+call, authority or Chronos disposition. Current Aegis delegation, later
+progression, aggregate profile and agenda composition remain ahead of TUI
+parity.
 
 Chronos revision 66 also makes the priority-10 product-manager alignment task
 and its six prerequisites inspectable through the live dependency graph. The

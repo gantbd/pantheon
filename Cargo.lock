@@ -917,6 +917,8 @@ version = "0.1.0"
 dependencies = [
  "chronos-engine",
  "chronos-host",
+ "moira-core",
+ "moira-host",
  "moira-protocol",
 ]
 

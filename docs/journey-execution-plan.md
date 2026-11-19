@@ -1233,6 +1233,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   closure hot; load other document bodies and parse trees on demand. Project
   index generation, scope, freshness, incompleteness, eviction and memory/context
   budgets so IDE-like resolution never masquerades as complete or current.
+  Current J1 dogfood evidence enriches the retained
+  `vellum-workspace-limit-diagnostics` item: exact two- and three-file workspaces
+  succeeded, while larger source/test and observer/governing-document sets
+  refused as `workspace_identity_reservation` or `workspace construction
+  refused`. Reusing a namespace with changed roots correctly refused, but the
+  surfaced classes did not name the violated bound, observed usage, configured
+  ceiling or a safe reduced workspace. A `parent_permissions` refusal likewise
+  omitted the required private mode (`0700`).
 - [ ] Retain each discovered item through Chronos's stable identity, revision,
   receipt and recovery contract rather than a Pantheon-only checklist.
 - [ ] Offer a bounded agent-assisted backlog sift that proposes duplicate
@@ -2332,30 +2340,33 @@ Operational means observable completed work, not a configured role name:
   grounding and authority-policy digests, initiating principal, accountable
   human, objective/acceptance/current-evidence digests, TTL, consequence-bound
   human confirmation and durable journey observation. Every role plan now
-  includes that bounded journey observation. What remains is an owner
-  progression receipt binding the admitted journey to a current Aegis
-  delegation, expiry, exact Chronos attempt and Daimon worker/session; admission
-  alone still starts no peer effect.
-- Moira `dacd31c` now closes the deterministic part of the first progression
-  boundary. Its pure owner law derives a typed task-attempt binding only from a
-  trusted Chronos claim receipt matching the journey's exact task key and
-  incarnation, a nonzero attempt and a Chronos revision strictly newer than the
-  admission witness. Alias, incarnation drift, attempt zero, equal revision and
-  older evidence refuse. The value binds the expected journey revision and
-  explicitly supplies no persisted phase, lease, Aegis delegation or session.
-  The remaining blocker is therefore narrower but still material: a Moira-owned
-  replayable/crash-recoverable transition must retain this binding before
-  `TaskAttemptReady`, then compose current delegation and worker/session facts.
+  includes that bounded journey observation. The exact Chronos attempt is now a
+  durable first progression receipt. What remains is owner progression from
+  that receipt into a current Aegis delegation and expiry, participation and
+  Daimon worker/session; admission alone still starts no peer effect.
+- Moira `dacd31c` closed the deterministic part of the first progression
+  boundary; `9ddb85f` now persists it. The trusted Chronos worker claims once,
+  submits the exact zero- or later-incarnation receipt to the journey store and
+  transactionally advances `Admitted` to `TaskAttemptReady`. Canonical V2
+  checkpoints reopen the exact binding and accept canonical admitted V1
+  checkpoints for upgrade. Matching replay does not advance storage; altered
+  claims conflict. A storage conflict after a successful claim returns that
+  claim, and bind-only recovery reaches the durable phase with zero further
+  Chronos worker requests. A real Chronos server plus SQLite owner proves this
+  behavior. The remaining blocker now begins at current Aegis delegation,
+  participation and worker/session facts; the retained claim is not a lease
+  bearer, authority grant, session, provider call or completion receipt.
 - The bounded task-agent observer now exposes that retained admission basis
   rather than reducing it to a phase label. Its additive projection includes
   the exact task evidence, template/version/digest, profile and room policy,
   initiating principal, accountable human, objective/acceptance/current-
   evidence digests, preview and instantiate operation identities, confirmation
   consequence, budgets and policy digests. A separate structured activation
-  block remains `not_published` with null Aegis delegation, Chronos attempt,
-  participation, Daimon session, expiry and completed-work receipt. This makes
-  the current boundary usable for bounded PM/SRE/frontier supervision without
-  pretending that admission progressed or that Pantheon owns those facts.
+  block is `not_published` while admitted and becomes `task_attempt_ready` only
+  when Moira publishes the exact retained claim. Aegis delegation,
+  participation, Daimon session, expiry and completed-work receipt remain null.
+  This makes the boundary usable for bounded PM/SRE/frontier supervision
+  without treating claim evidence as authority, execution or completion.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
