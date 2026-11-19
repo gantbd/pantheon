@@ -1,4 +1,4 @@
-.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-j1 qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-daimon qualify-hestia-model-bench
+.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-j1 qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-diagnostic qualify-hestia-real-model-daimon qualify-hestia-model-bench
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -58,6 +58,9 @@ qualify-hestia-artifact:
 
 qualify-hestia-real-model:
 	PANTHEON_LIVE_MODEL=1 ./tests/live/hestia_real_model.sh
+
+qualify-hestia-real-model-diagnostic:
+	PANTHEON_LIVE_MODEL=1 PANTHEON_REAL_MODEL_DIAGNOSTIC=1 ./tests/live/hestia_real_model.sh
 
 qualify-hestia-real-model-daimon:
 	PANTHEON_LIVE_MODEL=1 PANTHEON_REAL_MODEL_DAIMON=1 ./tests/live/hestia_real_model.sh

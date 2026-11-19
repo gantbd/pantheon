@@ -224,6 +224,90 @@ assert completion["usage"]["completion_tokens"] > 0, completion
 print("Model response:", text.replace("\n", " ")[:160])
 PYTHON
 
+if [ "${PANTHEON_REAL_MODEL_DIAGNOSTIC:-0}" = 1 ]; then
+  echo 'Qualifying Daimon structured-output diagnostics against the Hestia-owned endpoint'
+  cargo build --manifest-path "$workspace/daimon/Cargo.toml" \
+    --package daimon-local-model --bin daimon-local-model --locked --offline
+  diagnostic_model="$workspace/daimon/target/debug/daimon-local-model"
+  python3 - "$scratch" "$port" <<'PYTHON'
+from pathlib import Path
+import json, sys
+
+scratch, port = Path(sys.argv[1]), int(sys.argv[2])
+config = {
+    "principal": "01010101010101010101010101010101",
+    "aegis_socket": str(scratch / "diagnostic-aegis.sock"),
+    "aegis_expected_epoch": 0,
+    "aegis_grant_now": 1,
+    "aegis_grant_expires_at": 1000,
+    "chronos_socket": str(scratch / "diagnostic-chronos.sock"),
+    "daimon_socket": str(scratch / "diagnostic-daimon.sock"),
+    "store_directory": str(scratch / "diagnostic-store"),
+    "provider": {
+        "provider_id": "02020202020202020202020202020202",
+        "harness_profile_id": "03030303030303030303030303030303",
+        "model": "qwen/qwen2.5-coder-1.5b-instruct",
+        "address": f"127.0.0.1:{port}",
+        "host_header": f"127.0.0.1:{port}",
+        "path": "/v1/chat/completions",
+        "structured_output": True,
+        "structured_tools": False,
+        "sampling_temperature_milli": 0,
+        "connect_timeout_ms": 5000,
+        "io_timeout_ms": 300000,
+        "max_request_bytes": 65536,
+        "max_response_bytes": 1048576,
+    },
+    "task_bindings": [{
+        "external_task_key": "04040404040404040404040404040404",
+        "chronos_task_id": "structured-output-diagnostic",
+    }],
+    "context": [{
+        "reference": "05050505050505050505050505050505",
+        "kind": "chronos_work",
+        "text": "diagnose the selected structured-output profile only",
+    }],
+    "messages": [{"role": "system", "content": "Return bounded output only."}],
+    "io_timeout_ms": 300000,
+    "max_executions": 2,
+    "max_requests_per_connection": 2,
+}
+(scratch / "diagnostic-model.json").write_text(json.dumps(config))
+PYTHON
+  "$diagnostic_model" --describe-providers "$scratch/diagnostic-model.json" \
+    >"$scratch/diagnostic-catalog.json"
+  python3 - "$scratch/diagnostic-catalog.json" "$scratch/diagnostic-request.json" <<'PYTHON'
+from pathlib import Path
+import json, sys
+
+catalog = json.loads(Path(sys.argv[1]).read_text())
+Path(sys.argv[2]).write_text(json.dumps({
+    "version": 1,
+    "operation_id": "06060606060606060606060606060606",
+    "expected_document_digest": catalog["document_digest"],
+}))
+PYTHON
+  "$diagnostic_model" --qualify-provider "$scratch/diagnostic-model.json" \
+    <"$scratch/diagnostic-request.json" >"$scratch/diagnostic-result.json"
+  python3 - "$scratch/diagnostic-result.json" <<'PYTHON'
+from pathlib import Path
+import json, sys
+
+result = json.loads(Path(sys.argv[1]).read_text())
+assert result["disposition"] == "outcome_unknown", result
+assert result["completion"] is False, result
+assert (
+    result["diagnostic_kind"] == "invalid_structured_output"
+    or result["diagnostic_kind"].startswith("http_status:")
+), result
+assert result["diagnostic_response_digest"].startswith("sha256:"), result
+assert any("does not narrow outcome uncertainty" in item for item in result["known_deviations"]), result
+for forbidden in ("error", "secret", "unsupported"):
+    assert forbidden not in json.dumps(result).lower(), result
+print("Daimon structured diagnostic:", result["diagnostic_kind"], result["diagnostic_response_digest"])
+PYTHON
+fi
+
 if [ "${PANTHEON_REAL_MODEL_DAIMON:-0}" = 1 ]; then
   echo 'Composing the Hestia-owned endpoint through Daimon and Pantheon'
   PANTHEON_LOCAL_MODEL_LIVE=1 \

@@ -1927,6 +1927,10 @@ fn hestia_real_model_gate_separates_host_readiness_from_provider_readiness() {
         "llama-server",
         "/v1/models",
         "/v1/chat/completions",
+        "PANTHEON_REAL_MODEL_DIAGNOSTIC",
+        "diagnostic_kind",
+        "diagnostic_response_digest",
+        "does not narrow outcome uncertainty",
         "PANTHEON_REAL_MODEL_DAIMON",
         "PANTHEON_LOCAL_MODEL_HESTIA_SOCKET",
         "daimon_model_lmstudio.sh",
@@ -1939,6 +1943,8 @@ fn hestia_real_model_gate_separates_host_readiness_from_provider_readiness() {
             "Hestia real-model gate omits {required}"
         );
     }
+    let makefile = fs::read_to_string(root.join("Makefile")).expect("Makefile");
+    assert!(makefile.contains("qualify-hestia-real-model-diagnostic:"));
 }
 
 #[test]

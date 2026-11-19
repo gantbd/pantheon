@@ -286,8 +286,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   states that it does not narrow outcome uncertainty. Focused adapter and owner
   integration tests prove HTTP 400 and missing-usage paths, response-content
   redaction and no retry. The Chronos task remains Ready: general model-service
-  wire/checkpoint propagation, Oculus/Pantheon presentation and a live Hestia
-  structured-output diagnosis are not yet qualified.
+  wire/checkpoint propagation and Oculus/Pantheon presentation are not yet
+  qualified. The opt-in `make qualify-hestia-real-model-diagnostic` gate now
+  rehashes and admits the exact Qwen2.5 Coder 1.5B artifact, proves ordinary
+  completion, classifies the strict profile as `invalid_structured_output`,
+  retains only a response digest, and drains Hestia cleanly. Two temperature-zero
+  runs produced different response digests, so the stable diagnostic evidence is
+  the categorical result plus execution/profile binding, not a false claim of
+  byte-deterministic model output.
 - The next J33 slice now has an executable Moira review-exchange foundation.
   It admits review only after every independent first pass, retains exact
   findings and evidence, requires a different admitted member for rebuttal,

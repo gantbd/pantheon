@@ -182,12 +182,21 @@ existing `daimon-provider-uncertain-diagnostic-receipt` and
 `daimon-structured-output-profile-negotiation` tasks, not evidence that every
 provider supports one generic structured-output profile.
 
+Daimon commit `ac00c51` then added a content-free diagnostic receipt without
+changing `OutcomeUnknown`. An opt-in one-model Hestia gate replayed the
+structured profile against the exact Qwen2.5 Coder 1.5B artifact: ordinary
+completion succeeded, while the structured qualification was classified as
+`invalid_structured_output` and retained only a response digest. Hestia drained
+cleanly. This falsifies a blanket HTTP-schema-rejection explanation for Qwen;
+it does not retroactively identify the original first-provider/SmolLM failure.
+
 Categorically, model hosting, cleanup, locked graph resolution, and compilation
 passed. Plain-text serialization failed for all four small models; the raw
 substance also showed contradiction, missing grounding, or overconfidence.
-Strict structured-output interoperability remains unknown because the adapter
-discarded the failure cause. No report is decision evidence, no model is
-qualified for these stakeholder seats, and no rollout disposition changed.
+The original first-provider structured failure remains unattributed, while the
+subsequent Qwen run proves one invalid structured payload after HTTP success.
+No report is decision evidence, no model is qualified for these stakeholder
+seats, and no rollout disposition changed.
 
 Chronos revision 59 now also admits
 `grounded-instrumented-tdd-evidence-loop` with Tellus-grounding,
