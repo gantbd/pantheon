@@ -46,6 +46,17 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   different facts. Chronos revision 70 admits priority-9
   `moira-grounding-source-provenance-contract` so an owner-issued provenance
   witness can precede the scope-bound Tellus join.
+- Implemented that owner chain without inventing a cross-owner revision. Moira
+  now retains Dendrite-issued method/fold/orthogonality content identities;
+  Dendrite replays the exact fold and surface queries through an authenticated
+  closed Tellus verification endpoint; Tellus publishes a typed client contract;
+  and Chronos binds the proof to the exact scope, cohort and Moira requirements.
+  Stale, missing, changed, reordered, mismatched, legacy, oversized and
+  unavailable results refuse rather than becoming alignment evidence. Focused
+  owner tests and strict checks pass in Moira `a223d77`, Dendrite `deb4332`,
+  Tellus `0ad7edf`, and Chronos `d63c439` (after `3a98faf`). The live budget-
+  policy reader and packaged evidence composer remain open, and the Ready tasks
+  remain unsettled until Chronos observes prospective claim/evidence completion.
 - The task was created through Pantheon's central command palette and bounded
   Chronos form. Invalid priority input was refused without dispatch; the exact
   reviewed task then applied once. The form did not honor Emacs `C-u`, and the
@@ -54,6 +65,17 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   actionable refusal. This blocks a truthful live PM frontier in that profile
   and is retained as attachment/configuration drift rather than bypassed with
   ambient filesystem access.
+- Re-observed all 97 tasks across both bounded Chronos pages before admitting
+  the non-duplicate priority-9 `alignment-live-budget-policy-frontier` at
+  revision 71. The existing P10 PM control task still names six other immutable
+  prerequisites and cannot silently acquire this seventh edge from the
+  presentation layer; replacing or superseding that admitted graph is a
+  separately reviewable product-owner mutation. Independent headless attachment
+  confirmed revision 70 immediately before admission and projected the same
+  blocked PM control plane. The older Vellum-enabled dogfood session was dirty
+  and refused a fresh workspace operation with `AuthorityUnavailable`, so it
+  was used neither to overwrite the updated documents nor as false evidence of
+  a current PM goal binding.
 
 ### 2026-11-18 — provider posture at the J1 human gate
 
@@ -1275,8 +1297,13 @@ recovery before a human can settle the gate from this surface.
   bounded admission/orthogonality evidence and discovers human gates only while
   an exact request lacks a matching response. It refuses concurrent owner
   change, reopen-required state, review mismatch, scope/cohort drift and limit
-  overflow. Scope-bound Tellus grounding, a live budget-policy reader and the
-  packaged composition remain open.
+  overflow. Moira now retains the exact Dendrite-issued method, fold and
+  orthogonality source identities with member authority/surface/depth
+  requirements. Dendrite and Tellus can re-prove those requirements against
+  current loads, and Chronos now consumes the typed result through an exact
+  scope/cohort-bound reader. The reader refuses every non-current result and
+  emits bounded owner references only; it has no authority path. A live budget-
+  policy reader and the packaged composition remain open.
   The live goal binding now resolves its explicitly configured absolute locator
   through Vellum's existing exact in-memory join on every sample, then observes
   the resolved document without selecting a view. Its owner-native token binds

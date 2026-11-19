@@ -2289,11 +2289,27 @@ the surface digest measures Dendrite's canonical selected presentation. Neither
 identifies the fold or orthogonality load that made the grounding applicable.
 Chronos revision 70 therefore admits the priority-9
 `moira-grounding-source-provenance-contract` prerequisite. The owner-preserving
-repair must let Moira retain Dendrite-issued source provenance and let Tellus
-re-prove that exact selected grounding against current loads; Chronos may then
-join those owner facts. It must not equate unrelated hashes, treat every loaded
-corpus as applicable, or hide newly applicable grounding behind a host-maintained
-allowlist.
+repair now crosses the owner boundaries without equating those hashes. Moira
+retains Dendrite-issued method, fold and orthogonality content identities beside
+the selected member authority/surface/depth requirements and refuses legacy
+plans as current proof. Dendrite's authenticated Tellus endpoint re-runs the
+exact fold and surface queries against current loads; its closed result is
+current, stale with an enumerated reason, or unavailable. Tellus exposes the
+same contract through a typed non-MCP client. Chronos's scope- and cohort-bound
+reader submits every retained requirement, refuses stale, reordered, mismatched,
+oversized or unavailable results, and emits only bounded Tellus-owned currentness
+references. It grants no authority and cannot substitute for the Moira plan.
+The focused owner tests and strict checks pass in Moira `a223d77`, Dendrite
+`deb4332`, Tellus `0ad7edf`, and Chronos `d63c439` (building on its retained-
+requirements reader in `3a98faf`). The two historical Ready tasks are not
+retroactively completed outside Chronos's prospective claim/evidence/settlement
+path. A live budget-policy owner and packaged multi-owner evidence composition
+still block the recurring PM worker. After observing all 97 tasks across both
+bounded Chronos pages, revision 71 admits the non-duplicate priority-9
+`alignment-live-budget-policy-frontier`. The existing P10 PM activation task's
+six admitted prerequisites do not include it; the presentation cannot silently
+rewrite that immutable graph, so supersession or a separately authorized graph
+change remains an explicit product-owner decision.
 
 The same live pass exposed three presentation/operation findings without
 changing the owner result. Emacs `C-u` did not clear the Chronos numeric-priority
