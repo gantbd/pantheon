@@ -317,6 +317,17 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   search and total/page-cap disclosure, unambiguous reattachment to the active
   roadmap instead of a fresh default state root, and an explicit qualified
   binary path when unrelated peer source is temporarily uncompilable.
+- Reattaching by the old `pantheon-j1-next` display name first reopened an empty
+  historical owner at revision 0; persisted service evidence identified
+  `/private/tmp/pantheon-link-slice/chronos` as the actual revision-53 roadmap.
+  The incorrectly selected owner was stopped without mutation, and the stable
+  tmux session now presents the verified roadmap for `make attach`. On that
+  owner, Chronos Tasks advertised `] next` for its second bounded page, but the
+  shared behavior facade routed the key globally to Vellum. Revision 54 now
+  retains priority-7 `chronos-task-page-next-behavior-routing` with
+  behavior-facade, Chronos-presentation and pagination capabilities. The
+  existing `ensemble-outcome-observation-correlation` task remains the owner for
+  organization-correlation selection; no duplicate was admitted.
 - The default `make run` owner separately admitted priority-8
   `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
   Ready with its Moira-deliberation, Moira–Daimon and Pantheon-presentation
