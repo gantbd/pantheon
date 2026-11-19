@@ -216,8 +216,26 @@ Moira `02e59ac` implements the first portion of cut 1 in its sovereign core:
 bounded immutable templates, exact expiring previews, trusted-time named-human
 confirmation, owner-scoped journey/workflow allocation, one-journey-per-preview
 and canonical checkpoint/reopen. It deliberately exposes only `Admitted`; the
-public protocol, transactional store/service/transport and every peer-effect
-transition remain required before Pantheon may compose this path.
+transactional store/service/transport and every peer-effect transition remain
+required before Pantheon may compose this path.
+
+Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
+clients request a bounded TTL and the owner retains trusted time. Moira
+`28fae97` publishes the independent transport-neutral DTO and canonical wire
+families for catalogue, preview, instantiate, preview/journey observation and
+status. Transactional storage, the service-owned time port, client/daemon and
+peer-effect transitions remain required.
+
+### Reuse boundary
+
+The template, budget, grounding, authority, accountable-human, replay and
+persistence laws are reusable for any task-backed SME role. Continuous SRE
+observation is a different ingress profile: Oculus owns telemetry query/cursor/
+gap facts, Hermes may carry minimized wake events, and deterministic policy
+coalesces recurrence before a model is involved. It may hand a warranted task
+to this journey after Chronos admission; it must not create synthetic tickets
+for every signal or treat model interpretation as incident, paging, priority or
+closure authority.
 
 1. **Moira owner contract:** publish the template catalogue, preview,
    instantiate, observe and exact-replay protocol plus durable store. Reuse the

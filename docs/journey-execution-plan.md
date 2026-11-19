@@ -68,8 +68,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   `MOIRATJ1` bytes survive exact reopen and reject foreign ownership,
   noncanonical state, truncation, tails, mutation and host-limit overflow. Six
   focused tests and strict Clippy pass. This stops honestly at `Admitted`:
-  public protocol/service/store/transport, trusted Chronos progression, peer
-  effects and Pantheon presentation remain open.
+  Moira `b46ef62` further moves observation, expiry and confirmation time behind
+  the owner boundary; callers now request only a bounded TTL. Moira `28fae97`
+  publishes the transport-neutral catalogue/preview/instantiate/observe/status
+  DTOs and disjoint canonical wire family, qualified across every command,
+  outcome and refusal plus truncation, tails and cross-family rejection.
+  Transactional store/service/time, client/daemon, trusted Chronos progression,
+  peer effects and Pantheon presentation remain open.
+- The admission mechanics are directly reusable for task-backed product,
+  project, development, test, security and incident-response SMEs. A persistent
+  SRE watching Oculus is event-first and must not manufacture a ticket for each
+  signal merely to enter J1. That profile should retain exact Oculus query/
+  cursor/gap evidence, use Hermes for minimized wake/delivery, deterministically
+  coalesce recurrence, and invoke this task-backed journey only after a warranted
+  Chronos admission. Models may interpret and correlate; incident declaration,
+  paging, priority and closure remain owner/human-gated.
 - The current profile still does not expose Vellum, so this ledger update used
   the repository fallback rather than claiming Vellum dogfood. Chronos remains
   the authoritative alignment plane: the external supervisor, constrained
