@@ -2253,15 +2253,20 @@ supervisor to three distinct Moira stakeholder principals in one exact
 deliberation. Moira status revisions bracket every read, and the adapter refuses
 concurrent change, reopen-required state, a contested/non-admitted ensemble,
 missing principals, scope drift or retained-cohort drift. It does not infer a
-stakeholder role from persona lens, model, provider or member order. Moira's
-current view exposes report dissent digests but does not establish which of
-those items remain unresolved; the PM frontier therefore refuses to relabel all
-observed dissent as `unresolved_dissent`. That stronger owner projection or a
-separate bounded resolver remains a prerequisite for production composition.
-Chronos revision 68 records that exact gap as the priority-9 ready task
+stakeholder role from persona lens, model, provider or member order. Moira now
+explicitly projects every immutable retained report dissent as a content-free
+`{source_report, dissent_digest}` unresolved reference. This is an owner
+semantic, not a Chronos inference: the current Moira command vocabulary has no
+dissent-settlement mutation, and finding dispositions are separate facts that
+cannot silently erase dissent. A future Moira-owned settlement lifecycle may
+narrow the projection; until then all retained dissent remains honestly open.
+Chronos revision 68 records that owner slice as the priority-9 ready task
 `moira-unresolved-dissent-frontier-projection`; the shared Pantheon TUI
 re-observed the admitted task by exact search while reporting that another task
-page remained available. The subsequent Tellus audit found that its current
+page remained available. The protocol implementation is now qualified, while
+the task remains Ready because historical external work cannot bypass Chronos's
+prospective grant/claim/lease/evidence settlement path. The subsequent Tellus
+audit found that its current
 typed observation proves registry-wide load identity and freshness but does not
 publish which loads apply to an exact Chronos scope or stakeholder cohort.
 Treating every load as applicable would create unrelated drift; filtering by a

@@ -1246,18 +1246,23 @@ recovery before a human can settle the gate from this surface.
   one exact deliberation, brackets the read with stable Moira revisions, and
   refuses contested admission, missing stakeholders, reopen-required state and
   scope/cohort drift. It deliberately does not infer roles from persona or
-  model. Moira exposes observed dissent digests but not the stronger fact that a
-  particular dissent remains unresolved, so the complete evidence frontier and
-  packaged composition remain open rather than weakening Chronos's contract.
+  model. Moira now explicitly projects each immutable retained report dissent
+  as an unresolved source-report/digest reference. The projection is honest
+  because Moira currently has no dissent-settlement mutation and its separate
+  finding dispositions cannot erase dissent; a future owner settlement
+  lifecycle may narrow that set. Chronos still needs to consume the projection,
+  and the complete evidence frontier and packaged composition remain open.
   The live goal binding now resolves its explicitly configured absolute locator
   through Vellum's existing exact in-memory join on every sample, then observes
   the resolved document without selecting a view. Its owner-native token binds
   live workspace/document identity and revision, fencing both same-version
   locator rebinding and service restart without persisting a process-local ID
   or copying the locator into Chronos.
-  Chronos revision 68 retains that owner gap as the priority-9 ready task
+  Chronos revision 68 retains that owner slice as the priority-9 ready task
   `moira-unresolved-dissent-frontier-projection`, verified through the shared
-  Pantheon TUI's exact task search. Tellus's existing typed observation proves
+  Pantheon TUI's exact task search. Its protocol implementation is qualified,
+  but historical external work is not retroactively settled outside Chronos's
+  trusted owner-worker lifecycle. Tellus's existing typed observation proves
   registry-wide grounding identities and freshness, but not applicability to an
   exact Chronos scope/cohort. Revision 69 therefore retains the separate
   priority-9 ready task `tellus-scope-bound-grounding-evidence-frontier`; the PM
