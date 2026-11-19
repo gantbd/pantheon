@@ -1382,6 +1382,17 @@ recovery before a human can settle the gate from this surface.
   Recurring/coalesced scheduling, Agora challenge, authorized proposal
   application and operator configuration remain open and must not be inferred
   from the successful one-shot process gate.
+- Chronos `ff26498` and Pantheon `ab48a46` make that one-shot proposal available
+  as a supervised read-only worker selected by a versioned workspace profile.
+  Pantheon owns readiness and drain only, presents the same owner endpoint to
+  TUI and headless clients, and identifies its lifecycle separately from the
+  attached Chronos scheduler. Real tmux qualification refreshed **8 Alignment**
+  and completed two further independent reads without owner restart; the finite
+  headless run returned the same current human-escalation record plus a clean
+  `chronos-alignment/Product` shutdown receipt. This closes shared observation
+  availability and operator configuration. It does not yet trigger on owner
+  events or cadence, coalesce unchanged frontiers, author a changed proposal,
+  convene Agora, or apply a separately authorized disposition.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

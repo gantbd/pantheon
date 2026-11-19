@@ -2378,6 +2378,22 @@ coalescing, attributed Agora challenge, separately authorized application and
 operator configuration remain required before claiming a continuously
 operational intelligent product manager.
 
+Chronos `ff26498` and Pantheon `ab48a46` close the next availability and
+operator-composition slice without broadening that claim. The same immutable
+read-only PM listener now supports repeated observations under a private
+supervisor drain channel. A versioned Pantheon workspace profile selects one
+exact Chronos workstream, its already-presented alignment binding, the owner
+executable and an opaque owner config; Pantheon waits for the public listener
+but never parses credentials or stakeholder bindings. Real tmux dogfood showed
+the current proposal on **8 Alignment**, refreshed it through the TUI, and made
+two additional independent public reads while the owner stayed live. A finite
+headless run then returned `complete: true`, the same current proposal and a
+separate clean `chronos-alignment/Product` shutdown receipt. The externally
+attached Chronos owner and Pantheon-hosted alignment worker remained distinct in
+management output. This is long-running shared observation and clean lifecycle,
+not event/cadence activation, frontier-change coalescing, new proposal
+generation, Agora challenge or authorized application.
+
 The same live pass exposed three presentation/operation findings without
 changing the owner result. Emacs `C-u` did not clear the Chronos numeric-priority
 field, although the malformed value was safely refused without dispatch. The
