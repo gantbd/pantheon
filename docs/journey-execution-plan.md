@@ -64,9 +64,12 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   authenticated Vellum clients; requires absolute paths, finite time/frame
   bounds and a bearer-protected loopback Tellus endpoint; reconnects Moira per
   owner read; and redacts ordinary configuration debug output. The feature-
-  enabled suite passes 29 tests and strict Clippy. A process-separated all-owner
-  gate, composition-root configuration, listener launch and recurring PM worker
-  remain open, and the Ready tasks remain unsettled until Chronos observes
+  enabled suite passes 29 tests and strict Clippy. Chronos `8c8102c` then binds
+  the real-client frontier and caller disclosure policy to the independently
+  owned alignment listener for one bounded request or its readiness-driven
+  loop; signal installation and shutdown-channel ownership remain external. A
+  process-separated all-owner gate, composition-root configuration and recurring
+  PM worker remain open, and the Ready tasks remain unsettled until Chronos observes
   prospective claim/evidence completion.
 - The task was created through Pantheon's central command palette and bounded
   Chronos form. Invalid priority input was refused without dispatch; the exact

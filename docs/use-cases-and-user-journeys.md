@@ -2316,9 +2316,13 @@ clients: absolute private endpoint configuration, redacted ordinary debug
 output, independently authenticated Vellum clients for goal and policy,
 mandatory bearer-protected loopback Tellus, reconnecting Moira reads under the
 same registry-revision brackets, and Chronos's reconnecting local reader. The
-result remains observation-only. A process-separated all-owner gate,
-composition-root configuration, listener launch and the recurring PM worker
-remain open. After observing all 97 tasks across both bounded Chronos pages,
+result remains observation-only. Chronos `8c8102c` now binds that frontier and
+caller-supplied disclosure policy to the independently owned local alignment
+listener, supporting one bounded request or the existing readiness-driven loop
+while leaving signal installation and the shutdown channel with the composition
+root. A process-separated all-owner gate, composition-root configuration and the
+recurring PM worker remain open. After observing all 97 tasks across both
+bounded Chronos pages,
 revision 71 admits the non-duplicate priority-9
 `alignment-live-budget-policy-frontier`. The implementation is qualified, but
 the task remains unsettled outside Chronos's prospective execution path. The
