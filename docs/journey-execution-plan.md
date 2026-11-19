@@ -334,6 +334,26 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   paging is neither advertised nor claimed by this slice. The existing
   `ensemble-outcome-observation-correlation` task remains the owner for
   organization-correlation selection; no duplicate was admitted.
+- The governing blueprint still described Moira's combined owner-worker gate as
+  missing after the execution ledger and live qualification had already closed
+  it. The blueprint now records the qualified headless → TUI → Moira/Daimon →
+  durable-reopen path and keeps only dynamic participation admission, per-task
+  session creation and automatic task routing open. Canonical Chronos revision
+  55 admits that remaining boundary as priority-8
+  `j1-dynamic-task-participation-routing`, requiring Moira-participation,
+  Chronos-relationship and Daimon-session capabilities.
+- The same dogfood pass found that Pantheon treated a generic relationship
+  `created`/`replayed` reply as sufficient and labeled every transport failure
+  `NOT SENT`, even though a bind could have committed before its reply was lost.
+  Commit `6df48e6` now requires a fresh exact owner lookup of the retained link
+  before presenting success, exposes the owner-issued relationship reference,
+  provenance and freshness, and fences unavailable bind/readback evidence as
+  outcome-unknown. The focused unit and source-contract tests, strict package
+  Clippy, formatting, and the real TUI/headless/restart relationship gate pass.
+  A too-fast synthetic Escape→`n` sequence was consumed by the active search
+  editor; paced recovery made no owner mutation, and the existing
+  `chronos-batch-mode-transition-input-fencing` item owns that friction rather
+  than a duplicate task.
 - The default `make run` owner separately admitted priority-8
   `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
   Ready with its Moira-deliberation, Moira–Daimon and Pantheon-presentation
@@ -1254,9 +1274,10 @@ The public client sends only the participation ID; Moira validates pristine
 Admitted state and derives the revision, idempotency key and execution identity
 from its complete retained binding. A real SQLite/Unix qualification proves one
 durable preparation, exact replay after daemon restart and no presentation-side
-identity invention. This is an owner-bound effect-preparation seam, not yet the
-J1 chain: participation admission/template instantiation, worker dispatch,
-per-task Daimon session creation and automatic Chronos-to-Moira routing remain.
+identity invention. The separately qualified one-step owner worker below closes
+dispatch for that already-admitted participation. This is still not the complete
+J1 chain: dynamic participation admission/template instantiation, per-task
+Daimon session creation and automatic Chronos-to-Moira routing remain.
 
 The next worker/session sub-slice now has an implementation boundary. An
 optional workspace-profile field selects the `moira-agent-local` executable and

@@ -2145,9 +2145,13 @@ The configured one-step Moira owner worker is now an explicit follow-on
 composition seam rather than a hidden Pantheon-to-Daimon call. Its opaque
 configuration remains owner-controlled; Pantheon launches it only after the
 selected participation retains a prepared Open and accepts only a bounded
-process receipt naming that exact participation, outcome and revision. This is
-implemented and owner-process-tested, but a combined live Pantheon gate remains
-required before worker dispatch is considered qualified J1 evidence.
+process receipt naming that exact participation, outcome and revision. The
+combined live Pantheon gate observes Admitted through headless mode, drives
+owner-derived Open preparation and the separate worker through the TUI, crosses
+real Moira and Daimon sockets, verifies the exact revision-3 receipt, reconnects
+a fresh participation observer and proves Ready through both headless observation
+and durable reopen. `agent.worker.step.v1` is qualified owner-bound J1 evidence;
+dynamic task-to-participation admission and automatic routing remain open.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
