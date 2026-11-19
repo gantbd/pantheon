@@ -43,6 +43,22 @@ The initial authorities are distinct:
   snapshots the exact document, then releases the witness before Pantheon
   emits bounded content. The locator and witness are never returned; ranged
   reads retain whole-document revision, byte length and digest evidence.
+- `moira.task-agent.catalogue.v1` and `moira.task-agent.observe.v1`: separate
+  read-only Moira gateways. The deployment fixes the owner socket; the former
+  takes no model argument and the latter takes one opaque owner identity and
+  journey sequence. Neither admits preview, instantiation, progression, peer
+  effects or reconciliation.
+- `task-conversation.v1`: the exact relationship-observation gateway. The
+  deployment fixes the adapter socket and the model supplies either one task
+  reference or one conversation reference. Its result is relationship truth;
+  room activity is not promoted to task progress.
+- `ledger.events.disclose.v1`: bounded Hermes event disclosure for one stream,
+  start and limit, retaining the command's exact disclosure confirmation.
+  Acknowledgement and compaction remain separately guarded and unadmitted.
+
+The catalogue describes independently admissible commands, not a default role
+bundle. A deployment may admit any strict subset, and must deny every omitted
+command even when another command belongs to the same component.
 
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):
 

@@ -432,6 +432,30 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         model_arguments: "one_admitted_workspace_locator_and_optional_utf8_byte_range",
     },
     AgentToolRoute {
+        component: "moira",
+        capability: "moira.task-agent.catalogue.v1",
+        command: "moira-task-agent-catalogue",
+        model_arguments: "none_when_session_pinned",
+    },
+    AgentToolRoute {
+        component: "moira",
+        capability: "moira.task-agent.observe.v1",
+        command: "moira-task-agent-observe",
+        model_arguments: "one_owner_id_and_one_journey_sequence",
+    },
+    AgentToolRoute {
+        component: "task-conversation",
+        capability: "task-conversation.v1",
+        command: "task-conversation-inspect",
+        model_arguments: "one_exact_task_or_conversation_reference",
+    },
+    AgentToolRoute {
+        component: "hermes",
+        capability: "ledger.events.disclose.v1",
+        command: "hermes-disclose-events",
+        model_arguments: "one_stream_start_limit_and_exact_disclosure_confirmation",
+    },
+    AgentToolRoute {
         component: "external-web",
         capability: "agent.web.fetch.v1",
         command: "agent-web-fetch",
@@ -596,11 +620,14 @@ mod tests {
     #[test]
     fn agent_tools_are_operation_specific_and_non_aggregate() {
         let mut capabilities = std::collections::BTreeSet::new();
+        let mut commands = std::collections::BTreeSet::new();
         for route in AGENT_TOOL_ROUTES {
             assert_ne!(route.component, "pantheon");
             assert!(!route.capability.starts_with("pantheon."));
             assert_ne!(route.command, "headless");
+            assert!(!route.model_arguments.is_empty());
             assert!(capabilities.insert(route.capability));
+            assert!(commands.insert(route.command));
         }
     }
 

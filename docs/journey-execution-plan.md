@@ -2192,6 +2192,16 @@ Operational means observable completed work, not a configured role name:
   `tellus.sme-plan.v1` was live and agent-cataloged but absent from
   `composition-status.json`. Both interactive and headless observation routes
   now carry the qualified capability and its process-test evidence.
+- Existing exact owner operations for Moira task-agent catalogue and journey
+  observation, task-conversation relationship inspection, and bounded Hermes
+  event disclosure are now enumerated as separate agent tools. This closes a
+  catalogue gap without creating aggregate Moira, Agora, or Hermes authority:
+  every command remains denied by default and requires its own opaque Daimon
+  tool plus matching semantic Aegis capability. Moira mutation and progression,
+  Hermes acknowledgement/compaction, and all unlisted peer operations remain
+  unavailable. Oculus still lacks an equivalent exact bounded agent gateway;
+  that is a legitimate surface gap rather than permission to use the aggregate
+  headless snapshot.
 - Two narrow executable qualifications each incurred a multi-minute monolithic
   CLI link while shared dogfood sessions were active. The friction is captured
   in Chronos as `reduce-agent-gateway-link-cost` at board revision 2. It does
