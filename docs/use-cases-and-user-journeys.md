@@ -2556,6 +2556,14 @@ contract. The remaining gap is the separately qualified, command-scoped
 Aegis-authorized response control and attributable rationale capture; packet
 verification alone never becomes approval authority.
 
+Moira TUI `3e82a94` now supplies the reusable fail-closed response-control
+state machine rather than leaving Pantheon to invent a second implementation.
+It requires stable current request/revision evidence before arm, confirms once,
+fences an unknown transport outcome and recovers only by exact retained-
+response equality. This advances but does not close the boundary: Pantheon has
+not yet composed the Vellum rationale reference, behavior-facade actions,
+rendered control or real Aegis-authorized daemon gate.
+
 ### J5. Produce and review a grounded code/document change
 
 1. Chronos task and Moira saga bind the target workspace/document scope.

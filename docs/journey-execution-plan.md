@@ -1857,6 +1857,19 @@ mature stakeholder ensemble.
   success/refusal evidence and lost-reply recovery. Do not expose the control
   until the complete current decision packet resolves and verifies.
 
+Qualified 2026-11-19 reusable-control slice: `moira-tui` commit `3e82a94`
+adds the owner-neutral presentation state machine for one exact
+`HumanGateOperationV1`. It stably re-observes the selected deliberation and
+request before enabling arm, presents all four owner-protocol dispositions,
+submits only after explicit confirmation, fences a transport-unknown outcome,
+and recovers only when every retained response fact matches the original
+submission. Unavailable, stale, differently settled and refused owner evidence
+cannot enable arming. The full peer suite and strict Clippy pass. This is not
+yet a qualified Pantheon response path: Pantheon still must resolve and verify
+the attributable Vellum rationale, construct the exact operation from current
+owner facts, expose the control through its behavior facade, and prove an
+Aegis-authorized apply plus exact replay against the real daemon.
+
 Qualified 2026-11-18 material-reader slice: `moira-vellum` now reuses its
 existing opaque external-document route to select one exact Vellum document,
 read the public snapshot, enforce a bounded packet size and verify both revision
