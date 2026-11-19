@@ -2311,7 +2311,13 @@ no enforcement claim. A bounded composer joins that current policy reference
 with Moira's deliberation frontier and Tellus's exact grounding proof, refuses
 duplicate or oversized cross-owner evidence, and feeds the existing twice-
 sampled live frontier without allowing one owner to substitute for another.
-Authenticated production packaging, configuration and the recurring PM worker
+Chronos `b461afa` now adds opt-in macOS packaging for the real local owner
+clients: absolute private endpoint configuration, redacted ordinary debug
+output, independently authenticated Vellum clients for goal and policy,
+mandatory bearer-protected loopback Tellus, reconnecting Moira reads under the
+same registry-revision brackets, and Chronos's reconnecting local reader. The
+result remains observation-only. A process-separated all-owner gate,
+composition-root configuration, listener launch and the recurring PM worker
 remain open. After observing all 97 tasks across both bounded Chronos pages,
 revision 71 admits the non-duplicate priority-9
 `alignment-live-budget-policy-frontier`. The implementation is qualified, but

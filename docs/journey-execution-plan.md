@@ -59,9 +59,15 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   composer: Moira requirements, Tellus current proof and policy revision remain
   distinct; policy revision is explicitly not execution enforcement or Aegis
   authority. Twenty-eight focused tests and strict Clippy pass. Authenticated
-  production packaging and the recurring PM worker remain open, and the Ready
-  tasks remain unsettled until Chronos observes prospective claim/evidence
-  completion.
+  local packaging now follows in Chronos `b461afa`: the opt-in macOS feature
+  constructs the frontier from real Chronos, Moira, Tellus and independently
+  authenticated Vellum clients; requires absolute paths, finite time/frame
+  bounds and a bearer-protected loopback Tellus endpoint; reconnects Moira per
+  owner read; and redacts ordinary configuration debug output. The feature-
+  enabled suite passes 29 tests and strict Clippy. A process-separated all-owner
+  gate, composition-root configuration, listener launch and recurring PM worker
+  remain open, and the Ready tasks remain unsettled until Chronos observes
+  prospective claim/evidence completion.
 - The task was created through Pantheon's central command palette and bounded
   Chronos form. Invalid priority input was refused without dispatch; the exact
   reviewed task then applied once. The form did not honor Emacs `C-u`, and the
