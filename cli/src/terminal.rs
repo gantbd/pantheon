@@ -1,4 +1,4 @@
-use chronos_tui::{Hub, Lifecycle, WorkbenchIntent};
+use chronos_tui::{Hub, Lifecycle, WorkbenchIntent, Workstream};
 use crossterm::event::{
     self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
     Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers, KeyboardEnhancementFlags, MouseButton,
@@ -5831,9 +5831,30 @@ struct WorkItemBindingInspection {
 struct WorkItemBindingEvidence {
     task_id: String,
     external_task_key: String,
+    chronos_workstream: String,
+    chronos_revision: u64,
+    task_incarnation: u64,
+    attempt_number: u32,
     owner: String,
     document_digest: String,
     model: Option<ModelWorkItemBindingEvidence>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct TaskAttemptExpectation {
+    task_key: String,
+    task_incarnation: u64,
+    attempt_number: u32,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CurrentChronosTaskEvidence {
+    workstream: String,
+    task_id: String,
+    revision: u64,
+    task_incarnation: u64,
+    phase: &'static str,
+    attempt_number: Option<u32>,
 }
 
 #[derive(Debug)]
@@ -5872,6 +5893,10 @@ struct DaimonSessionOpenWorkflow {
     socket: PathBuf,
     request: OpenRequest,
     task_id: String,
+    chronos_workstream: String,
+    chronos_revision: u64,
+    task_incarnation: u64,
+    attempt_number: u32,
     owner: String,
     document_digest: String,
     draft: String,
@@ -5908,6 +5933,10 @@ impl DaimonSessionOpenWorkflow {
                 now: current_unix_time()?,
             },
             task_id: evidence.task_id,
+            chronos_workstream: evidence.chronos_workstream,
+            chronos_revision: evidence.chronos_revision,
+            task_incarnation: evidence.task_incarnation,
+            attempt_number: evidence.attempt_number,
             owner: evidence.owner,
             document_digest: evidence.document_digest,
             draft,
@@ -6053,7 +6082,14 @@ impl DaimonSessionOpenWorkflow {
             ),
             self.notice.clone(),
             String::new(),
-            format!("Chronos task          {}", self.task_id),
+            format!(
+                "Chronos task          {}/{}#{} · attempt {} · revision {}",
+                self.chronos_workstream,
+                self.task_id,
+                self.task_incarnation,
+                self.attempt_number,
+                self.chronos_revision,
+            ),
             format!("owner                 {}", self.owner),
             format!("owner document        {}", self.document_digest),
             format!(
@@ -7727,6 +7763,7 @@ fn spawn_provider_inspection(
 
 fn spawn_work_item_binding_inspection(
     profile: Option<WorkspaceProfile>,
+    workstream: Workstream,
     task_id: String,
     draft: String,
     lens: Option<AgentCollaborationLens>,
@@ -7734,7 +7771,8 @@ fn spawn_work_item_binding_inspection(
 ) -> WorkItemBindingInspection {
     let (sender, result) = sync_channel(1);
     std::thread::spawn(move || {
-        let inspected = inspect_work_item_binding(profile.as_ref(), &task_id, target);
+        let inspected =
+            inspect_work_item_binding(profile.as_ref(), &workstream, &task_id, target);
         let _ = sender.send(inspected);
     });
     WorkItemBindingInspection {
@@ -7748,6 +7786,7 @@ fn spawn_work_item_binding_inspection(
 
 fn inspect_work_item_binding(
     profile: Option<&WorkspaceProfile>,
+    workstream: &Workstream,
     task_id: &str,
     target: WorkItemExecutionTarget,
 ) -> Result<WorkItemBindingEvidence, String> {
@@ -7758,26 +7797,50 @@ fn inspect_work_item_binding(
         "the selected Daimon profile does not publish its owner executable/config".to_owned()
     })?;
     let catalog = provider_catalog(&host.executable, &host.config)?;
-    let configured_task_key = match target {
-        WorkItemExecutionTarget::Agent => daimon
-            .execution
-            .as_ref()
-            .map(|execution| execution.task_attempt.task_key.as_str())
-            .ok_or_else(|| {
-                "the selected Daimon profile does not publish a frozen execution task key"
-                    .to_owned()
-            })?,
-        WorkItemExecutionTarget::Model => catalog
-            .task_bindings
-            .iter()
-            .find(|binding| binding.chronos_task_id == task_id)
-            .map(|binding| binding.external_task_key.as_str())
-            .ok_or_else(|| {
-                "the local-model owner catalogue has no exact binding for the created Chronos task"
-                    .to_owned()
-            })?,
+    let expected_attempt = match target {
+        WorkItemExecutionTarget::Agent => {
+            let attempt = &daimon
+                .execution
+                .as_ref()
+                .ok_or_else(|| {
+                    "the selected Daimon profile does not publish a frozen execution task attempt"
+                        .to_owned()
+                })?
+                .task_attempt;
+            TaskAttemptExpectation {
+                task_key: attempt.task_key.clone(),
+                task_incarnation: attempt.task_incarnation,
+                attempt_number: attempt.attempt_number,
+            }
+        }
+        WorkItemExecutionTarget::Model => {
+            let execution = catalog.task_execution.as_ref().ok_or_else(|| {
+                "the local-model owner does not publish a task-execution policy".to_owned()
+            })?;
+            let task_key = catalog
+                .task_bindings
+                .iter()
+                .find(|binding| binding.chronos_task_id == task_id)
+                .map(|binding| binding.external_task_key.clone())
+                .ok_or_else(|| {
+                    "the local-model owner catalogue has no exact binding for the created Chronos task"
+                        .to_owned()
+                })?;
+            TaskAttemptExpectation {
+                task_key,
+                task_incarnation: execution.task_incarnation,
+                attempt_number: execution.attempt_number,
+            }
+        }
     };
-    let mut evidence = validate_work_item_binding(&catalog, task_id, configured_task_key, target)?;
+    let current_task = observe_current_chronos_task(workstream, task_id)?;
+    let mut evidence = validate_work_item_binding(
+        &catalog,
+        task_id,
+        &expected_attempt,
+        &current_task,
+        target,
+    )?;
     if let Some(model) = &mut evidence.model
         && let Some(hestia) = profile.and_then(|profile| profile.hestia.as_ref())
     {
@@ -7800,7 +7863,8 @@ fn inspect_work_item_binding(
 fn validate_work_item_binding(
     catalog: &ProviderCatalogProjection,
     task_id: &str,
-    configured_task_key: &str,
+    expected_attempt: &TaskAttemptExpectation,
+    current_task: &CurrentChronosTaskEvidence,
     target: WorkItemExecutionTarget,
 ) -> Result<WorkItemBindingEvidence, String> {
     let expected_owner = match target {
@@ -7826,11 +7890,38 @@ fn validate_work_item_binding(
     }
     if !binding
         .external_task_key
-        .eq_ignore_ascii_case(configured_task_key)
+        .eq_ignore_ascii_case(&expected_attempt.task_key)
     {
         return Err(
             "the owner-bound task key does not match the selected Daimon execution profile".into(),
         );
+    }
+    if current_task.task_id != task_id {
+        return Err("Chronos returned a different task than the requested work item".into());
+    }
+    if current_task.phase != "running" || current_task.attempt_number.is_none() {
+        return Err(format!(
+            "Chronos task {task_id} is {} at revision {} and has no owner-issued running attempt · Next: delegate it through the configured Moira/trusted-worker journey before invoking Daimon",
+            current_task.phase, current_task.revision,
+        ));
+    }
+    if current_task.task_incarnation != expected_attempt.task_incarnation {
+        return Err(format!(
+            "the owner-bound task incarnation {} is stale; Chronos currently reports incarnation {} at revision {}",
+            expected_attempt.task_incarnation,
+            current_task.task_incarnation,
+            current_task.revision,
+        ));
+    }
+    if current_task.attempt_number != Some(expected_attempt.attempt_number) {
+        return Err(format!(
+            "the owner-bound attempt {} is stale; Chronos currently reports attempt {} at revision {}",
+            expected_attempt.attempt_number,
+            current_task
+                .attempt_number
+                .map_or_else(|| "none".into(), |value| value.to_string()),
+            current_task.revision,
+        ));
     }
     let model = if target == WorkItemExecutionTarget::Model {
         let execution = catalog.task_execution.as_ref().ok_or_else(|| {
@@ -7873,9 +7964,79 @@ fn validate_work_item_binding(
     Ok(WorkItemBindingEvidence {
         task_id: task_id.to_owned(),
         external_task_key: binding.external_task_key.clone(),
+        chronos_workstream: current_task.workstream.clone(),
+        chronos_revision: current_task.revision,
+        task_incarnation: current_task.task_incarnation,
+        attempt_number: current_task
+            .attempt_number
+            .expect("validated current running attempt"),
         owner: catalog.owner.clone(),
         document_digest: catalog.document_digest.clone(),
         model,
+    })
+}
+
+fn observe_current_chronos_task(
+    workstream: &Workstream,
+    task_id: &str,
+) -> Result<CurrentChronosTaskEvidence, String> {
+    let mut client = chronos_local::LocalClient::new(workstream.directory.clone());
+    let response = chronos_client::WireClientV1::request(
+        &mut client,
+        chronos_protocol::Request {
+            version: 1,
+            command: chronos_protocol::Command::Snapshot {
+                task: task_id.to_owned(),
+            },
+        },
+    )
+    .map_err(|error| format!("Chronos task re-observation unavailable: {error:?}"))?;
+    let (entry, revision) = match response.outcome {
+        chronos_protocol::Outcome::Snapshot {
+            value: Some(entry),
+            revision: Some(revision),
+        } => (entry, revision),
+        chronos_protocol::Outcome::Snapshot {
+            value: None,
+            revision: None,
+        } => return Err(format!("Chronos no longer reports task {task_id}")),
+        chronos_protocol::Outcome::Refused { .. } => {
+            return Err(format!("Chronos refused re-observation of task {task_id}"));
+        }
+        _ => return Err("Chronos returned an invalid task re-observation outcome".into()),
+    };
+    if entry.reference.task != task_id {
+        return Err("Chronos returned a different task than requested".into());
+    }
+    let task_incarnation = entry
+        .reference
+        .incarnation
+        .parse::<u64>()
+        .map_err(|_| "Chronos returned an invalid task incarnation")?;
+    let revision = match revision {
+        chronos_protocol::Revision::Finite(value) => value
+            .parse::<u64>()
+            .map_err(|_| "Chronos returned an invalid task revision")?,
+        chronos_protocol::Revision::Exhausted => {
+            return Err("Chronos task revision is exhausted".into());
+        }
+    };
+    let phase = match entry.snapshot.phase {
+        chronos_protocol::Phase::Blocked => "blocked",
+        chronos_protocol::Phase::Ready => "ready",
+        chronos_protocol::Phase::Running => "running",
+        chronos_protocol::Phase::Uncertain => "uncertain",
+        chronos_protocol::Phase::Succeeded => "succeeded",
+        chronos_protocol::Phase::Failed => "failed",
+        chronos_protocol::Phase::Cancelled => "cancelled",
+    };
+    Ok(CurrentChronosTaskEvidence {
+        workstream: workstream.name.clone(),
+        task_id: entry.reference.task,
+        revision,
+        task_incarnation,
+        phase,
+        attempt_number: entry.snapshot.attempt_number,
     })
 }
 
@@ -9028,9 +9189,13 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             ActivityLevel::Success,
                             "work-item",
                             format!(
-                                "Daimon owner {} mapped Chronos task {} to configured task key {} under catalogue {}",
+                                "Daimon owner {} mapped Chronos task {}#{} attempt {} in {} at revision {} to configured task key {} under catalogue {}",
                                 evidence.owner,
                                 evidence.task_id,
+                                evidence.task_incarnation,
+                                evidence.attempt_number,
+                                evidence.chronos_workstream,
+                                evidence.chronos_revision,
                                 evidence.external_task_key,
                                 evidence.document_digest
                             ),
@@ -9267,9 +9432,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             activity.push(level, "work-item", notice.clone());
                         } else {
                             let binding_target = *target;
+                            let binding_workstream = chronos.active_workstream();
                             work_item_binding_inspection =
                                 Some(spawn_work_item_binding_inspection(
                                     current_profile.clone(),
+                                    binding_workstream,
                                     task_id.clone(),
                                     draft.clone(),
                                     *lens,
@@ -13837,20 +14004,52 @@ mod tests {
             latest_task_invocation: None,
         };
         validate_provider_catalog(&catalog).unwrap();
+        let expected_attempt = TaskAttemptExpectation {
+            task_key: "55".repeat(16),
+            task_incarnation: 2,
+            attempt_number: 3,
+        };
+        let current_task = CurrentChronosTaskEvidence {
+            workstream: "Product".into(),
+            task_id: "review-headless-boundary".into(),
+            revision: 9,
+            task_incarnation: 2,
+            phase: "running",
+            attempt_number: Some(3),
+        };
         let binding = validate_work_item_binding(
             &catalog,
             "review-headless-boundary",
-            &"55".repeat(16),
+            &expected_attempt,
+            &current_task,
             WorkItemExecutionTarget::Agent,
         )
         .unwrap();
         assert_eq!(binding.task_id, "review-headless-boundary");
         assert_eq!(binding.external_task_key, "55".repeat(16));
+        assert_eq!(binding.chronos_revision, 9);
+        let ready_task = CurrentChronosTaskEvidence {
+            phase: "ready",
+            attempt_number: None,
+            task_incarnation: 99,
+            ..current_task.clone()
+        };
+        let refusal = validate_work_item_binding(
+            &catalog,
+            "review-headless-boundary",
+            &expected_attempt,
+            &ready_task,
+            WorkItemExecutionTarget::Agent,
+        )
+        .unwrap_err();
+        assert!(refusal.contains("no owner-issued running attempt"));
+        assert!(refusal.contains("Moira/trusted-worker journey"));
         assert!(
             validate_work_item_binding(
                 &catalog,
                 "unbound-task",
-                &"55".repeat(16),
+                &expected_attempt,
+                &current_task,
                 WorkItemExecutionTarget::Agent,
             )
             .unwrap_err()
@@ -13860,7 +14059,11 @@ mod tests {
             validate_work_item_binding(
                 &catalog,
                 "review-headless-boundary",
-                &"77".repeat(16),
+                &TaskAttemptExpectation {
+                    task_key: "77".repeat(16),
+                    ..expected_attempt.clone()
+                },
+                &current_task,
                 WorkItemExecutionTarget::Agent,
             )
             .unwrap_err()
@@ -14040,10 +14243,24 @@ mod tests {
             latest_task_invocation: None,
         };
         validate_provider_catalog(&catalog).unwrap();
+        let expected_attempt = TaskAttemptExpectation {
+            task_key: "aa".repeat(16),
+            task_incarnation: execution.task_incarnation,
+            attempt_number: execution.attempt_number,
+        };
+        let current_task = CurrentChronosTaskEvidence {
+            workstream: "Product".into(),
+            task_id: "model-task".into(),
+            revision: 12,
+            task_incarnation: execution.task_incarnation,
+            phase: "running",
+            attempt_number: Some(execution.attempt_number),
+        };
         let evidence = validate_work_item_binding(
             &catalog,
             "model-task",
-            &"aa".repeat(16),
+            &expected_attempt,
+            &current_task,
             WorkItemExecutionTarget::Model,
         )
         .unwrap();
@@ -14116,7 +14333,8 @@ mod tests {
             validate_work_item_binding(
                 &catalog,
                 "model-task",
-                &"aa".repeat(16),
+                &expected_attempt,
+                &current_task,
                 WorkItemExecutionTarget::Model,
             )
             .unwrap_err()
@@ -14643,6 +14861,10 @@ mod tests {
             WorkItemBindingEvidence {
                 task_id: "chronos-task".into(),
                 external_task_key: "14".repeat(16),
+                chronos_workstream: "Product".into(),
+                chronos_revision: 7,
+                task_incarnation: 3,
+                attempt_number: 2,
                 owner: "daimon-local-agent".into(),
                 document_digest: format!("sha256:{}", "22".repeat(32)),
                 model: None,
@@ -14658,7 +14880,9 @@ mod tests {
         assert!(workflow.armed);
         assert!(workflow.worker.is_none());
         let lines = workflow.lines().join("\n");
-        assert!(lines.contains("Chronos task          chronos-task"));
+        assert!(lines.contains(
+            "Chronos task          Product/chronos-task#3 · attempt 2 · revision 7"
+        ));
         assert!(lines.contains("owner                 daimon-local-agent"));
         assert!(lines.contains("human gate            review → arm → confirm once"));
         assert!(lines.contains("does not submit the work prompt"));
