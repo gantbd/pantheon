@@ -2148,17 +2148,21 @@ one scope-matched work receipt pass; transport-only readiness and model-work
 readiness remain separate. Start/drain/retry actions use the behavior facade and
 retain success, refusal and outcome-unknown receipts.
 
-Chronos must also own a human workflow status distinct from its scheduler
-phase: `Backlog`, `Open`, `Blocked`, `In Progress`, `Ready for Review`, and
-`Done`. `Blocked` is a first-class current status, not an overlay; it retains
-structured blocker evidence and an explicit authorized unblocking destination.
-Scheduler `Ready` is not `Ready for Review`, and provider/attempt `Succeeded`
-is not human `Done`. Agents may submit evidence and propose `Ready for Review`;
+Chronos owns one authoritative task status: `Backlog`, `Open`, `Blocked`, `In
+Progress`, `Ready for Review`, or `Done`. These are the actual states of the
+work item for humans, agents, the TUI and headless clients alike; there is no
+parallel "human" status. `Blocked` is a first-class current status, not an
+overlay, and retains structured blocker evidence plus an explicit authorized
+unblocking destination. Dependency readiness, claimability, leases, attempts
+and provider outcomes are orthogonal execution facts and must not be exposed or
+interpreted as a second task-status machine. In particular, a runnable task is
+not thereby `Ready for Review`, and a successful attempt does not itself make
+the task `Done`. Agents may submit evidence and propose `Ready for Review`;
 only the configured acceptance owner may settle `Done`. Every transition
 requires an owner receipt and observable refusal/unknown outcome, and the TUI
 board, agenda, headless view, PM grooming and verifier handoff must consume the
-same behavior-facade command rather than infer workflow status from scheduler
-columns or prose.
+same behavior-facade command rather than infer task status from execution facts
+or prose.
 
 Live evidence on 2026-11-19 established the current frontier-provider split.
 Daimon's real provider-neutral router initialized and closed installed
