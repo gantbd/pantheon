@@ -219,6 +219,17 @@ and canonical checkpoint/reopen. It deliberately exposes only `Admitted`; the
 transactional store/service/transport and every peer-effect transition remain
 required before Pantheon may compose this path.
 
+Moira `dacd31c` adds the first deterministic progression law without exposing a
+client mutation. `derive_task_attempt_binding` accepts only a trusted Chronos
+claim receipt whose task key and incarnation exactly equal the admitted journey,
+whose attempt is nonzero and whose Chronos revision is strictly newer than the
+admission evidence. Alias, incarnation drift, attempt zero, equal revision and
+older evidence refuse. Its typed output binds the expected journey revision but
+is explicitly not a persisted phase, lease, delegation or authority grant. The
+next owner cut must retain that binding with replay/conflict and crash recovery
+before projecting `TaskAttemptReady`; Pantheon must not serialize the pure
+result as if persistence already occurred.
+
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
 `28fae97` publishes the independent transport-neutral DTO and canonical wire

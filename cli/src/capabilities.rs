@@ -587,8 +587,8 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
 const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
     component: "moira-aegis-progression",
     surface: "task-agent.activation.v1",
-    missing: "owner progression from the replay-safe admitted Moira task-agent journey into a current Aegis delegation and exact worker/session lifecycle with expiry and completed-work receipts",
-    next_boundary: "reuse Moira's retained template, task, work mode, profile, budgets, grounding/authority policy digests, principals, accountable human, objective/acceptance evidence, TTL and consequence confirmation; add only current delegation and progression receipts",
+    missing: "persistent owner progression from Moira's deterministic exact Chronos-attempt binding into a current Aegis delegation and exact worker/session lifecycle with expiry and completed-work receipts",
+    next_boundary: "feed Moira's exact task-attempt derivation only from the retained trusted-worker claim receipt, then persist the journey transition with replay/recovery before adding current delegation and session receipts",
 };
 
 const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {

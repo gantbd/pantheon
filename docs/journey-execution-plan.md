@@ -2336,6 +2336,16 @@ Operational means observable completed work, not a configured role name:
   progression receipt binding the admitted journey to a current Aegis
   delegation, expiry, exact Chronos attempt and Daimon worker/session; admission
   alone still starts no peer effect.
+- Moira `dacd31c` now closes the deterministic part of the first progression
+  boundary. Its pure owner law derives a typed task-attempt binding only from a
+  trusted Chronos claim receipt matching the journey's exact task key and
+  incarnation, a nonzero attempt and a Chronos revision strictly newer than the
+  admission witness. Alias, incarnation drift, attempt zero, equal revision and
+  older evidence refuse. The value binds the expected journey revision and
+  explicitly supplies no persisted phase, lease, Aegis delegation or session.
+  The remaining blocker is therefore narrower but still material: a Moira-owned
+  replayable/crash-recoverable transition must retain this binding before
+  `TaskAttemptReady`, then compose current delegation and worker/session facts.
 - The bounded task-agent observer now exposes that retained admission basis
   rather than reducing it to a phase label. Its additive projection includes
   the exact task evidence, template/version/digest, profile and room policy,

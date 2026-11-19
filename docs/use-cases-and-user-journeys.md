@@ -2186,6 +2186,15 @@ The proposed owner-safe implementation boundary is specified in
 owns the durable template/instance and derives workflow identities, while
 Pantheon only previews, confirms, observes and routes owner commands.
 
+Moira now also publishes a deterministic internal law for the first progression
+edge. An admitted journey and a trusted Chronos claim receipt yield an exact
+task-attempt binding only when task key and incarnation match, attempt is
+nonzero, and the claim revision is strictly newer than admission. The law
+refuses aliases and stale evidence, but intentionally does not persist a phase
+or imply a lease, delegation, session or authority grant. Durable replay-safe
+retention of that binding remains required before `TaskAttemptReady` can be
+projected to Pantheon.
+
 The first headless-first admission slice is now qualified. Moira `72b87bb`
 persists canonical task-agent checkpoints transactionally and `c7fe06d` exposes
 catalogue, preview, instantiate, status and journey observation through its

@@ -2717,6 +2717,23 @@ fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
         );
     }
 
+    let progression = fs::read_to_string(root.join("../moira/src/task_agent_journey.rs"))
+        .expect("Moira task-agent progression source");
+    for required in [
+        "derive_task_attempt_binding",
+        "TaskAttemptBindingV1",
+        "TaskMismatch",
+        "StaleChronosRevision",
+        "receipt.attempt_number() == 0",
+        "receipt.chronos_revision() <= journey.preview.request.task.chronos_revision",
+        "not itself a persisted phase transition",
+    ] {
+        assert!(
+            progression.contains(required),
+            "Moira deterministic task-attempt boundary omits {required}"
+        );
+    }
+
     let observer =
         fs::read_to_string(root.join("cli/src/task_agent.rs")).expect("task-agent observer source");
     for required in [
