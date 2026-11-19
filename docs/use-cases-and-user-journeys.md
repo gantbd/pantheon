@@ -2229,6 +2229,17 @@ observing and editing the target, proving no view selection, witness allocation
 or source-byte disclosure. PM configuration still must bind the retained Vellum
 source identity to the exact authorized live workspace document and consume
 this read as one part of the full multi-owner frontier.
+The integration now supplies that bounded frontier composition. It uses the
+retained basis only as selectors, samples goal, exact control-task incarnation,
+stakeholder cohort and the complete discoverable evidence/dissent/human-gate
+sets twice, and refuses unequal samples as unstable. This permits newly raised
+dissent and gates to invalidate an older proposal instead of requiring them to
+be predeclared by it. Concrete readers now cover the exact Chronos task and a
+host-bound Vellum workspace document under the closed
+`vellum-workspace-source-revision-v1` evidence domain, including byte length.
+The remaining production boundary is explicit configuration/resolution of that
+live document binding plus concrete cohort and evidence-owner readers; none may
+be replaced by the retained proposal or a presentation cache.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
