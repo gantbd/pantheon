@@ -58,6 +58,18 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Daimon dispatch and evidence-backed settlement. The full workflow remains
   open under `j1-dynamic-task-participation-routing`; manually completing the
   Ready Chronos work would erase the very evidence the PM control plane needs.
+- Moira `02e59ac` now closes the first owner-core portion of that gap. A bounded
+  immutable template issues an expiring preview over exact Chronos admission,
+  provider/room policy, accountable human, objective/acceptance evidence,
+  budgets, grounding/authority policy and consequence. Instantiate requires
+  the exact owner revision, trusted current time and matching named-human
+  confirmation; Moira allocates one owner-scoped journey/workflow identity and
+  refuses changed replay or a second journey from the same preview. Canonical
+  `MOIRATJ1` bytes survive exact reopen and reject foreign ownership,
+  noncanonical state, truncation, tails, mutation and host-limit overflow. Six
+  focused tests and strict Clippy pass. This stops honestly at `Admitted`:
+  public protocol/service/store/transport, trusted Chronos progression, peer
+  effects and Pantheon presentation remain open.
 - The current profile still does not expose Vellum, so this ledger update used
   the repository fallback rather than claiming Vellum dogfood. Chronos remains
   the authoritative alignment plane: the external supervisor, constrained

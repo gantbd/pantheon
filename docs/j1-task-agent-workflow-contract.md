@@ -212,6 +212,13 @@ Moira/trusted-worker next step. This is a presentation-boundary safety check,
 not workflow instantiation: it creates no attempt, lease, effect, participation
 or session identity and does not settle Chronos.
 
+Moira `02e59ac` implements the first portion of cut 1 in its sovereign core:
+bounded immutable templates, exact expiring previews, trusted-time named-human
+confirmation, owner-scoped journey/workflow allocation, one-journey-per-preview
+and canonical checkpoint/reopen. It deliberately exposes only `Admitted`; the
+public protocol, transactional store/service/transport and every peer-effect
+transition remain required before Pantheon may compose this path.
+
 1. **Moira owner contract:** publish the template catalogue, preview,
    instantiate, observe and exact-replay protocol plus durable store. Reuse the
    existing participation, proposal-saga and worker contracts; do not fork them.
