@@ -342,6 +342,31 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   than inferred from output or local configuration. Organization stays
   explicitly unknown until a named identity/organization owner supplies that
   relationship; neither provider nor principal identity is a valid substitute.
+- Daimon commit `7e2757b` now publishes that content-free invocation evidence
+  from the exact retained invocation through protocol/wire v4: provider profile
+  and document digest, model digest, ordered context-manifest digest,
+  message/prompt-manifest digest, and an order-insensitive evidence-scope
+  digest. Legacy results remain explicitly unavailable rather than receiving
+  invented evidence, and checkpoint restoration recomputes the projection from
+  its retained invocation. Moira commit `ef331a7` consumes the typed evidence,
+  validates exact outcome membership, and derives observed context, model,
+  provider, prompt and evidence-scope dimensions without inferring
+  independence. Organization remains explicitly unknown. Focused protocol,
+  wire, service, checkpoint and Moira adapter tests plus strict Clippy passed.
+  The publisher/consumer contract is delivered; composing the observed analyzer
+  into live review creation remains acceptance work on
+  `moira-reviewer-correlation-evidence`.
+- Pantheon TUI dogfood then admitted priority-8
+  `chronos-asynchronous-verification-worker` at Chronos revision 12, blocked on
+  `j1-worker-process-controller` and `j1-worker-receipt-contract`, with explicit
+  Chronos-worker, Daimon-test-runner, Oculus-observability and
+  local-model-triage capabilities. This preserves the economical boundary:
+  Pantheon executes allowlisted deterministic tests and owns receipts; a local
+  model may select bounded slices, triage structured results and propose task
+  updates; Chronos owns lifecycle/evidence, Oculus owns ELMT, and humans retain
+  waivers and rollout authority. The backlog contract is now executable and
+  discoverable, but unattended task-to-runner-to-status operation is not yet
+  delivered.
 - Vellum dogfooding admitted the exact Moira–Agora source file but rejected a
   three-file workspace at its configured limit. More importantly, it retained
   a stale clean snapshot after an external source mutation and offered no
@@ -1428,8 +1453,11 @@ mature stakeholder ensemble.
   evidence stays visible. Real `ServiceV2` publication and discarded-reply
   recovery are qualified. Typed deliberation/item/effect correlation now
   accompanies accepted, refused and replayed publication outcomes through one
-  durable adapter facade. Authoritative population of the currently unknown
-  model/provider/prompt/evidence-scope/organization dimensions remains open.
+  durable adapter facade. Daimon now authoritatively publishes and Moira
+  consumes model, provider, prompt and evidence-scope evidence from the exact
+  retained invocation; production composition of that observed analyzer into
+  live review creation remains open, as does authoritative organization
+  evidence.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
