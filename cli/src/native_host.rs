@@ -1221,8 +1221,15 @@ mod deployment_factory_tests {
 #[cfg(all(test, feature = "native-chronos"))]
 mod tests {
     use super::*;
-    use chronos_client::observer::{Observer, ObserverLimits};
-    use moira_chronos_worker::{ClaimIntentV1, ConfigurationV1, ErrorV1};
+    use chronos_client::{
+        WireClientV1,
+        observer::{Observer, ObserverLimits},
+    };
+    use chronos_protocol::{Command, Outcome, Request, RetrySafety, Revision, TaskSpec};
+    use moira_chronos_worker::{
+        ClaimIntentV1, ConfigurationV1, ErrorV1, ResultBindingV1, SettlementV1,
+    };
+    use moira_protocol::{DispositionV1, EffectIdV1, ResultReceiptV1};
     use std::{
         fs,
         os::unix::fs::PermissionsExt,
@@ -1304,6 +1311,111 @@ mod tests {
             Err(ErrorV1::OutcomeUnknown(_))
         ));
         assert!(worker.is_fenced());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn hosted_worker_claims_and_completes_one_exact_task() {
+        let directory = scratch("worker-complete");
+        if directory.exists() {
+            fs::remove_dir_all(&directory).unwrap();
+        }
+        fs::create_dir(&directory).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+
+        let mut host = NativeHost::new();
+        let configuration = ConfigurationV1::new(
+            "pantheon-j1-worker",
+            Duration::from_secs(60),
+            Duration::from_secs(30),
+        )
+        .unwrap();
+        let mut worker = host
+            .start_chronos_worker(
+                "Atlas",
+                &directory,
+                ChronosHostOptions {
+                    allow_writes: true,
+                    atomic_state: true,
+                    ..Default::default()
+                },
+                configuration,
+            )
+            .unwrap();
+        host.seal().unwrap();
+
+        let mut client = chronos_local::LocalClient::new(directory.clone());
+        let response = client
+            .request(Request {
+                version: 1,
+                command: Command::SubmitGraph {
+                    expected: Revision::Finite("0".into()),
+                    tasks: vec![TaskSpec {
+                        id: "j1-owner-packaging".into(),
+                        priority: 0,
+                        dependencies: vec![],
+                        capabilities: vec![],
+                        max_attempts: 1,
+                        retry_safety: RetrySafety::FenceUnknown,
+                    }],
+                },
+            })
+            .unwrap();
+        assert!(matches!(response.outcome, Outcome::Applied {}));
+
+        let claim = worker
+            .claim(ClaimIntentV1 {
+                task_id: "j1-owner-packaging".into(),
+                external_task_key: [7; 16],
+                expected_revision: 1,
+                now: SystemTime::UNIX_EPOCH,
+            })
+            .unwrap();
+        assert_eq!(claim.receipt.task.external_task_key, [7; 16]);
+        assert_eq!(claim.receipt.attempt_number, 1);
+
+        let binding = ResultBindingV1 {
+            effect: EffectIdV1([8; 16]),
+            execution_id: [9; 16],
+        };
+        worker.bind_result(binding).unwrap();
+        assert_eq!(
+            worker
+                .settle(
+                    ResultReceiptV1 {
+                        effect: binding.effect,
+                        execution_id: binding.execution_id,
+                        task: claim.receipt.task,
+                        attempt_number: claim.receipt.attempt_number,
+                        disposition: DispositionV1::Completed,
+                    },
+                    SystemTime::UNIX_EPOCH,
+                )
+                .unwrap(),
+            SettlementV1::Completed
+        );
+        assert!(worker.active().is_none());
+
+        let response = client
+            .request(Request {
+                version: 1,
+                command: Command::Snapshot {
+                    task: "j1-owner-packaging".into(),
+                },
+            })
+            .unwrap();
+        let Outcome::Snapshot {
+            value: Some(entry), ..
+        } = response.outcome
+        else {
+            panic!("completed task snapshot missing");
+        };
+        assert!(matches!(
+            entry.snapshot.phase,
+            chronos_protocol::Phase::Succeeded
+        ));
+
+        assert!(host.shutdown().unwrap().clean());
         fs::remove_dir_all(directory).unwrap();
     }
 }
