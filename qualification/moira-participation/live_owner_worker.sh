@@ -38,8 +38,10 @@ saga_fixture="$repo/qualification/moira-participation/target/debug/examples/real
 
 start_saga() {
   label=$1
+  connections=${2:-1}
   rm -f "$scratch/saga.sock"
   "$saga_fixture" "$scratch/saga-$label.db" "$scratch/saga.sock" \
+    "$connections" \
     >"$scratch/saga-$label.log" 2>&1 &
   saga_pid=$!
   attempt=0
@@ -146,7 +148,7 @@ assert peer["status"] == "current"
 assert peer["phase"] == "Admitted" and peer["revision"] == 0
 '
 
-start_saga tui
+start_saga tui 2
 python3 - "$scratch" "$workbench" <<'PYTHON'
 from pathlib import Path
 import shlex
@@ -179,8 +181,9 @@ def screen():
     if captured.returncode != 0:
         error = (root / "pantheon.err").read_text(errors="replace")
         fixture = (root / "fixture.log").read_text(errors="replace")
+        saga = (root / "saga-tui.log").read_text(errors="replace")
         raise AssertionError(
-            f"Pantheon exited before the expected screen:\n{error}\nFixture:\n{fixture}"
+            f"Pantheon exited before the expected screen:\n{error}\nFixture:\n{fixture}\nSaga:\n{saga}"
         )
     return captured.stdout
 
@@ -195,8 +198,9 @@ def expect(*markers, timeout=20):
     history = tmux("capture-pane", "-p", "-S", "-120", "-t", session).stdout
     error = (root / "pantheon.err").read_text(errors="replace")
     fixture = (root / "fixture.log").read_text(errors="replace")
+    saga = (root / "saga-tui.log").read_text(errors="replace")
     raise AssertionError(
-        f"Missing {markers!r}:\n{history}\nPantheon:\n{error}\nFixture:\n{fixture}"
+        f"Missing {markers!r}:\n{history}\nPantheon:\n{error}\nFixture:\n{fixture}\nSaga:\n{saga}"
     )
 
 def keys(*values):
@@ -213,7 +217,7 @@ def palette(query, marker):
 
 try:
     tmux("new-session", "-d", "-x", "170", "-y", "36", "-s", session, command)
-    expect("MOIRA", "Current governed revision 0", "phase: Admitted", timeout=30)
+    expect("MOIRA", "census total 1", "FencedUncertain", timeout=30)
 
     palette("prepare selected moira agent session", "Prepare selected Moira agent session")
     expect("Moira prepare agent session", "c arms owner-derived open", "phase: Admitted")
@@ -221,7 +225,7 @@ try:
     expect("Agent-session open durably prepared", "pending operation: Some(Open", timeout=20)
 
     palette("dispatch prepared moira agent session", "Dispatch prepared Moira agent session")
-    expect("phase: Ready", "pending operation: none", timeout=20)
+    expect("Moira owner worker Observed participation revision 3", timeout=20)
     keys("C-g")
     activity = expect("ACTIVITY & RECEIPTS", "Moira owner worker Observed participation revision 3")
     assert "OUTCOME UNKNOWN" not in activity
@@ -233,7 +237,7 @@ try:
             raise AssertionError("Pantheon did not exit after qualified owner-worker settlement")
         time.sleep(0.025)
 finally:
-    tmux("kill-server", check=False)
+    tmux("kill-session", "-t", session, check=False)
 PYTHON
 finish_saga
 
@@ -250,9 +254,23 @@ assert peer["phase"] == "Ready" and peer["revision"] == 3
 assert peer["session_revision"] == 1
 '
 
+headless_worker=$("$workbench" moira-participation-worker-run \
+  "$scratch/profile.json" \
+  'RUN MOIRA PARTICIPATION WORKER 02020202020202020202020202020202')
+printf '%s' "$headless_worker" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"]
+assert report["capability"] == "agent.worker.step.v1"
+assert report["status"] == "idle"
+assert report["participation"] == "02020202020202020202020202020202"
+assert report["participation_revision"] == 3
+assert "does not activate a task-agent journey" in report["boundary"]
+'
+
 kill "$fixture_pid" 2>/dev/null || true
 wait "$fixture_pid" 2>/dev/null || true
 fixture_pid=
 "$fixture" verify "$scratch"
 
-echo 'PASS: Pantheon headless Admitted -> TUI prepared Open and dispatched real owner worker -> headless/durable Ready'
+echo 'PASS: Pantheon headless Admitted -> TUI prepared Open and dispatched real owner worker -> headless/durable Ready -> profile-bound headless worker safely observed idle'

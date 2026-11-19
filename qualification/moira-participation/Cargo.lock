@@ -64,6 +64,23 @@ name = "agora-actor-publication-port"
 version = "0.1.0"
 
 [[package]]
+name = "agora-chronos-adapter"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "agora-client",
+ "agora-scheduled-publication-port",
+ "chronos-client",
+ "chronos-protocol",
+ "keystone-storage 0.0.1",
+ "keystone-storage-directory",
+ "keystone-unix-listener",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "agora-client"
 version = "0.1.0"
 dependencies = [
@@ -255,7 +272,7 @@ version = "0.1.0"
 dependencies = [
  "chronos-engine",
  "chronos-host",
- "keystone-storage",
+ "keystone-storage 0.0.1-chronos.1",
 ]
 
 [[package]]
@@ -414,6 +431,9 @@ dependencies = [
 [[package]]
 name = "daimon-protocol"
 version = "0.1.0"
+dependencies = [
+ "sha2",
+]
 
 [[package]]
 name = "daimon-service"
@@ -694,6 +714,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "hestia-local-client"
+version = "0.1.0"
+dependencies = [
+ "hestia-protocol",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "hestia-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "hestia-tui"
+version = "0.1.0"
+dependencies = [
+ "hestia-local-client",
+ "hestia-protocol",
+ "ratatui",
+]
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -797,6 +842,18 @@ name = "keystone-storage"
 version = "0.0.1-chronos.1"
 
 [[package]]
+name = "keystone-storage"
+version = "0.0.1"
+
+[[package]]
+name = "keystone-storage-directory"
+version = "0.0.1"
+dependencies = [
+ "keystone-storage 0.0.1",
+ "rustix",
+]
+
+[[package]]
 name = "keystone-unix-listener"
 version = "0.0.1"
 
@@ -887,6 +944,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "moira-chronos-worker"
+version = "0.1.0"
+dependencies = [
+ "chronos-engine",
+ "chronos-host",
+ "moira-protocol",
+]
+
+[[package]]
 name = "moira-client"
 version = "0.1.0"
 dependencies = [
@@ -966,6 +1032,7 @@ dependencies = [
  "moira-client",
  "moira-protocol",
  "ratatui",
+ "serde_json",
  "sha2",
 ]
 
@@ -976,6 +1043,16 @@ dependencies = [
  "moira-client",
  "moira-protocol",
  "moira-wire",
+]
+
+[[package]]
+name = "moira-vellum"
+version = "0.1.0"
+dependencies = [
+ "moira-protocol",
+ "sha2",
+ "vellum-client",
+ "vellum-protocol",
 ]
 
 [[package]]
@@ -1064,6 +1141,7 @@ dependencies = [
  "crossterm",
  "daimon-tui",
  "hermes-tui",
+ "hestia-tui",
  "moira-tui",
  "ratatui",
  "serde",
@@ -1082,10 +1160,13 @@ dependencies = [
  "aegis-local-client",
  "aegis-tui",
  "aegis-wire",
+ "agora-actor-publication-port",
+ "agora-chronos-adapter",
  "agora-client",
  "agora-local-client",
  "agora-protocol",
  "agora-tui",
+ "agora-wire",
  "chronos-client",
  "chronos-local",
  "chronos-protocol",
@@ -1104,11 +1185,16 @@ dependencies = [
  "hermes-operator-command",
  "hermes-protocol",
  "hermes-tui",
+ "hestia-local-client",
+ "hestia-protocol",
+ "hestia-tui",
+ "moira-chronos-worker",
  "moira-client",
  "moira-protocol",
  "moira-reconciliation-command",
  "moira-tui",
  "moira-tui-local-client",
+ "moira-vellum",
  "nix",
  "pantheon",
  "ratatui",
@@ -1121,6 +1207,7 @@ dependencies = [
  "vellum-adapter-local-fs",
  "vellum-daemon",
  "vellum-host",
+ "vellum-protocol",
  "vellum-sdk-client",
  "vellum-tui",
  "vellum-workspace",

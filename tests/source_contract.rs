@@ -2652,6 +2652,8 @@ fn moira_agent_worker_is_opaque_participation_bound_and_separate_from_preparatio
         "dispatch prepared moira agent session",
         "Moira owner worker Observed participation revision 3",
         "headless-after",
+        "moira-participation-worker-run",
+        "profile-bound headless worker safely observed idle",
         "owner_worker_fixture",
     ] {
         assert!(live.contains(required), "live worker gate omits {required}");

@@ -1773,6 +1773,20 @@ structured headless receipt distinguishes `idle`, `observed` and
 denies task-agent activation, acceptance or authority inference. This closes
 presentation parity for the already-qualified worker step; it does not fill the
 preceding admitted-journey-to-participation progression gap.
+The real Moira/Daimon qualification now follows the TUI-dispatched Open and
+durable Ready reopen with that profile-backed headless command. The actual
+`moira-agent-local` process returns `idle` at retained participation revision 3,
+proving that the command can safely attach to a settled owner record without a
+duplicate Daimon effect; this is owner evidence, not merely a shell-receipt
+fixture.
+Refreshing that qualification against the current Moira landing view exposed a
+presentation gap: once the worker settles, the tab returns to the saga list and
+shows the exact receipt in activity, but offers no persistent participation
+inspector alongside the saga view. Independent headless reopen remains the
+post-state proof. A future Moira presentation slice should make saga,
+deliberation, task-agent journey and participation views explicitly navigable
+without relying on one peer being unavailable; this does not block the current
+headless-first worker path.
 
 The earlier observation-only profile copy was a presentation-boundary leak.
 The aggregate headless observer now validates requirements against the complete
