@@ -1451,17 +1451,23 @@ recovery before a human can settle the gate from this surface.
   and unchanged does not extend freshness. Focused tests and strict Clippy pass.
   Cadence/event activation, durable multi-record sequencing, model invocation,
   attributed challenge and authorized application remain open.
-- A fresh revision-73 shared-session dogfood pass reproduced the existing
-  `chronos-live-owner-headless-attach-readiness` defect after rebuilding the
-  headless client: operation `pantheon-27016-18e9774420351708` attached to the
-  configured directory but reported Chronos `not_sent`/`not_ready` while the
-  TUI continued to observe revision 73. The same profile exposed Chronos but no
-  Vellum service, and its effective footer advertised `Ctrl-P` while the
-  documented Emacs `M-x` route did not open the palette. These are evidence for
-  the existing attachment/configuration/keymap owners, not new tasks. A PM must
-  mark this frontier incomplete and orient the operator to effective
-  configuration; it may not reconcile from the live TUI or cached documents
-  alone.
+- A revision-73 shared-session dogfood pass first appeared to reproduce the
+  existing live-owner attachment defect: operation
+  `pantheon-27016-18e9774420351708` targeted
+  `/private/tmp/pantheon-run/chronos` and returned `not_sent`/`not_ready` while
+  the TUI displayed revision 73. Process and tmux owner evidence then showed
+  that the live pane actually hosted `/private/tmp/pantheon-link-slice/chronos`.
+  Corrected operation `pantheon-27016-corrected-live-attach` observed all 100
+  tasks at revision 73 with `complete: true`; this run therefore does **not**
+  prove a multi-client boundary leak. It does expose target-identity friction:
+  plausible private directories are not enough to identify a live owner, and
+  the active surface does not prominently orient the operator to its exact
+  attachment target. The same correction withdrew an assumed Emacs-keymap
+  defect: this profile advertised and accepted its effective Pantheon `Ctrl-P`
+  binding. The absent Vellum service remains a truthful partial-profile fact.
+  A PM must retain the refused first observation and its corrected
+  disposition, then reconcile from exact owner identity and effective
+  configuration rather than a comfortable diagnosis.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
