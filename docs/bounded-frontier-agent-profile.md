@@ -60,6 +60,14 @@ The catalogue describes independently admissible commands, not a default role
 bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
+`pantheon agent-tools` also returns a machine-readable `unavailable` collection.
+Agora, Daimon, Hestia, and Oculus are currently named there with the missing
+owner/client boundary and next admissible seam. `aggregate_fallback=false` is
+normative: neither an agent nor a launcher may replace a missing component tool
+with Pantheon's aggregate headless observation. Aegis authority and human-gate
+responses are deliberately absent from this gap list because they are guarded
+controls, not autonomous-agent conveniences.
+
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):
 
 ```json

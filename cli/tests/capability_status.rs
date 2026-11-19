@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
 use pantheon_cli::capabilities::{
-    self, AGENT_TOOL_ROUTES, Capability, ChronosFeatures, GUARDED_CONTROL_CAPABILITIES,
-    GUARDED_CONTROL_ROUTES, Mode,
+    self, AGENT_TOOL_GAPS, AGENT_TOOL_ROUTES, Capability, ChronosFeatures,
+    GUARDED_CONTROL_CAPABILITIES, GUARDED_CONTROL_ROUTES, Mode,
 };
 
 fn status() -> serde_json::Value {
@@ -176,6 +176,18 @@ fn bounded_agent_tools_are_machine_discoverable_and_individually_admissible() {
         assert_eq!(entry["model_arguments"], route.model_arguments);
         assert_eq!(entry["aggregate_route"], false);
         assert_eq!(entry["default_admission"], "denied");
+    }
+    let unavailable = catalog["unavailable"].as_array().unwrap();
+    assert_eq!(unavailable.len(), AGENT_TOOL_GAPS.len());
+    for gap in AGENT_TOOL_GAPS {
+        let entry = unavailable
+            .iter()
+            .find(|entry| entry["component"] == gap.component)
+            .unwrap_or_else(|| panic!("catalog omits {} gap", gap.component));
+        assert_eq!(entry["status"], "not_admissible");
+        assert_eq!(entry["missing"], gap.missing);
+        assert_eq!(entry["next_boundary"], gap.next_boundary);
+        assert_eq!(entry["aggregate_fallback"], false);
     }
 }
 

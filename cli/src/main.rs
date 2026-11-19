@@ -912,6 +912,18 @@ fn agent_tool_catalog(
             })
         })
         .collect::<Vec<_>>();
+    let unavailable = capabilities::AGENT_TOOL_GAPS
+        .iter()
+        .map(|gap| {
+            serde_json::json!({
+                "component": gap.component,
+                "status": "not_admissible",
+                "missing": gap.missing,
+                "next_boundary": gap.next_boundary,
+                "aggregate_fallback": false,
+            })
+        })
+        .collect::<Vec<_>>();
     println!(
         "{}",
         serde_json::to_string_pretty(&serde_json::json!({
@@ -919,6 +931,7 @@ fn agent_tool_catalog(
             "mode": "bounded_agent_tool_catalog",
             "complete": true,
             "tools": tools,
+            "unavailable": unavailable,
             "boundary": "catalogue presence grants nothing; Daimon and Aegis must admit each opaque tool and matching semantic capability independently",
         }))?
     );

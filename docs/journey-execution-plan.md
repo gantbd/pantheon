@@ -2202,6 +2202,21 @@ Operational means observable completed work, not a configured role name:
   unavailable. Oculus still lacks an equivalent exact bounded agent gateway;
   that is a legitimate surface gap rather than permission to use the aggregate
   headless snapshot.
+- Agent-tool discovery now reports unavailable component surfaces as explicitly
+  non-admissible instead of relying on omission. Agora lacks bounded room/message
+  agent gateways; Daimon lacks standalone exact session/event observation;
+  Hestia lacks exact artifact/serving observation; and Oculus remains a protocol-
+  value skeleton without an owner service, public client, source-catalogue
+  runtime, or query settlement transport. Every entry names its next owner seam
+  and sets `aggregate_fallback=false`. This is intentionally distinct from Aegis
+  and human-gate controls, which are guarded authority surfaces rather than
+  missing autonomous-agent conveniences.
+- Live Chronos reconciliation found that the current `pantheon-goal-work` owner
+  does not contain `oculus-observability-query-peer`, while the older dogfood
+  owner returns a contract-invalid V9 reply to the new exact gateway. The
+  documented revision-21 admission remains historical evidence, but is not a
+  current actionable task receipt; migration/compatibility must be addressed
+  before claiming the item is managed by the current board.
 - Two narrow executable qualifications each incurred a multi-minute monolithic
   CLI link while shared dogfood sessions were active. The friction is captured
   in Chronos as `reduce-agent-gateway-link-cost` at board revision 2. It does

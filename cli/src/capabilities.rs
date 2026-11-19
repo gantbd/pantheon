@@ -410,6 +410,13 @@ pub struct AgentToolRoute {
     pub model_arguments: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AgentToolGap {
+    pub component: &'static str,
+    pub missing: &'static str,
+    pub next_boundary: &'static str,
+}
+
 /// Closed gateways qualified for bounded agent profiles. This is intentionally
 /// smaller than the human/operator command surface: absence is non-admission.
 pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
@@ -460,6 +467,32 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         capability: "agent.web.fetch.v1",
         command: "agent-web-fetch",
         model_arguments: "exactly_one_https_url",
+    },
+];
+
+/// Named component surfaces that must not be inferred from aggregate Pantheon
+/// observation. Keeping these machine-visible makes absence an explicit
+/// non-admission rather than a discoverability failure.
+pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
+    AgentToolGap {
+        component: "agora",
+        missing: "bounded room/message observation and addressed-message submission gateways",
+        next_boundary: "compose Agora's public owner client with exact room, revision, participant, disclosure, and mutation confirmation contracts",
+    },
+    AgentToolGap {
+        component: "daimon",
+        missing: "standalone exact session and event observation gateways",
+        next_boundary: "project one selected owner session and bounded event cursor without reusing the aggregate headless snapshot",
+    },
+    AgentToolGap {
+        component: "hestia",
+        missing: "exact model-artifact and serving-instance observation gateways",
+        next_boundary: "project owner-issued artifact, placement, readiness, provenance, and resource-budget evidence without lifecycle authority",
+    },
+    AgentToolGap {
+        component: "oculus",
+        missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
+        next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
     },
 ];
 
@@ -628,6 +661,16 @@ mod tests {
             assert!(!route.model_arguments.is_empty());
             assert!(capabilities.insert(route.capability));
             assert!(commands.insert(route.command));
+        }
+        for gap in AGENT_TOOL_GAPS {
+            assert_ne!(gap.component, "pantheon");
+            assert!(!gap.missing.is_empty());
+            assert!(!gap.next_boundary.is_empty());
+            assert!(
+                !AGENT_TOOL_ROUTES
+                    .iter()
+                    .any(|route| route.component == gap.component)
+            );
         }
     }
 
