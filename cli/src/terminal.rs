@@ -359,11 +359,14 @@ impl BehaviorFacade {
                 ShellInput::ActivateSurface(surface) => {
                     KeyBehavior::ExecuteCommand(Self::surface_command(surface))
                 }
-                // Vellum is a text workspace. Once it owns focus, printable
-                // bracket characters belong to the document instead of the
-                // workbench rail. Direct Ctrl/Alt surface shortcuts, the
-                // command palette, and mouse navigation remain available.
-                ShellInput::NextSurface | ShellInput::PreviousSurface if vellum_active => {
+                // Peer surfaces own bracket characters when they advertise a
+                // local meaning (Vellum text or Chronos page navigation).
+                // Direct Ctrl/Alt shortcuts, the command palette, and mouse
+                // navigation keep global surface switching available.
+                ShellInput::NextSurface | ShellInput::PreviousSurface
+                    if vellum_active
+                        || matches!(surface, Surface::Chronos | Surface::Workspace) =>
+                {
                     KeyBehavior::SurfaceLocal
                 }
                 _ => KeyBehavior::Navigate(input),
@@ -13116,6 +13119,19 @@ mod tests {
         );
         assert_eq!(
             BehaviorFacade::key(plain('['), WorkbenchOverlay::None, Surface::Vellum, true),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            BehaviorFacade::key(plain(']'), WorkbenchOverlay::None, Surface::Chronos, false),
+            KeyBehavior::SurfaceLocal
+        );
+        assert_eq!(
+            BehaviorFacade::key(
+                plain('['),
+                WorkbenchOverlay::None,
+                Surface::Workspace,
+                false
+            ),
             KeyBehavior::SurfaceLocal
         );
         assert_eq!(
