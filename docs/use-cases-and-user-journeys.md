@@ -2467,9 +2467,19 @@ codec and strong-acknowledgement register reopen the exact reconciliation after
 restart and refuse malformed, weak, indeterminate or overwrite attempts. It is
 now available through a closed, scope-bound, observation-only public protocol
 that classifies goal/work/cohort/evidence drift against a freshly supplied
-alignment basis and has no control command. A local endpoint, live
-worker-frontier readers, recurring PM runtime and presentation remain on the
-blocked task.
+alignment basis and has no control command. Chronos `d3b0e8b` closes the local
+attachment slice without broadening that authority: a separately owned Unix
+listener and typed client carry the exact read-only profile, while a reusable
+mechanism owns only private-directory verification, advisory locking, stale-
+socket recovery, readiness, drain, fencing and bounded signals. Alignment and
+dual-frontier hosts retain separate sockets, locks, protocol, disclosure and
+owner semantics. End-to-end qualification exercises the durable PM record,
+fresh alignment frontier, host, socket and client; it also proves wrong-scope
+refusal, clean drain and replacement fencing without deleting the replacement.
+The blocked task remains blocked. Live external and Pantheon-constrained worker-
+frontier readers, recurring/coalesced PM composition, attributed Agora
+challenge and operator presentation remain open; the new endpoint cannot
+manufacture or continuously refresh worker truth.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
