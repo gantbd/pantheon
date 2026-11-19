@@ -2237,9 +2237,9 @@ dissent and gates to invalidate an older proposal instead of requiring them to
 be predeclared by it. Concrete readers now cover the exact Chronos task and a
 host-bound Vellum workspace document under the closed
 `vellum-workspace-source-revision-v1` evidence domain, including byte length.
-The remaining production boundary is the complete evidence-owner reader and
-packaged multi-owner composition; neither may be replaced by the retained
-proposal or a presentation cache. Live goal resolution now reuses Vellum's
+The remaining production boundary is scope-bound Tellus grounding, a live
+budget-policy reader and packaged multi-owner composition; none may be replaced
+by the retained proposal or a presentation cache. Live goal resolution now reuses Vellum's
 existing exact `ResolveLocator` join on every sample rather than persisting a
 process-local document ID. It then performs the non-view-mutating exact version
 observation. The owner-native evidence token binds live workspace ID, document
@@ -2260,14 +2260,21 @@ semantic, not a Chronos inference: the current Moira command vocabulary has no
 dissent-settlement mutation, and finding dispositions are separate facts that
 cannot silently erase dissent. A future Moira-owned settlement lifecycle may
 narrow the projection; until then all retained dissent remains honestly open.
+Chronos now consumes that owner semantic through a separate Moira deliberation-
+evidence reader. Stable registry status reads bracket the exact deliberation and
+optional review; it projects bounded admission/orthogonality evidence, discovers
+source-report/digest dissent and reports a human gate only while an exact
+request lacks a matching response. Concurrent owner change, reopen-required
+state, review mismatch, scope/cohort drift and bound overflow all refuse. The
+adapter remains a Moira-owned fragment and cannot claim Tellus or budget state.
 Chronos revision 68 records that owner slice as the priority-9 ready task
 `moira-unresolved-dissent-frontier-projection`; the shared Pantheon TUI
 re-observed the admitted task by exact search while reporting that another task
 page remained available. The protocol implementation is now qualified, while
 the task remains Ready because historical external work cannot bypass Chronos's
 prospective grant/claim/lease/evidence settlement path. The subsequent Tellus
-audit found that its current
-typed observation proves registry-wide load identity and freshness but does not
+audit found that its current typed observation proves registry-wide load
+identity and freshness but does not
 publish which loads apply to an exact Chronos scope or stakeholder cohort.
 Treating every load as applicable would create unrelated drift; filtering by a
 host-maintained list could hide newly applicable grounding. Chronos revision 69

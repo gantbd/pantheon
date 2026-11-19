@@ -1250,8 +1250,13 @@ recovery before a human can settle the gate from this surface.
   as an unresolved source-report/digest reference. The projection is honest
   because Moira currently has no dissent-settlement mutation and its separate
   finding dispositions cannot erase dissent; a future owner settlement
-  lifecycle may narrow that set. Chronos still needs to consume the projection,
-  and the complete evidence frontier and packaged composition remain open.
+  lifecycle may narrow that set. Chronos now consumes the projection through a
+  stable status-bracketed exact-deliberation/review reader that also emits
+  bounded admission/orthogonality evidence and discovers human gates only while
+  an exact request lacks a matching response. It refuses concurrent owner
+  change, reopen-required state, review mismatch, scope/cohort drift and limit
+  overflow. Scope-bound Tellus grounding, a live budget-policy reader and the
+  packaged composition remain open.
   The live goal binding now resolves its explicitly configured absolute locator
   through Vellum's existing exact in-memory join on every sample, then observes
   the resolved document without selecting a view. Its owner-native token binds
