@@ -371,12 +371,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   boundary that room activity is not task progress. The focused live gate
   proves the exact observation before and after relationship-owner restart;
   package formatting, strict Clippy, diff hygiene and the focused source
-  contract pass. The canonical J1 journey script now includes the same check,
-  but its fresh run is blocked before journey execution because the clean
-  sibling `daimon-tui/Cargo.lock` no longer satisfies its locked dependency
-  graph. The existing priority-4
-  `pantheon-last-known-good-development-launch` task owns that development-
-  launch boundary; the gate was not weakened and no peer lockfile was changed.
+  contract pass. Commit `135dab2` adds focused `make qualify-j1` and keeps
+  the default locked owner-source build fail-closed while permitting an explicit
+  executable only when its exact SHA-256 and provenance are supplied and
+  verified. The current `daimon-tui/Cargo.lock` still lacks Daimon's newly
+  declared `sha2` dependency edge, so default reproducible source qualification
+  remains open. An isolated offline mirror of clean Daimon `7e2757b` and
+  Daimon TUI `86443d2` produced an attributed fixture and lock digest; the full
+  J1 gate then passed task admission, human-gated session/prompt work, Agora
+  conversation and addressed follow-up, Kanban return, exact relationship
+  inspection, owner drain, restart and reinspection. This proves current runtime
+  compatibility, not peer lockfile reproducibility. The existing priority-4
+  `pantheon-last-known-good-development-launch` task owns that remaining
+  boundary; Pantheon changed no peer lockfile and accepted no unattributed
+  binary. The run also removed a raw-SIGTERM recovery shortcut: owner drain is
+  now required so a stale Unix socket cannot masquerade as restart readiness.
 - Shared-session dogfooding found no existing multi-user presentation item.
   Canonical Chronos revision 56 therefore admits priority-4
   `pantheon-multi-user-presentation-operating-model` with identity,
@@ -385,6 +394,25 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   action, fence stale controllers through explicit takeover leases, retain
   per-user focus/selection, and respect disclosure boundaries. Multiple
   terminals sharing one keyboard stream is not a multi-user contract.
+- Human review of the presentation layer admitted four separately executable
+  priority-4 tasks atomically at canonical Chronos revision 57:
+  `chronos-human-inspection-layout`,
+  `agora-conversation-presentation-maturity`,
+  `oculus-operations-surface-identity`, and
+  `configuration-operational-surface-maturity`. The effective shared-session
+  footer already confirms the Pantheon keymap, while the isolated J1 gate
+  registered every behavior route through completion. Intermittent missing
+  shared-session input remains evidence for the existing mode-transition
+  fencing and multi-user control-leasing work, not a reason to retain Emacs as
+  the active dogfood mapping.
+- This reconciliation attempted to edit the governing ledger through an
+  isolated Pantheon/Vellum workspace. The owner refused the full document at
+  admission with `Workspace(Session(Adapter(Limit)))`; a bounded exact old/new
+  fragment then passed Vellum's guarded preview, owner-atomic edit and durable
+  save before the same reviewed replacement was applied here. That is useful
+  transformation evidence, not full-document Vellum edit parity. The existing
+  `vellum-root-limit-diagnostic` task owns the missing actionable limit and
+  capacity guidance; no duplicate was admitted.
 - The default `make run` owner separately admitted priority-8
   `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
   Ready with its Moira-deliberation, Moira–Daimon and Pantheon-presentation
