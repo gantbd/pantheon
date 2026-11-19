@@ -287,9 +287,17 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   canonical recipient ordering; duplicate recipients now refuse before
   dispatch. A review-specific recovery journey then discards the first real
   Agora success reply, recreates the durable publisher and proves exact request
-  replay returns the retained receipt without a second room message. Typed
-  review-item-to-publication outcome correlation and Pantheon TUI/headless
-  projection remain required before the J33 checklist item closes.
+  replay returns the retained receipt without a second room message.
+  Review creation now also requires one complete correlation disclosure over
+  execution principal/profile, context manifest, model, provider, prompt,
+  grounding, evidence scope and organization plus first-pass exposure. Moira
+  retains it in the review checkpoint, derives only `correlated` or
+  `not_established`, publishes the same evidence through protocol profile v4,
+  and restores it through SQLite. Missing dimensions remain zero-observation
+  disclosures; distinct values never become an independence claim. Legacy v1
+  reviews migrate as explicitly undisclosed rather than receiving invented
+  evidence. Typed review-item-to-publication outcome correlation and Pantheon
+  TUI/headless projection remain required before the J33 checklist item closes.
 - Chronos revision 53 atomically admitted three follow-on dogfood discoveries:
   priority-6 `chronos-complete-paginated-task-search`, priority-5
   `pantheon-canonical-dogfood-workspace-attachment`, and priority-4
@@ -297,6 +305,12 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   search and total/page-cap disclosure, unambiguous reattachment to the active
   roadmap instead of a fresh default state root, and an explicit qualified
   binary path when unrelated peer source is temporarily uncompilable.
+- The default `make run` owner separately admitted priority-8
+  `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
+  Ready with its Moira-deliberation, Moira–Daimon and Pantheon-presentation
+  capabilities. Its separation from the revision-53 roadmap is further direct
+  evidence for `pantheon-canonical-dogfood-workspace-attachment`, not a second
+  roadmap authority.
 - Vellum dogfooding admitted the exact Moira–Agora source file but rejected a
   three-file workspace at its configured limit. More importantly, it retained
   a stale clean snapshot after an external source mutation and offered no
@@ -1228,11 +1242,14 @@ Real tmux gates cross the old request ceiling and execute a three-document
 multiline atomic replacement through independent durable receipts.
 
 The same Vellum workset delivered Moira's first content-free execution-cohort
-correlation slice. The governed harness now retains shared principal, profile
-and context-manifest facts; `moira-methodical-local` projects them to operators.
-Shared principal/profile identity is `correlated`, while distinct identities
-remain `not_established` rather than becoming an independence claim. Provider,
-model, organizational and training-lineage correlation remain explicit gaps.
+correlation slice. The governed harness observes principal, profile,
+context-manifest and grounding facts; `moira-methodical-local` projects them to
+operators. The review owner now retains those facts alongside explicit unknown
+model, provider, prompt, evidence-scope and organization dimensions and
+first-pass exposure. Shared observed values are `correlated`, while distinct
+values remain `not_established` rather than becoming an independence claim.
+Authoritative producers for the still-unknown dimensions and Pantheon
+presentation remain open; missing evidence is no longer hidden.
 
 - [x] Admit one exact Chronos task and prove its owner-published binding to the
   already selected agent-assisted execution profile before prompt preparation.
@@ -1372,9 +1389,15 @@ mature stakeholder ensemble.
   SQLite-restored review exchange for first-pass admission, cross-member
   rebuttal, findings, seven explicit owner dispositions and exact human-gate
   response binding, plus public capability-shaped review mutation/read commands
-  and an addressed Agora projection. Real `ServiceV2` publication and
-  discarded-reply recovery are qualified. Typed review-item-to-publication
-  correlation and Pantheon presentation remain open.
+  and an addressed Agora projection. Review creation now retains a mandatory,
+  explicit nine-dimension correlation disclosure and first-pass exposure;
+  public profile-v4 and SQLite-reopen qualifications prove that shared evidence
+  stays `correlated`, distinct evidence stays `not_established`, and missing
+  evidence stays visible. Real `ServiceV2` publication and discarded-reply
+  recovery are qualified. Authoritative population of the currently unknown
+  model/provider/prompt/evidence-scope/organization dimensions, typed
+  review-item-to-publication outcome correlation and Pantheon presentation
+  remain open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
