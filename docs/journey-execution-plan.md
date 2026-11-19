@@ -2148,6 +2148,18 @@ one scope-matched work receipt pass; transport-only readiness and model-work
 readiness remain separate. Start/drain/retry actions use the behavior facade and
 retain success, refusal and outcome-unknown receipts.
 
+Chronos must also own a human workflow status distinct from its scheduler
+phase: `Backlog`, `Open`, `Blocked`, `In Progress`, `Ready for Review`, and
+`Done`. `Blocked` is a first-class current status, not an overlay; it retains
+structured blocker evidence and an explicit authorized unblocking destination.
+Scheduler `Ready` is not `Ready for Review`, and provider/attempt `Succeeded`
+is not human `Done`. Agents may submit evidence and propose `Ready for Review`;
+only the configured acceptance owner may settle `Done`. Every transition
+requires an owner receipt and observable refusal/unknown outcome, and the TUI
+board, agenda, headless view, PM grooming and verifier handoff must consume the
+same behavior-facade command rather than infer workflow status from scheduler
+columns or prose.
+
 Live evidence on 2026-11-19 established the current frontier-provider split.
 Daimon's real provider-neutral router initialized and closed installed
 `codex-acp` and Claude Code together. A separately authorized Codex no-tool turn
