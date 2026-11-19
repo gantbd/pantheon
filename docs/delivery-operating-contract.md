@@ -152,8 +152,11 @@ pending gate. The contract refuses role collapse, invented evidence and false
 `Aligned` status. Chronos now durably retains and exactly reopens that immutable
 record through a closed bounded codec and strong-acknowledgement register;
 weak, indeterminate, malformed and overwrite attempts refuse. Public projection
-and runtime composition remain prospective, so durability alone is not an
-operational PM or permission to mutate Chronos.
+now exists as a closed, scope-bound, observation-only Chronos protocol with
+explicit goal/work/cohort/evidence currentness and no control command. The
+local endpoint, live worker-frontier readers and runtime composition remain
+prospective, so durability/projection alone is not an operational PM or
+permission to mutate Chronos.
 
 The minimum recurring, owner-bracketed reconciliation cycle is:
 

@@ -1419,7 +1419,12 @@ recovery before a human can settle the gate from this surface.
   survives restart, while unknown versions, truncation, tails, weak or
   indeterminate acknowledgement and overwrite attempts refuse. The complete
   alignment package passes 58 executed tests and strict all-target Clippy.
-  Owner readers/public projection, recurring/coalesced PM execution, Agora
+  An owner-neutral, scope-bound read protocol now projects the disclosed record
+  against a freshly supplied alignment basis, classifies
+  goal/work/cohort/evidence drift, independently revalidates the anti-overreach
+  laws and exposes no control command. Chronos protocol, wire, remote-client and
+  alignment-integration suites plus strict Clippy pass. Live worker-frontier
+  readers, the local endpoint, recurring/coalesced PM execution, Agora
   challenge and separately authorized application remain open, so the
   priority-10 Chronos task remains blocked rather than being declared complete.
 - The cyclic review contract now also requires evidence-grounded inventory of

@@ -2465,8 +2465,11 @@ without an exact task and false `Aligned` judgment are refused. This is a
 qualified data contract with an immutable durable record: a closed bounded
 codec and strong-acknowledgement register reopen the exact reconciliation after
 restart and refuse malformed, weak, indeterminate or overwrite attempts. It is
-not yet publicly projected or a recurring intelligent PM; those owner-reader,
-runtime and presentation cuts remain on the blocked task.
+now available through a closed, scope-bound, observation-only public protocol
+that classifies goal/work/cohort/evidence drift against a freshly supplied
+alignment basis and has no control command. A local endpoint, live
+worker-frontier readers, recurring PM runtime and presentation remain on the
+blocked task.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
