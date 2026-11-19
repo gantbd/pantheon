@@ -1257,7 +1257,12 @@ recovery before a human can settle the gate from this surface.
   or copying the locator into Chronos.
   Chronos revision 68 retains that owner gap as the priority-9 ready task
   `moira-unresolved-dissent-frontier-projection`, verified through the shared
-  Pantheon TUI's exact task search.
+  Pantheon TUI's exact task search. Tellus's existing typed observation proves
+  registry-wide grounding identities and freshness, but not applicability to an
+  exact Chronos scope/cohort. Revision 69 therefore retains the separate
+  priority-9 ready task `tellus-scope-bound-grounding-evidence-frontier`; the PM
+  must not substitute either all registry loads or a host-maintained allowlist
+  for an owner-published complete applicable frontier.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

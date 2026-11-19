@@ -2261,7 +2261,13 @@ separate bounded resolver remains a prerequisite for production composition.
 Chronos revision 68 records that exact gap as the priority-9 ready task
 `moira-unresolved-dissent-frontier-projection`; the shared Pantheon TUI
 re-observed the admitted task by exact search while reporting that another task
-page remained available.
+page remained available. The subsequent Tellus audit found that its current
+typed observation proves registry-wide load identity and freshness but does not
+publish which loads apply to an exact Chronos scope or stakeholder cohort.
+Treating every load as applicable would create unrelated drift; filtering by a
+host-maintained list could hide newly applicable grounding. Chronos revision 69
+therefore records `tellus-scope-bound-grounding-evidence-frontier` as a distinct
+priority-9 ready owner-contract task.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
