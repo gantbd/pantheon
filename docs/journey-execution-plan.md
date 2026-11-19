@@ -301,8 +301,15 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   disclosure and its tmux TUI shows first-pass counts plus every observed or
   unknown dimension. A real SQLite-backed owner qualifies both surfaces with
   observed execution-principal/grounding evidence and unknown provider evidence
-  while retaining `not_established`. Typed review-item-to-publication outcome
-  correlation remains required before the J33 checklist item closes.
+  while retaining `not_established`. Moira commit `4c0980a` then closed the
+  text-only publication boundary: one adapter-owned typed correlation binds the
+  exact deliberation, finding/rebuttal/disposition and effect to every accepted
+  or refused Agora outcome. Dispatch is available only through the shared
+  `publish_review` facade; the raw transport intent is inspectable only through
+  bounded body/address views. Real Agora and SQLite qualifications prove stale
+  refusal, lost-reply recovery, independent store reopen and exact replay
+  without a second room message. Authoritative producers for the still-unknown
+  correlation dimensions remain required before the J33 checklist item closes.
 - Chronos revision 53 atomically admitted three follow-on dogfood discoveries:
   priority-6 `chronos-complete-paginated-task-search`, priority-5
   `pantheon-canonical-dogfood-workspace-attachment`, and priority-4
@@ -1408,9 +1415,10 @@ mature stakeholder ensemble.
   public profile-v4 and SQLite-reopen qualifications prove that shared evidence
   stays `correlated`, distinct evidence stays `not_established`, and missing
   evidence stays visible. Real `ServiceV2` publication and discarded-reply
-  recovery are qualified. Authoritative population of the currently unknown
-  model/provider/prompt/evidence-scope/organization dimensions and typed
-  review-item-to-publication outcome correlation remain open.
+  recovery are qualified. Typed deliberation/item/effect correlation now
+  accompanies accepted, refused and replayed publication outcomes through one
+  durable adapter facade. Authoritative population of the currently unknown
+  model/provider/prompt/evidence-scope/organization dimensions remains open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
