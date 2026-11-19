@@ -838,6 +838,8 @@ fn usage() -> &'static str {
         "pantheon hestia-artifact-catalog SOCKET\n",
         "pantheon agora-room-observe SOCKET PARTICIPANT <conversation|composition> ROOM_ID\n",
         "pantheon agora-message-observe SOCKET PARTICIPANT <conversation|composition> ROOM_ID CURSOR_OR_- LIMIT\n",
+        "pantheon agora-message-publish SOCKET PARTICIPANT REQUEST_JSON 'PUBLISH AGORA ACTOR MESSAGE OPERATION … REQUEST SHA256 …'\n",
+        "pantheon agora-message-publication-observe SOCKET PARTICIPANT REQUEST_JSON\n",
         "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\npantheon chronos-task-observe SERVICE_DIRECTORY TASK\n",
         "pantheon vellum-document-read SOCKET CREDENTIAL_OR_- MAX_BYTES LOCATOR [START END]\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
@@ -1109,6 +1111,18 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agora-message-publish")
+    {
+        return pantheon_cli::agora_publish::execute(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agora-message-publication-observe")
+    {
+        return pantheon_cli::agora_publish::observe(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "agora-room-observe")

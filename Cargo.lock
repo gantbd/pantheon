@@ -1139,6 +1139,7 @@ dependencies = [
  "aegis-local-client",
  "aegis-tui",
  "aegis-wire",
+ "agora-actor-publication-port",
  "agora-chronos-adapter",
  "agora-client",
  "agora-local-client",

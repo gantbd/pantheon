@@ -2264,6 +2264,21 @@ Operational means observable completed work, not a configured role name:
   unavailable: addressed-message submission still needs its own content
   transport, exact revision/logical-time/addressee confirmation and durable
   lost-reply recovery contract rather than inheriting either read capability.
+- Agora's addressed-message gap is now closed through its existing durable
+  actor-publication port rather than ordinary one-shot `Speak`. A private
+  versioned request document binds one nonzero operation identity, exact room
+  revision, logical time, body and at most 64 strictly sorted addressees;
+  execute requires a confirmation over the raw request SHA-256. Output is
+  content-free and returns only bounded request facts plus Agora's revision,
+  stable message identity and sequence. Transport uncertainty explicitly
+  forbids blind retry. A separately admitted observation command submits the
+  identical operation and intent and returns Agora-retained `accepted` or
+  authoritative `absent` evidence; absent is not mutation authority. The live
+  gate combines Agora's real durable composition-daemon publish/observe proof
+  with Pantheon's protocol-level command tests and pre-connection confirmation
+  refusal. This also corrected a fixture-selection error: the ordinary real
+  daemon fixture intentionally serves conversation transport, while durable
+  actor publication is a distinct composition profile.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The

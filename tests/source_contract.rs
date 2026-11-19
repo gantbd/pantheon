@@ -869,6 +869,41 @@ fn agora_agent_observation_gate_is_exact_bounded_and_component_scoped() {
 }
 
 #[test]
+fn agora_agent_publication_gate_is_durable_exact_confirmed_and_recoverable() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/agora_agent_publish.sh"))
+        .expect("Agora agent-publication gate");
+    for required in [
+        "agora-message-publish",
+        "public_composition_client_publishes_observes_and_projects_through_durable_daemon",
+        "agora_publish_command",
+        "exact-confirmed, observable, addressed, and content-redacted",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Agora agent-publication gate omits {required}"
+        );
+    }
+    let source = fs::read_to_string(root.join("cli/src/agora_publish.rs"))
+        .expect("Agora publication gateway");
+    for required in [
+        "messages.actor-publication.execute.v1",
+        "messages.actor-publication.observe.v1",
+        "PUBLISH AGORA ACTOR MESSAGE OPERATION",
+        "REQUEST SHA256",
+        "ActorPublicationObservationV1::Absent",
+        "LocalCallErrorV1::OutcomeUnknown",
+        "O_NOFOLLOW",
+        "do not retry publication",
+    ] {
+        assert!(
+            source.contains(required),
+            "Agora publication gateway omits {required}"
+        );
+    }
+}
+
+#[test]
 fn agora_hosted_gate_sends_real_work_on_the_owner_client_session() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_hosted.sh"))

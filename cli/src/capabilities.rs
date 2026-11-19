@@ -434,6 +434,18 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         model_arguments: "one_exact_room_id_cursor_and_limit_up_to_64",
     },
     AgentToolRoute {
+        component: "agora",
+        capability: "messages.actor-publication.observe.v1",
+        command: "agora-message-publication-observe",
+        model_arguments: "none_when_exact_private_request_document_is_pinned",
+    },
+    AgentToolRoute {
+        component: "agora",
+        capability: "messages.actor-publication.execute.v1",
+        command: "agora-message-publish",
+        model_arguments: "none_when_exact_private_request_document_and_confirmation_are_pinned",
+    },
+    AgentToolRoute {
         component: "chronos",
         capability: "tasks.workflow.observe.v9",
         command: "chronos-task-observe",
@@ -510,20 +522,12 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
 /// Named component surfaces that must not be inferred from aggregate Pantheon
 /// observation. Keeping these machine-visible makes absence an explicit
 /// non-admission rather than a discoverability failure.
-pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
-    AgentToolGap {
-        component: "agora",
-        surface: "messages.speak.v2",
-        missing: "independently admitted addressed-message submission gateway",
-        next_boundary: "compose Agora's public owner message command with an exact room revision, logical time, addressees, content transport, confirmation, and lost-reply recovery contract",
-    },
-    AgentToolGap {
-        component: "oculus",
-        surface: "owner-query-runtime",
-        missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
-        next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
-    },
-];
+pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
+    component: "oculus",
+    surface: "owner-query-runtime",
+    missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
+    next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
+}];
 
 /// Concrete local CLI routes for separately guarded controls. Shared commands
 /// retain their peer-owned subcommand or administrative-session semantics.

@@ -37,6 +37,20 @@ The initial authorities are distinct:
   room and cursor and intentionally disclose body text, author, logical time and
   addressees. Neither read grants room creation, speaking, membership,
   moderation, task mutation or agent execution.
+- `messages.actor-publication.observe.v1` and
+  `messages.actor-publication.execute.v1`: separate durable Agora publication
+  tools. A private, owner-only request document fixes a fresh nonzero operation
+  identity, exact room revision, logical time, body and a sorted bounded
+  addressee set. Execute additionally requires an exact confirmation bound to
+  the SHA-256 digest of the complete request bytes. Output retains only bounded
+  facts and the owner receipt, never body or addressee content. Unknown delivery
+  forbids blind retry; the observation tool reconciles the same operation and
+  intent to owner-retained `accepted` or authoritative `absent` evidence. The
+  deployment pins the private request path and confirmation in the command;
+  the model receives no path or arbitrary filesystem argument. Pantheon opens
+  only one owner-private, non-symlink, single-link regular file capped at 64
+  KiB. A Vellum-backed staging adapter may supply that immutable effect document
+  later without changing the Agora owner contract.
 - component-owned capability IDs such as `tasks.workflow.observe.v9` and
   `tellus.sme-plan.v1`: each exact catalog entry fixes the Pantheon subcommand
   and deployment arguments; the model cannot append a different operation or
@@ -84,10 +98,10 @@ bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
-Agora and Oculus are currently named there with the remaining unavailable
-surface and next admissible seam. Agora's read tools are admissible independently,
-but addressed-message submission is not; Oculus still lacks its owner/query
-runtime. `aggregate_fallback=false` is
+Oculus is currently named there with its unavailable owner/query runtime and
+next admissible seam. Agora's read, durable-publication observation, and
+durable-publication execution tools remain independent grants.
+`aggregate_fallback=false` is
 normative: neither an agent nor a launcher may replace a missing component tool
 with Pantheon's aggregate headless observation. Aegis authority and human-gate
 responses are deliberately absent from this gap list because they are guarded
