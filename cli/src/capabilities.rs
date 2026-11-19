@@ -918,7 +918,7 @@ pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
     GuardedControlRoute {
         peer: "moira",
         capability: "agent.worker.step.v1",
-        command: "workbench",
+        command: "moira-participation-worker-run",
     },
     GuardedControlRoute {
         peer: "moira",

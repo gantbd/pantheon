@@ -1762,6 +1762,18 @@ owner deadlock: the Open review now deterministically releases its authenticated
 owner session before the separate worker connects, then Pantheon reconnects a
 fresh participation observer. `agent.worker.step.v1` is therefore qualified.
 
+The same step is no longer TUI-only. `moira-participation-worker-run` loads the
+executable, opaque configuration and exact participation exclusively from one
+validated workspace profile, requires a literal confirmation naming that
+participation, and reuses the TUI's bounded receipt validator. A wrong
+confirmation starts no process; a mismatched, oversized, invalid, failed or
+disconnected process result is visible and fenced without blind retry. The
+structured headless receipt distinguishes `idle`, `observed` and
+`fenced_unknown`, preserves the exact participation revision and explicitly
+denies task-agent activation, acceptance or authority inference. This closes
+presentation parity for the already-qualified worker step; it does not fill the
+preceding admitted-journey-to-participation progression gap.
+
 The earlier observation-only profile copy was a presentation-boundary leak.
 The aggregate headless observer now validates requirements against the complete
 configured workspace route, exercises only its actual observation catalogue,

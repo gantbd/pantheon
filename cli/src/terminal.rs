@@ -31,7 +31,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, TrySendError, sync_channel};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vellum_sdk_client::{
@@ -51,6 +50,11 @@ use vellum_tui::{
 
 use crate::capabilities::GUARDED_CONTROL_ROUTES;
 use crate::hestia::{RuntimeEvidenceProjection, observe_provider_runtime};
+use crate::moira_agent_worker::{
+    MoiraAgentWorkerConfig, Outcome as MoiraAgentWorkerOutcome,
+    ProcessError as MoiraAgentWorkerProcessError, Receipt as MoiraAgentWorkerReceipt,
+    execute as execute_moira_agent_worker,
+};
 use crate::native_host::NativeHost;
 use crate::profile::{
     AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile, KeybindingProfile,
@@ -1720,29 +1724,6 @@ fn decision_packet_error(error: DecisionPacketErrorV1) -> String {
     format!("Exact decision packet refused: {error:?}; refresh or repair the selected route")
 }
 
-#[derive(Clone, Debug)]
-pub struct MoiraAgentWorkerConfig {
-    pub executable: PathBuf,
-    pub config: PathBuf,
-    pub participation: moira_protocol::agent_participation::ParticipationIdV1,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
-#[serde(rename_all = "snake_case")]
-enum MoiraAgentWorkerOutcome {
-    Idle,
-    Observed,
-    FencedUnknown,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct MoiraAgentWorkerReceipt {
-    outcome: MoiraAgentWorkerOutcome,
-    participation: String,
-    participation_revision: u64,
-}
-
 #[derive(Debug)]
 enum MoiraAgentWorkerResult {
     Receipt(MoiraAgentWorkerReceipt),
@@ -1793,55 +1774,14 @@ impl MoiraAgentWorkerControl {
         }
         let (sender, receiver) = sync_channel(1);
         std::thread::spawn(move || {
-            let child = Command::new(&config.executable)
-                .arg(&config.config)
-                .stdin(Stdio::null())
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn();
-            let result = match child {
-                Err(error) => {
-                    let _ = sender.send(MoiraAgentWorkerResult::Refused(format!(
-                        "owner worker could not start: {error}"
-                    )));
-                    return;
-                }
-                Ok(child) => child
-                    .wait_with_output()
-                    .map_err(|error| format!("owner worker outcome unknown: {error}"))
-                    .and_then(|output| {
-                        if output.stdout.len() > 4_096 || output.stderr.len() > 4_096 {
-                            return Err("owner worker output exceeded 4096 bytes".into());
-                        }
-                        if !output.status.success() {
-                            let detail = String::from_utf8_lossy(&output.stderr);
-                            return Err(format!(
-                                "owner worker exited {}: {}",
-                                output.status,
-                                detail.trim()
-                            ));
-                        }
-                        let receipt: MoiraAgentWorkerReceipt =
-                            serde_json::from_slice(&output.stdout).map_err(|_| {
-                                "owner worker returned an invalid receipt".to_string()
-                            })?;
-                        let expected = config
-                            .participation
-                            .0
-                            .iter()
-                            .map(|byte| format!("{byte:02x}"))
-                            .collect::<String>();
-                        if receipt.participation != expected {
-                            return Err(
-                                "owner worker receipt named a different participation".into()
-                            );
-                        }
-                        Ok(receipt)
-                    }),
-            };
-            let _ = sender.send(match result {
+            let _ = sender.send(match execute_moira_agent_worker(&config) {
                 Ok(receipt) => MoiraAgentWorkerResult::Receipt(receipt),
-                Err(error) => MoiraAgentWorkerResult::OutcomeUnknown(error),
+                Err(MoiraAgentWorkerProcessError::NotStarted(error)) => {
+                    MoiraAgentWorkerResult::Refused(error)
+                }
+                Err(MoiraAgentWorkerProcessError::OutcomeUnknown(error)) => {
+                    MoiraAgentWorkerResult::OutcomeUnknown(error)
+                }
             });
         });
         self.receiver = Some(receiver);

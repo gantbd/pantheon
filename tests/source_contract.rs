@@ -2608,13 +2608,32 @@ fn moira_agent_worker_is_opaque_participation_bound_and_separate_from_preparatio
         "moira.participation.open.prepare",
         "moira.participation.worker.run",
         "dispatch_ready",
-        "owner worker receipt named a different participation",
-        "owner worker output exceeded 4096 bytes",
         "Dispatch refused: review and durably prepare",
         "MoiraAgentWorkerSettlement::FencedUnknown",
         "release_for_dispatch",
     ] {
         assert!(terminal.contains(required), "worker route omits {required}");
+    }
+    let shared = fs::read_to_string(root.join("cli/src/moira_agent_worker.rs"))
+        .expect("shared Moira worker behavior");
+    for required in [
+        "RUN MOIRA PARTICIPATION WORKER",
+        "owner worker output exceeded 4096 bytes",
+        "owner worker receipt named a different participation",
+        "inspect and reconcile this exact participation; do not retry blindly",
+        "one owner-worker step does not activate a task-agent journey",
+    ] {
+        assert!(shared.contains(required), "shared worker behavior omits {required}");
+    }
+    let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI source");
+    assert!(main.contains("moira-participation-worker-run"));
+    let commands = fs::read_to_string(root.join("cli/tests/moira_agent_worker_command.rs"))
+        .expect("headless Moira worker command tests");
+    for required in [
+        "exact_confirmation_runs_profile_bound_worker_and_emits_receipt",
+        "mismatched_owner_receipt_fences_headless_retry",
+    ] {
+        assert!(commands.contains(required), "headless worker gate omits {required}");
     }
     let owner = fs::read_to_string(root.join("../moira/apps/moira-agent-local/src/lib.rs"))
         .expect("Moira agent worker source");
