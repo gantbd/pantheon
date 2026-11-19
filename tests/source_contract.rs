@@ -2476,6 +2476,7 @@ fn task_conversation_gate_proves_tui_headless_and_recovery_parity() {
         .expect("task-conversation live qualification");
     for required in [
         "Bind selected task to open Agora room",
+        "exact readback verified relationship",
         "room activity remains separate from task progress",
         "task-conversation.v1",
         "peer[\"revision\"] == 1 and peer[\"links\"] == 1",

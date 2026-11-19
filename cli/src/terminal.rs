@@ -6249,7 +6249,15 @@ impl ModelTaskInvocationWorkflow {
 }
 
 struct TaskConversationWorker {
-    result: Receiver<Result<agora_chronos_adapter::task_conversation_local::LocalReplyV1, String>>,
+    result: Receiver<
+        Result<
+            (
+                agora_chronos_adapter::task_conversation_local::LocalReplyV1,
+                Option<u64>,
+            ),
+            String,
+        >,
+    >,
     started: Instant,
 }
 
@@ -6499,15 +6507,35 @@ impl TaskConversationWorkflow {
             .into();
         } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) && self.armed && !self.complete {
             let socket = self.socket.clone();
+            let expected_link = self.link.clone();
             let request = agora_chronos_adapter::task_conversation_local::LocalRequestV1::Bind {
-                link: self.link.clone(),
+                link: expected_link.clone(),
             };
             let (sender, result) = sync_channel(1);
             std::thread::spawn(move || {
                 let client = agora_chronos_adapter::task_conversation_local::TaskConversationLocalClientV1::new(socket);
                 let outcome = client
                     .request(&request)
-                    .map_err(|error| format!("relationship owner unavailable: {error:?}"));
+                    .map_err(|error| format!("relationship bind receipt unavailable: {error:?}"))
+                    .and_then(|receipt| {
+                        if !receipt.complete
+                            || !matches!(receipt.status.as_str(), "created" | "replayed")
+                        {
+                            return Ok((receipt, None));
+                        }
+                        let lookup = client
+                            .request(&agora_chronos_adapter::task_conversation_local::LocalRequestV1::ByTask {
+                                task: expected_link.task.clone(),
+                            })
+                            .map_err(|error| {
+                                format!(
+                                    "bind was accepted but exact relationship lookup was unavailable: {error:?}"
+                                )
+                            })?;
+                        let verified_revision =
+                            verify_task_conversation_lookup(&expected_link, &lookup)?;
+                        Ok((receipt, Some(verified_revision)))
+                    });
                 let _ = sender.send(outcome);
             });
             self.armed = false;
@@ -6536,22 +6564,24 @@ impl TaskConversationWorkflow {
         self.worker = None;
         self.complete = true;
         match result {
-            Ok(reply)
+            Ok((reply, verified_revision))
                 if reply.version == 1
                     && reply.capability == "task-conversation.v1"
                     && reply.complete
                     && matches!(reply.status.as_str(), "created" | "replayed") =>
             {
                 self.notice = format!(
-                    "BOUND · Owner {} relationship at revision {} · Next: return to Chronos or Agora; room activity remains separate from task progress",
+                    "BOUND · Owner {} and exact readback verified relationship {} at owner revision {} (bind revision {}) · Next: return to Chronos or Agora; room activity remains separate from task progress",
                     reply.status,
+                    self.link.link_id,
+                    verified_revision.map_or_else(|| "unknown".into(), |value| value.to_string()),
                     reply
                         .revision
                         .map_or_else(|| "unknown".into(), |value| value.to_string())
                 );
                 Some((ActivityLevel::Success, elapsed))
             }
-            Ok(reply) => {
+            Ok((reply, _)) => {
                 self.notice = format!(
                     "REFUSED · Relationship owner returned {} ({}) · Next: refresh both peers and inspect owner state before a fresh link",
                     reply.status,
@@ -6561,9 +6591,9 @@ impl TaskConversationWorkflow {
             }
             Err(reason) => {
                 self.notice = format!(
-                    "NOT SENT · {reason} · Next: restore the relationship owner and reopen a fresh review"
+                    "OUTCOME UNKNOWN · {reason} · Next: inspect the relationship owner by exact task/link identity before any retry"
                 );
-                Some((ActivityLevel::Warning, elapsed))
+                Some((ActivityLevel::Uncertain, elapsed))
             }
         }
     }
@@ -6572,6 +6602,8 @@ impl TaskConversationWorkflow {
         vec![
             self.notice.clone(),
             String::new(),
+            "relationship owner  task-conversation.v1".into(),
+            format!("relationship ref    {}", self.link.link_id),
             format!("Chronos scope        {}", self.link.task.scope),
             format!("Chronos task         {}", self.link.task.task),
             format!("incarnation          {}", self.link.task.incarnation),
@@ -6585,6 +6617,12 @@ impl TaskConversationWorkflow {
             format!("Chronos revision     {}", self.link.chronos_revision),
             format!("Agora room           {}", self.link.conversation.room),
             format!("Agora revision       {}", self.link.agora_revision),
+            format!("operation            {}", self.link.operation_id),
+            format!("principal            {}", self.link.principal_id),
+            format!(
+                "created/observed     {} / {}",
+                self.link.created_at_unix_seconds, self.link.observed_at_unix_seconds
+            ),
             "visibility           workspace".into(),
             "human gate           review → arm → confirm once".into(),
             "authority            owner/Aegis policy; this screen grants none".into(),
@@ -6600,6 +6638,26 @@ impl TaskConversationWorkflow {
             .into(),
         ]
     }
+}
+
+fn verify_task_conversation_lookup(
+    expected: &agora_chronos_adapter::task_conversation_local::LinkWireV1,
+    lookup: &agora_chronos_adapter::task_conversation_local::LocalReplyV1,
+) -> Result<u64, String> {
+    if lookup.version != 1
+        || lookup.capability != "task-conversation.v1"
+        || !lookup.complete
+        || lookup.status != "current"
+        || lookup.revision.is_none()
+        || lookup.links.len() != 1
+        || lookup.links.first() != Some(expected)
+    {
+        return Err(
+            "bind was accepted but the owner did not return the one exact retained relationship"
+                .into(),
+        );
+    }
+    Ok(lookup.revision.expect("validated as present"))
 }
 
 const AGENT_PROVIDER_EDIT_FIELDS: [&str; 11] = [
@@ -13352,6 +13410,66 @@ mod tests {
         }
         assert_eq!(translated('s'), ServiceInput::Find);
         assert_eq!(translated('o'), ServiceInput::Unsupported);
+    }
+
+    #[test]
+    fn task_conversation_bind_requires_exact_owner_readback_and_projects_identity() {
+        use agora_chronos_adapter::task_conversation_local::{
+            ConversationReferenceWireV1, LinkWireV1, LocalReplyV1, TaskReferenceWireV1,
+        };
+
+        let link = LinkWireV1 {
+            link_id: "11".repeat(16),
+            task: TaskReferenceWireV1 {
+                scope: "roadmap".into(),
+                task: "owner-readback".into(),
+                incarnation: "7".into(),
+                attempt: Some(2),
+            },
+            conversation: ConversationReferenceWireV1 {
+                room: "room-7".into(),
+                thread_root: None,
+            },
+            operation_id: "22".repeat(16),
+            principal_id: "33".repeat(16),
+            created_at_unix_seconds: 41,
+            visibility_principal_id: None,
+            chronos_revision: "9".into(),
+            agora_revision: 5,
+            observed_at_unix_seconds: 42,
+        };
+        let current = LocalReplyV1 {
+            version: 1,
+            capability: "task-conversation.v1".into(),
+            complete: true,
+            status: "current".into(),
+            revision: Some(3),
+            link_count: 1,
+            links: vec![link.clone()],
+            refusal: None,
+        };
+        assert_eq!(verify_task_conversation_lookup(&link, &current), Ok(3));
+
+        let mut wrong = current;
+        wrong.links[0].link_id = "44".repeat(16);
+        assert!(
+            verify_task_conversation_lookup(&link, &wrong)
+                .unwrap_err()
+                .contains("one exact retained relationship")
+        );
+
+        let workflow = TaskConversationWorkflow {
+            socket: PathBuf::from("/unused"),
+            link,
+            armed: false,
+            notice: "READY".into(),
+            worker: None,
+            complete: false,
+        };
+        let lines = workflow.lines().join("\n");
+        assert!(lines.contains("relationship owner  task-conversation.v1"));
+        assert!(lines.contains(&format!("relationship ref    {}", "11".repeat(16))));
+        assert!(lines.contains("created/observed     41 / 42"));
     }
 
     #[test]

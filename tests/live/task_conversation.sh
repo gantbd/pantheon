@@ -168,7 +168,12 @@ expect("Standalone CLI reached the real Agora daemon")
 palette("bind selected task to open agora room", "Bind selected task to open Agora room")
 expect("Bind Chronos task to Agora room", "task-level", "human gate")
 keys("c", "Enter")
-expect("BOUND", "room activity remains separate from task progress", timeout=15)
+expect(
+    "BOUND · Owner created and exact readback verified relationship",
+    "relationship ref",
+    "room activity remains separate from task progress",
+    timeout=15,
+)
 keys("Escape")
 expect("Live Room")
 keys("C-q")
