@@ -413,6 +413,7 @@ pub struct AgentToolRoute {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AgentToolGap {
     pub component: &'static str,
+    pub surface: &'static str,
     pub missing: &'static str,
     pub next_boundary: &'static str,
 }
@@ -420,6 +421,18 @@ pub struct AgentToolGap {
 /// Closed gateways qualified for bounded agent profiles. This is intentionally
 /// smaller than the human/operator command surface: absence is non-admission.
 pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
+    AgentToolRoute {
+        component: "agora",
+        capability: "rooms.read.v2",
+        command: "agora-room-observe",
+        model_arguments: "exactly_one_room_id",
+    },
+    AgentToolRoute {
+        component: "agora",
+        capability: "messages.read.v2",
+        command: "agora-message-observe",
+        model_arguments: "one_exact_room_id_cursor_and_limit_up_to_64",
+    },
     AgentToolRoute {
         component: "chronos",
         capability: "tasks.workflow.observe.v9",
@@ -500,11 +513,13 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
 pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
     AgentToolGap {
         component: "agora",
-        missing: "bounded room/message observation and addressed-message submission gateways",
-        next_boundary: "compose Agora's public owner client with exact room, revision, participant, disclosure, and mutation confirmation contracts",
+        surface: "messages.speak.v2",
+        missing: "independently admitted addressed-message submission gateway",
+        next_boundary: "compose Agora's public owner message command with an exact room revision, logical time, addressees, content transport, confirmation, and lost-reply recovery contract",
     },
     AgentToolGap {
         component: "oculus",
+        surface: "owner-query-runtime",
         missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
         next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
     },
@@ -678,13 +693,12 @@ mod tests {
         }
         for gap in AGENT_TOOL_GAPS {
             assert_ne!(gap.component, "pantheon");
+            assert!(!gap.surface.is_empty());
             assert!(!gap.missing.is_empty());
             assert!(!gap.next_boundary.is_empty());
-            assert!(
-                !AGENT_TOOL_ROUTES
-                    .iter()
-                    .any(|route| route.component == gap.component)
-            );
+            assert!(!AGENT_TOOL_ROUTES.iter().any(|route| {
+                route.component == gap.component && route.capability == gap.surface
+            }));
         }
     }
 

@@ -182,9 +182,9 @@ fn bounded_agent_tools_are_machine_discoverable_and_individually_admissible() {
     for gap in AGENT_TOOL_GAPS {
         let entry = unavailable
             .iter()
-            .find(|entry| entry["component"] == gap.component)
-            .unwrap_or_else(|| panic!("catalog omits {} gap", gap.component));
-        assert_eq!(entry["status"], "not_admissible");
+            .find(|entry| entry["component"] == gap.component && entry["surface"] == gap.surface)
+            .unwrap_or_else(|| panic!("catalog omits {} {} gap", gap.component, gap.surface));
+        assert_eq!(entry["status"], "surface_not_admissible");
         assert_eq!(entry["missing"], gap.missing);
         assert_eq!(entry["next_boundary"], gap.next_boundary);
         assert_eq!(entry["aggregate_fallback"], false);

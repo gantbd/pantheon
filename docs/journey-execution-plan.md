@@ -2250,6 +2250,20 @@ Operational means observable completed work, not a configured role name:
   initial leakage assertion rejected the explanatory words “storage path”;
   replacing that false positive with exact forbidden-key/value checks preserved
   the privacy intent without weakening the boundary.
+- Agora now has independently admissible exact-room and bounded-message
+  observation gateways over its ordinary public owner client. The deployment
+  fixes the socket, participant claim and conversation/composition transport;
+  the model supplies only an exact room, and for messages one opaque cursor and
+  a limit capped at 64. Exact-room selection scans no more than eight
+  revision-consistent owner pages but emits only the selected summary; an
+  invisible room returns `not_found` without disclosing or substituting another
+  room. Message observation intentionally discloses the selected room's body,
+  author, logical time and addressees, and labels that disclosure directly.
+  The real Agora daemon fixture proves both reads, invisible-room refusal and
+  pre-connection limit refusal. Agora remains machine-visible as partially
+  unavailable: addressed-message submission still needs its own content
+  transport, exact revision/logical-time/addressee confirmation and durable
+  lost-reply recovery contract rather than inheriting either read capability.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The

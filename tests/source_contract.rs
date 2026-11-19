@@ -845,6 +845,30 @@ fn agora_mutation_gate_reuses_the_owner_guard_in_both_shells() {
 }
 
 #[test]
+fn agora_agent_observation_gate_is_exact_bounded_and_component_scoped() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/agora_agent_observe.sh"))
+        .expect("Agora agent-observation gate");
+    for required in [
+        "agora-room-observe",
+        "agora-message-observe",
+        "rooms.read.v2",
+        "messages.read.v2",
+        "missing-room",
+        "not_found",
+        "intentionally disclosed",
+        "must be 1..=64",
+        "real_daemon_fixture",
+        "component admission",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Agora agent-observation gate omits {required}"
+        );
+    }
+}
+
+#[test]
 fn agora_hosted_gate_sends_real_work_on_the_owner_client_session() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate = fs::read_to_string(root.join("tests/live/agora_hosted.sh"))

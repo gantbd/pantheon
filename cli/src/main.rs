@@ -836,6 +836,8 @@ fn usage() -> &'static str {
         "pantheon hestia-runtime-observe SOCKET RUNTIME_HEX\n",
         "pantheon hestia-artifact-observe SOCKET ARTIFACT_ID\n",
         "pantheon hestia-artifact-catalog SOCKET\n",
+        "pantheon agora-room-observe SOCKET PARTICIPANT <conversation|composition> ROOM_ID\n",
+        "pantheon agora-message-observe SOCKET PARTICIPANT <conversation|composition> ROOM_ID CURSOR_OR_- LIMIT\n",
         "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\npantheon chronos-task-observe SERVICE_DIRECTORY TASK\n",
         "pantheon vellum-document-read SOCKET CREDENTIAL_OR_- MAX_BYTES LOCATOR [START END]\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
@@ -921,7 +923,8 @@ fn agent_tool_catalog(
         .map(|gap| {
             serde_json::json!({
                 "component": gap.component,
-                "status": "not_admissible",
+                "surface": gap.surface,
+                "status": "surface_not_admissible",
                 "missing": gap.missing,
                 "next_boundary": gap.next_boundary,
                 "aggregate_fallback": false,
@@ -936,7 +939,7 @@ fn agent_tool_catalog(
             "complete": true,
             "tools": tools,
             "unavailable": unavailable,
-            "boundary": "catalogue presence grants nothing; Daimon and Aegis must admit each opaque tool and matching semantic capability independently",
+            "boundary": "catalogue presence grants nothing; Daimon and Aegis must admit each opaque tool and matching semantic capability independently; unavailable entries apply only to their named component surface",
         }))?
     );
     Ok(())
@@ -1106,6 +1109,18 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agora-room-observe")
+    {
+        return pantheon_cli::agora_observe::room(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agora-message-observe")
+    {
+        return pantheon_cli::agora_observe::messages(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "hestia-runtime-observe")

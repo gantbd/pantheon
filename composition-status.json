@@ -95,8 +95,9 @@
       "owner": "agora",
       "presentation": "agora-tui",
       "readCapability": "rooms.read.v2",
+      "readCapabilities": ["rooms.read.v2", "messages.read.v2"],
       "client": { "contract": "agora-client", "connection": "agora-local-client", "ownership": "peer" },
-      "evidence": ["agora-tui/tests/live/real_daemon.sh", "pantheon/tests/live/agora_mutation.sh", "pantheon/tests/live/agora_hosted.sh", "pantheon/qualification/agora-host/qualify.sh"],
+      "evidence": ["agora-tui/tests/live/real_daemon.sh", "pantheon/tests/live/agora_agent_observe.sh", "pantheon/tests/live/agora_mutation.sh", "pantheon/tests/live/agora_hosted.sh", "pantheon/qualification/agora-host/qualify.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
@@ -109,6 +110,7 @@
         ],
         "headless": [
           { "id": "rooms.read.v2", "plane": "observation", "state": "qualified" },
+          { "id": "messages.read.v2", "plane": "observation", "state": "qualified", "when": "exact-room-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ]

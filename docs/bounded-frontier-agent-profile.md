@@ -29,6 +29,14 @@ the component's owner client and does not transfer sovereignty to Pantheon.
 
 The initial authorities are distinct:
 
+- `rooms.read.v2` and `messages.read.v2`: separate Agora gateways for one exact
+  room summary or one message page of at most 64 items. The deployment fixes
+  the owner socket, participant claim and transport profile. Exact-room lookup
+  scans at most eight internally consistent owner pages and emits no catalogue;
+  absence refuses without substituting a visible room. Message reads bind one
+  room and cursor and intentionally disclose body text, author, logical time and
+  addressees. Neither read grants room creation, speaking, membership,
+  moderation, task mutation or agent execution.
 - component-owned capability IDs such as `tasks.workflow.observe.v9` and
   `tellus.sme-plan.v1`: each exact catalog entry fixes the Pantheon subcommand
   and deployment arguments; the model cannot append a different operation or
@@ -76,12 +84,17 @@ bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
-Agora and Oculus are currently named there with the missing
-owner/client boundary and next admissible seam. `aggregate_fallback=false` is
+Agora and Oculus are currently named there with the remaining unavailable
+surface and next admissible seam. Agora's read tools are admissible independently,
+but addressed-message submission is not; Oculus still lacks its owner/query
+runtime. `aggregate_fallback=false` is
 normative: neither an agent nor a launcher may replace a missing component tool
 with Pantheon's aggregate headless observation. Aegis authority and human-gate
 responses are deliberately absent from this gap list because they are guarded
 controls, not autonomous-agent conveniences.
+
+An unavailable entry is keyed by both `component` and `surface`; it does not
+withdraw or weaken independently admitted sibling surfaces on that component.
 
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):
 

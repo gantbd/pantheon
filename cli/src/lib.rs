@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 pub mod agent_web;
+pub mod agora_observe;
 pub mod capabilities;
 pub mod chronos_task;
 pub mod daimon_observe;
