@@ -47,6 +47,7 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
     {
       "command": "pantheon-status",
       "capability": "11111111111111111111111111111111",
+      "semantic_capability": "tasks.workflow.observe.v9",
       "program": "/absolute/pantheon",
       "argument_prefix": ["headless", "--workspace-profile", "/absolute/profile.json"],
       "allow_additional_arguments": false
@@ -54,6 +55,7 @@ Example Daimon terminal fragment (identifiers and paths are deployment-owned):
     {
       "command": "web",
       "capability": "22222222222222222222222222222222",
+      "semantic_capability": "agent.web.fetch.v1",
       "program": "/absolute/pantheon",
       "argument_prefix": ["agent-web-fetch", "/absolute/web-policy.json"],
       "allow_additional_arguments": true

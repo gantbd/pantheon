@@ -2156,7 +2156,11 @@ Operational means observable completed work, not a configured role name:
   tool. Chronos observation, Tellus SME planning, Vellum reads, Agora speech and
   every control plane require distinct command entries and Aegis/Daimon tool
   IDs. A session may receive an explicit subset; no peer name, wildcard or role
-  switch grants sibling operations.
+  switch grants sibling operations. Daimon `4932bf6` makes that split
+  machine-auditable: its redacted catalogue publishes the stable semantic
+  component capability beside each opaque enforcement ID and command label,
+  while withholding the executable, arguments, paths and environment. It
+  rejects aggregate `pantheon*` labels and wildcard shapes.
 - The gateway's real HTTPS qualification pinned the current `/usr/bin/curl`
   digest `b636262803922ee1dd0fbf614818473ffa53c811e44fd3278c2270d3af4759d3`,
   admitted only `example.com`, returned 577 UTF-8 bytes with content digest
