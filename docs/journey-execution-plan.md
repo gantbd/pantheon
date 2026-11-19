@@ -2187,3 +2187,32 @@ capacity work own the presentation/remediation gap; the five existing tasks
 remain the authoritative tranche until the owner can express their shared P0
 portfolio without cancel/recreate churn.
 
+Hermes consumer and Vellum dogfood on 2026-11-19 added two bounded operational
+facts. Hermes now exposes an exact-stream `consumer` process profile limited to
+bounded event read, cursor observation and acknowledgement. Its reusable TUI
+projection requests only `Cursor` plus bounded `Read`, retains no payloads in
+presentation state, requests no service aggregates and cannot propose
+compaction. Pantheon composes that same projection in TUI and headless modes.
+The real hosted-process gate proves observer, operator and consumer startup,
+consumer read/cursor visibility, explicit compaction refusal, clean interactive
+drain and durable reopen. The gate also found and fixed a lifecycle leak:
+presentation connections must be released before sovereign owners drain, or a
+live Hermes connection fences shutdown into a forced kill.
+
+The isolated current-build `make run` topology reported Chronos and Vellum
+current. Vellum successfully presented and searched the admitted README, and
+`Ctrl-O` opened its file prompt while Vellum was active. Two interface gaps
+remain and must not be papered over with ambient filesystem access:
+
+- [ ] Route `Ctrl-O` through the behavior facade from every surface to the
+  configured Vellum file workflow. Overview currently reports `no input peer`
+  and Chronos consumes or ignores the key; the behavior works only after the
+  operator has already navigated to Vellum through `M-x`.
+- [ ] Make the default `make run` Vellum admission boundary match its promise.
+  It enables runtime file admission but configures the README regular file as
+  its only root, so admitting `docs/journey-execution-plan.md` returned the
+  non-actionable `Refused(EditorUnavailable)`. Select a bounded repository-root
+  profile or an explicit multi-root workset, expose the violated boundary and
+  safe remedy, and qualify both acceptance and refusal through TUI and headless
+  clients.
+
