@@ -2281,6 +2281,30 @@ host-maintained list could hide newly applicable grounding. Chronos revision 69
 therefore records `tellus-scope-bound-grounding-evidence-frontier` as a distinct
 priority-9 ready owner-contract task.
 
+Live PM dogfood refined that boundary rather than weakening it. Moira retains
+each selected SME authority and rendered-surface digest, while Tellus currently
+publishes the SHA-256 identity of each loaded Rune entry. Those identities are
+not interchangeable: the authority digest measures exact routed SME bytes and
+the surface digest measures Dendrite's canonical selected presentation. Neither
+identifies the fold or orthogonality load that made the grounding applicable.
+Chronos revision 70 therefore admits the priority-9
+`moira-grounding-source-provenance-contract` prerequisite. The owner-preserving
+repair must let Moira retain Dendrite-issued source provenance and let Tellus
+re-prove that exact selected grounding against current loads; Chronos may then
+join those owner facts. It must not equate unrelated hashes, treat every loaded
+corpus as applicable, or hide newly applicable grounding behind a host-maintained
+allowlist.
+
+The same live pass exposed three presentation/operation findings without
+changing the owner result. Emacs `C-u` did not clear the Chronos numeric-priority
+field, although the malformed value was safely refused without dispatch. The
+successful task admission was labeled `Cancel receipts` even though its applied
+receipt advanced Chronos from revision 69 to 70. Finally, the still-attached
+shared Pantheon profile retained Chronos but had no configured Vellum service;
+Vellum correctly refused `Ctrl-O`. A product manager must report that partial
+attachment as drift and withhold goal/proposal currentness, not infer Vellum
+availability from the current Make target or from host filesystem access.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

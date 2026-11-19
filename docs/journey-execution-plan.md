@@ -35,6 +35,26 @@ does not close an item; input profiles share one behavior facade.
 This ledger records experience gathered while using the component ensemble to
 deliver Pantheon. It is product input, not a substitute for journey acceptance.
 
+### 2026-11-19 — PM grounding provenance and partial-attachment drift
+
+- Re-entered the shared Pantheon TUI and confirmed the durable Chronos owner was
+  still current at revision 69. Initial sandbox-local tmux observation failed,
+  but an authorized client attachment succeeded; client visibility failure was
+  not misclassified as owner loss.
+- Audited Moira's Dendrite grounding adapter and Dendrite's Tellus boundary.
+  Moira's authority/surface digests and Tellus's loaded-entry identity measure
+  different facts. Chronos revision 70 admits priority-9
+  `moira-grounding-source-provenance-contract` so an owner-issued provenance
+  witness can precede the scope-bound Tellus join.
+- The task was created through Pantheon's central command palette and bounded
+  Chronos form. Invalid priority input was refused without dispatch; the exact
+  reviewed task then applied once. The form did not honor Emacs `C-u`, and the
+  successful submit summary was mislabeled `Cancel receipts`.
+- The shared profile exposed Chronos but not Vellum. `Ctrl-O` returned an
+  actionable refusal. This blocks a truthful live PM frontier in that profile
+  and is retained as attachment/configuration drift rather than bypassed with
+  ambient filesystem access.
+
 ### 2026-11-18 — provider posture at the J1 human gate
 
 - The exact task-to-model binding previously retained Daimon's qualification

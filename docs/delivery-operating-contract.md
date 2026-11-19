@@ -129,6 +129,39 @@ priority changes; it may not silently rewrite the goal, accept its own work,
 suppress stakeholder dissent, or assume executive, product-owner or rollout
 authority.
 
+The external frontier collaborator and a long-running Pantheon-constrained
+frontier insider are separate attributed principals, even when they use the
+same model family. They align through owner facts rather than private agent
+memory: each executable slice has one current Chronos task/attempt/lease; each
+Agora contribution names its participant; and each delivered effect carries
+its owner receipt. The product manager detects overlapping claims, stale goal
+revisions, conflicting recommendations and abandoned work, then proposes a
+boundary, pause, handoff or escalation. It cannot dispatch an unadmitted task,
+transfer a lease, merge two attempts, or declare one agent's narration to be
+the other's evidence. A disagreement that changes scope, priority, acceptance
+or consequential risk goes through attributed Agora challenge and the
+applicable product-owner, sponsor or human gate.
+
+The minimum recurring reconciliation cycle is:
+
+1. Observe the exact Vellum goal revision and current Chronos graph, attempts,
+   leases, dependencies and prior grooming receipt.
+2. Ask Moira whether the represented stakeholder ensemble remains adequate;
+   retain dissent rather than averaging it away.
+3. Join only current owner evidence from Tellus, Oculus, budget-policy and Aegis
+   boundaries; unavailable or incompatible owners make the frontier incomplete.
+4. Compare commitments, active claims, outcomes, friction and drift across the
+   external collaborator and constrained insider.
+5. Publish a PM-authored Vellum proposal and open an attributed Agora challenge
+   when material judgment is involved.
+6. Apply only the separately authorized owner/human disposition to Chronos and
+   retain the exact mutation receipt. Re-observe before the next dispatch.
+
+The cycle runs on relevant owner events and at a bounded scheduled cadence;
+event bursts are coalesced, and an unchanged frontier does not manufacture a
+new proposal. MBR/QBR review provides the slower strategic control loop and
+named executive sponsorship, not a substitute for operational reconciliation.
+
 Chronos is the authoritative scheduling and alignment index. Rich objective,
 acceptance and review content remains in Vellum under exact artifact references;
 Agora carries attributed challenge; Tellus carries grounding/provenance; Oculus
