@@ -2204,9 +2204,15 @@ same bounded proposal, stakeholder cohort, currentness, evidence/dissent/gate
 counts and recommended next tasks; focused tests cover successful orientation,
 endpoint failure, exact binding validation and a real verified local-socket
 exchange. Neither consumer can apply, accept, claim, reprioritize or sign off.
-This closes presentation parity, not the intelligent product manager: automatic
-grooming and challenge, owner mutation, acceptance evidence, production
-listener operation and final human sign-off remain open.
+This closes presentation parity, not the intelligent product manager. The
+independent integration listener lifecycle now also has single-owner locking,
+safe attributable stale-endpoint recovery, identity fencing, readiness-driven
+shutdown, clean removal and bounded signals, with real-client lifecycle and
+replacement-endpoint tests. Packaging that listener with a live frontier
+adapter remains open: it must re-read exact Chronos, Vellum and evidence-owner
+state rather than treating a retained proposal as current. Automatic grooming
+and challenge, owner mutation, acceptance evidence, that production composition,
+and final human sign-off remain open.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
