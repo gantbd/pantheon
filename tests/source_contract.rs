@@ -2964,4 +2964,22 @@ fn verification_result_validation_is_closed_private_and_not_publication() {
     ] {
         assert!(worker.contains(required), "worker adapter omits {required}");
     }
+
+    let journey = fs::read_to_string(
+        root.join("../moira/crates/moira-protocol/src/task_agent_journey.rs"),
+    )
+    .expect("Moira task-agent journey contract");
+    for required in [
+        "InstantiateOperationIdV1",
+        "WorkModeV1",
+        "BudgetV1",
+        "initiating_principal",
+        "accountable_human",
+        "grounding_policy_digest",
+        "authority_policy_digest",
+        "requested_ttl",
+        "replayed",
+    ] {
+        assert!(journey.contains(required), "activation owner omits {required}");
+    }
 }

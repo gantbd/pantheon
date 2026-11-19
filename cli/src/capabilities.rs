@@ -585,10 +585,10 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
 }];
 
 const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
-    component: "role-activation",
-    surface: "versioned-owner-runtime",
-    missing: "a sovereign activation owner with current and prior activation, principal, scope, delegation, budgets, grounding, policy epoch, accountable human, rationale, and expiry",
-    next_boundary: "select and qualify the role-activation owner; a role name or candidate tool set grants no authority",
+    component: "moira-aegis-progression",
+    surface: "task-agent.activation.v1",
+    missing: "owner progression from the replay-safe admitted Moira task-agent journey into a current Aegis delegation and exact worker/session lifecycle with expiry and completed-work receipts",
+    next_boundary: "reuse Moira's retained template, task, work mode, profile, budgets, grounding/authority policy digests, principals, accountable human, objective/acceptance evidence, TTL and consequence confirmation; add only current delegation and progression receipts",
 };
 
 const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {
@@ -707,6 +707,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "tasks.workflow.observe.v9",
             "tellus.sme-plan.v1",
             "workspace.snapshot.v1",
+            "moira.task-agent.observe.v1",
             "rooms.read.v2",
             "messages.read.v2",
             "messages.actor-publication.observe.v1",
@@ -737,6 +738,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "tasks.workflow.observe.v9",
             "tellus.sme-plan.v1",
             "workspace.snapshot.v1",
+            "moira.task-agent.observe.v1",
             "rooms.read.v2",
             "messages.read.v2",
             "messages.actor-publication.observe.v1",
@@ -768,6 +770,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
         required_tools: &[
             "tasks.workflow.observe.v9",
             "workspace.snapshot.v1",
+            "moira.task-agent.observe.v1",
             "messages.actor-publication.observe.v1",
             "messages.actor-publication.execute.v1",
             "task-conversation.v1",

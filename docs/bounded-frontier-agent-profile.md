@@ -162,10 +162,16 @@ set remain visibly extraneous rather than silently broadening the role.
 The result separately reports missing candidate tools and structural owner
 surfaces. It is a complete plan evaluation, never an activation receipt:
 `operational` remains false even when every semantic tool is present. Actual
-operation still requires a sovereign versioned role activation, current opaque
-Aegis/Daimon command grants, one exact Running Chronos attempt, an owner-bound
-worker lifecycle and a completed-work receipt. Human gates and authorities the
-role must never exercise are machine-readable parts of each profile.
+operation still requires progression from Moira's existing replay-safe
+task-agent journey into current opaque Aegis/Daimon command grants, one exact
+Running Chronos attempt, an owner-bound worker lifecycle and a completed-work
+receipt. The existing journey already retains its versioned template/profile,
+exact task evidence, work mode, budgets, grounding and authority-policy
+digests, initiating principal, accountable human, objective/acceptance
+evidence, TTL, consequence confirmation and replay receipts. Pantheon must add
+only the missing current delegation, expiry and effect progression; it must not
+create another role registry. Human gates and authorities the role must never
+exercise are machine-readable parts of each profile.
 
 The current profiles intentionally fail closed. In particular, the SRE still
 requires Oculus's catalogue/query owner, a durable Hermes trigger subscription,

@@ -2299,6 +2299,17 @@ Operational means observable completed work, not a configured role name:
   `blocked_by_owner_surfaces`, naming Oculus, Hermes trigger, Chronos proposal,
   role-activation and Daimon worker-lifecycle gaps. This is executable admission
   planning and honest orientation, not worker activation or completed work.
+- The common activation blocker is now grounded in Moira's existing
+  task-agent journey rather than an invented role registry. Preview and
+  instantiate already retain operation replay, versioned template/profile,
+  exact Chronos task evidence, PM/SRE/project/collaborator work mode, budgets,
+  grounding and authority-policy digests, initiating principal, accountable
+  human, objective/acceptance/current-evidence digests, TTL, consequence-bound
+  human confirmation and durable journey observation. Every role plan now
+  includes that bounded journey observation. What remains is an owner
+  progression receipt binding the admitted journey to a current Aegis
+  delegation, expiry, exact Chronos attempt and Daimon worker/session; admission
+  alone still starts no peer effect.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
