@@ -364,6 +364,27 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   editor; paced recovery made no owner mutation, and the existing
   `chronos-batch-mode-transition-input-fencing` item owns that friction rather
   than a duplicate task.
+- Commit `896ab02` adds a direct, read-only
+  `task-conversation-inspect` command for exact task or conversation lookup.
+  It emits the owner revision and complete typed links, including the
+  owner-issued link, operation and principal identities, while retaining the
+  boundary that room activity is not task progress. The focused live gate
+  proves the exact observation before and after relationship-owner restart;
+  package formatting, strict Clippy, diff hygiene and the focused source
+  contract pass. The canonical J1 journey script now includes the same check,
+  but its fresh run is blocked before journey execution because the clean
+  sibling `daimon-tui/Cargo.lock` no longer satisfies its locked dependency
+  graph. The existing priority-4
+  `pantheon-last-known-good-development-launch` task owns that development-
+  launch boundary; the gate was not weakened and no peer lockfile was changed.
+- Shared-session dogfooding found no existing multi-user presentation item.
+  Canonical Chronos revision 56 therefore admits priority-4
+  `pantheon-multi-user-presentation-operating-model` with identity,
+  control-leases, privacy and concurrent-clients capabilities. Its future
+  operating model must distinguish observer/controller roles, attribute every
+  action, fence stale controllers through explicit takeover leases, retain
+  per-user focus/selection, and respect disclosure boundaries. Multiple
+  terminals sharing one keyboard stream is not a multi-user contract.
 - The default `make run` owner separately admitted priority-8
   `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
   Ready with its Moira-deliberation, Moira–Daimon and Pantheon-presentation
@@ -1401,9 +1422,14 @@ present the same retained disclosure; missing evidence is no longer hidden.
   bidirectional lookup and explicit broken-link projection. Pantheon's shared
   behavior facade now reviews, arms and confirms the exact selected Chronos task
   and open Agora room, reports the owner receipt, and projects the same
-  content-free relationship status headlessly. `tests/live/task_conversation.sh`
-  and `tests/live/work_item_agent_journey.sh` qualify complementary real-TUI
-  paths, headless parity and owner restart recovery. The composed work-item
+  content-free relationship status headlessly. The direct read-only
+  `task-conversation-inspect` command accepts one exact task or conversation
+  reference and returns the complete owner-issued typed link identity,
+  provenance and freshness without constructing TUI state.
+  `tests/live/task_conversation.sh` qualifies that exact query before and after
+  owner restart; `tests/live/work_item_agent_journey.sh` retains the
+  complementary composed real-TUI path and now carries the same exact check for
+  its next canonical run. The composed work-item
   journey now includes the Agora capability: after an applied Daimon turn it
   prefills a direct conversation for the configured operator and agent
   participants, retains Agora's ordinary review/arm/confirm gate, and opens the

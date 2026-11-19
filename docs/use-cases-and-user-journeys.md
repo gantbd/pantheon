@@ -2080,6 +2080,10 @@ the first prompt. Pantheon then prefills an Agora conversation between the
 configured operator and one legacy agent or a bounded exact agent cohort,
 retains Agora's ordinary review/arm/confirm gate,
 and separately reviews the exact durable Chronos-task-to-room relationship.
+The same relationship is now directly inspectable headlessly by one exact task
+or conversation reference, returning the complete owner-issued typed link,
+provenance and freshness without constructing presentation state. Room activity
+still does not imply task progress.
 Only an explicitly selected addressed message can open the ordinary guarded
 prompt flow; ambient chatter remains inert. A bounded participant-to-session
 route selects each exact configured Daimon session independently of the UI's
