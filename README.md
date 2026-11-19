@@ -631,6 +631,13 @@ Tellus peer through Dendrite's typed authenticated observation endpoint in
 both Pantheon modes. This uses `tellus.observe.v1`, not Dendrite's agent-facing
 MCP boundary.
 
+Use `pantheon tellus-sme-plan LOOPBACK_HOST:PORT REQUEST_JSON [--token-file
+PATH]` for the bounded headless SME roster. The strict request selects exact
+fold and concern-lattice loads, context tags, one authored depth, a role bound
+and a disclosure-byte bound. The result retains fold, lattice, authority and
+surface digests, asks `do we have the right ensemble?`, and cannot imply
+stakeholder equity, independence, approval, authority or proof.
+
 Run `sh tests/live/moira_attach.sh` to qualify Moira's content-free census in
 headless mode and the same reusable component's bounded selected-saga evidence
 and operator receipts interactively. The gate uses only `SagaReadOnlyClient`;

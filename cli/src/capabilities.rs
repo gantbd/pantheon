@@ -215,6 +215,7 @@ pub fn aegis(hosted: bool) -> Vec<Capability> {
 pub fn tellus() -> Vec<Capability> {
     vec![
         capability("tellus.observe.v1", Plane::Observation),
+        capability("tellus.sme-plan.v1", Plane::Observation),
         topology(false),
     ]
 }

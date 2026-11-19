@@ -1103,6 +1103,16 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Pantheon rendering work. The obvious palette phrase `open tellus` also found
   no action even though `navigate.tellus` exists; the footer did not orient the
   operator to Tellus's `Ctrl-6`/`Alt-6` route.
+- The first breadth repair is now delivered headlessly. Dendrite commit
+  `ba7ccaf` adds authenticated `tellus.sme-plan.v1` over its real fold, selected
+  surface, content-identity and orthogonality queries. Tellus commit `bf3705a`
+  projects that response through closed Rust DTOs, preserving fold/lattice,
+  authority and surface digests while rejecting invented entry kinds, false
+  completion and alteration of the ensemble-review question. Pantheon's
+  `tellus-sme-plan` command consumes only that typed loopback client and emits
+  actionable refusal/transport states. This is SME roster evidence, not
+  stakeholder equity, session admission, influence evidence or model
+  authority; arbitrary query/navigation and TUI parity remain open.
 - Vellum dogfood used a fresh owner-backed session to update `README.md`: one
   exact match at revision 0, owner generation 2 atomic publication, then guarded
   save back to Clean. A stale session separately turned tmux `F6` into literal
