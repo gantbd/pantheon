@@ -1942,6 +1942,37 @@ fn hestia_real_model_gate_separates_host_readiness_from_provider_readiness() {
 }
 
 #[test]
+fn local_ensemble_preflights_its_consumer_before_spending_model_budget() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let gate = fs::read_to_string(root.join("tests/live/moira_local_ensemble.sh"))
+        .expect("Moira local-ensemble gate");
+    for required in [
+        "cargo metadata --manifest-path \"$moira_live_manifest\"",
+        "--locked --offline --format-version 1",
+        "No Hestia artifact was acquired and no local model was started",
+        "make qualify-moira-local-ensemble",
+        "Admitted ensemble artifact",
+        "Ready ensemble provider",
+        "independently attributed reports",
+    ] {
+        assert!(
+            gate.contains(required),
+            "Moira local-ensemble gate omits {required}"
+        );
+    }
+    let preflight = gate
+        .find("cargo metadata --manifest-path")
+        .expect("consumer preflight");
+    let acquisition = gate
+        .find("hestiactl\" acquire")
+        .expect("artifact acquisition");
+    assert!(
+        preflight < acquisition,
+        "local model acquisition precedes the final-consumer preflight"
+    );
+}
+
+#[test]
 fn daimon_advance_reuses_the_owner_guard_in_standalone_and_workbench() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let gate =

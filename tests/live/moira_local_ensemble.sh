@@ -15,6 +15,7 @@ context_ranges=${PANTHEON_ENSEMBLE_CONTEXT_LINE_RANGES:-128-180,300-455,690-753}
 dendrite_port=${PANTHEON_DENDRITE_PORT:-4498}
 scratch=$(mktemp -d "/private/tmp/pme.XXXXXX")
 hestia_pid=
+moira_live_manifest="$workspace/moira/qualification/methodical-peer-live/Cargo.toml"
 
 cleanup() {
   if [ -n "$hestia_pid" ] && kill -0 "$hestia_pid" 2>/dev/null; then
@@ -28,6 +29,17 @@ cleanup() {
   fi
 }
 trap cleanup EXIT HUP INT TERM
+
+# Resolve the final consumer before acquiring or starting a model. This must be
+# a full locked resolution: --no-deps would hide stale peer lock edges and burn
+# local runtime and token budgets before the ensemble can accept a report.
+if ! cargo metadata --manifest-path "$moira_live_manifest" \
+  --locked --offline --format-version 1 >/dev/null; then
+  echo 'FAIL: Moira live-ensemble harness locked graph is not reproducible.' >&2
+  echo 'No Hestia artifact was acquired and no local model was started.' >&2
+  echo 'Next: reconcile the owner lockfile, then rerun make qualify-moira-local-ensemble.' >&2
+  exit 1
+fi
 
 test -d "$store" || { echo "FAIL: qualified Hestia artifact store is unavailable: $store" >&2; exit 1; }
 test -f "$qwen_source" || { echo "FAIL: retained Qwen artifact is unavailable: $qwen_source" >&2; exit 1; }
