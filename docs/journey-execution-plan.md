@@ -1407,6 +1407,17 @@ recovery before a human can settle the gate from this surface.
   delivered. The live creation receipt again used the unrelated label `Cancel
   receipts`; the existing Chronos mutation-receipt labeling backlog item owns
   that friction, so no duplicate task was created.
+- Chronos now carries the first bounded data contract for that dual-frontier
+  ledger. It keeps the external supervisor, constrained worker and PM as three
+  distinct attributed principals; retains exact task/attempt/lease,
+  contribution and evidence references per worker; and binds PM judgment to
+  the same owner-sampled alignment basis. The contract refuses a claim without
+  an exact task, role collapse, invented conflict/gate references and a false
+  `Aligned` judgment while conflict or gate evidence remains. Three focused
+  tests and strict Clippy pass. Durable encoding, the owner readers/public
+  projection, recurring/coalesced PM execution, Agora challenge and separately
+  authorized application remain open, so the priority-10 Chronos task remains
+  blocked rather than being declared complete.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

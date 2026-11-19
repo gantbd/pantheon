@@ -142,6 +142,16 @@ the other's evidence. A disagreement that changes scope, priority, acceptance
 or consequential risk goes through attributed Agora challenge and the
 applicable product-owner, sponsor or human gate.
 
+Chronos now defines the first owner-native dual-frontier reconciliation shape:
+the external supervisor and constrained insider remain distinct principals,
+and each position carries only exact owner-supplied task, attempt, lease,
+contribution and evidence references. The PM may bind a judgment and Vellum
+rationale to that shared alignment basis, but every cited conflict must already
+resolve to sampled owner evidence and every human escalation must name an exact
+pending gate. The contract refuses role collapse, invented evidence and false
+`Aligned` status. Its durable/public/runtime composition remains prospective;
+the type alone is not an operational PM or permission to mutate Chronos.
+
 The minimum recurring, owner-bracketed reconciliation cycle is:
 
 1. Observe the exact Vellum goal revision and current Chronos graph, attempts,
