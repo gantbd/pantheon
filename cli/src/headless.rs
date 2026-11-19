@@ -36,7 +36,7 @@ use crate::profile::{
 use crate::provider::provider_catalog;
 use pantheon::{
     AgendaActionability, AgendaEntry, AgendaKind, AgendaUrgency, OperatorAgendaView,
-    chronos_attention_entry,
+    alignment_drift_entry, alignment_human_gate_entry, chronos_attention_entry,
 };
 
 pub struct HeadlessRequest {
@@ -440,6 +440,16 @@ fn hestia_observation(
 
 fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
     let mut agenda = OperatorAgendaView::default();
+    let direct_moira_gate = peers.iter().any(|peer| {
+        peer.get("peer").and_then(serde_json::Value::as_str) == Some("moira-deliberation")
+            && peer.get("status").and_then(serde_json::Value::as_str) == Some("current")
+            && peer
+                .get("deliberation")
+                .and_then(|value| value.get("human_gate"))
+                .and_then(|gate| gate.get("status"))
+                .and_then(serde_json::Value::as_str)
+                == Some("pending")
+    });
     for peer in peers {
         let Some(name) = peer.get("peer").and_then(serde_json::Value::as_str) else {
             continue;
@@ -497,6 +507,84 @@ fn project_operator_agenda(peers: &[serde_json::Value]) -> OperatorAgendaView {
                     dependency_count,
                 ) {
                     agenda.push(entry);
+                }
+            }
+        } else if name == "chronos-alignment" {
+            let instance = peer
+                .get("instance")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown");
+            let source = format!("chronos-alignment/{instance}");
+            let Some(observation) = (status == "current")
+                .then(|| peer.get("observation"))
+                .flatten()
+            else {
+                agenda.unavailable_sources.push(source);
+                continue;
+            };
+            let Some(record_revision) = observation
+                .get("record_revision")
+                .and_then(serde_json::Value::as_str)
+            else {
+                agenda.unavailable_sources.push(source);
+                continue;
+            };
+            let Some(currentness) = observation
+                .get("currentness")
+                .and_then(serde_json::Value::as_str)
+            else {
+                agenda.unavailable_sources.push(source);
+                continue;
+            };
+            let Some(proposal) = observation.get("proposal") else {
+                agenda.unavailable_sources.push(source);
+                continue;
+            };
+            let (Some(namespace), Some(document)) = (
+                proposal
+                    .get("namespace")
+                    .and_then(serde_json::Value::as_str),
+                proposal.get("document").and_then(serde_json::Value::as_str),
+            ) else {
+                agenda.unavailable_sources.push(source);
+                continue;
+            };
+            if let Some(entry) = alignment_drift_entry(
+                instance,
+                record_revision,
+                &format!("{namespace}/{document}"),
+                currentness,
+            ) {
+                agenda.push(entry);
+            }
+            if !direct_moira_gate {
+                for gate in observation
+                    .get("pending_human_gates")
+                    .and_then(serde_json::Value::as_array)
+                    .into_iter()
+                    .flatten()
+                {
+                    let (Some(owner), Some(resource), Some(revision)) = (
+                        gate.get("owner").and_then(serde_json::Value::as_str),
+                        gate.get("resource").and_then(serde_json::Value::as_str),
+                        gate.get("revision").and_then(serde_json::Value::as_str),
+                    ) else {
+                        if !agenda
+                            .truncated_sources
+                            .iter()
+                            .any(|value| value == &source)
+                        {
+                            agenda.truncated_sources.push(source.clone());
+                        }
+                        continue;
+                    };
+                    agenda.push(alignment_human_gate_entry(
+                        instance,
+                        record_revision,
+                        owner,
+                        resource,
+                        revision,
+                    ));
                 }
             }
         } else if name == "moira-participation" && status == "current" {
@@ -2350,6 +2438,72 @@ mod tests {
         );
         assert!(blocked.next_owner_action.contains("Dependencies"));
         assert!(!agenda.operating_reviews.owner_configured);
+    }
+
+    #[test]
+    fn operator_agenda_surfaces_alignment_drift_and_gate_without_inventing_control() {
+        let alignment = serde_json::json!({
+            "peer": "chronos-alignment",
+            "instance": "Product",
+            "status": "current",
+            "observation": {
+                "record_revision": "0",
+                "currentness": "evidence_changed",
+                "proposal": {"namespace":"product-delivery", "document":"pm-proposal"},
+                "pending_human_gates": [{
+                    "owner":"moira",
+                    "resource":"human-gate/1e",
+                    "revision":"gate-revision"
+                }]
+            }
+        });
+        let agenda = project_operator_agenda(&[alignment]);
+        assert_eq!(agenda.entries.len(), 2);
+        let drift = agenda
+            .entries
+            .iter()
+            .find(|entry| entry.kind == AgendaKind::ProductAlignment)
+            .unwrap();
+        assert_eq!(drift.source_instance.as_deref(), Some("Product"));
+        assert_eq!(drift.source_revision, "0");
+        assert_eq!(drift.actionability, AgendaActionability::InspectOnly);
+        let gate = agenda
+            .entries
+            .iter()
+            .find(|entry| entry.kind == AgendaKind::HumanGate)
+            .unwrap();
+        assert_eq!(gate.resource_identity, "moira/human-gate/1e@gate-revision");
+        assert_eq!(gate.actionability, AgendaActionability::InspectOnly);
+        assert!(gate.blocker.as_deref().unwrap().contains("cannot resolve"));
+    }
+
+    #[test]
+    fn direct_moira_gate_supersedes_the_alignment_projection() {
+        let alignment = serde_json::json!({
+            "peer": "chronos-alignment",
+            "instance": "Product",
+            "status": "current",
+            "observation": {
+                "record_revision": "0",
+                "currentness": "current",
+                "proposal": {"namespace":"product-delivery", "document":"pm-proposal"},
+                "pending_human_gates": [{
+                    "owner":"moira", "resource":"human-gate/1e", "revision":"gate-revision"
+                }]
+            }
+        });
+        let moira = serde_json::json!({
+            "peer": "moira-deliberation",
+            "status": "current",
+            "registry_revision": 12,
+            "deliberation": {"human_gate": {
+                "status": "pending",
+                "request": {"id": "17".repeat(16), "reviewer": "18".repeat(16)}
+            }}
+        });
+        let agenda = project_operator_agenda(&[alignment, moira]);
+        assert_eq!(agenda.entries.len(), 1);
+        assert_eq!(agenda.entries[0].source_peer, "moira-deliberation");
     }
 
     #[test]

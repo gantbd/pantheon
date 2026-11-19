@@ -14,6 +14,7 @@ pub enum AgendaKind {
     OutcomeUnknown,
     GovernedPermission,
     HumanGate,
+    ProductAlignment,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
@@ -171,6 +172,71 @@ pub fn chronos_attention_entry(
     })
 }
 
+/// Projects a non-current PM proposal as inspect-only attention. The retained
+/// proposal is not rewritten or applied, and the currentness label must come
+/// from the owner protocol rather than host comparison.
+pub fn alignment_drift_entry(
+    workstream: &str,
+    record_revision: &str,
+    proposal_identity: &str,
+    currentness: &str,
+) -> Option<AgendaEntry> {
+    if currentness == "current" {
+        return None;
+    }
+    Some(AgendaEntry {
+        source_peer: "chronos-alignment".into(),
+        source_instance: Some(workstream.into()),
+        source_revision: record_revision.into(),
+        resource_identity: proposal_identity.into(),
+        kind: AgendaKind::ProductAlignment,
+        urgency: AgendaUrgency::Blocking,
+        actionability: AgendaActionability::InspectOnly,
+        blocker: Some(format!(
+            "the retained PM proposal is no longer current: {currentness}"
+        )),
+        title: format!("Product alignment drift · {currentness}"),
+        why_operator: "the owner reports that the retained PM proposal no longer matches the live alignment frontier".into(),
+        authority: "agenda presence grants none; the PM may propose, while Chronos, Vellum, Agora and named humans retain their own authority".into(),
+        requested_action: "inspect Alignment, preserve dissent, and request a new attributable PM proposal".into(),
+        consequence_of_waiting: "collaborators may continue from different goal, work, ensemble or evidence frontiers".into(),
+        next_owner_action: "open Chronos Alignment; convene attributed challenge before any owner mutation".into(),
+        route: "navigate.chronos".into(),
+    })
+}
+
+/// Projects one exact current-frontier human-gate reference carried by the PM
+/// observation. This is intentionally inspect-only: the alignment projection
+/// neither contains nor substitutes for Moira's decision packet and Aegis-
+/// authorized response control.
+pub fn alignment_human_gate_entry(
+    workstream: &str,
+    record_revision: &str,
+    owner: &str,
+    resource: &str,
+    gate_revision: &str,
+) -> AgendaEntry {
+    AgendaEntry {
+        source_peer: "chronos-alignment".into(),
+        source_instance: Some(workstream.into()),
+        source_revision: record_revision.into(),
+        resource_identity: format!("{owner}/{resource}@{gate_revision}"),
+        kind: AgendaKind::HumanGate,
+        urgency: AgendaUrgency::Blocking,
+        actionability: AgendaActionability::InspectOnly,
+        blocker: Some(
+            "the PM projection identifies the gate but cannot resolve its decision material or response authority".into(),
+        ),
+        title: "Product alignment · pending human gate".into(),
+        why_operator: "the current multi-owner alignment frontier retains an unanswered named-human gate".into(),
+        authority: "agenda presence grants none; only the exact Moira/Aegis human response contract can settle this gate".into(),
+        requested_action: "inspect Alignment, then follow the exact gate in its owning human-decision surface".into(),
+        consequence_of_waiting: "the PM recommendation remains human-gated and no agent or timeout may infer a disposition".into(),
+        next_owner_action: "open Chronos Alignment; resolve the referenced owner gate through its qualified control".into(),
+        route: "navigate.chronos".into(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -236,5 +302,28 @@ mod tests {
         assert_eq!(uncertain.actionability, AgendaActionability::Actionable);
         assert!(uncertain.blocker.is_none());
         assert!(chronos_attention_entry("delivery", "9", "ready", "4", "ready", 0, 0).is_none());
+    }
+
+    #[test]
+    fn alignment_attention_preserves_drift_and_human_gate_without_authority() {
+        assert!(alignment_drift_entry("delivery", "0", "pm/proposal", "current").is_none());
+        let drift =
+            alignment_drift_entry("delivery", "0", "pm/proposal", "evidence_changed").unwrap();
+        assert_eq!(drift.kind, AgendaKind::ProductAlignment);
+        assert_eq!(drift.actionability, AgendaActionability::InspectOnly);
+        assert!(
+            drift
+                .blocker
+                .as_deref()
+                .unwrap()
+                .contains("evidence_changed")
+        );
+
+        let gate =
+            alignment_human_gate_entry("delivery", "0", "moira", "human-gate/abc", "revision-7");
+        assert_eq!(gate.kind, AgendaKind::HumanGate);
+        assert_eq!(gate.actionability, AgendaActionability::InspectOnly);
+        assert_eq!(gate.resource_identity, "moira/human-gate/abc@revision-7");
+        assert!(gate.authority.contains("Moira/Aegis"));
     }
 }

@@ -70,9 +70,9 @@ use pantheon::{
     CommandKind, CommandPalette, CommandSpec, DaimonModelView, ExitDecision, Focus,
     HumanGatePacketView, Instrumentation, KeybindingGuide, OperationsReceiptView, OperationsView,
     OperatorAgendaView, PaletteOutcome, PeerHealthState, PeerHealthView, PeerViews, RoutedInput,
-    Shell, ShellInput, SuiteHealthView, Surface, chronos_attention_entry, decide_exit,
-    draw_activity, draw_command_palette, draw_help, draw_inspector, draw_shell_with_moira,
-    shell_input, surface_tab_at,
+    Shell, ShellInput, SuiteHealthView, Surface, alignment_drift_entry, alignment_human_gate_entry,
+    chronos_attention_entry, decide_exit, draw_activity, draw_command_palette, draw_help,
+    draw_inspector, draw_shell_with_moira, shell_input, surface_tab_at,
 };
 
 struct InputCapture {
@@ -1073,6 +1073,9 @@ fn operator_agenda_view(
     moira_decision_packet: Option<&MoiraDecisionPacketComponent>,
 ) -> OperatorAgendaView {
     let mut agenda = OperatorAgendaView::default();
+    let direct_moira_gate = moira_deliberation
+        .and_then(moira_tui::DeliberationComponent::operator_agenda_observation)
+        .is_some();
     if let Some(chronos) = chronos {
         for observation in chronos.operator_agenda_observations() {
             let source = format!("chronos/{}", observation.workstream);
@@ -1094,6 +1097,36 @@ fn operator_agenda_view(
                     task.dependency_count as u64,
                 ) {
                     agenda.push(entry);
+                }
+            }
+        }
+        for alignment in chronos.alignment_operator_agenda_observations() {
+            let source = format!("chronos-alignment/{}", alignment.workstream);
+            let Some(observation) = alignment.observation else {
+                agenda.unavailable_sources.push(source);
+                continue;
+            };
+            let proposal_identity = format!(
+                "{}/{}",
+                observation.proposal.namespace, observation.proposal.document
+            );
+            if let Some(entry) = alignment_drift_entry(
+                &alignment.workstream,
+                &observation.record_revision,
+                &proposal_identity,
+                alignment_currentness_label(observation.currentness),
+            ) {
+                agenda.push(entry);
+            }
+            if !direct_moira_gate {
+                for gate in observation.pending_human_gates {
+                    agenda.push(alignment_human_gate_entry(
+                        &alignment.workstream,
+                        &observation.record_revision,
+                        &gate.owner,
+                        &gate.resource,
+                        &gate.revision,
+                    ));
                 }
             }
         }
@@ -1162,6 +1195,18 @@ fn operator_agenda_view(
     }
     agenda.sort();
     agenda
+}
+
+const fn alignment_currentness_label(
+    value: chronos_protocol::alignment_v1::Currentness,
+) -> &'static str {
+    match value {
+        chronos_protocol::alignment_v1::Currentness::Current => "current",
+        chronos_protocol::alignment_v1::Currentness::GoalChanged => "goal_changed",
+        chronos_protocol::alignment_v1::Currentness::WorkChanged => "work_changed",
+        chronos_protocol::alignment_v1::Currentness::CohortChanged => "cohort_changed",
+        chronos_protocol::alignment_v1::Currentness::EvidenceChanged => "evidence_changed",
+    }
 }
 
 fn agenda_identity(value: [u8; 16]) -> String {
