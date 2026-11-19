@@ -68,6 +68,31 @@ start_link() {
   wait_socket "$scratch/task-conversation.sock" "$link_pid" "$scratch/link.err"
 }
 
+inspect_relationship() {
+  "$workbench" task-conversation-inspect \
+    "$scratch/task-conversation.sock" conversation local-agent-task - | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["version"] == 1
+assert report["mode"] == "task_conversation_exact_observation"
+assert report["owner"] == "task-conversation.v1"
+assert report["status"] == "current" and report["complete"]
+assert report["owner_revision"] == 1
+assert report["query"] == {
+    "kind": "conversation",
+    "reference": {"room": "local-agent-task", "thread_root": None},
+}
+assert report["link_count"] == 1 and len(report["links"]) == 1
+link = report["links"][0]
+assert len(link["link_id"]) == 32
+assert link["task"]["task"] == "local-agent-task"
+assert link["conversation"] == {"room": "local-agent-task", "thread_root": None}
+assert len(link["operation_id"]) == 32 and len(link["principal_id"]) == 32
+assert link["chronos_revision"] and link["agora_revision"] > 0
+assert "not task progress" in report["boundary"]
+'
+}
+
 cat >"$scratch/provider-catalog.json" <<'EOF'
 {
   "version": 1,
@@ -338,8 +363,15 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
+inspect_relationship
+kill -TERM "$link_pid"
+wait "$link_pid" || true
+link_pid=
+start_link
+inspect_relationship
+
 test "$(wc -l <"$scratch/receipts" | tr -d ' ')" = 3
 grep '^opened$' "$scratch/receipts" >/dev/null
 test "$(grep -c '^prompted$' "$scratch/receipts")" = 2
 
-echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated direct Agora task conversation -> durable exact relationship -> explicitly addressed room message -> guarded second agent turn -> refreshed Kanban board'
+echo 'PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated direct Agora task conversation -> durable exact relationship -> explicitly addressed room message -> guarded second agent turn -> refreshed Kanban board -> exact headless relationship inspection before/after owner restart'

@@ -763,6 +763,7 @@ fn negotiate_capabilities(
 fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
+        "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
         "pantheon [interactive|headless] (--workspace-profile PATH | CHRONOS_PRIVATE_SERVICE_DIRECTORY | --chronos-profile PATH) [--host-chronos] [--vellum-service SOCKET] [--host-vellum --vellum-root PATH…] [--vellum-credential PATH] [--vellum-allow-edit] [--vellum-allow-save] [--chronos-allow-writes] [--chronos-watch] [--chronos-scheduling] [--chronos-planning PATH] [--chronos-cancel-receipts] [--chronos-workstream NAME DIRECTORY]… [--chronos-moira WORKSTREAM SOCKET SCOPE] [--chronos-daimon WORKSTREAM SOCKET] [--check-profile]\npantheon vellum-durable-save <execute|lookup> SOCKET CREDENTIAL vdo1.OPERATION_HEX DOCUMENT_ORDINAL EXPECTED_REVISION\npantheon agora-create-room SOCKET PARTICIPANT <conversation|composition> ROOM_ID NAME <open|invite-only> EXPECTED_REVISION 'CREATE AGORA ROOM ROOM_ID NAMED NAME ADMISSION <OPEN|INVITE ONLY> AT REVISION EXPECTED_REVISION'\npantheon daimon-agent-advance SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'ADVANCE DAIMON SESSION …'\npantheon daimon-agent-cancel SOCKET AGENT_SESSION_HEX TURN_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CANCEL DAIMON SESSION …'\npantheon daimon-agent-close SOCKET AGENT_SESSION_HEX EXPECTED_REVISION IDEMPOTENCY_KEY_HEX NOW 'CLOSE DAIMON SESSION …'\npantheon daimon-agent-reattach SOCKET REQUEST_JSON 'REATTACH DAIMON SESSION …'\npantheon daimon-agent-prompt SOCKET REQUEST_JSON PROMPT_FILE 'PROMPT DAIMON SESSION …'\npantheon daimon-agent-permission SOCKET REQUEST_JSON 'DECIDE DAIMON PERMISSION …'\npantheon aegis-revoke-epoch SOCKET EXPECTED_EPOCH 'REVOKE AEGIS EPOCH EXPECTED_EPOCH'\npantheon aegis-attenuate-authorize-once SOCKET EXPECTED_EPOCH NOW PARENT_EXPIRES_AT CHILD_EXPIRES_AT ENGINE RESOURCE_HEX ACTION 'AUTHORIZE AEGIS EPOCH EXPECTED_EPOCH ENGINE RESOURCE_HEX ACTION UNTIL CHILD_EXPIRES_AT'\npantheon aegis-manage-session SOCKET\npantheon hermes-disclose-events SOCKET STREAM_HEX START LIMIT 'DISCLOSE HERMES STREAM STREAM_HEX FROM START LIMIT LIMIT'\npantheon hermes-acknowledge SOCKET CONSUMER_HEX STREAM_HEX EXPECTED_NEXT THROUGH 'ACKNOWLEDGE HERMES CONSUMER CONSUMER_HEX STREAM STREAM_HEX FROM EXPECTED_NEXT THROUGH THROUGH'\npantheon hermes-compact SOCKET STREAM_HEX EXPECTED_RETAINED_FROM EXPECTED_PUBLISHED_EDGE THROUGH 'COMPACT HERMES STREAM STREAM_HEX RETAINED FROM EXPECTED_RETAINED_FROM PUBLISHED EDGE EXPECTED_PUBLISHED_EDGE THROUGH THROUGH'\npantheon moira-reconciliation-view SOCKET SAGA_ID DISPOSITION [ARGS]\npantheon moira-reconciliation-confirm SOCKET STORAGE_REVISION SAGA_ID DISPOSITION [ARGS] ACTION_HEX CONFIRMATION_DIGEST_HEX CONFIRM\npantheon moira-reconciliation-recover SOCKET SAGA_ID ACTION_HEX\nreconciliation dispositions: keep-uncertain | fail-terminal | retry EFFECT_ID NOW | compensate NOW | cancel NOW | admit-evidence EFFECT_ID <succeeded|failed> OBSERVED_AT\nThe explicit headless command emits one bounded, versioned JSON observation for every configured peer without constructing TUI state. --headless and --snapshot remain compatibility aliases when no command is supplied. Hosted Chronos and Vellum reuse the same peer clients while Pantheon owns service startup and drain. Peer commands reuse their owner guards and application contracts: Agora room creation binds the exact room facts and current revision, uses the actor-bound owner client and does not retry an uncertain outcome; Moira accepts only exact server-prepared reconciliation and recovers uncertainty only from durable receipts; Daimon cancellation, close, reattach and permission decisions bind exact current state, prompt bytes stay outside argv, and no uncertain mutation is retried; Aegis never retries uncertain authority mutations; Hermes disclosure stays bounded while acknowledgement and compaction observe exact current state then mutate once on one connection without retrying uncertain delivery. Vellum durable save execute/lookup uses the peer-owned public-client guard and caller-persisted identity; Pantheon grants no authentication, action authority, persistence or retry permission. [/] switches configured surfaces; Tab switches focus inside Workspace; Ctrl-Q exits after persistence checks. Authority-bearing write access remains an explicit launch option."
     )
 }
@@ -857,6 +858,130 @@ fn reconfiguration_plan(
     Ok(())
 }
 
+fn task_conversation_inspect(
+    mut args: impl Iterator<Item = std::ffi::OsString>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use agora_chronos_adapter::task_conversation_local::{
+        ConversationReferenceWireV1, LocalRequestV1, TASK_CONVERSATION_CAPABILITY_V1,
+        TaskConversationLocalClientV1, TaskReferenceWireV1,
+    };
+
+    let usage = "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->";
+    let socket = PathBuf::from(required_arg(&mut args, usage)?);
+    let kind = required_arg(&mut args, usage)?
+        .into_string()
+        .map_err(|_| "task-conversation query kind must be UTF-8")?;
+    let (request, query) = match kind.as_str() {
+        "task" => {
+            let scope = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| "task scope must be UTF-8")?;
+            let task = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| "task identity must be UTF-8")?;
+            let incarnation = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| "task incarnation must be UTF-8")?;
+            let attempt = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| "task attempt must be UTF-8")?;
+            let attempt =
+                if attempt == "-" {
+                    None
+                } else {
+                    Some(attempt.parse::<u32>().map_err(
+                        |_| "task attempt must be a positive integer or '-' for task-level",
+                    )?)
+                };
+            if attempt == Some(0) {
+                return Err("task attempt must be positive".into());
+            }
+            let task_reference = TaskReferenceWireV1 {
+                scope,
+                task,
+                incarnation,
+                attempt,
+            };
+            (
+                LocalRequestV1::ByTask {
+                    task: task_reference.clone(),
+                },
+                serde_json::json!({"kind":"task","reference":task_reference}),
+            )
+        }
+        "conversation" => {
+            let room = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| "conversation room must be UTF-8")?;
+            let thread_root = required_arg(&mut args, usage)?
+                .into_string()
+                .map_err(|_| "conversation thread root must be UTF-8")?;
+            let thread_root = if thread_root == "-" {
+                None
+            } else {
+                Some(
+                    thread_root
+                        .parse::<u64>()
+                        .map_err(|_| "conversation thread root must be an integer or '-'")?,
+                )
+            };
+            let conversation = ConversationReferenceWireV1 { room, thread_root };
+            (
+                LocalRequestV1::ByConversation {
+                    conversation: conversation.clone(),
+                },
+                serde_json::json!({"kind":"conversation","reference":conversation}),
+            )
+        }
+        _ => return Err(usage.into()),
+    };
+    if args.next().is_some() {
+        return Err(usage.into());
+    }
+
+    let reply = TaskConversationLocalClientV1::new(socket).request(&request)?;
+    if reply.version != 1
+        || reply.capability != TASK_CONVERSATION_CAPABILITY_V1
+        || !reply.complete
+        || reply.status != "current"
+        || reply.revision.is_none()
+    {
+        return Err(format!(
+            "task-conversation owner refused exact inspection: {} ({})",
+            reply.status,
+            reply.refusal.as_deref().unwrap_or("unclassified")
+        )
+        .into());
+    }
+    let exact = match &request {
+        LocalRequestV1::ByTask { task } => reply.links.iter().all(|link| &link.task == task),
+        LocalRequestV1::ByConversation { conversation } => reply
+            .links
+            .iter()
+            .all(|link| &link.conversation == conversation),
+        _ => false,
+    };
+    if !exact {
+        return Err("task-conversation owner returned a link outside the exact query".into());
+    }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::json!({
+            "version": 1,
+            "mode": "task_conversation_exact_observation",
+            "owner": "task-conversation.v1",
+            "status": "current",
+            "owner_revision": reply.revision,
+            "query": query,
+            "link_count": reply.links.len(),
+            "links": reply.links,
+            "complete": true,
+            "boundary": "typed relationship truth only; room activity is not task progress",
+        }))?
+    );
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if std::env::args_os()
         .nth(1)
@@ -869,6 +994,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "reconfigure-plan")
     {
         return reconfiguration_plan(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "task-conversation-inspect")
+    {
+        return task_conversation_inspect(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)

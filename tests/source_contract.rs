@@ -2300,6 +2300,8 @@ fn tui_operational_demo_proves_make_run_and_every_peer_surface() {
         "offer addressed agora message to agent cohort",
         "ordinary room chatter is not a prompt",
         "ambient chatter inert",
+        "task-conversation-inspect",
+        "exact headless relationship inspection before/after owner restart",
         "PASS: Chronos task -> exact owner binding -> human-gated fresh Daimon session -> guarded prompt -> human-gated direct Agora task conversation -> durable exact relationship -> explicitly addressed room message -> guarded second agent turn -> refreshed Kanban board",
     ] {
         assert!(
@@ -2477,6 +2479,8 @@ fn task_conversation_gate_proves_tui_headless_and_recovery_parity() {
     for required in [
         "Bind selected task to open Agora room",
         "exact readback verified relationship",
+        "task-conversation-inspect",
+        "exact headless relationship identity/freshness",
         "room activity remains separate from task progress",
         "task-conversation.v1",
         "peer[\"revision\"] == 1 and peer[\"links\"] == 1",

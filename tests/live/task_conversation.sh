@@ -111,6 +111,31 @@ PY
   link_pid=''
 }
 
+inspect_exact_link() {
+  "$target/debug/pantheon" task-conversation-inspect \
+    "$scratch/task-conversation.sock" conversation live-room - | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["version"] == 1
+assert report["mode"] == "task_conversation_exact_observation"
+assert report["owner"] == "task-conversation.v1"
+assert report["status"] == "current" and report["complete"]
+assert report["owner_revision"] == 1
+assert report["query"] == {
+    "kind": "conversation",
+    "reference": {"room": "live-room", "thread_root": None},
+}
+assert report["link_count"] == 1 and len(report["links"]) == 1
+link = report["links"][0]
+assert len(link["link_id"]) == 32
+assert link["task"]["task"] == "linked-task"
+assert link["conversation"] == {"room": "live-room", "thread_root": None}
+assert len(link["operation_id"]) == 32 and len(link["principal_id"]) == 32
+assert link["chronos_revision"] and link["agora_revision"] > 0
+assert "not task progress" in report["boundary"]
+'
+}
+
 start_link
 start_agora
 
@@ -202,9 +227,11 @@ assert "not task progress" in peer["boundary"]
 '
 wait "$agora_pid"
 agora_pid=''
+inspect_exact_link
 
 drain_link
 start_link
+inspect_exact_link
 start_agora
 headless=$("$target/debug/pantheon" headless --workspace-profile "$profile")
 printf '%s' "$headless" | python3 -c '
@@ -216,4 +243,4 @@ wait "$agora_pid"
 agora_pid=''
 drain_link
 
-echo 'PASS: selected Chronos task + open Agora room -> reviewed durable task-conversation link -> headless parity -> owner restart recovery'
+echo 'PASS: selected Chronos task + open Agora room -> reviewed durable task-conversation link -> exact headless relationship identity/freshness -> owner restart recovery'
