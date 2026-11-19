@@ -1221,6 +1221,17 @@ recovery before a human can settle the gate from this surface.
   though `make run` and the qualification targets exist. That discoverability
   gap is retained as user friction for Chronos triage; it does not weaken or
   delay the sponsored-review acceptance requirement.
+- The first product-alignment contract now lives in Chronos's existing
+  separately locked Vellum-capture integration rather than in Pantheon or the
+  content-minimized Chronos task record. It binds an exact Vellum goal version,
+  exact Chronos control-task observation, distinct external-advocate/product-
+  manager/frontier-supervisor identities, budget policy, evidence frontier,
+  unresolved dissent and pending human gates. Only the named PM can author a
+  Vellum-backed grooming proposal, and deterministic currentness distinguishes
+  goal, work, cohort and evidence drift. The contract deliberately cannot
+  apply, accept, claim, reprioritize or sign off. Focused tests and strict
+  Clippy pass; durable hosting, Pantheon projection and owner-routed proposal
+  application remain open before the Chronos alignment prerequisite is closed.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,

@@ -2184,6 +2184,13 @@ revision-66 dogfood owner later returned repeated `not_sent` attachment results
 while its original TUI remained current, so canonical multi-client attachment
 stability is again an open operational finding rather than being inferred from
 the isolated qualification.
+The reusable relationship contract now exists in Chronos's Vellum-capture
+integration: exact goal source, control-task observation, three distinct
+alignment participants, budget/evidence/dissent/gate references and a named-PM
+Vellum proposal are bounded and freshness-classified without copying content or
+adding an apply path. This closes the deterministic contract shape, not durable
+alignment hosting, Pantheon presentation, automatic grooming, owner mutation,
+acceptance or human sign-off.
 
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
