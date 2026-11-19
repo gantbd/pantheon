@@ -352,6 +352,7 @@
         "agent.open.prepare.v1": "qualified",
         "agent.worker.step.v1": "qualified",
         "deliberation.human-gate.respond.v1": "qualified",
+        "task-agent.instantiate.v1": "qualified",
         "sagas.reconciliation.confirmation.v1": "qualified",
         "sagas.reconciliation.confirm.v1": "qualified",
         "sagas.reconciliation.recovery.v1": "qualified"

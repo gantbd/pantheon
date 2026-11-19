@@ -11,6 +11,7 @@ pub mod profile;
 mod provider;
 pub mod reconfiguration;
 pub mod registry;
+pub mod task_agent;
 mod terminal;
 
 pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};

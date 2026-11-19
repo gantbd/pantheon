@@ -185,6 +185,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "cc"
+version = "1.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33ef9e3e8154a45c7a95cff4c1299702106ad94062d7bb85fdc5d3a5afd91d45"
+dependencies = [
+ "find-msvc-tools",
+ "shlex",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -526,6 +536,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "fallible-iterator"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2acce4a10f12dc2fb14a218589d4f1f62ef011b2d0cc4b3cb1bba8e94da14649"
+
+[[package]]
+name = "fallible-streaming-iterator"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
+
+[[package]]
+name = "find-msvc-tools"
+version = "0.1.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
+
+[[package]]
 name = "foldhash"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -572,6 +600,15 @@ dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
+]
+
+[[package]]
+name = "hashlink"
+version = "0.12.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a596f1b20ed2cc5ecac41a164aaebc7258057060f06c0cf7a2ba3991ee7990fb"
+dependencies = [
+ "hashbrown 0.17.1",
 ]
 
 [[package]]
@@ -742,9 +779,21 @@ version = "0.0.1"
 source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4#2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
 
 [[package]]
+name = "keystone-effects"
+version = "0.0.1"
+
+[[package]]
+name = "keystone-framing"
+version = "0.0.1"
+
+[[package]]
 name = "keystone-lifecycle"
 version = "0.0.1"
 source = "git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4#2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4"
+
+[[package]]
+name = "keystone-observe"
+version = "0.0.1"
 
 [[package]]
 name = "keystone-observe"
@@ -787,6 +836,17 @@ name = "libm"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
+
+[[package]]
+name = "libsqlite3-sys"
+version = "0.39.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14a5f01b87b92705d07b433c06f96cbc764637d81a0bffb5734ce17cf0f9a2b3"
+dependencies = [
+ "cc",
+ "pkg-config",
+ "vcpkg",
+]
 
 [[package]]
 name = "line-clipping"
@@ -869,6 +929,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "moira-core"
+version = "0.0.1"
+dependencies = [
+ "keystone-codec 0.0.1",
+ "keystone-effects",
+ "keystone-observe 0.0.1",
+]
+
+[[package]]
+name = "moira-host"
+version = "0.1.0"
+dependencies = [
+ "moira-core",
+ "moira-protocol",
+]
+
+[[package]]
+name = "moira-local-daemon"
+version = "0.1.0"
+dependencies = [
+ "keystone-framing",
+ "keystone-unix-listener",
+ "moira-host",
+ "moira-protocol",
+ "moira-service",
+ "moira-wire",
+]
+
+[[package]]
 name = "moira-protocol"
 version = "0.1.0"
 dependencies = [
@@ -881,6 +970,26 @@ version = "0.1.0"
 dependencies = [
  "moira-client",
  "moira-protocol",
+]
+
+[[package]]
+name = "moira-service"
+version = "0.1.0"
+dependencies = [
+ "moira-core",
+ "moira-host",
+ "moira-protocol",
+]
+
+[[package]]
+name = "moira-sqlite"
+version = "0.0.1"
+dependencies = [
+ "keystone-codec 0.0.1",
+ "moira-core",
+ "moira-host",
+ "rusqlite",
+ "sha2",
 ]
 
 [[package]]
@@ -1059,11 +1168,16 @@ dependencies = [
  "hestia-tui",
  "moira-chronos-worker",
  "moira-client",
+ "moira-core",
+ "moira-local-daemon",
  "moira-protocol",
  "moira-reconciliation-command",
+ "moira-service",
+ "moira-sqlite",
  "moira-tui",
  "moira-tui-local-client",
  "moira-vellum",
+ "moira-wire",
  "nix",
  "pantheon",
  "ratatui",
@@ -1104,6 +1218,12 @@ dependencies = [
  "smallvec",
  "windows-link",
 ]
+
+[[package]]
+name = "pkg-config"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "portable-atomic"
@@ -1217,6 +1337,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "rsqlite-vfs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "353b74f9810d5b085b6c42c9d86a5f0fdb795553235cdd48753b32e3809d18a7"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
+name = "rusqlite"
+version = "0.41.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "da9bba6f3506135e120a6586df05be18b48d18896600646a4bec8f993d91a594"
+dependencies = [
+ "bitflags",
+ "fallible-iterator",
+ "fallible-streaming-iterator",
+ "hashlink",
+ "libsqlite3-sys",
+ "smallvec",
+ "sqlite-wasm-rs",
+]
+
+[[package]]
 name = "rustc_version"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1317,6 +1461,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "shlex"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
+
+[[package]]
 name = "signal-hook"
 version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1352,6 +1502,16 @@ name = "smallvec"
 version = "1.16.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "149309498a5f7334b12ddae0cad8aba81ce785fe91755068867e017cf98fee46"
+
+[[package]]
+name = "sqlite-wasm-rs"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36bd8e29bf08189a005b2df1df99823aa0861cabe9044e5f31ed54ca292ee618"
+dependencies = [
+ "cc",
+ "rsqlite-vfs",
+]
 
 [[package]]
 name = "static_assertions"
@@ -1508,6 +1668,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
 
 [[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
+
+[[package]]
 name = "vellum-adapter-local-authentication"
 version = "0.1.0"
 dependencies = [
@@ -1541,7 +1707,7 @@ name = "vellum-daemon"
 version = "0.1.0"
 dependencies = [
  "keystone-lifecycle",
- "keystone-observe",
+ "keystone-observe 0.0.1 (git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4)",
  "rustix",
  "signal-hook",
  "vellum-adapter-local-authentication",
@@ -1572,7 +1738,7 @@ dependencies = [
 name = "vellum-engine"
 version = "0.1.0"
 dependencies = [
- "keystone-observe",
+ "keystone-observe 0.0.1 (git+https://github.com/gantbd/keystone?rev=2e4faf10ec0a70805aa1db1555f93c77fcf0a1e4)",
  "sha2",
 ]
 

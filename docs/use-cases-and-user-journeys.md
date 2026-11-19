@@ -2179,6 +2179,18 @@ The proposed owner-safe implementation boundary is specified in
 owns the durable template/instance and derives workflow identities, while
 Pantheon only previews, confirms, observes and routes owner commands.
 
+The first headless-first admission slice is now qualified. Moira `72b87bb`
+persists canonical task-agent checkpoints transactionally and `c7fe06d` exposes
+catalogue, preview, instantiate, status and journey observation through its
+bounded private Unix service. Pantheon uses those capability-shaped clients for
+four explicit JSON commands: catalogue, size-limited versioned preview, exact
+named-human confirmation/instantiate and observe. A real Pantheon process run
+restarts the SQLite-backed Moira owner between every command and retains the
+same owner-issued preview and journey. Admission remains only `Admitted`: no
+room, participation, session, provider call, peer effect or Chronos disposition
+is inferred. Trusted peer-evidence adapters, progression, aggregate profile and
+agenda composition remain ahead of TUI parity.
+
 Chronos revision 66 also makes the priority-10 product-manager alignment task
 and its six prerequisites inspectable through the live dependency graph. The
 host operator agenda now imports both dependency-blocked and uncertain owner

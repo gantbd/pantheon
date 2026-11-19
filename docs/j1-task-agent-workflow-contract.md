@@ -223,8 +223,24 @@ Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
 `28fae97` publishes the independent transport-neutral DTO and canonical wire
 families for catalogue, preview, instantiate, preview/journey observation and
-status. Transactional storage, the service-owned time port, client/daemon and
-peer-effect transitions remain required.
+status. Moira `72b87bb` adds the transactional SQLite store and service-owned
+trusted-time admission path; canonical checkpoints survive reopen, matching
+preview/instantiate operations replay without advancing storage, stale writers
+conflict, and ambiguous/lost ownership fences the store. Moira `c7fe06d` exposes
+that same contract through bounded local daemon and capability-shaped client
+facades, with a real Unix test proving catalogue, preview, named-human-bound
+instantiate, restart, observation and exact replay.
+
+Pantheon's headless composition now consumes only those owner facades. Its
+bounded commands catalogue templates, create a preview from a size-limited
+versioned document, emit an exact human confirmation challenge, instantiate
+only when that challenge matches, and observe the durable journey. Every JSON
+result carries owner/storage revisions, replay or uncertainty disposition,
+boundary language and an actionable next step. A process-level qualification
+runs the real Pantheon binary against a restarted Moira SQLite owner for every
+step. This completes cut 1 and the headless admission portion of cut 3; trusted
+peer-evidence adapters, owner-derived progression beyond `Admitted`, aggregate
+profile configuration, operator-agenda projection and TUI parity remain open.
 
 ### Reuse boundary
 

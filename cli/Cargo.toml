@@ -76,6 +76,11 @@ nix = { version = "=0.29.0", default-features = false, features = ["process", "s
 
 [dev-dependencies]
 agora-wire = { version = "=0.1.0", path = "../../agora/protocol/agora-wire" }
+moira-core = { version = "=0.0.1", path = "../../moira" }
+moira-local-daemon = { version = "=0.1.0", path = "../../moira/crates/moira-local-daemon" }
+moira-service = { version = "=0.1.0", path = "../../moira/crates/moira-service" }
+moira-sqlite = { version = "=0.0.1", path = "../../moira/adapters/moira-sqlite" }
+moira-wire = { version = "=0.1.0", path = "../../moira/crates/moira-wire" }
 
 [lints.rust]
 unsafe_code = "forbid"
