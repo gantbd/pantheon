@@ -325,8 +325,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   owner, Chronos Tasks advertised `] next` for its second bounded page, but the
   shared behavior facade routed the key globally to Vellum. Revision 54 now
   retains priority-7 `chronos-task-page-next-behavior-routing` with
-  behavior-facade, Chronos-presentation and pagination capabilities. The
-  existing `ensemble-outcome-observation-correlation` task remains the owner for
+  behavior-facade, Chronos-presentation and pagination capabilities. Commit
+  `cfccf70` routes the advertised bracket navigation through the surface-local
+  behavior path for Chronos and Workspace while retaining global navigation on
+  the other surfaces. The focused facade test, strict package Clippy, locked
+  package build and package formatting all pass. A rebuilt live TUI stayed on
+  Chronos and loaded the second page with 11 tasks when `]` was pressed; reverse
+  paging is neither advertised nor claimed by this slice. The existing
+  `ensemble-outcome-observation-correlation` task remains the owner for
   organization-correlation selection; no duplicate was admitted.
 - The default `make run` owner separately admitted priority-8
   `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
