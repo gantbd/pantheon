@@ -274,6 +274,20 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   clean owner shutdown. The 119 KiB governing plan remains outside Vellum's
   current bounded workspace profile and is still owned by the existing workspace
   capacity/diagnostic backlog rather than silently truncated.
+- Daimon commit `ac00c51` implements the first bounded
+  `daimon-provider-uncertain-diagnostic-receipt` slice without changing the
+  terminal `Receipt | OutcomeUnknown` algebra. The provider port can now retain
+  an execution/profile-bound categorical diagnostic and optional digest of the
+  complete bounded HTTP response; the OpenAI-compatible adapter distinguishes
+  profile, construction, connect, transport, size, HTTP-status, HTTP-shape,
+  JSON, usage, choice, empty-output, structured-envelope and tool-call failures.
+  Daimon's existing provider-qualification projection durably exposes only that
+  category/digest, preserves it on replay without redispatch, and explicitly
+  states that it does not narrow outcome uncertainty. Focused adapter and owner
+  integration tests prove HTTP 400 and missing-usage paths, response-content
+  redaction and no retry. The Chronos task remains Ready: general model-service
+  wire/checkpoint propagation, Oculus/Pantheon presentation and a live Hestia
+  structured-output diagnosis are not yet qualified.
 - The next J33 slice now has an executable Moira review-exchange foundation.
   It admits review only after every independent first pass, retains exact
   findings and evidence, requires a different admitted member for rebuttal,
