@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, fs, path::Path, process::Command};
 
 use pantheon_cli::capabilities::{
-    self, AGENT_ROLE_PROFILES, AGENT_TOOL_GAPS, AGENT_TOOL_ROUTES, Capability, ChronosFeatures,
-    GUARDED_CONTROL_CAPABILITIES, GUARDED_CONTROL_ROUTES, Mode,
+    self, AGENT_OWNER_TOOL_ROUTES, AGENT_ROLE_PROFILES, AGENT_TOOL_GAPS, AGENT_TOOL_ROUTES,
+    Capability, ChronosFeatures, GUARDED_CONTROL_CAPABILITIES, GUARDED_CONTROL_ROUTES, Mode,
 };
 
 fn status() -> serde_json::Value {
@@ -177,6 +177,20 @@ fn bounded_agent_tools_are_machine_discoverable_and_individually_admissible() {
         assert_eq!(entry["aggregate_route"], false);
         assert_eq!(entry["default_admission"], "denied");
     }
+    let owner_tools = catalog["owner_tools"].as_array().unwrap();
+    assert_eq!(owner_tools.len(), AGENT_OWNER_TOOL_ROUTES.len());
+    for route in AGENT_OWNER_TOOL_ROUTES {
+        let entry = owner_tools
+            .iter()
+            .find(|entry| entry["semantic_capability"] == route.capability)
+            .unwrap_or_else(|| panic!("catalog omits owner tool {}", route.capability));
+        assert_eq!(entry["component"], route.component);
+        assert_eq!(entry["owner_surface"], route.owner_surface);
+        assert_eq!(entry["model_arguments"], route.model_arguments);
+        assert_eq!(entry["enforcement"], route.enforcement);
+        assert_eq!(entry["aggregate_route"], false);
+        assert_eq!(entry["default_admission"], "denied");
+    }
     let unavailable = catalog["unavailable"].as_array().unwrap();
     assert_eq!(unavailable.len(), AGENT_TOOL_GAPS.len());
     for gap in AGENT_TOOL_GAPS {
@@ -246,6 +260,38 @@ fn complete_semantic_candidate_still_does_not_claim_an_operational_sre() {
                 && gap["surface"] == "owner-query-runtime"
                 && gap["aggregate_fallback"] == false)
     );
+}
+
+#[test]
+fn verification_role_reuses_the_daimon_native_governed_test_catalog() {
+    let output = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+        .args([
+            "agent-role-plan",
+            "verification-worker",
+            "verification.test.run.v1",
+        ])
+        .output()
+        .expect("run verification-worker candidate plan");
+    assert!(output.status.success());
+    let plan: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    let tool = plan["required_tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["semantic_capability"] == "verification.test.run.v1")
+        .expect("Daimon governed test tool");
+    assert_eq!(tool["component"], "daimon");
+    assert_eq!(tool["route_kind"], "component_owner_catalogue");
+    assert_eq!(tool["owner_surface"], "acp_terminal.commands[]");
+    assert_eq!(tool["candidate_disposition"], "included");
+    assert!(
+        plan["structural_blockers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|gap| gap["surface"] != "tests.allowlisted.execute.v1")
+    );
+    assert_eq!(plan["operational"], false);
 }
 
 #[test]

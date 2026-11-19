@@ -921,6 +921,21 @@ fn agent_tool_catalog(
             })
         })
         .collect::<Vec<_>>();
+    let owner_tools = capabilities::AGENT_OWNER_TOOL_ROUTES
+        .iter()
+        .map(|route| {
+            serde_json::json!({
+                "component": route.component,
+                "semantic_capability": route.capability,
+                "owner_surface": route.owner_surface,
+                "model_arguments": route.model_arguments,
+                "enforcement": route.enforcement,
+                "aggregate_route": false,
+                "authority": "owner_operation_specific",
+                "default_admission": "denied",
+            })
+        })
+        .collect::<Vec<_>>();
     let unavailable = capabilities::AGENT_TOOL_GAPS
         .iter()
         .map(|gap| {
@@ -941,8 +956,9 @@ fn agent_tool_catalog(
             "mode": "bounded_agent_tool_catalog",
             "complete": true,
             "tools": tools,
+            "owner_tools": owner_tools,
             "unavailable": unavailable,
-            "boundary": "catalogue presence grants nothing; Daimon and Aegis must admit each opaque tool and matching semantic capability independently; unavailable entries apply only to their named component surface",
+            "boundary": "catalogue presence grants nothing; Pantheon gateways and component-native owner tools remain distinct; Daimon and Aegis must admit each opaque tool and matching semantic capability independently; unavailable entries apply only to their named component surface",
         }))?
     );
     Ok(())
@@ -967,6 +983,10 @@ fn agent_role_plan(
         .iter()
         .map(|route| (route.capability, route))
         .collect::<BTreeMap<_, _>>();
+    let known_owner = capabilities::AGENT_OWNER_TOOL_ROUTES
+        .iter()
+        .map(|route| (route.capability, route))
+        .collect::<BTreeMap<_, _>>();
     let mut candidates = std::collections::BTreeSet::new();
     for argument in args {
         let capability = argument
@@ -981,7 +1001,9 @@ fn agent_role_plan(
             )
             .into());
         }
-        if !known.contains_key(capability.as_str()) {
+        if !known.contains_key(capability.as_str())
+            && !known_owner.contains_key(capability.as_str())
+        {
             return Err(format!(
                 "candidate capability {capability:?} is not an independently admissible agent tool"
             )
@@ -996,18 +1018,32 @@ fn agent_role_plan(
         .required_tools
         .iter()
         .map(|capability| {
-            let route = known
-                .get(capability)
-                .expect("role profiles reference catalogued agent tools");
             let admitted = candidates.contains(*capability);
-            serde_json::json!({
-                "component": route.component,
-                "semantic_capability": capability,
-                "command": route.command,
-                "model_arguments": route.model_arguments,
-                "candidate_disposition": if admitted { "included" } else { "missing" },
-                "authority": "not_granted_by_plan",
-            })
+            if let Some(route) = known.get(capability) {
+                serde_json::json!({
+                    "component": route.component,
+                    "semantic_capability": capability,
+                    "route_kind": "pantheon_gateway",
+                    "command": route.command,
+                    "model_arguments": route.model_arguments,
+                    "candidate_disposition": if admitted { "included" } else { "missing" },
+                    "authority": "not_granted_by_plan",
+                })
+            } else {
+                let route = known_owner
+                    .get(capability)
+                    .expect("role profiles reference catalogued agent tools");
+                serde_json::json!({
+                    "component": route.component,
+                    "semantic_capability": capability,
+                    "route_kind": "component_owner_catalogue",
+                    "owner_surface": route.owner_surface,
+                    "model_arguments": route.model_arguments,
+                    "enforcement": route.enforcement,
+                    "candidate_disposition": if admitted { "included" } else { "missing" },
+                    "authority": "not_granted_by_plan",
+                })
+            }
         })
         .collect::<Vec<_>>();
     let missing_candidate_tools = profile

@@ -411,6 +411,15 @@ pub struct AgentToolRoute {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct AgentOwnerToolRoute {
+    pub component: &'static str,
+    pub capability: &'static str,
+    pub owner_surface: &'static str,
+    pub model_arguments: &'static str,
+    pub enforcement: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct AgentToolGap {
     pub component: &'static str,
     pub surface: &'static str,
@@ -549,6 +558,16 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
     },
 ];
 
+/// Component-native tool routes already enforced by their sovereign owner.
+/// These are not Pantheon CLI commands and must never be restyled as such.
+pub const AGENT_OWNER_TOOL_ROUTES: &[AgentOwnerToolRoute] = &[AgentOwnerToolRoute {
+    component: "daimon",
+    capability: "verification.test.run.v1",
+    owner_surface: "acp_terminal.commands[]",
+    model_arguments: "select_one_catalog_entry_with_no_appended_arguments",
+    enforcement: "Daimon canonicalizes the workspace, boundary and executable; Aegis reauthorizes the command-specific capability; the retained argument prefix is the complete argv; the environment and UTF-8 output are bounded",
+}];
+
 /// Named component surfaces that must not be inferred from aggregate Pantheon
 /// observation. Keeping these machine-visible makes absence an explicit
 /// non-admission rather than a discoverability failure.
@@ -626,12 +645,6 @@ const FRONTIER_GAPS: &[AgentRoleGap] = &[
 
 const VERIFICATION_GAPS: &[AgentRoleGap] = &[
     ROLE_ACTIVATION_GAP,
-    AgentRoleGap {
-        component: "verification",
-        surface: "tests.allowlisted.execute.v1",
-        missing: "a deployment-pinned test catalogue and bounded execution gateway with no shell, arbitrary arguments, or ambient filesystem authority",
-        next_boundary: "admit exact test targets independently and return bounded process plus artifact evidence",
-    },
     AgentRoleGap {
         component: "verification",
         surface: "tests.result.publish.v1",
@@ -755,6 +768,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "agents.session.inspect.v1",
             "runtimes.observe.v1",
             "artifacts.observe.v1",
+            "verification.test.run.v1",
         ],
         gaps: VERIFICATION_GAPS,
         human_gates: &[
@@ -944,6 +958,14 @@ mod tests {
             assert!(capabilities.insert(route.capability));
             assert!(commands.insert(route.command));
         }
+        for route in AGENT_OWNER_TOOL_ROUTES {
+            assert_ne!(route.component, "pantheon");
+            assert!(!route.capability.starts_with("pantheon."));
+            assert!(!route.owner_surface.is_empty());
+            assert!(!route.model_arguments.is_empty());
+            assert!(!route.enforcement.is_empty());
+            assert!(capabilities.insert(route.capability));
+        }
         for gap in AGENT_TOOL_GAPS {
             assert_ne!(gap.component, "pantheon");
             assert!(!gap.surface.is_empty());
@@ -957,10 +979,11 @@ mod tests {
 
     #[test]
     fn agent_role_profiles_are_least_authority_and_reference_real_tools() {
-        let catalogued = AGENT_TOOL_ROUTES
+        let mut catalogued = AGENT_TOOL_ROUTES
             .iter()
             .map(|route| route.capability)
             .collect::<std::collections::BTreeSet<_>>();
+        catalogued.extend(AGENT_OWNER_TOOL_ROUTES.iter().map(|route| route.capability));
         let mut roles = std::collections::BTreeSet::new();
         for profile in AGENT_ROLE_PROFILES {
             assert!(roles.insert(profile.role));

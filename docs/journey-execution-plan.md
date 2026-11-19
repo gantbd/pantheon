@@ -2352,6 +2352,15 @@ Operational means observable completed work, not a configured role name:
   declare rollout readiness. With no qualified local endpoint running, the
   deterministic runner remains available and model triage is visibly
   unavailable.
+- Pantheon's admission catalogue now represents that existing Daimon runner as
+  a component-native `owner_tool` instead of fabricating another Pantheon test
+  command. `verification.test.run.v1` retains Daimon's exact immutable argv,
+  canonical workspace/program, per-command Aegis reauthorization, clean
+  allowlisted environment and bounded-output enforcement. The verification
+  role planner accepts this semantic capability and no longer reports test
+  execution itself as missing. Result publication, asynchronous Chronos
+  scheduling, role activation and worker lifecycle remain real blockers, so
+  the role still reports `operational: false`.
 
 Operations presents one row per role with owner, lifecycle, exact task/attempt,
 provider/model, capability profile, last evidence, budget, failure orientation

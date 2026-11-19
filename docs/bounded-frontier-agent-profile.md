@@ -112,6 +112,17 @@ The catalogue describes independently admissible commands, not a default role
 bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
+Not every admitted tool is a Pantheon CLI gateway. `owner_tools` records
+component-native routes separately. The first is Daimon's
+`verification.test.run.v1`: one operator-named ACP terminal catalogue entry
+whose command-specific Aegis capability and stable semantic capability are
+revalidated at callback time. Its program and argument prefix are
+deployment-owned, `allow_additional_arguments=false` makes that prefix the
+complete argv, the workspace/executables are canonicalized, the environment is
+explicitly allowlisted, and output is bounded. The model may select the entry;
+it receives no shell, arbitrary flags, path expansion or Pantheon gateway by
+implication. Pantheon does not restyle this as its own command.
+
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
 Oculus is currently named there with its unavailable owner/query runtime and
 next admissible seam. Agora's read, durable-publication observation, and
@@ -150,8 +161,9 @@ Hermes disclosure, shell output or Pantheon aggregate observation cannot stand
 in for Oculus. The product manager now has independently admissible alignment
 and stakeholder-ensemble reads, including exact pending human-gate references;
 changed Vellum-backed proposal authoring remains unavailable. Frontier
-and verification workers likewise retain their provider continuation, Aegis,
-allowlisted-test, result-publication and scheduling gaps. These are executable
+workers retain their provider continuation and Aegis gaps. The verification
+worker now reuses Daimon's allowlisted exact-argv runner but still lacks
+result-publication and scheduling. These are executable
 blocker inventories, not claims that named roles are running.
 
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):

@@ -2877,3 +2877,37 @@ fn bounded_chronos_alignment_agent_read_reuses_owner_projection() {
     assert!(command.contains("exact_alignment_owner_projection_is_independently_agent_readable"));
     assert!(command.contains("another-scope"));
 }
+
+#[test]
+fn verification_role_reuses_daimon_owner_native_test_enforcement() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let capabilities = fs::read_to_string(root.join("cli/src/capabilities.rs"))
+        .expect("agent capability catalogue");
+    for required in [
+        "AGENT_OWNER_TOOL_ROUTES",
+        "verification.test.run.v1",
+        "acp_terminal.commands[]",
+        "complete argv",
+    ] {
+        assert!(
+            capabilities.contains(required),
+            "owner-native tool catalogue omits {required}"
+        );
+    }
+    assert!(!capabilities.contains("surface: \"tests.allowlisted.execute.v1\""));
+    let main = fs::read_to_string(root.join("cli/src/main.rs")).expect("Pantheon CLI");
+    assert!(main.contains("component_owner_catalogue"));
+    assert!(main.contains("owner_tools"));
+    let daimon = fs::read_to_string(
+        root.join("../daimon/apps/daimon-local-agent/src/lib.rs"),
+    )
+    .expect("Daimon local-agent owner enforcement");
+    for required in [
+        "allow_additional_arguments",
+        "terminal_arguments_allowed",
+        "command.capability",
+        "semantic_capability",
+    ] {
+        assert!(daimon.contains(required), "Daimon enforcement omits {required}");
+    }
+}
