@@ -2101,3 +2101,73 @@ qualified. The first J30 candidate must be a low-risk stateless presentation
 change. Moira, Aegis, any future registry, steward, observer, recovery machinery,
 their schemas and their trust roots require a separate outer maintenance profile.
 
+## Immediate P0 — operations agent team activation
+
+The next operating tranche is one integrated outcome: a human operator can see,
+start, stop and orient a bounded product-manager worker, SRE worker, frontier
+Codex/Claude worker and economical verification worker from Pantheon Operations.
+This is a priority override from the accountable human sponsor, but it does not
+erase the distinct sovereign prerequisites already admitted in Chronos:
+`pantheon-product-manager-alignment-control-plane`,
+`oculus-persistent-sre-and-delivery-agents`,
+`acp-harness-provider-privacy-qualification`,
+`chronos-asynchronous-verification-worker`, and
+`pantheon-frontier-capability-sandbox`.
+
+Operational means observable completed work, not a configured role name:
+
+- The product manager samples the exact current Chronos alignment basis,
+  coalesces an unchanged frontier, publishes an attributed recommendation and
+  dissent into Agora, and routes any priority, goal, acceptance or rollout
+  change to a named human disposition. It cannot apply its own recommendation.
+- The SRE reads a bounded Oculus query with source settlements, cursor and gaps,
+  deterministically coalesces repeated evidence, and proposes either a link to
+  existing Chronos work or a new admission packet. It cannot declare an
+  incident, page a human, set priority or close work. Until Oculus has an owner
+  daemon and populated sources, this role is unavailable rather than simulated
+  from arbitrary logs or shell access.
+- Codex and Claude run only through the Daimon-owned agent service, against an
+  exact Running Chronos attempt and Aegis grant, with frozen provider/workspace
+  profiles and Pantheon-mediated Vellum, Chronos, Agora, Tellus/Dendrite and
+  allowlisted test capabilities. No unconstrained shell, ambient network,
+  inherited secret or undeclared MCP capability is part of the operating
+  profile.
+- The verification worker claims only explicitly testable Chronos work,
+  executes a governed deterministic test-catalog entry asynchronously, and
+  returns attributed command, scope, timing, exit and bounded-output evidence.
+  A qualified small model may select a catalog entry or triage that structured
+  result; it cannot invent a command, waive a failure, accept the change or
+  declare rollout readiness. With no qualified local endpoint running, the
+  deterministic runner remains available and model triage is visibly
+  unavailable.
+
+Operations presents one row per role with owner, lifecycle, exact task/attempt,
+provider/model, capability profile, last evidence, budget, failure orientation
+and pending human gate. A role is `ready` only after its owner-facing probe and
+one scope-matched work receipt pass; transport-only readiness and model-work
+readiness remain separate. Start/drain/retry actions use the behavior facade and
+retain success, refusal and outcome-unknown receipts.
+
+Live evidence on 2026-11-19 established the current frontier-provider split.
+Daimon's real provider-neutral router initialized and closed installed
+`codex-acp` and Claude Code together. A separately authorized Codex no-tool turn
+completed through the ACP adapter. The two-provider completion gate failed
+before spending the Codex turn because Claude returned a failed terminal
+disposition; `claude auth status` then reported `loggedIn: false`. Codex is
+therefore work-ready at the adapter boundary, while Claude is transport-ready
+but blocked on an external human login. No local OpenAI-compatible endpoint was
+reachable at the LM Studio or Ollama loopback ports. Hestia retains a previously
+qualified Qwen2.5-Coder-1.5B artifact-serving path, but no persistent runtime was
+claimed active by this observation.
+
+Live Chronos dogfood attempted to admit a single priority-10
+`pantheon-operations-agent-team-activation` integration task with the five exact
+prerequisites above. The owner remained at revision 73 and Pantheon retained a
+refused mutation receipt, but the task surface exposed no refusal reason. The
+board already contained 100 tasks, so capacity is a plausible but unproven
+cause. No duplicate or dependency-free task was admitted. The existing
+`chronos-mutation-receipt-operation-labeling`, complete-search and workspace-
+capacity work own the presentation/remediation gap; the five existing tasks
+remain the authoritative tranche until the owner can express their shared P0
+portfolio without cancel/recreate churn.
+
