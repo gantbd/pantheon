@@ -134,6 +134,7 @@ pub fn draw_shell(
             moira_participation: None,
             moira_deliberation: None,
             moira_decision_packet: None,
+            moira_human_gate_response: None,
             moira_open: None,
             moira_reconciliation: None,
             daimon: None,
@@ -175,6 +176,7 @@ pub struct PeerViews<'a> {
     pub moira_participation: Option<&'a moira_tui::ParticipationComponent>,
     pub moira_deliberation: Option<&'a moira_tui::DeliberationComponent>,
     pub moira_decision_packet: Option<&'a HumanGatePacketView>,
+    pub moira_human_gate_response: Option<&'a moira_tui::HumanGateResponseComponent>,
     pub moira_open: Option<&'a moira_tui::OpenControlComponent>,
     pub moira_reconciliation: Option<&'a moira_tui::ReconciliationBatchComponent>,
     pub daimon: Option<&'a daimon_tui::Component>,
@@ -289,6 +291,7 @@ pub fn draw_shell_with_moira(
         moira_participation,
         moira_deliberation,
         moira_decision_packet,
+        moira_human_gate_response,
         moira_open,
         moira_reconciliation,
         daimon,
@@ -490,6 +493,11 @@ pub fn draw_shell_with_moira(
         }
         Surface::Agora if agora.is_some() => {
             agora.expect("matched above").draw_in(frame, body, true);
+        }
+        Surface::Moira if moira_human_gate_response.is_some() => {
+            moira_human_gate_response
+                .expect("matched above")
+                .draw_in(frame, body, true);
         }
         Surface::Moira if moira_open.is_some() => {
             moira_open
@@ -2289,6 +2297,7 @@ mod tests {
                             moira_participation: None,
                             moira_deliberation: None,
                             moira_decision_packet: None,
+                            moira_human_gate_response: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
@@ -2361,6 +2370,7 @@ mod tests {
                             moira_participation: Some(&participation),
                             moira_deliberation: None,
                             moira_decision_packet: None,
+                            moira_human_gate_response: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,
@@ -2431,6 +2441,7 @@ mod tests {
                             moira_participation: None,
                             moira_deliberation: None,
                             moira_decision_packet: None,
+                            moira_human_gate_response: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: Some(&daimon),
@@ -2500,6 +2511,7 @@ mod tests {
                             moira_participation: None,
                             moira_deliberation: None,
                             moira_decision_packet: None,
+                            moira_human_gate_response: None,
                             moira_open: None,
                             moira_reconciliation: None,
                             daimon: None,

@@ -5,7 +5,8 @@ use agora_local_client::{LocalClientLimits, LocalServicePort as AgoraLocalServic
 use chronos_tui::{Hub, Workstream};
 use pantheon::{DaimonModelView, Shell};
 use pantheon_cli::{
-    AgoraControlConfig, MoiraDecisionPacketComponent, OperationalPeers,
+    AgoraControlConfig, MoiraDecisionPacketComponent, MoiraHumanGateResponseConfig,
+    OperationalPeers,
     capabilities::{self, ChronosFeatures, Mode},
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     management::LocalManagementSnapshot,
@@ -577,6 +578,10 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     } else {
         Mode::Interactive
     };
+    let moira_human_response = loaded_workspace_profile
+        .as_ref()
+        .and_then(|profile| profile.moira.as_ref())
+        .is_some_and(|moira| moira.human_gate_response.is_some());
     let agora_capabilities = capabilities::agora(mode, agora_host.is_some());
     let task_conversation_capabilities = capabilities::task_conversation(mode);
     let moira_capabilities = capabilities::moira(
@@ -585,6 +590,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         moira_socket.is_some(),
         moira_participation.is_some(),
         moira_deliberation.is_some(),
+        moira_human_response,
     );
     let daimon_capabilities = capabilities::daimon(
         mode,
@@ -667,6 +673,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
             moira_socket.is_some(),
             moira_participation.is_some(),
             moira_deliberation.is_some(),
+            moira_human_response,
         ),
     )?;
     negotiate_selected_route(
@@ -3771,6 +3778,29 @@ fn interactive(
                 credential: Some(credential.clone()),
             })
     });
+    let moira_human_gate_response_config = options
+        .workspace_profile
+        .as_ref()
+        .and_then(|profile| profile.moira.as_ref())
+        .and_then(|moira| {
+            moira
+                .human_gate_response
+                .as_ref()
+                .map(|response| MoiraHumanGateResponseConfig {
+                    deliberation_socket: moira
+                        .deliberation_socket
+                        .clone()
+                        .expect("workspace profile validates response deliberation"),
+                    vellum: pantheon_cli::VellumControlConfig {
+                        socket: options
+                            .vellum_socket
+                            .clone()
+                            .expect("workspace profile validates response Vellum"),
+                        credential: options.vellum_credential.clone(),
+                    },
+                    rationale: response.clone(),
+                })
+        });
     let vellum = if let Some(socket) = options.vellum_socket {
         let connector = vellum_connector(socket, options.vellum_credential.as_ref())?;
         let transport = RemoteTransport::new(connector, TransportLimits::reference())
@@ -3802,6 +3832,7 @@ fn interactive(
             moira_participation,
             moira_deliberation,
             moira_decision_packet,
+            moira_human_gate_response_config,
             moira_participation_control,
             moira_agent_worker,
             moira_control_socket,

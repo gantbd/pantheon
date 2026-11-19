@@ -220,6 +220,17 @@ Moira's independent public client, advertises
 headless mode and presents the owner record beside sagas in the Moira tab. The
 saga host does not implicitly serve this separate protocol, and Pantheon neither
 copies the record nor derives authority from its persona or phase.
+
+A selected deliberation may also carry `decision_packet_reader` and
+`human_gate_response` objects plus an attached Vellum service. The former binds
+Moira's opaque packet routes to one exact Vellum workspace/document; the latter
+binds a separate revisioned rationale document and its opaque routes.
+Interactive mode then advertises four command-palette dispositions. Each opens
+the shared Moira review sheet, re-observes the exact pending gate, and requires
+`c` to arm followed by Enter to submit once. Moira obtains and verifies the
+Aegis authority; Pantheon cannot settle the gate from packet text, agenda
+presence, timeout, or agent output. `r` recovers only an exact retained response
+after an unknown outcome, while headless remains observation-only.
 On the Moira saga list, Space marks up to 16 sagas; with no marks, the focused
 saga remains the one-item default. The keep-uncertain, fail-terminal, cancel,
 and compensate palette actions open one parent workflow but never claim an atomic batch. Each path re-inspects every child
@@ -636,6 +647,15 @@ Aegis profile and shared reconciliation guard. Standalone and Pantheon prepare
 and confirm in opposite directions, both recover attributed receipts, an
 unselected saga is refused without revision change, and Pantheon hosts and
 cleanly drains the same durable owner before receipt recovery after reopen.
+
+Run `sh tests/live/moira_deliberation.sh` to qualify deliberation inspection,
+exact decision-packet reading, and the separately selected human-response
+control. The gate revisions packet and rationale documents through hosted
+Vellum, hands the pending durable record to the production Moira deliberation
+owner, obtains command-scoped Aegis authority, and drives review, arm and
+approval through Pantheon in tmux. A separate headless observation verifies the
+settled owner response, exact rationale evidence, reviewer authority, and
+cleared operator-agenda entry.
 
 Run `sh tests/live/daimon_attach.sh` to qualify Daimon's redacted presence plus
 one exact configured `agents.session.inspect.v1` projection in both Pantheon

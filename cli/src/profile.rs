@@ -127,6 +127,9 @@ pub struct MoiraProfile {
     /// Vellum document. This grants read access only; it is not human-gate
     /// response authority.
     pub decision_packet_reader: Option<MoiraDecisionPacketReaderProfile>,
+    /// Separately selected rationale artifact used to construct one exact
+    /// human response. Moira still authorizes the command through Aegis.
+    pub human_gate_response: Option<MoiraHumanGateResponseProfile>,
     /// Optional one-step owner worker. Pantheon treats the configuration as
     /// opaque and accepts only an exact participation-bound process receipt.
     pub agent_worker: Option<MoiraAgentWorkerProfile>,
@@ -143,6 +146,16 @@ pub struct MoiraDecisionPacketReaderProfile {
     pub vellum_workspace: u64,
     pub vellum_document: u64,
     pub max_packet_bytes: usize,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct MoiraHumanGateResponseProfile {
+    pub rationale_owner_route: String,
+    pub rationale_artifact_route: String,
+    pub vellum_workspace: u64,
+    pub vellum_document: u64,
+    pub max_rationale_bytes: usize,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -738,6 +751,37 @@ impl WorkspaceProfile {
                 }
                 if !(1..=65_536).contains(&reader.max_packet_bytes) {
                     return Err("Moira decision-packet byte limit must be between 1 and 65536");
+                }
+            }
+            if let Some(response) = &moira.human_gate_response {
+                if moira.deliberation_socket.is_none() || moira.deliberation.is_none() {
+                    return Err(
+                        "Moira human-gate response requires an exact selected deliberation",
+                    );
+                }
+                if moira.decision_packet_reader.is_none() {
+                    return Err(
+                        "Moira human-gate response requires the selected decision-packet reader",
+                    );
+                }
+                if self.vellum.is_none() {
+                    return Err("Moira human-gate response requires Vellum configuration");
+                }
+                validate_lower_hex(
+                    &response.rationale_owner_route,
+                    32,
+                    "Moira response rationale owner route",
+                )?;
+                validate_lower_hex(
+                    &response.rationale_artifact_route,
+                    32,
+                    "Moira response rationale artifact route",
+                )?;
+                if response.vellum_workspace == 0 || response.vellum_document == 0 {
+                    return Err("Moira response rationale Vellum identities must be non-zero");
+                }
+                if !(1..=65_536).contains(&response.max_rationale_bytes) {
+                    return Err("Moira response rationale byte limit must be between 1 and 65536");
                 }
             }
             if let Some(worker) = &moira.agent_worker {
@@ -1826,6 +1870,44 @@ mod tests {
             })
             .unwrap();
         assert!(WorkspaceProfile::parse(&oversized, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn moira_human_gate_response_requires_packet_and_bounded_rationale_route() {
+        let valid = br#"{
+          "version":1,"name":"Moira response","surfaces":["moira","vellum"],
+          "moira":{"deliberation_socket":"deliberation.sock",
+            "deliberation":"0102030405060708090a0b0c0d0e0f10",
+            "decision_packet_reader":{
+              "owner_route":"11111111111111111111111111111111",
+              "artifact_route":"22222222222222222222222222222222",
+              "vellum_workspace":7,"vellum_document":9,"max_packet_bytes":4096},
+            "human_gate_response":{
+              "rationale_owner_route":"33333333333333333333333333333333",
+              "rationale_artifact_route":"44444444444444444444444444444444",
+              "vellum_workspace":7,"vellum_document":10,"max_rationale_bytes":4096}},
+          "vellum":{"socket":"vellum.sock","credential":null}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let response = profile
+            .moira
+            .unwrap()
+            .human_gate_response
+            .expect("selected human response");
+        assert_eq!(response.vellum_document, 10);
+        assert_eq!(response.max_rationale_bytes, 4096);
+
+        let missing_packet = br#"{
+          "version":1,"name":"Moira response","surfaces":["moira","vellum"],
+          "moira":{"deliberation_socket":"deliberation.sock",
+            "deliberation":"0102030405060708090a0b0c0d0e0f10",
+            "human_gate_response":{
+              "rationale_owner_route":"33333333333333333333333333333333",
+              "rationale_artifact_route":"44444444444444444444444444444444",
+              "vellum_workspace":7,"vellum_document":10,"max_rationale_bytes":4096}},
+          "vellum":{"socket":"vellum.sock","credential":null}
+        }"#;
+        assert!(WorkspaceProfile::parse(missing_packet, Path::new(".")).is_err());
     }
 
     #[test]

@@ -2108,9 +2108,10 @@ material revision, policy, four-way human disposition and injected authority.
 Only an unresolved request appears in Pantheon's shared operator agenda, where
 it retains the request identity and owner revision and routes back to Moira;
 settled evidence remains in deliberation instead of masquerading as pending
-work. This is inspection and routing, not a human finding disposition or
-authority grant: Pantheon does not yet expose Moira's Aegis-authorized response
-command.
+work. Inspection remains authority-free. A separately selected interactive
+route exposes Moira's Aegis-authorized response command only after the complete
+packet and a revisioned Vellum rationale resolve; it still cannot infer a
+disposition from inspection, timeout, an agent, or agenda presence.
 The selected execution profile now freezes an explicit opaque task key,
 incarnation and attempt alongside principal, harness profile, context/tools and
 budgets; prompt, permission and reattach operations retain that exact attempt
@@ -2437,6 +2438,22 @@ receipt. This is intentionally not folded into the product-alignment gate
 projection: it is a broader live blocked-task projection defect and should be
 qualified independently.
 
+The two-frontier operating model makes Chronos more than a board projection.
+The external frontier supervisor and the Pantheon-constrained frontier worker
+must reconcile against the same exact goal, task graph, evidence, budget and
+human-gate frontier through an independently attributable intelligent product
+manager. The PM is a stakeholder and user advocate, not a hidden superior: it
+may challenge either frontier, make sequencing and value recommendations, and
+surface disagreement, but only the relevant owner can mutate its state and a
+named human still settles contested priority, acceptance and rollout. Chronos
+revision 73 admits the priority-10 blocked task
+`dual-frontier-product-manager-alignment-ledger` with exact prerequisites
+`pantheon-product-manager-alignment-control-plane` and
+`pantheon-frontier-supervisor-operating-model-v2`. Its blocked status is the
+current truth; admission does not imply that the long-running PM is complete.
+The live submit succeeded but its feedback again said `Cancel receipts`; the
+existing receipt-labeling backlog item remains the single owner of that UX gap.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.
@@ -2552,17 +2569,19 @@ verified human-readable text only when the public snapshot matches the
 expected revision, SHA-256 and size bound; otherwise it presents an actionable
 refusal and offers no disposition. Vellum may present and edit the material
 while the selected durable artifact owner retains its revision/evidence
-contract. The remaining gap is the separately qualified, command-scoped
-Aegis-authorized response control and attributable rationale capture; packet
+contract. The separately qualified command-scoped control now resolves an
+attributable revisioned Vellum rationale, re-observes the exact pending gate,
+and requires review, arm and confirm before one Moira submission. Packet
 verification alone never becomes approval authority.
 
 Moira TUI `3e82a94` now supplies the reusable fail-closed response-control
 state machine rather than leaving Pantheon to invent a second implementation.
 It requires stable current request/revision evidence before arm, confirms once,
 fences an unknown transport outcome and recovers only by exact retained-
-response equality. This advances but does not close the boundary: Pantheon has
-not yet composed the Vellum rationale reference, behavior-facade actions,
-rendered control or real Aegis-authorized daemon gate.
+response equality. Pantheon now composes the Vellum rationale reference, four
+behavior-facade actions and rendered control. The real gate builds the
+production Moira deliberation owner, obtains Aegis authority, drives approval
+through tmux and independently verifies the settled owner response headlessly.
 
 ### J5. Produce and review a grounded code/document change
 

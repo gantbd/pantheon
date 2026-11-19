@@ -1393,6 +1393,20 @@ recovery before a human can settle the gate from this surface.
   availability and operator configuration. It does not yet trigger on owner
   events or cadence, coalesce unchanged frontiers, author a changed proposal,
   convene Agora, or apply a separately authorized disposition.
+- The operating model now requires that intelligent product management keep the
+  external frontier supervisor and the Pantheon-constrained frontier worker
+  aligned against one owner-backed goal, work, evidence, budget and human-gate
+  frontier. The PM is an equitable stakeholder with attributable judgment: it
+  may challenge either worker, expose priority or interpretation drift and
+  recommend sequencing, but it cannot settle dissent, rewrite owner state or
+  acquire human authority. Chronos revision 73 admits the priority-10 blocked
+  task `dual-frontier-product-manager-alignment-ledger`, with exact dependencies
+  on `pantheon-product-manager-alignment-control-plane` and
+  `pantheon-frontier-supervisor-operating-model-v2`. This makes the dependency
+  honest rather than declaring the PM operational before both foundations are
+  delivered. The live creation receipt again used the unrelated label `Cancel
+  receipts`; the existing Chronos mutation-receipt labeling backlog item owns
+  that friction, so no duplicate task was created.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
@@ -1852,10 +1866,24 @@ mature stakeholder ensemble.
   reader continuously verifies revision, SHA-256 and size, and the Moira pane
   presents the human-readable packet or an actionable refusal without gaining
   edit or response authority.
-- [ ] Compose a separately selected, command-scoped human-response control with
+- [x] Compose a separately selected, command-scoped human-response control with
   review/arm/confirm, four distinct dispositions, Aegis authorization, exact
   success/refusal evidence and lost-reply recovery. Do not expose the control
   until the complete current decision packet resolves and verifies.
+
+Qualified 2026-11-19 Pantheon composition: the workspace profile now selects
+the exact deliberation, verified decision-packet reader, revisioned Vellum
+rationale and bounded rationale routes. All four dispositions enter through
+the behavior facade and reuse Moira TUI's review/arm/confirm/recovery state
+machine. `tests/live/moira_deliberation.sh` hands a durable pending gate to the
+production `moira-deliberation-local` owner, which obtains command-scoped Aegis
+authority; tmux drives approve, arm and confirm through Pantheon, and a separate
+headless read verifies the retained response, rationale revision/SHA and named
+reviewer authority. Socket-file existence proved weaker than owner-protocol
+readiness, so the gate uses a bounded exact observation rather than a sleep.
+Refusal and outcome-unknown recovery remain covered by the reusable component
+suite; the live path qualifies authorized success without claiming fault
+injection it did not perform.
 
 Qualified 2026-11-19 reusable-control slice: `moira-tui` commit `3e82a94`
 adds the owner-neutral presentation state machine for one exact
@@ -1864,11 +1892,9 @@ request before enabling arm, presents all four owner-protocol dispositions,
 submits only after explicit confirmation, fences a transport-unknown outcome,
 and recovers only when every retained response fact matches the original
 submission. Unavailable, stale, differently settled and refused owner evidence
-cannot enable arming. The full peer suite and strict Clippy pass. This is not
-yet a qualified Pantheon response path: Pantheon still must resolve and verify
-the attributable Vellum rationale, construct the exact operation from current
-owner facts, expose the control through its behavior facade, and prove an
-Aegis-authorized apply plus exact replay against the real daemon.
+cannot enable arming. The full peer suite and strict Clippy pass. The Pantheon
+composition above closes the previously open host boundary without moving
+response or authority semantics out of Moira and Aegis.
 
 Qualified 2026-11-18 material-reader slice: `moira-vellum` now reuses its
 existing opaque external-document route to select one exact Vellum document,
@@ -1902,7 +1928,7 @@ and save the packet through the TUI, discover its exact opaque
 workspace/document and evidence headlessly, admit that evidence through the
 real Moira fixture, then prove packet text and agenda parity in headless and
 tmux-driven interactive modes.
-- [ ] Refuse relabeling, automatic disposition, timeout or agent impersonation as
+- [x] Refuse relabeling, automatic disposition, timeout or agent impersonation as
   substitutes for a named-human response.
 - [ ] Require fresh named-human go/no-go for final production rollout and
   invalidate it after any material decision change.

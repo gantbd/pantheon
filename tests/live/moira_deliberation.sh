@@ -5,14 +5,28 @@ root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd -P)
 workspace=$(CDPATH= cd -- "$root/.." && pwd -P)
 scratch=$(mktemp -d "/private/tmp/pmd.XXXXXX")
 fixture_pid=
+aegis_pid=
+owner_pid=
 vellum_tmux_socket="$scratch/vellum-tmux.sock"
 
 cleanup() {
+  if [ -n "$owner_pid" ] && kill -0 "$owner_pid" 2>/dev/null; then
+    kill -TERM "$owner_pid" 2>/dev/null || true
+    wait "$owner_pid" 2>/dev/null || true
+  fi
+  if [ -n "$aegis_pid" ] && kill -0 "$aegis_pid" 2>/dev/null; then
+    kill -TERM "$aegis_pid" 2>/dev/null || true
+    wait "$aegis_pid" 2>/dev/null || true
+  fi
   if [ -n "$fixture_pid" ] && kill -0 "$fixture_pid" 2>/dev/null; then
     kill "$fixture_pid" 2>/dev/null || true
     wait "$fixture_pid" 2>/dev/null || true
   fi
   tmux -S "$vellum_tmux_socket" kill-server >/dev/null 2>&1 || true
+  if [ "${PANTHEON_KEEP_LIVE_SCRATCH:-0}" = 1 ]; then
+    echo "preserved live qualification scratch: $scratch" >&2
+    return
+  fi
   rm -rf "$scratch"
 }
 trap cleanup EXIT HUP INT TERM
@@ -20,11 +34,19 @@ chmod 700 "$scratch"
 
 cargo build --manifest-path "$workspace/moira-tui/Cargo.toml" \
   --package moira-tui-cli --example deliberation_fixture --locked --offline
+cargo build --manifest-path "$workspace/aegis/Cargo.toml" \
+  --package aegis-daemon --bin aegis-daemon --locked --offline
+cargo build --manifest-path "$workspace/moira/Cargo.toml" \
+  --package moira-deliberation-local --bin moira-deliberation-local --locked --offline
 cargo build --manifest-path "$root/Cargo.toml" \
   --package pantheon-cli --bin pantheon --locked --offline
 
 fixture="$workspace/moira-tui/target/debug/examples/deliberation_fixture"
+aegis="$workspace/aegis/target/debug/aegis-daemon"
+owner="$workspace/moira/target/debug/moira-deliberation-local"
 workbench="$root/target/debug/pantheon"
+uid=$(id -u)
+gid=$(id -g)
 "$fixture" "$scratch/deliberation.sock" "$scratch/deliberation.db" \
   >"$scratch/fixture.out" 2>"$scratch/fixture.err" &
 fixture_pid=$!
@@ -158,6 +180,7 @@ wait "$fixture_pid" 2>/dev/null || true
 fixture_pid=
 
 printf '%s' 'Approve the bounded Pantheon rollout after human review.' >"$scratch/decision-packet.txt"
+printf '%s' 'Approved because the exact bounded packet, owner evidence, rollback posture, and named-human responsibility were reviewed.' >"$scratch/human-rationale.txt"
 cat >"$scratch/vellum-profile.json" <<EOF
 {
   "version": 1,
@@ -167,7 +190,7 @@ cat >"$scratch/vellum-profile.json" <<EOF
     "deployment": "hosted",
     "socket": "$scratch/vellum.sock",
     "credential": null,
-    "roots": ["$scratch/decision-packet.txt"],
+    "roots": ["$scratch/decision-packet.txt", "$scratch/human-rationale.txt"],
     "requires": ["workspace.inventory.v1", "workspace.edit.v1", "workspace.save.v1"]
   }
 }
@@ -214,6 +237,12 @@ tmux("send-keys", "-t", session, "!")
 expect("Service Current / Dirty")
 tmux("send-keys", "-t", session, "C-s")
 expect("Service Current / Clean")
+tmux("send-keys", "-t", session, "F6")
+expect("Approved because the exact bounded packet")
+tmux("send-keys", "-t", session, "!")
+expect("Service Current / Dirty")
+tmux("send-keys", "-t", session, "C-s")
+expect("Service Current / Clean")
 PYTHON
 cat >"$scratch/vellum-reader-profile.json" <<EOF
 {
@@ -225,12 +254,18 @@ cat >"$scratch/vellum-reader-profile.json" <<EOF
 EOF
 "$workbench" headless --workspace-profile "$scratch/vellum-reader-profile.json" \
   --operation-id decision-packet-route >"$scratch/vellum-headless.json"
-packet_route=$(python3 - "$scratch/vellum-headless.json" <<'PYTHON'
-import json, sys
+packet_route=$(python3 - "$scratch/vellum-headless.json" "$scratch/decision-packet.txt" "$scratch/human-rationale.txt" <<'PYTHON'
+import hashlib, json, sys
 value = json.load(open(sys.argv[1]))
 peer = next(item for item in value["peers"] if item["peer"] == "vellum")
-context = peer["context_manifest"][0]
-print(context["workspace"], context["document"], context["revision"], context["sha256"].removeprefix("sha256:"))
+contexts = peer["context_manifest"]
+def selected(path):
+    digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+    return next(item for item in contexts if item["sha256"] == "sha256:" + digest)
+packet = selected(sys.argv[2])
+rationale = selected(sys.argv[3])
+print(packet["workspace"], packet["document"], packet["revision"], packet["sha256"].removeprefix("sha256:"),
+      rationale["workspace"], rationale["document"], rationale["revision"], rationale["sha256"].removeprefix("sha256:"))
 PYTHON
 )
 set -- $packet_route
@@ -238,6 +273,10 @@ packet_workspace=$1
 packet_document=$2
 packet_revision=$3
 packet_sha256=$4
+rationale_workspace=$5
+rationale_document=$6
+rationale_revision=$7
+rationale_sha256=$8
 
 "$fixture" "$scratch/pending.sock" "$scratch/pending.db" \
   pending-packet "$packet_revision" "$packet_sha256" \
@@ -367,6 +406,205 @@ finally:
     tmux("kill-server", check=False)
 PYTHON
 
+kill "$fixture_pid"
+wait "$fixture_pid" 2>/dev/null || true
+fixture_pid=
+rm -f "$scratch/pending.sock"
+
+"$aegis" create "$scratch/authority" "$scratch/aegis.sock" \
+  10101010101010101010101010101010 "$uid" "$gid" \
+  31313131313131313131313131313131 2020202020202020 administrator \
+  >"$scratch/aegis.out" 2>"$scratch/aegis.err" &
+aegis_pid=$!
+attempt=0
+while [ ! -S "$scratch/aegis.sock" ]; do
+  if ! kill -0 "$aegis_pid" 2>/dev/null || [ "$attempt" -eq 400 ]; then
+    sed -n '1,160p' "$scratch/aegis.err" >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+cat >"$scratch/deliberation-owner.json" <<EOF
+{
+  "database": "$scratch/pending.db",
+  "socket": "$scratch/pending.sock",
+  "owner": "3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d",
+  "mappings": [{
+    "effective_uid": $uid,
+    "effective_gid": $gid,
+    "read": true,
+    "mutate": true
+  }],
+  "io_timeout_ms": 3000,
+  "max_requests_per_connection": 64,
+  "max_frame_bytes": 65536,
+  "max_checkpoint_bytes": 65536,
+  "max_deliberation_bytes": 32768,
+  "max_database_pages": 64,
+  "max_deliberations": 8,
+  "max_claims": 8,
+  "max_criteria": 8,
+  "max_candidates": 8,
+  "max_members": 4,
+  "max_evidence_per_report": 8,
+  "max_dissent_per_report": 8,
+  "max_fuel": 32,
+  "human_gate": {
+    "kind": "aegis",
+    "socket": "$scratch/aegis.sock",
+    "expected_epoch": 0,
+    "grant_ttl_seconds": 300,
+    "subject": "31313131313131313131313131313131",
+    "gates": [{
+      "deliberation": "01010101010101010101010101010101",
+      "request": "30303030303030303030303030303030"
+    }]
+  }
+}
+EOF
+
+"$owner" "$scratch/deliberation-owner.json" \
+  >"$scratch/owner.out" 2>"$scratch/owner.err" &
+owner_pid=$!
+attempt=0
+while [ ! -S "$scratch/pending.sock" ]; do
+  if ! kill -0 "$owner_pid" 2>/dev/null || [ "$attempt" -eq 400 ]; then
+    sed -n '1,200p' "$scratch/owner.err" >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+attempt=0
+while :; do
+  if "$workbench" headless --workspace-profile "$scratch/pending-reader-profile.json" \
+    --operation-id moira-response-owner-ready \
+    >"$scratch/response-owner-ready.json" 2>"$scratch/response-owner-ready.err"; then
+    break
+  fi
+  if ! kill -0 "$owner_pid" 2>/dev/null || [ "$attempt" -eq 400 ]; then
+    sed -n '1,200p' "$scratch/owner.err" >&2
+    sed -n '1,200p' "$scratch/response-owner-ready.err" >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+cat >"$scratch/response-profile.json" <<EOF
+{
+  "version": 1,
+  "name": "Authorized named-human response qualification",
+  "surfaces": ["agenda", "moira", "vellum"],
+  "moira": {
+    "deliberation_socket": "$scratch/pending.sock",
+    "deliberation": "01010101010101010101010101010101",
+    "decision_packet_reader": {
+      "owner_route": "3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c",
+      "artifact_route": "3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d",
+      "vellum_workspace": $packet_workspace,
+      "vellum_document": $packet_document,
+      "max_packet_bytes": 4096
+    },
+    "human_gate_response": {
+      "rationale_owner_route": "40404040404040404040404040404040",
+      "rationale_artifact_route": "41414141414141414141414141414141",
+      "vellum_workspace": $rationale_workspace,
+      "vellum_document": $rationale_document,
+      "max_rationale_bytes": 4096
+    },
+    "requires": ["deliberation.inspect.v1", "deliberation.human-gate.respond.v1"]
+  },
+  "vellum": {"socket": "$scratch/vellum.sock", "credential": null}
+}
+EOF
+
+python3 - "$scratch" "$workbench" <<'PYTHON'
+from pathlib import Path
+import shlex, subprocess, sys, time
+
+scratch, binary = sys.argv[1:]
+tmux_socket = str(Path(scratch) / "response-tmux.sock")
+profile = str(Path(scratch) / "response-profile.json")
+session = "moira-human-response"
+error_log = Path(scratch) / "response-pantheon.err"
+command = shlex.join([binary, "interactive", "--workspace-profile", profile]) + \
+    " 2>" + shlex.quote(str(error_log))
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", tmux_socket, "-f", "/dev/null", *args],
+        capture_output=True, text=True, check=check, timeout=5,
+    )
+
+def screen():
+    result = tmux("capture-pane", "-p", "-t", session, check=False)
+    if result.returncode:
+        raise AssertionError(error_log.read_text(errors="replace"))
+    return result.stdout
+
+def expect(*markers, timeout=30):
+    deadline = time.monotonic() + timeout
+    visible = ""
+    while time.monotonic() < deadline:
+        visible = screen()
+        if all(marker in visible for marker in markers):
+            return visible
+        time.sleep(0.025)
+    raise AssertionError(f"missing {markers!r}:\n{visible}\n" +
+                         error_log.read_text(errors="replace"))
+
+try:
+    tmux("new-session", "-d", "-x", "220", "-y", "40", "-s", session, command)
+    expect("Named-human deliberation gate", "inspect only")
+    tmux("send-keys", "-t", session, "C-p", "C-u")
+    tmux("send-keys", "-t", session, "-l", "approve pending human gate")
+    expect("Approve pending human gate")
+    tmux("send-keys", "-t", session, "Enter")
+    expect(
+        "Named-human response",
+        "disposition: Approved",
+        "Exact pending gate and response binding verified",
+    )
+    tmux("send-keys", "-t", session, "c")
+    expect("ARMED: Enter submits once; Esc disarms")
+    tmux("send-keys", "-t", session, "Enter")
+    expect("SETTLED", "Named-human response durably accepted")
+    tmux("send-keys", "-t", session, "q")
+    tmux("send-keys", "-t", session, "r")
+    expect("human gate: approved", "human gate authority:")
+    tmux("send-keys", "-t", session, "C-q")
+finally:
+    tmux("kill-server", check=False)
+PYTHON
+
+"$workbench" headless --workspace-profile "$scratch/pending-reader-profile.json" \
+  --operation-id moira-settled-gate-live >"$scratch/settled-headless.json"
+python3 - "$scratch/settled-headless.json" "$rationale_revision" "$rationale_sha256" <<'PYTHON'
+import json, sys
+value = json.load(open(sys.argv[1]))
+peer = next(item for item in value["peers"] if item["peer"] == "moira-deliberation")
+gate = peer["deliberation"]["human_gate"]
+assert gate["status"] == "settled"
+assert gate["response"]["disposition"] == "approved"
+assert gate["response"]["rationale"]["owner_route"] == "40" * 16
+assert gate["response"]["rationale"]["artifact_route"] == "41" * 16
+assert gate["response"]["rationale"]["expected_revision"] == int(sys.argv[2])
+assert gate["response"]["rationale"]["expected_sha256"] == sys.argv[3]
+assert gate["response"]["authority"]["subject"] == "31" * 16
+assert value["operator_agenda"]["entries"] == []
+PYTHON
+
+kill -TERM "$owner_pid"
+wait "$owner_pid"
+owner_pid=
+kill -TERM "$aegis_pid"
+wait "$aegis_pid"
+aegis_pid=
+
 tmux -S "$vellum_tmux_socket" send-keys -t decision-packet-authoring C-q
 attempt=0
 while tmux -S "$vellum_tmux_socket" has-session -t decision-packet-authoring 2>/dev/null; do
@@ -378,4 +616,4 @@ while tmux -S "$vellum_tmux_socket" has-session -t decision-packet-authoring 2>/
   sleep 0.025
 done
 
-echo "qualified: Pantheon verifies an exact Vellum decision packet headlessly and keeps pending gates inspect-only until the Aegis response control exists"
+echo "qualified: Pantheon resolves exact Vellum packet and rationale artifacts, then reviews, arms, and settles one Aegis-authorized Moira human response through the shared behavior facade"

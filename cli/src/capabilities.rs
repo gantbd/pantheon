@@ -103,6 +103,7 @@ pub fn moira(
     selected_sagas: bool,
     selected_participation: bool,
     selected_deliberation: bool,
+    selected_human_response: bool,
 ) -> Vec<Capability> {
     let mut capabilities = Vec::new();
     if selected_sagas {
@@ -116,6 +117,12 @@ pub fn moira(
     }
     if selected_deliberation {
         capabilities.push(capability("deliberation.inspect.v1", Plane::Observation));
+    }
+    if mode == Mode::Interactive && selected_human_response {
+        capabilities.push(capability(
+            "deliberation.human-gate.respond.v1",
+            Plane::Control,
+        ));
     }
     if mode == Mode::Interactive && selected_sagas {
         capabilities.extend([
@@ -367,6 +374,7 @@ pub const GUARDED_CONTROL_CAPABILITIES: &[(&str, &[&str])] = &[
         &[
             "agent.open.prepare.v1",
             "agent.worker.step.v1",
+            "deliberation.human-gate.respond.v1",
             "sagas.reconciliation.confirmation.v1",
             "sagas.reconciliation.confirm.v1",
             "sagas.reconciliation.recovery.v1",
@@ -391,6 +399,11 @@ pub struct GuardedControlRoute {
 /// Concrete local CLI routes for separately guarded controls. Shared commands
 /// retain their peer-owned subcommand or administrative-session semantics.
 pub const GUARDED_CONTROL_ROUTES: &[GuardedControlRoute] = &[
+    GuardedControlRoute {
+        peer: "moira",
+        capability: "deliberation.human-gate.respond.v1",
+        command: "workbench",
+    },
     GuardedControlRoute {
         peer: "aegis",
         capability: "authority.revoke-epoch.v1",
@@ -558,7 +571,7 @@ mod tests {
 
     #[test]
     fn moira_aggregate_does_not_claim_separate_agent_or_control_routes() {
-        let interactive = moira(Mode::Interactive, false, true, false, false);
+        let interactive = moira(Mode::Interactive, false, true, false, false, false);
         assert!(
             interactive
                 .iter()
@@ -576,7 +589,7 @@ mod tests {
             );
         }
         assert_eq!(
-            moira(Mode::Headless, true, true, false, false)
+            moira(Mode::Headless, true, true, false, false, false)
                 .iter()
                 .map(|capability| capability.id)
                 .collect::<Vec<_>>(),
@@ -587,12 +600,12 @@ mod tests {
     #[test]
     fn moira_participation_is_advertised_only_when_selected() {
         assert!(
-            moira(Mode::Interactive, false, false, true, false)
+            moira(Mode::Interactive, false, false, true, false, false)
                 .iter()
                 .any(|capability| capability.id == "agent.participation.inspect.v1")
         );
         assert!(
-            !moira(Mode::Headless, false, false, false, false)
+            !moira(Mode::Headless, false, false, false, false, false)
                 .iter()
                 .any(|capability| capability.id == "agent.participation.inspect.v1")
         );
@@ -601,14 +614,28 @@ mod tests {
     #[test]
     fn moira_deliberation_is_advertised_only_when_selected() {
         assert!(
-            moira(Mode::Interactive, false, false, false, true)
+            moira(Mode::Interactive, false, false, false, true, false)
                 .iter()
                 .any(|capability| capability.id == "deliberation.inspect.v1")
         );
         assert!(
-            !moira(Mode::Headless, false, false, false, false)
+            !moira(Mode::Headless, false, false, false, false, false)
                 .iter()
                 .any(|capability| capability.id == "deliberation.inspect.v1")
+        );
+    }
+
+    #[test]
+    fn moira_human_response_is_interactive_and_explicitly_selected() {
+        assert!(
+            moira(Mode::Interactive, false, false, false, true, true)
+                .iter()
+                .any(|capability| capability.id == "deliberation.human-gate.respond.v1")
+        );
+        assert!(
+            !moira(Mode::Headless, false, false, false, true, true)
+                .iter()
+                .any(|capability| capability.id == "deliberation.human-gate.respond.v1")
         );
     }
 

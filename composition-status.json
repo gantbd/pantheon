@@ -246,6 +246,9 @@
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified" }
         ]
       },
+      "uncomposedPeerCapabilities": {
+        "tellus.verify-grounding.v1": { "peer": "qualified", "pantheon": "absent" }
+      },
       "mutation": "not-applicable",
       "nonApplicable": {
         "host": "Dendrite is an independently deployed IDE and agent bridge; Pantheon attaches only to its bounded typed Tellus endpoint.",
@@ -318,7 +321,7 @@
       "presentation": "moira-tui",
       "readCapability": "sagas.inspect.v1",
       "client": { "contract": "moira-client", "connection": "moira-client::unix::SagaUnixPort", "ownership": "peer" },
-      "evidence": ["moira-tui/tests/live/real_daemon.sh", "pantheon/tests/live/moira_attach.sh", "pantheon/tests/live/moira_hosted.sh", "pantheon/tests/live/moira_reconciliation.sh", "pantheon/tests/live/moira_batch.sh"],
+      "evidence": ["moira-tui/tests/live/real_daemon.sh", "pantheon/tests/live/moira_attach.sh", "pantheon/tests/live/moira_hosted.sh", "pantheon/tests/live/moira_reconciliation.sh", "pantheon/tests/live/moira_batch.sh", "pantheon/tests/live/moira_deliberation.sh"],
       "standalone": { "interactive": "qualified", "headless": "qualified" },
       "attach": { "interactive": "qualified", "headless": "qualified" },
       "host": { "interactive": "qualified", "headless": "qualified" },
@@ -326,6 +329,8 @@
         "interactive": [
           { "id": "sagas.inspect.v1", "plane": "observation", "state": "qualified" },
           { "id": "agent.participation.inspect.v1", "plane": "observation", "state": "implemented", "when": "participation-selected" },
+          { "id": "deliberation.inspect.v1", "plane": "observation", "state": "qualified", "when": "deliberation-selected" },
+          { "id": "deliberation.human-gate.respond.v1", "plane": "control", "state": "qualified", "when": "deliberation, decision-packet reader, human response, and Vellum rationale selected" },
           { "id": "sagas.reconciliation.v1", "plane": "operator", "state": "qualified" },
           { "id": "sagas.evidence.v1", "plane": "operator", "state": "qualified" },
           { "id": "sagas.operator-receipts.v1", "plane": "operator", "state": "qualified" },
@@ -335,6 +340,7 @@
         "headless": [
           { "id": "sagas.inspect.v1", "plane": "observation", "state": "qualified" },
           { "id": "agent.participation.inspect.v1", "plane": "observation", "state": "implemented", "when": "participation-selected" },
+          { "id": "deliberation.inspect.v1", "plane": "observation", "state": "qualified", "when": "deliberation-selected" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ]
@@ -343,6 +349,7 @@
       "mutationCapabilities": {
         "agent.open.prepare.v1": "qualified",
         "agent.worker.step.v1": "qualified",
+        "deliberation.human-gate.respond.v1": "qualified",
         "sagas.reconciliation.confirmation.v1": "qualified",
         "sagas.reconciliation.confirm.v1": "qualified",
         "sagas.reconciliation.recovery.v1": "qualified"
@@ -357,6 +364,11 @@
           "state": "composed",
           "when": "an exact Open is durably prepared and an opaque one-step Moira owner-worker profile is selected",
           "evidence": ["moira/apps/moira-agent-local/src/lib.rs", "pantheon/cli/src/terminal.rs", "pantheon/qualification/moira-participation/live_owner_worker.sh"]
+        },
+        "deliberation.human-gate.respond.v1": {
+          "state": "composed",
+          "when": "one current pending gate, complete selected Vellum decision packet, revisioned selected Vellum rationale, and Aegis-authorized Moira owner are selected",
+          "evidence": ["moira-tui/src/human_gate_control.rs", "pantheon/cli/src/terminal.rs", "pantheon/tests/live/moira_deliberation.sh"]
         }
       },
       "uncomposedPeerCapabilities": {
@@ -369,8 +381,7 @@
         "agent.cancel.confirmation-view.v1": { "peer": "qualified", "pantheon": "absent" },
         "agent.cancel.confirm.v1": { "peer": "qualified", "pantheon": "absent" },
         "agent.reattach.confirmation-view.v1": { "peer": "qualified", "pantheon": "absent" },
-        "agent.reattach.confirm.v1": { "peer": "qualified", "pantheon": "absent" },
-        "deliberation.inspect.v1": { "peer": "qualified", "pantheon": "absent" }
+        "agent.reattach.confirm.v1": { "peer": "qualified", "pantheon": "absent" }
       }
     },
     "vellum": {

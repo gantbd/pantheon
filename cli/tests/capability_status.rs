@@ -48,7 +48,7 @@ fn every_runtime_route_capability_is_in_the_machine_matrix() {
                 &status,
                 "moira",
                 mode,
-                capabilities::moira(mode, hosted, true, false, false),
+                capabilities::moira(mode, hosted, true, false, false, false),
             );
             assert_route(
                 &status,

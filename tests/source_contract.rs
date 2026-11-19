@@ -280,9 +280,21 @@ fn composition_status_is_closed_and_does_not_infer_stronger_cells() {
     assert_eq!(peers["moira"]["host"]["interactive"], "qualified");
     assert_eq!(peers["moira"]["host"]["headless"], "qualified");
     assert_eq!(peers["moira"]["client"]["ownership"], "peer");
+    assert!(peers["moira"]["pantheonRoutes"]["headless"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|route| route["id"] == "deliberation.inspect.v1"
+            && route["plane"] == "observation"));
+    assert!(peers["moira"]["pantheonRoutes"]["interactive"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|route| route["id"] == "deliberation.human-gate.respond.v1"
+            && route["plane"] == "control"));
     assert_eq!(
-        peers["moira"]["uncomposedPeerCapabilities"]["deliberation.inspect.v1"]["pantheon"],
-        "absent"
+        peers["moira"]["mutationCapabilities"]["deliberation.human-gate.respond.v1"],
+        "qualified"
     );
 
     let capabilities = [
@@ -2654,6 +2666,12 @@ fn moira_deliberation_gate_proves_exact_ensemble_and_human_gate_evidence_in_both
         "authority",
         "infers no ensemble fitness",
         "Open Moira deliberation",
+        "moira-deliberation-local",
+        "deliberation.human-gate.respond.v1",
+        "approve pending human gate",
+        "Exact pending gate and response binding verified",
+        "Named-human response durably accepted",
+        "expected_sha256",
     ] {
         assert!(
             live.contains(required),
@@ -2666,6 +2684,9 @@ fn moira_deliberation_gate_proves_exact_ensemble_and_human_gate_evidence_in_both
     let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
     assert!(terminal.contains("moira.view.deliberation"));
     assert!(terminal.contains("MoiraPane::Deliberation"));
+    assert!(terminal.contains("moira.deliberation.respond.approve"));
+    assert!(terminal.contains("prepare_human_gate_response"));
+    assert!(terminal.contains("HumanGateControlInput::Confirm"));
     let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
     assert!(headless.contains("moira_tui::deliberation_view_json"));
     assert!(headless.contains("Named-human deliberation gate"));

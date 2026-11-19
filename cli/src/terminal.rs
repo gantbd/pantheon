@@ -17,12 +17,16 @@ use daimon_protocol::{
 use hestia_protocol::{OperationIdV1 as HestiaOperationIdV1, RuntimeIdV1 as HestiaRuntimeIdV1};
 use moira_protocol::{
     OperatorDispositionV1, ReconciliationProposalV1,
-    deliberation::{HumanGateMaterialRefV1, HumanGateRequestV1},
+    deliberation::{
+        HumanGateDispositionV1, HumanGateMaterialRefV1, HumanGateOperationV1, HumanGateRequestV1,
+        HumanGateResponseIdV1, HumanGateResponseSubmissionV1,
+    },
 };
 use moira_vellum::{
     DecisionPacketAdapter, DecisionPacketErrorV1, DocumentRouteV1, ExternalDocumentRefV1,
 };
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
 use std::io::Read;
@@ -36,6 +40,7 @@ use vellum_sdk_client::{
         AuthenticatedUnixConnector, FrameExchange, RemoteTransport, TransportError,
         TransportLimits, UnixConnector,
     },
+    workspace::WorkspaceClientV1,
 };
 use vellum_tui::{
     AtomicReplaceComponent, AtomicReplaceDisposition, AtomicReplaceInput, AtomicReplaceLifecycle,
@@ -49,7 +54,7 @@ use crate::hestia::{RuntimeEvidenceProjection, observe_provider_runtime};
 use crate::native_host::NativeHost;
 use crate::profile::{
     AgoraTransportProfile, DaimonAgentOpenProfile, DaimonExecutionPolicyProfile, KeybindingProfile,
-    TaskConversationProfile, WorkspaceProfile,
+    MoiraHumanGateResponseProfile, TaskConversationProfile, WorkspaceProfile,
 };
 #[cfg(test)]
 use crate::provider::{
@@ -1472,6 +1477,7 @@ pub fn run_terminal_with_operational_peers<T: ServicePort>(
             moira_participation: None,
             moira_deliberation: None,
             moira_decision_packet: None,
+            moira_human_gate_response_config: None,
             moira_participation_control: None,
             moira_agent_worker: None,
             moira_control_socket: None,
@@ -1501,6 +1507,7 @@ pub struct OperationalPeers {
     pub moira_participation: Option<moira_tui::ParticipationComponent>,
     pub moira_deliberation: Option<moira_tui::DeliberationComponent>,
     pub moira_decision_packet: Option<MoiraDecisionPacketComponent>,
+    pub moira_human_gate_response_config: Option<MoiraHumanGateResponseConfig>,
     pub moira_participation_control: Option<(
         PathBuf,
         moira_protocol::agent_participation::ParticipationIdV1,
@@ -1889,6 +1896,106 @@ impl MoiraAgentWorkerControl {
 pub struct VellumControlConfig {
     pub socket: PathBuf,
     pub credential: Option<PathBuf>,
+}
+
+#[derive(Clone, Debug)]
+pub struct MoiraHumanGateResponseConfig {
+    pub deliberation_socket: PathBuf,
+    pub vellum: VellumControlConfig,
+    pub rationale: MoiraHumanGateResponseProfile,
+}
+
+fn prepare_human_gate_response(
+    config: &MoiraHumanGateResponseConfig,
+    gate: moira_tui::HumanGateAgendaObservation,
+    packet_current: bool,
+    disposition: HumanGateDispositionV1,
+) -> Result<moira_tui::HumanGateResponseComponent, String> {
+    if !packet_current {
+        return Err(
+            "the complete current decision packet must verify before a response can be reviewed"
+                .into(),
+        );
+    }
+    let transport = vellum_batch_transport(&config.vellum)?;
+    let mut workspace = WorkspaceClientV1::connect(transport)
+        .map_err(|error| format!("Vellum rationale workspace refused: {error:?}"))?;
+    let workspace_id = vellum_protocol::WorkspaceIdV1::new(config.rationale.vellum_workspace)
+        .ok_or("Vellum rationale workspace identity refused")?;
+    let document =
+        vellum_protocol::WorkspaceDocumentIdV1::new(workspace_id, config.rationale.vellum_document)
+            .ok_or("Vellum rationale document identity refused")?;
+    let rationale = (|| -> Result<(u64, [u8; 32]), String> {
+        workspace
+            .refresh_inventory()
+            .map_err(|error| format!("Vellum rationale inventory refused: {error:?}"))?;
+        let inventory = workspace
+            .projection()
+            .inventory()
+            .ok_or("Vellum rationale inventory was not published")?;
+        if !inventory.documents.contains(&document) {
+            return Err(
+                "Configured Vellum rationale document is not in the current inventory".into(),
+            );
+        }
+        workspace
+            .select_document(document)
+            .map_err(|error| format!("Vellum rationale selection refused: {error:?}"))?;
+        workspace
+            .refresh_snapshot()
+            .map_err(|error| format!("Vellum rationale snapshot refused: {error:?}"))?;
+        let snapshot = workspace
+            .projection()
+            .snapshot()
+            .ok_or("Vellum rationale snapshot was not published")?;
+        if snapshot.revision == 0
+            || snapshot.text.trim().is_empty()
+            || snapshot.text.len() > config.rationale.max_rationale_bytes
+        {
+            return Err("Vellum rationale must be non-empty, revisioned, and within its configured byte bound".into());
+        }
+        Ok((
+            snapshot.revision,
+            Sha256::digest(snapshot.text.as_bytes()).into(),
+        ))
+    })();
+    let disconnected = workspace
+        .disconnect()
+        .map_err(|_| "Vellum rationale client disconnect refused".to_owned());
+    let (rationale_revision, digest) = match (rationale, disconnected) {
+        (Ok(rationale), Ok(_)) => rationale,
+        (Err(reason), _) => return Err(reason),
+        (Ok(_), Err(reason)) => return Err(reason),
+    };
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|_| "system clock precedes the Unix epoch".to_owned())?
+        .as_secs();
+    let operation = HumanGateOperationV1 {
+        deliberation: gate.deliberation,
+        expected_revision: gate.registry_revision,
+        response: HumanGateResponseSubmissionV1 {
+            id: HumanGateResponseIdV1(fresh_identity()?),
+            request: gate.request.id,
+            disposition,
+            rationale_digest: digest,
+            rationale: HumanGateMaterialRefV1 {
+                owner_route: parse_hex_identity(&config.rationale.rationale_owner_route)
+                    .map_err(|_| "validated rationale owner route became invalid")?,
+                artifact_route: parse_hex_identity(&config.rationale.rationale_artifact_route)
+                    .map_err(|_| "validated rationale artifact route became invalid")?,
+                expected_revision: rationale_revision,
+                expected_sha256: digest,
+            },
+            responded_at: now,
+        },
+    };
+    let port = moira_tui_local_client::LocalDeliberationPort::connect(
+        &config.deliberation_socket,
+        moira_tui_local_client::ClientLimits::default(),
+    )
+    .map_err(|error| format!("Moira human-response control refused: {error:?}"))?;
+    Ok(moira_tui::HumanGateResponseComponent::new(port, operation))
 }
 
 enum VellumBatchConnector {
@@ -2417,6 +2524,7 @@ fn workbench_commands(
     moira: bool,
     moira_participation: bool,
     moira_deliberation: bool,
+    moira_human_response: bool,
     moira_agent_worker: bool,
     moira_control: bool,
     daimon: bool,
@@ -3147,6 +3255,40 @@ fn workbench_commands(
             command.unavailable("This Moira presentation endpoint is not configured")
         });
     }
+    for (id, label) in [
+        (
+            "moira.deliberation.respond.approve",
+            "Approve pending human gate",
+        ),
+        (
+            "moira.deliberation.respond.reject",
+            "Reject pending human gate",
+        ),
+        (
+            "moira.deliberation.respond.defer",
+            "Defer pending human gate",
+        ),
+        (
+            "moira.deliberation.respond.request-changes",
+            "Request changes at pending human gate",
+        ),
+    ] {
+        let command = CommandSpec::available(
+            id,
+            label,
+            "Resolve the complete current decision packet and attributable Vellum rationale, then review, arm, and confirm one exact Moira response authorized by Aegis.",
+            "Moira",
+            None,
+            CommandKind::Guarded,
+        );
+        commands.push(if moira_human_response {
+            command
+        } else {
+            command.unavailable(
+                "Select Moira deliberation, decision-packet reader, human response, and Vellum rationale routes",
+            )
+        });
+    }
     let run_agent_worker = CommandSpec::available(
         "moira.participation.worker.run",
         "Dispatch prepared Moira agent session",
@@ -3593,6 +3735,18 @@ enum MoiraPane {
     Deliberation,
 }
 
+fn human_gate_disposition(action: &str) -> Option<HumanGateDispositionV1> {
+    match action {
+        "moira.deliberation.respond.approve" => Some(HumanGateDispositionV1::Approved),
+        "moira.deliberation.respond.reject" => Some(HumanGateDispositionV1::Rejected),
+        "moira.deliberation.respond.defer" => Some(HumanGateDispositionV1::Deferred),
+        "moira.deliberation.respond.request-changes" => {
+            Some(HumanGateDispositionV1::ChangesRequested)
+        }
+        _ => None,
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum HestiaArtifactAction {
     Refresh,
@@ -3725,6 +3879,9 @@ fn execute_workbench_action<T: ServicePort>(
     moira: &mut Option<moira_tui::Component>,
     moira_participation: &mut Option<moira_tui::ParticipationComponent>,
     moira_deliberation: &mut Option<moira_tui::DeliberationComponent>,
+    moira_decision_packet: Option<&MoiraDecisionPacketComponent>,
+    moira_human_gate_response_config: Option<&MoiraHumanGateResponseConfig>,
+    moira_human_gate_response: &mut Option<moira_tui::HumanGateResponseComponent>,
     moira_pane: &mut MoiraPane,
     moira_participation_control: Option<&(
         PathBuf,
@@ -3784,6 +3941,42 @@ fn execute_workbench_action<T: ServicePort>(
             format!("Opened {}", destination.label()),
         );
     }
+    if let Some(disposition) = human_gate_disposition(action) {
+        let Some(config) = moira_human_gate_response_config else {
+            return (
+                ActivityLevel::Warning,
+                "moira",
+                "Named-human response control is not configured".into(),
+            );
+        };
+        let Some(gate) = moira_deliberation
+            .as_ref()
+            .and_then(moira_tui::DeliberationComponent::operator_agenda_observation)
+        else {
+            return (
+                ActivityLevel::Warning,
+                "moira",
+                "No exact current pending named-human gate is available".into(),
+            );
+        };
+        let packet_current =
+            moira_decision_packet.is_some_and(|packet| packet.current_for(gate.request));
+        match prepare_human_gate_response(config, gate, packet_current, disposition) {
+            Ok(control) => {
+                *moira_human_gate_response = Some(control);
+                *moira_open = None;
+                *moira_reconciliation = None;
+                *moira_pane = MoiraPane::Deliberation;
+                let _ = shell.activate(Surface::Moira);
+                return (
+                    ActivityLevel::Info,
+                    "moira",
+                    "Exact named-human response review opened; inspect the Vellum rationale and owner binding before arming".into(),
+                );
+            }
+            Err(reason) => return (ActivityLevel::Warning, "moira", reason),
+        }
+    }
     if let Some(pane) = match action {
         "moira.view.sagas" => Some(MoiraPane::Sagas),
         "moira.view.participation" => Some(MoiraPane::Participation),
@@ -3803,6 +3996,7 @@ fn execute_workbench_action<T: ServicePort>(
             );
         }
         *moira_pane = pane;
+        *moira_human_gate_response = None;
         *moira_open = None;
         *moira_reconciliation = None;
         let _ = shell.activate(Surface::Moira);
@@ -8226,6 +8420,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         mut moira_participation,
         mut moira_deliberation,
         mut moira_decision_packet,
+        moira_human_gate_response_config,
         moira_participation_control,
         moira_agent_worker: moira_agent_worker_config,
         moira_control_socket,
@@ -8254,6 +8449,8 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
     let mut agora_message_operation = None;
     let mut moira_reconciliation: Option<moira_tui::ReconciliationBatchComponent> = None;
     let mut moira_open: Option<moira_tui::OpenControlComponent> = None;
+    let mut moira_human_gate_response: Option<moira_tui::HumanGateResponseComponent> = None;
+    let mut last_moira_human_gate_notice = String::new();
     let mut moira_pane = if moira.is_some() {
         MoiraPane::Sagas
     } else if moira_participation.is_some() {
@@ -8367,6 +8564,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         moira.is_some(),
         moira_participation_control.is_some(),
         moira_deliberation.is_some(),
+        moira_human_gate_response_config.is_some(),
         moira_agent_worker_config.is_some(),
         moira_control_socket.is_some(),
         daimon.is_some() || daimon_model.is_some() || daimon_agent.is_some(),
@@ -9259,6 +9457,33 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                     .map(|observation| observation.request);
                 packet.sync(request);
             }
+            if let Some(control) = &mut moira_human_gate_response {
+                control.poll();
+                let current = control.notice();
+                if current != last_moira_human_gate_notice {
+                    let level = match control.disposition() {
+                        moira_tui::HumanGateControlDisposition::Applied => ActivityLevel::Success,
+                        moira_tui::HumanGateControlDisposition::OutcomeUnknown => {
+                            ActivityLevel::Uncertain
+                        }
+                        moira_tui::HumanGateControlDisposition::Refused
+                        | moira_tui::HumanGateControlDisposition::Unavailable => {
+                            ActivityLevel::Warning
+                        }
+                        moira_tui::HumanGateControlDisposition::Ready
+                        | moira_tui::HumanGateControlDisposition::Armed
+                        | moira_tui::HumanGateControlDisposition::Pending => ActivityLevel::Info,
+                    };
+                    notice = current.into();
+                    activity.push(level, "moira", current);
+                    if level == ActivityLevel::Success
+                        && let Some(deliberation) = &mut moira_deliberation
+                    {
+                        deliberation.update(moira_tui::Input::Refresh, true);
+                    }
+                    last_moira_human_gate_notice = current.into();
+                }
+            }
             if let Some(control) = &mut moira_open {
                 control.poll();
                 let current = control.notice();
@@ -10071,6 +10296,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         || moira_reconciliation
                             .as_ref()
                             .is_some_and(|control| control.request_pending())
+                        || moira_human_gate_response
+                            .as_ref()
+                            .is_some_and(moira_tui::HumanGateResponseComponent::request_pending)
                 }
                 "daimon" => {
                     daimon
@@ -10150,6 +10378,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         || moira_reconciliation
                             .as_ref()
                             .is_some_and(moira_tui::ReconciliationBatchComponent::recovery_required)
+                        || moira_human_gate_response
+                            .as_ref()
+                            .is_some_and(moira_tui::HumanGateResponseComponent::recovery_required)
                 }
                 "daimon" => {
                     daimon_control.as_ref().is_some_and(|control| {
@@ -10225,6 +10456,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             .then_some(moira_decision_packet.as_ref())
                             .flatten()
                             .and_then(MoiraDecisionPacketComponent::view),
+                        moira_human_gate_response: (moira_pane == MoiraPane::Deliberation)
+                            .then_some(moira_human_gate_response.as_ref())
+                            .flatten(),
                         moira_open: moira_open.as_ref(),
                         moira_reconciliation: moira_reconciliation.as_ref(),
                         daimon: daimon.as_ref(),
@@ -10828,6 +11062,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                         &mut moira,
                         &mut moira_participation,
                         &mut moira_deliberation,
+                        moira_decision_packet.as_ref(),
+                        moira_human_gate_response_config.as_ref(),
+                        &mut moira_human_gate_response,
                         &mut moira_pane,
                         moira_participation_control.as_ref(),
                         &mut moira_open,
@@ -11808,6 +12045,32 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                 }
                             }
                             .into();
+                            activity.push(ActivityLevel::Info, "moira", notice.clone());
+                        }
+                    } else if let Some(control) = &mut moira_human_gate_response {
+                        let input = if is_key(key, KeyCode::Char('c'), KeyModifiers::NONE) {
+                            Some(moira_tui::HumanGateControlInput::Arm)
+                        } else if is_key(key, KeyCode::Enter, KeyModifiers::NONE) {
+                            Some(moira_tui::HumanGateControlInput::Confirm)
+                        } else if is_key(key, KeyCode::Char('r'), KeyModifiers::NONE) {
+                            Some(moira_tui::HumanGateControlInput::Refresh)
+                        } else if is_key(key, KeyCode::Esc, KeyModifiers::NONE) {
+                            Some(moira_tui::HumanGateControlInput::Back)
+                        } else if is_key(key, KeyCode::Char('q'), KeyModifiers::NONE) {
+                            Some(moira_tui::HumanGateControlInput::Close)
+                        } else {
+                            None
+                        };
+                        if let Some(input) = input {
+                            if control.update(input, true) == moira_tui::Lifecycle::CloseRequested {
+                                moira_human_gate_response = None;
+                                last_moira_human_gate_notice.clear();
+                                notice =
+                                    "Closed named-human response review without another submission"
+                                        .into();
+                            } else {
+                                notice = control.notice().into();
+                            }
                             activity.push(ActivityLevel::Info, "moira", notice.clone());
                         }
                     } else if moira_pane == MoiraPane::Deliberation
@@ -14574,7 +14837,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, true, true, true, true, true, true, true, true, true, true, true, true, true,
             true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-            true, true,
+            true, true, true,
         );
         for expected in [
             "navigate.overview",
@@ -14597,6 +14860,10 @@ mod tests {
             "moira.view.sagas",
             "moira.view.participation",
             "moira.view.deliberation",
+            "moira.deliberation.respond.approve",
+            "moira.deliberation.respond.reject",
+            "moira.deliberation.respond.defer",
+            "moira.deliberation.respond.request-changes",
             "view.refresh",
             "vellum.atomic-replace-selected",
             "suite.refresh",
@@ -14715,7 +14982,7 @@ mod tests {
         let commands = workbench_commands(
             &shell, false, false, false, false, false, false, false, false, false, false, false,
             false, false, false, false, false, false, false, false, false, false, false, false,
-            false, false, false, false, false, false,
+            false, false, false, false, false, false, false,
         );
         let save = commands
             .iter()
@@ -14729,6 +14996,75 @@ mod tests {
             .unwrap();
         assert!(!hestia_start.enabled);
         assert_eq!(hestia_start.unavailable, Some("Hestia is not configured"));
+        let human_response = commands
+            .iter()
+            .find(|command| command.id == "moira.deliberation.respond.approve")
+            .unwrap();
+        assert!(!human_response.enabled);
+        assert!(
+            human_response
+                .unavailable
+                .is_some_and(|value| value.contains("decision-packet reader"))
+        );
+    }
+
+    #[test]
+    fn human_gate_dispositions_are_closed_behavior_actions() {
+        assert_eq!(
+            human_gate_disposition("moira.deliberation.respond.approve"),
+            Some(HumanGateDispositionV1::Approved)
+        );
+        assert_eq!(
+            human_gate_disposition("moira.deliberation.respond.request-changes"),
+            Some(HumanGateDispositionV1::ChangesRequested)
+        );
+        assert_eq!(
+            human_gate_disposition("moira.deliberation.respond.other"),
+            None
+        );
+    }
+
+    #[test]
+    fn human_gate_response_refuses_before_touching_rationale_when_packet_is_not_current() {
+        let config = MoiraHumanGateResponseConfig {
+            deliberation_socket: "/tmp/not-used-moira.sock".into(),
+            vellum: VellumControlConfig {
+                socket: "/tmp/not-used-vellum.sock".into(),
+                credential: None,
+            },
+            rationale: MoiraHumanGateResponseProfile {
+                rationale_owner_route: "11".repeat(16),
+                rationale_artifact_route: "22".repeat(16),
+                vellum_workspace: 1,
+                vellum_document: 2,
+                max_rationale_bytes: 1024,
+            },
+        };
+        let gate = moira_tui::HumanGateAgendaObservation {
+            registry_revision: 3,
+            deliberation: moira_protocol::deliberation::DeliberationIdV1([4; 16]),
+            request: HumanGateRequestV1 {
+                id: moira_protocol::deliberation::HumanGateRequestIdV1([5; 16]),
+                reviewer: [6; 16],
+                finding_digest: [7; 32],
+                decision_digest: [8; 32],
+                material_revision_digest: [9; 32],
+                policy_digest: [10; 32],
+                decision_packet: HumanGateMaterialRefV1 {
+                    owner_route: [11; 16],
+                    artifact_route: [12; 16],
+                    expected_revision: 13,
+                    expected_sha256: [14; 32],
+                },
+                requested_at: 15,
+            },
+        };
+        let Err(reason) =
+            prepare_human_gate_response(&config, gate, false, HumanGateDispositionV1::Deferred)
+        else {
+            panic!("unverified packet must refuse before rationale access")
+        };
+        assert!(reason.contains("decision packet"));
     }
 
     #[test]
