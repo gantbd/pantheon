@@ -57,6 +57,11 @@ def expect(marker, timeout=10):
         time.sleep(0.025)
     raise AssertionError(f"Missing {marker!r} in hosted Chronos pane:\n{visible}")
 
+def reject(marker):
+    visible = screen()
+    if marker in visible:
+        raise AssertionError(f"Unexpected {marker!r} in hosted Chronos pane:\n{visible}")
+
 def keys(*values):
     tmux("send-keys", "-t", "chronos", *values)
 
@@ -102,7 +107,7 @@ try:
     expect("deps=1")
     expect("caps=1")
     keys("Enter")
-    expect("Applied.")
+    expect("Task graph submission applied.")
 
     keys("s")
     expect("Observed scheduling and")
@@ -173,6 +178,19 @@ try:
     expect("Applied 3/3 independently receipted cancellations")
     expect("applied=3 refused=0 unknown=0 not-sent=0")
 
+    keys("n")
+    expect("Task batch")
+    text("bad-dependent")
+    keys("Enter", "d")
+    expect("Dependencies: comma-separated exact task IDs")
+    text("missing-owner-task")
+    keys("Enter", "Enter")
+    expect("Task graph submission refused.")
+    expect("exact dependency")
+    reject("Cancel receipts:")
+    keys("r")
+    expect("Observed 3 tasks")
+
     palette("inspect tui instrumentation", "Inspect TUI instrumentation")
     expect("chronos.schedule.eligibility-batch")
     expect("chronos.task.cancel-batch")
@@ -186,7 +204,7 @@ try:
     keys("Enter")
     expect("Review 1 exact task(s)")
     keys("Enter")
-    expect("Applied.")
+    expect("Task graph submission applied.")
 
     keys("C-q")
     deadline = time.monotonic() + 10
