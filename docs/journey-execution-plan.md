@@ -54,9 +54,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   Stale, missing, changed, reordered, mismatched, legacy, oversized and
   unavailable results refuse rather than becoming alignment evidence. Focused
   owner tests and strict checks pass in Moira `a223d77`, Dendrite `deb4332`,
-  Tellus `0ad7edf`, and Chronos `d63c439` (after `3a98faf`). The live budget-
-  policy reader and packaged evidence composer remain open, and the Ready tasks
-  remain unsettled until Chronos observes prospective claim/evidence completion.
+  Tellus `0ad7edf`, and Chronos `d63c439` (after `3a98faf`). Chronos `fa4a481`
+  now adds the exact Vellum budget-policy artifact reader and bounded owner
+  composer: Moira requirements, Tellus current proof and policy revision remain
+  distinct; policy revision is explicitly not execution enforcement or Aegis
+  authority. Twenty-eight focused tests and strict Clippy pass. Authenticated
+  production packaging and the recurring PM worker remain open, and the Ready
+  tasks remain unsettled until Chronos observes prospective claim/evidence
+  completion.
 - The task was created through Pantheon's central command palette and bounded
   Chronos form. Invalid priority input was refused without dispatch; the exact
   reviewed task then applied once. The form did not honor Emacs `C-u`, and the
@@ -76,6 +81,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   and refused a fresh workspace operation with `AuthorityUnavailable`, so it
   was used neither to overwrite the updated documents nor as false evidence of
   a current PM goal binding.
+- A fresh `make run` profile intended to edit this ledger through Vellum spent
+  several minutes compiling and then made no progress at 178/194 for more than
+  a minute; the isolated build was stopped and is evidence for the existing
+  `pantheon-last-known-good-development-launch` work, not a reason to create a
+  duplicate. The already-built binary then correctly refused this 131 KB ledger
+  at Vellum's workspace limit, but exposed only `Workspace(Session(Adapter(Limit)))`,
+  reinforcing the existing `vellum-root-limit-diagnostic` and workset-bound
+  items. A bounded 15 KB delivery-contract workset did open cleanly. `M-2`
+  reached Vellum and literal find selected the exact PM-cycle text, but typing
+  inserted beside the selection; `Ctrl-R` escaped to Agenda and `F8` was
+  unavailable through Pantheon's facade. The incorrect saved insertion was
+  repaired only after cleanly draining the isolated profile. This run is
+  current-binary dogfood, not proof against newer source; it strengthens the
+  existing `vellum-find-selection-edit-semantics` and
+  `vellum-minibuffer-key-precedence-recovery` acceptance evidence.
 
 ### 2026-11-18 — provider posture at the J1 human gate
 

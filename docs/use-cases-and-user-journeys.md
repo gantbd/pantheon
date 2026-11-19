@@ -2303,13 +2303,23 @@ The focused owner tests and strict checks pass in Moira `a223d77`, Dendrite
 `deb4332`, Tellus `0ad7edf`, and Chronos `d63c439` (building on its retained-
 requirements reader in `3a98faf`). The two historical Ready tasks are not
 retroactively completed outside Chronos's prospective claim/evidence/settlement
-path. A live budget-policy owner and packaged multi-owner evidence composition
-still block the recurring PM worker. After observing all 97 tasks across both
-bounded Chronos pages, revision 71 admits the non-duplicate priority-9
-`alignment-live-budget-policy-frontier`. The existing P10 PM activation task's
-six admitted prerequisites do not include it; the presentation cannot silently
-rewrite that immutable graph, so supersession or a separately authorized graph
-change remains an explicit product-owner decision.
+path. Chronos `fa4a481` now makes the budget-policy ownership split executable:
+Vellum owns the rich accountable policy artifact, execution owners enforce
+concrete limits, and Aegis authorizes effects. The exact scope/cohort-bound
+reader refreshes only the Vellum workspace/document/revision binding and makes
+no enforcement claim. A bounded composer joins that current policy reference
+with Moira's deliberation frontier and Tellus's exact grounding proof, refuses
+duplicate or oversized cross-owner evidence, and feeds the existing twice-
+sampled live frontier without allowing one owner to substitute for another.
+Authenticated production packaging, configuration and the recurring PM worker
+remain open. After observing all 97 tasks across both bounded Chronos pages,
+revision 71 admits the non-duplicate priority-9
+`alignment-live-budget-policy-frontier`. The implementation is qualified, but
+the task remains unsettled outside Chronos's prospective execution path. The
+existing P10 PM activation task's six admitted prerequisites do not include it;
+the presentation cannot silently rewrite that immutable graph, so supersession
+or a separately authorized graph change remains an explicit product-owner
+decision.
 
 The same live pass exposed three presentation/operation findings without
 changing the owner result. Emacs `C-u` did not clear the Chronos numeric-priority

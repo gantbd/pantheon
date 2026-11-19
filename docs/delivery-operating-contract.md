@@ -142,7 +142,7 @@ the other's evidence. A disagreement that changes scope, priority, acceptance
 or consequential risk goes through attributed Agora challenge and the
 applicable product-owner, sponsor or human gate.
 
-The minimum recurring reconciliation cycle is:
+The minimum recurring, owner-bracketed reconciliation cycle is:
 
 1. Observe the exact Vellum goal revision and current Chronos graph, attempts,
    leases, dependencies and prior grooming receipt.
