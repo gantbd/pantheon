@@ -280,8 +280,13 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   and remain readable through that public boundary. Named-human approval
   updates the retained review, exact lost-reply replay returns the same review
   outcome, and a gated disposition cannot proceed without the admitted
-  approval. A real Agora service round trip, outcome correlation and Pantheon
-  TUI/headless projection remain required before the J33 checklist item closes.
+  approval. A real Agora `ServiceV2` round trip now starts from one retained
+  review checkpoint, projects the exact finding, rebuttal and disposition,
+  publishes three independently receipted addressed messages, and observes the
+  same bodies and recipients from Agora's owner. That journey exposed and fixed
+  canonical recipient ordering; duplicate recipients now refuse before
+  dispatch. Outcome correlation and Pantheon TUI/headless projection remain
+  required before the J33 checklist item closes.
 - Chronos revision 53 atomically admitted three follow-on dogfood discoveries:
   priority-6 `chronos-complete-paginated-task-search`, priority-5
   `pantheon-canonical-dogfood-workspace-attachment`, and priority-4
