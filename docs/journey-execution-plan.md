@@ -2142,6 +2142,27 @@ Operational means observable completed work, not a configured role name:
   allowlisted test capabilities. No unconstrained shell, ambient network,
   inherited secret or undeclared MCP capability is part of the operating
   profile.
+- The first constrained-tool boundary is now concrete. Daimon `68cc949`
+  authorizes each allowlisted ACP command under its own tool capability instead
+  of sharing one terminal-scope grant. Pantheon's `agent-web-fetch` is a closed
+  host gateway: operator-pinned transport digest and exact hosts, HTTPS-only,
+  no redirects, cleared environment, bounded time/bytes, UTF-8-only output,
+  content SHA-256 and an explicit untrusted-content label. The provider still
+  has no ambient network or filesystem authority. A Pantheon owner-operation
+  gateway, live Codex session receipt, Claude host-tool continuation and the
+  combined denial matrix remain required before the frontier-worker row is
+  operational.
+- The capability catalogue is component-granular, not an omnibus `Pantheon`
+  tool. Chronos observation, Tellus SME planning, Vellum reads, Agora speech and
+  every control plane require distinct command entries and Aegis/Daimon tool
+  IDs. A session may receive an explicit subset; no peer name, wildcard or role
+  switch grants sibling operations.
+- The gateway's real HTTPS qualification pinned the current `/usr/bin/curl`
+  digest `b636262803922ee1dd0fbf614818473ffa53c811e44fd3278c2270d3af4759d3`,
+  admitted only `example.com`, returned 577 UTF-8 bytes with content digest
+  `25ddf2c883e0d1958ea971d279a7e4f0fd446724ee3db7db19dadabd4a62e484`,
+  and labeled them `untrusted_external_content`. This is host-gateway evidence,
+  not yet evidence that a Daimon-confined frontier provider invoked it.
 - The verification worker claims only explicitly testable Chronos work,
   executes a governed deterministic test-catalog entry asynchronously, and
   returns attributed command, scope, timing, exit and bounded-output evidence.

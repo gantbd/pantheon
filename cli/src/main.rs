@@ -832,6 +832,7 @@ fn negotiate_capabilities(
 fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
+        "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
         "pantheon tellus-sme-plan LOOPBACK_HOST:PORT REQUEST_JSON [--token-file PATH]\n",
         "pantheon alignment option: --chronos-alignment WORKSTREAM DIRECTORY SCOPE\n",
@@ -1054,6 +1055,12 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "agent-web-fetch")
+    {
+        return pantheon_cli::agent_web::fetch(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "controls")

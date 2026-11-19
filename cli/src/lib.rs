@@ -1,6 +1,7 @@
 //! Pantheon application lifecycle for interactive and headless composition.
 #![forbid(unsafe_code)]
 
+pub mod agent_web;
 pub mod capabilities;
 pub mod headless;
 pub mod hestia;

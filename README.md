@@ -638,6 +638,13 @@ and a disclosure-byte bound. The result retains fold, lattice, authority and
 surface digests, asks `do we have the right ensemble?`, and cannot imply
 stakeholder equity, independence, approval, authority or proof.
 
+Use `pantheon agent-web-fetch POLICY_JSON HTTPS_URL` only through a
+Daimon-governed command capability. The policy pins the exact curl executable
+by SHA-256, exact lowercase hosts, response and time bounds, and a fixed user
+agent. The gateway clears its environment, accepts HTTPS on port 443 only,
+follows no redirects, rejects non-UTF-8/oversized content, and labels returned
+bytes as untrusted external evidence. It is not ambient provider networking.
+
 Run `sh tests/live/moira_attach.sh` to qualify Moira's content-free census in
 headless mode and the same reusable component's bounded selected-saga evidence
 and operator receipts interactively. The gate uses only `SagaReadOnlyClient`;
