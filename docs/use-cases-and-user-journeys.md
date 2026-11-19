@@ -2404,6 +2404,39 @@ Vellum correctly refused `Ctrl-O`. A product manager must report that partial
 attachment as drift and withhold goal/proposal currentness, not infer Vellum
 availability from the current Make target or from host filesystem access.
 
+Chronos TUI `f164493` and Pantheon `054c9af` close the corresponding operator-
+attention gap. Each configured alignment binding now exposes its latest
+owner-validated observation to the host without adding a PM mutation path.
+Pantheon projects a non-current proposal and each exact pending human-gate
+reference onto the operator agenda with the workstream, alignment-record
+revision and owner resource revision intact. Both are inspect-only. A current
+direct Moira gate supersedes the less capable alignment reference so the agenda
+does not duplicate a decision or weaken Moira/Aegis response authority; product
+alignment drift remains visible independently. An unavailable alignment source
+is reported as unavailable rather than reusing a cached proposal. The affected
+Chronos TUI, Pantheon core and Pantheon CLI suites pass with strict Clippy.
+
+This slice also attempted to update this governing record through a fresh
+Pantheon-hosted Vellum workspace. Vellum refused the real document during
+workspace admission with `Workspace(Session(Adapter(Limit)))`; no edit was
+attempted through the refused owner. The live Chronos board already retains the
+separate ready items `vellum-governing-document-workspace-capacity`,
+`vellum-workspace-admission-orientation` and `vellum-root-limit-diagnostic`, so
+the run did not manufacture a duplicate ticket. The refusal is repeatable
+dogfood evidence that current Vellum limits and their user-facing diagnostic
+are not yet adequate for this governing-document workload. This record was
+therefore updated through the repository fallback, explicitly, rather than
+claiming Vellum dogfood success.
+
+The same attached Pantheon session also exposed a separate parity defect: the
+Chronos task surface showed `pantheon-product-manager-alignment-control-plane`
+blocked with six prerequisites while the operator agenda reported zero open
+items. Chronos accepted the bounded follow-up
+`operator-agenda-live-blocked-task-parity` at owner revision 72 with an applied
+receipt. This is intentionally not folded into the product-alignment gate
+projection: it is a broader live blocked-task projection defect and should be
+qualified independently.
+
 1. In Chronos, the user creates a task with objective, acceptance criteria,
    risk class, required capabilities, budget envelope, due/not-before facts,
    dependencies, and an explicit “agent-assisted” execution profile.

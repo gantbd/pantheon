@@ -180,6 +180,15 @@ surface; autonomous grooming and acceptance remain unavailable until the
 owner-bound worker, task-linked conversation, model-role-fit and stakeholder-
 ensemble contracts are qualified.
 
+The agenda also imports Chronos's read-only product-alignment observation.
+Owner-reported proposal drift and exact pending human-gate references retain
+their workstream, alignment-record revision and owner resource revision and are
+inspect-only. When a current direct Moira pending gate is composed, its richer
+decision material supersedes the alignment reference; alignment drift remains
+independently visible. An unavailable alignment source invalidates the
+projection instead of licensing cached PM advice. Neither projection grants a
+response control, creates a ticket, changes priority or applies a proposal.
+
 Qualification must cover both the interactive agenda and a concurrently
 attached headless client against the same owner. A passing isolated fixture does
 not erase a live owner's attachment refusal; the product manager treats that
