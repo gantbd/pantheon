@@ -1468,6 +1468,20 @@ recovery before a human can settle the gate from this surface.
   A PM must retain the refused first observation and its corrected
   disposition, then reconcile from exact owner identity and effective
   configuration rather than a comfortable diagnosis.
+- The corrected headless observation also made the alignment backlog
+  authoritative again. At revision 73,
+  `dual-frontier-product-manager-alignment-ledger#99` remains P10 blocked on
+  `pantheon-frontier-supervisor-operating-model-v2#90` and
+  `pantheon-product-manager-alignment-control-plane#91`; the latter remains P10
+  blocked on six admitted prerequisites. Several corresponding repository
+  slices now exist, but they were delivered outside a Chronos
+  claim/attempt/lease/evidence/settlement path. Commits and agent narration
+  therefore cannot silently complete those ready tasks. The PM may flag this
+  implementation-versus-owner-state mismatch and propose reconciliation, but
+  only the separately authorized worker/result path may settle exact tasks.
+  Closing the constrained task-to-agent-to-evidence-to-settlement path is now a
+  prerequisite to claiming that the PM keeps the external and insider
+  frontiers operationally aligned.
 - The cyclic review contract now also requires evidence-grounded inventory of
   underused capabilities, observability and presentation gaps, abstraction and
   leakage checks, and explicit learning flow through Vellum, Dendrite, Moira,
