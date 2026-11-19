@@ -2493,6 +2493,39 @@ fn task_conversation_gate_proves_tui_headless_and_recovery_parity() {
 }
 
 #[test]
+fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let terminal = fs::read_to_string(root.join("cli/src/terminal.rs")).expect("terminal source");
+    for forbidden in [
+        "agent_participation::MutationV1::Admit",
+        "agent_participation::BindingV1 {",
+    ] {
+        assert!(
+            !terminal.contains(forbidden),
+            "Pantheon presentation must not construct raw Moira participation admission: {forbidden}"
+        );
+    }
+
+    let contract = fs::read_to_string(root.join("docs/j1-task-agent-workflow-contract.md"))
+        .expect("J1 workflow contract");
+    for required in [
+        "Moira owns the durable task-agent workflow instance",
+        "PreviewTaskAgentJourneyV1",
+        "InstantiateTaskAgentJourneyV1",
+        "ObserveTaskAgentJourneyV1",
+        "FencedUnknown",
+        "Matching replay cannot create another task, room, participation, session",
+        "Human confirmation is not an Aegis grant",
+        "no Pantheon-generated participation/workflow/session/effect identity",
+    ] {
+        assert!(
+            contract.contains(required),
+            "J1 owner contract omits required boundary: {required}"
+        );
+    }
+}
+
+#[test]
 fn shared_agent_context_gate_proves_exact_multi_stakeholder_routing() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let live = fs::read_to_string(root.join("tests/live/agora_shared_agent_context.sh"))
