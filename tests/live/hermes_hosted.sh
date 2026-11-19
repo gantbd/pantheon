@@ -81,6 +81,7 @@ import time
 
 scratch, binary, profile = sys.argv[1:]
 tmux_socket = str(Path(scratch) / "tmux.sock")
+socket = Path(scratch) / "hermes.sock"
 command = shlex.join([binary, "interactive", "--workspace-profile", profile])
 
 def tmux(*args, check=True):
@@ -108,6 +109,10 @@ try:
     while tmux("has-session", "-t", "hermes", check=False).returncode == 0:
         if time.monotonic() >= deadline:
             raise AssertionError("Interactive Pantheon did not drain hosted Hermes")
+        time.sleep(0.025)
+    while socket.exists():
+        if time.monotonic() >= deadline:
+            raise AssertionError("Interactive Pantheon left the hosted Hermes socket behind")
         time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
@@ -232,6 +237,10 @@ try:
         if time.monotonic() >= deadline:
             raise AssertionError("Interactive Pantheon did not drain hosted Hermes operator")
         time.sleep(0.025)
+    while Path(socket).exists():
+        if time.monotonic() >= deadline:
+            raise AssertionError("Interactive Pantheon left the hosted Hermes operator socket behind")
+        time.sleep(0.025)
 finally:
     tmux("kill-server", check=False)
 PYTHON
@@ -250,4 +259,115 @@ assert report["hosted_shutdown"]["status"] == "clean"
 '
 [ ! -e "$scratch/operator.sock" ]
 
-echo 'PASS: selected Hermes observer/operator daemon -> same public clients and owner guards -> hosted Pantheon -> clean reopen'
+cat >"$scratch/consumer.json" <<EOF
+{
+  "version": 1,
+  "name": "Hosted Hermes consumer qualification",
+  "surfaces": ["hermes"],
+  "hermes": {
+    "deployment": "hosted",
+    "socket": "$scratch/consumer.sock",
+    "stream": "05050505050505050505050505050505",
+    "consumer": "06060606060606060606060606060606",
+    "requires": ["ledger.consumer.observe.v1"],
+    "host": {
+      "executable": "$daemon",
+      "directory": "$scratch/operator-ledger",
+      "mode": "open",
+      "effective_uid": $uid,
+      "effective_gid": $gid,
+      "subject": "07070707070707070707070707070707",
+      "access": "consumer",
+      "operator_stream": null,
+      "consumer_stream": "05050505050505050505050505050505"
+    }
+  }
+}
+EOF
+
+python3 - "$scratch" "$workbench" "$scratch/consumer.json" <<'PYTHON'
+from pathlib import Path
+import json
+import shlex
+import subprocess
+import sys
+import time
+
+scratch, binary, profile = sys.argv[1:]
+socket = str(Path(scratch) / "consumer.sock")
+tmux_socket = str(Path(scratch) / "consumer-tmux.sock")
+command = shlex.join([binary, "interactive", "--workspace-profile", profile])
+
+def tmux(*args, check=True):
+    return subprocess.run(
+        ["tmux", "-S", tmux_socket, "-f", "/dev/null", *args],
+        capture_output=True,
+        text=True,
+        check=check,
+        timeout=5,
+    )
+
+try:
+    tmux("new-session", "-d", "-x", "120", "-y", "24", "-s", "hermes-consumer", command)
+    deadline = time.monotonic() + 5
+    while time.monotonic() < deadline:
+        screen = tmux("capture-pane", "-p", "-t", "hermes-consumer").stdout
+        if (
+            "Hermes" in screen
+            and "access: exact-stream consumer" in screen
+            and "configured consumer next sequence: 2" in screen
+        ):
+            break
+        time.sleep(0.025)
+    else:
+        raise AssertionError(f"Hosted Hermes consumer pane not ready:\n{screen}")
+
+    refused = subprocess.run(
+        [
+            binary,
+            "hermes-compact",
+            socket,
+            "05050505050505050505050505050505",
+            "1",
+            "1",
+            "1",
+            "COMPACT HERMES STREAM 05050505050505050505050505050505 RETAINED FROM 1 PUBLISHED EDGE 1 THROUGH 1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=5,
+    )
+    assert refused.returncode == 1, refused.stderr
+    refusal = json.loads(refused.stdout)
+    assert not refusal["complete"] and refusal["status"] == "refused"
+
+    tmux("send-keys", "-t", "hermes-consumer", "C-q")
+    deadline = time.monotonic() + 5
+    while tmux("has-session", "-t", "hermes-consumer", check=False).returncode == 0:
+        if time.monotonic() >= deadline:
+            raise AssertionError("Interactive Pantheon did not drain hosted Hermes consumer")
+        time.sleep(0.025)
+    while Path(socket).exists():
+        if time.monotonic() >= deadline:
+            raise AssertionError("Interactive Pantheon left the hosted Hermes consumer socket behind")
+        time.sleep(0.025)
+finally:
+    tmux("kill-server", check=False)
+PYTHON
+[ ! -e "$scratch/consumer.sock" ]
+
+consumer_reopened=$("$workbench" headless --workspace-profile "$scratch/consumer.json")
+printf '%s' "$consumer_reopened" | python3 -c '
+import json, sys
+report = json.load(sys.stdin)
+assert report["complete"]
+peer = report["peers"][0]
+assert peer["peer"] == "hermes" and peer["status"] == "current"
+assert peer["configured_stream"]["retained_from"] == 1
+assert peer["configured_cursor"]["next_sequence"] == 2
+assert report["hosted_shutdown"]["status"] == "clean"
+'
+[ ! -e "$scratch/consumer.sock" ]
+
+echo 'PASS: selected Hermes observer/operator/consumer daemon -> same public clients and owner guards -> hosted Pantheon -> clean reopen'

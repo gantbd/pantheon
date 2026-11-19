@@ -13,7 +13,7 @@ use pantheon_cli::{
     native_host::{
         AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions,
         ChronosProductAlignmentProcessOptions, ChronosTrustedWorkerOptions, DaimonProcessOptions,
-        HermesProcessOptions, MoiraProcessOptions, NativeHost,
+        HermesProcessAccess, HermesProcessOptions, MoiraProcessOptions, NativeHost,
     },
     profile::{
         AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, AlignmentBinding,
@@ -82,6 +82,7 @@ struct Options {
     hermes_socket: Option<PathBuf>,
     hermes_stream: Option<hermes_protocol::StreamIdV1>,
     hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
+    hermes_consumer_access: bool,
     hermes_host: Option<HermesProcessOptions>,
     aegis_socket: Option<PathBuf>,
     aegis_host: Option<AegisProcessOptions>,
@@ -198,6 +199,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut hermes_socket = None;
     let mut hermes_stream = None;
     let mut hermes_consumer = None;
+    let mut hermes_consumer_access = false;
     let mut hermes_requires = Vec::new();
     let mut hermes_host = None;
     let mut aegis_socket = None;
@@ -329,6 +331,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                     .host
                     .as_ref()
                     .expect("validated hosted Hermes configuration");
+                hermes_consumer_access = host.access == HermesAccessProfile::Consumer;
                 hermes_host = Some(HermesProcessOptions {
                     executable: host.executable.clone(),
                     directory: host.directory.clone(),
@@ -337,11 +340,19 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
                     effective_uid: host.effective_uid,
                     effective_gid: host.effective_gid,
                     subject: host.subject.clone(),
-                    operator_stream: (host.access == HermesAccessProfile::Operator).then(|| {
-                        host.operator_stream
-                            .clone()
-                            .expect("validated operator Hermes stream")
-                    }),
+                    access: match host.access {
+                        HermesAccessProfile::Observer => HermesProcessAccess::Observer,
+                        HermesAccessProfile::Operator => HermesProcessAccess::Operator(
+                            host.operator_stream
+                                .clone()
+                                .expect("validated operator Hermes stream"),
+                        ),
+                        HermesAccessProfile::Consumer => HermesProcessAccess::Consumer(
+                            host.consumer_stream
+                                .clone()
+                                .expect("validated consumer Hermes stream"),
+                        ),
+                    },
                 });
             }
             hermes_socket = Some(hermes.socket);
@@ -776,6 +787,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         hermes_socket,
         hermes_stream,
         hermes_consumer,
+        hermes_consumer_access,
         hermes_host,
         aegis_socket,
         aegis_host,
@@ -2739,6 +2751,9 @@ fn hermes_compact(
         Err(hermes_operator_command::CompactError::MutationRefused(refusal)) => {
             hermes_compact_failure("refused", &format!("{refusal:?}"), None, None)
         }
+        Err(hermes_operator_command::CompactError::ObservationRefused(refusal)) => {
+            hermes_compact_failure("refused", &format!("{refusal:?}"), None, None)
+        }
         Err(error) => hermes_compact_failure("unavailable", &format!("{error:?}"), None, None),
     }
 }
@@ -3710,12 +3725,29 @@ fn interactive(
             hermes_local_client::ClientLimits::default(),
         )
         .map_err(|error| format!("Hermes service refused: {error:?}"))?;
-        Some(hermes_tui::Component::new_with_selection(
-            hermes_local_client::CONNECTION_SESSION,
-            port,
-            options.hermes_stream,
-            options.hermes_consumer,
-        ))
+        if options.hermes_consumer_access {
+            Some(
+                hermes_tui::Component::new_consumer(
+                    hermes_local_client::CONNECTION_SESSION,
+                    port,
+                    options
+                        .hermes_stream
+                        .expect("validated consumer Hermes stream"),
+                    options
+                        .hermes_consumer
+                        .expect("validated consumer Hermes identity"),
+                    hermes_tui::DISCLOSURE_BATCH_LIMIT,
+                )
+                .expect("positive Hermes consumer read bound"),
+            )
+        } else {
+            Some(hermes_tui::Component::new_with_selection(
+                hermes_local_client::CONNECTION_SESSION,
+                port,
+                options.hermes_stream,
+                options.hermes_consumer,
+            ))
+        }
     } else {
         None
     };
@@ -4358,6 +4390,7 @@ fn headless_request(options: &Options, operation_id: String) -> HeadlessRequest 
         hermes_socket: options.hermes_socket.clone(),
         hermes_stream: options.hermes_stream,
         hermes_consumer: options.hermes_consumer,
+        hermes_consumer_access: options.hermes_consumer_access,
         hermes_hosted: options.hermes_host.is_some(),
         aegis_socket: options.aegis_socket.clone(),
         aegis_hosted: options.aegis_host.is_some(),

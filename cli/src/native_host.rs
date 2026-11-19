@@ -232,7 +232,15 @@ pub struct HermesProcessOptions {
     pub effective_uid: u32,
     pub effective_gid: u32,
     pub subject: String,
-    pub operator_stream: Option<String>,
+    pub access: HermesProcessAccess,
+}
+
+#[cfg(unix)]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum HermesProcessAccess {
+    Observer,
+    Operator(String),
+    Consumer(String),
 }
 
 /// Explicit deployment inputs for one production Daimon application. Model or
@@ -716,12 +724,15 @@ impl NativeHost {
                 .arg(options.effective_uid.to_string())
                 .arg(options.effective_gid.to_string())
                 .arg(&options.subject);
-            match &options.operator_stream {
-                Some(stream) => {
+            match &options.access {
+                HermesProcessAccess::Observer => {
+                    command.arg("observer");
+                }
+                HermesProcessAccess::Operator(stream) => {
                     command.arg("operator").arg(stream);
                 }
-                None => {
-                    command.arg("observer");
+                HermesProcessAccess::Consumer(stream) => {
+                    command.arg("consumer").arg(stream);
                 }
             }
             let mut child = command

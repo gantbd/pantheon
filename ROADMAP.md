@@ -337,15 +337,21 @@ reuses Hermes's `DisclosureClient` and exact stream/start/limit guard in both
 standalone and Pantheon, bounded to 16 events plus the negotiated frame and
 reporting retention/publication gaps explicitly. Producer append remains
 outside presentation; compaction is qualified through its owner guard below.
+Hosted event-driven workers can now select a least-authority
+`ledger.consumer.observe.v1` projection: it issues only an exact cursor request
+and bounded read, retains no payloads in UI state, requests no service-wide
+aggregates, cannot propose compaction, and returns an explicit authorization
+refusal when an operator action is attempted.
 
 Hermes now also supplies the shutdown-aware accept loop and explicit observer
-and exact-stream operator daemon profiles. Pantheon owns that sovereign process
-through explicit profile inputs, waits for its owner socket, attaches the
-ordinary public client, and records bounded signal shutdown. This avoids
-combining Hermes and Chronos engine graphs or masking their distinct
+and exact-stream operator/consumer daemon profiles. Pantheon owns that sovereign
+process through explicit profile inputs, waits for its owner socket, attaches
+the capability-shaped public client, records bounded signal shutdown, and
+avoids combining Hermes and Chronos engine graphs or masking their distinct
 `keystone-storage` sources with a product Cargo patch. Headless create/reopen
-lifecycle is qualified. The interactive Pantheon path now renders the same
-public-client observation, drains the owner on shell exit, removes the socket,
+lifecycle is qualified. The interactive Pantheon path now renders the matching
+aggregate or bounded consumer projection, releases presentation connections
+before owner drain, removes the socket,
 and proves a subsequent headless reopen. Append remains producer-specific and
 therefore outside the Pantheon presentation/application command surface.
 

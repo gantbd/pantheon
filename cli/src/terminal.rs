@@ -13545,14 +13545,24 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
             .map(|_| ())
             .map_err(|failure| format!("Vellum disconnect refused: {failure:?}"))
     });
-    // Agora's private-local owner serves one admitted connection at a time.
-    // Release every presentation client before asking the hosted owner to
-    // drain; retaining the projection connection here fences the owner's
-    // shutdown wake behind that live stream and turns a clean UI exit into
-    // crash residue.
+    // Release presentation clients before asking their sovereign owners to
+    // drain. Retaining a projection connection fences an owner that waits for
+    // admitted work behind the live stream, converting a clean UI exit into a
+    // forced kill and crash residue. This ordering applies to every hosted
+    // peer, not only Agora's single-connection private-local owner.
+    drop(tellus);
+    drop(aegis);
+    drop(hermes);
+    drop(daimon_agent);
+    drop(daimon);
+    drop(moira_decision_packet);
+    drop(moira_deliberation);
+    drop(moira_participation);
+    drop(moira);
     drop(agora_message);
     drop(agora_create);
     drop(agora);
+    drop(chronos);
     let shutdown = operations.finish();
     if let Err(error) = result {
         return match shutdown {

@@ -1247,6 +1247,11 @@ fn hermes_hosted_gate_uses_the_owner_daemon_and_public_client() {
         "interactive",
         "streams: 0",
         "reopened_after_interactive",
+        "ledger.consumer.observe.v1",
+        "\"access\": \"consumer\"",
+        "access: exact-stream consumer",
+        "refusal[\"status\"] == \"refused\"",
+        "consumer_reopened",
     ] {
         assert!(
             gate.contains(required),

@@ -64,6 +64,7 @@ pub struct HeadlessRequest {
     pub hermes_socket: Option<PathBuf>,
     pub hermes_stream: Option<hermes_protocol::StreamIdV1>,
     pub hermes_consumer: Option<hermes_protocol::ConsumerIdV1>,
+    pub hermes_consumer_access: bool,
     pub hermes_hosted: bool,
     pub aegis_socket: Option<PathBuf>,
     pub aegis_hosted: bool,
@@ -234,8 +235,12 @@ pub fn observe(request: HeadlessRequest) -> Result<HeadlessObservation, String> 
         );
     }
     if let Some(socket) = request.hermes_socket {
-        let (observation, current) =
-            observe_hermes(socket, request.hermes_stream, request.hermes_consumer);
+        let (observation, current) = observe_hermes(
+            socket,
+            request.hermes_stream,
+            request.hermes_consumer,
+            request.hermes_consumer_access,
+        );
         record_observation(
             &mut peers,
             &mut management,
@@ -889,6 +894,7 @@ fn observe_hermes(
     socket: PathBuf,
     configured_stream: Option<hermes_protocol::StreamIdV1>,
     configured_consumer: Option<hermes_protocol::ConsumerIdV1>,
+    consumer_access: bool,
 ) -> (serde_json::Value, bool) {
     let capability = hermes_tui::CAPABILITIES.headless[0];
     let port = match hermes_local_client::LocalPort::connect(
@@ -908,6 +914,53 @@ fn observe_hermes(
             );
         }
     };
+    if consumer_access {
+        let stream = configured_stream.expect("validated consumer Hermes stream");
+        let consumer = configured_consumer.expect("validated consumer Hermes identity");
+        let mut client = hermes_client::ConsumerClient::new(
+            hermes_local_client::CONNECTION_SESSION,
+            port,
+            hermes_tui::DISCLOSURE_BATCH_LIMIT,
+        )
+        .expect("positive Hermes consumer read bound");
+        return match hermes_tui::observe_consumer(
+            &mut client,
+            stream,
+            consumer,
+            hermes_tui::DISCLOSURE_BATCH_LIMIT,
+        ) {
+            Ok(value) => (
+                serde_json::json!({
+                    "peer": "hermes", "capability": "ledger.consumer.observe.v1",
+                    "status": "current", "access": "consumer",
+                    "service_aggregates": "not_requested",
+                    "configured_stream": {
+                        "status": "current", "retained_from": value.retained_from.0,
+                        "published_edge": value.published_edge.map(|edge| edge.0),
+                    },
+                    "configured_cursor": value.cursor.map(|cursor| serde_json::json!({
+                        "status": "current", "next_sequence": cursor.next_sequence.0,
+                    })).unwrap_or_else(|| serde_json::json!({"status": "absent"})),
+                    "bounded_read": {
+                        "start": value.read_start.0,
+                        "events": value.disclosed_events,
+                        "through": value.disclosed_through.map(|sequence| sequence.0),
+                        "gap": format!("{:?}", value.gap),
+                    },
+                }),
+                true,
+            ),
+            Err(error) => (
+                peer_failure(
+                    "hermes",
+                    "ledger.consumer.observe.v1",
+                    "unavailable",
+                    error,
+                ),
+                false,
+            ),
+        };
+    }
     let mut client =
         hermes_client::ReadOnlyClient::new(hermes_local_client::CONNECTION_SESSION, port);
     match hermes_tui::observe_selected(&mut client, configured_stream, configured_consumer) {
@@ -2281,6 +2334,7 @@ mod tests {
             hermes_socket: None,
             hermes_stream: None,
             hermes_consumer: None,
+            hermes_consumer_access: false,
             hermes_hosted: false,
             aegis_socket: None,
             aegis_hosted: false,

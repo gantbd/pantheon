@@ -268,12 +268,14 @@
         "interactive": [
           { "id": "ledger.observe.v1", "plane": "observation", "state": "qualified" },
           { "id": "ledger.cursor.observe.v1", "plane": "operator", "state": "qualified", "when": "consumer-selected" },
+          { "id": "ledger.consumer.observe.v1", "plane": "observation", "state": "qualified", "when": "host.access=consumer", "boundary": "exact stream cursor plus bounded read; no service aggregates" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ],
         "headless": [
           { "id": "ledger.observe.v1", "plane": "observation", "state": "qualified" },
           { "id": "ledger.cursor.observe.v1", "plane": "observation", "state": "qualified", "when": "consumer-selected" },
+          { "id": "ledger.consumer.observe.v1", "plane": "observation", "state": "qualified", "when": "host.access=consumer", "boundary": "exact stream cursor plus bounded read; no service aggregates" },
           { "id": "topology.attach.v1", "plane": "management", "state": "qualified", "when": "deployment=attach" },
           { "id": "topology.host.v1", "plane": "management", "state": "qualified", "when": "deployment=hosted" }
         ]

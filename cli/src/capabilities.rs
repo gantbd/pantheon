@@ -199,6 +199,10 @@ pub fn hermes(mode: Mode, hosted: bool, selected_cursor: bool) -> Vec<Capability
                 Plane::Operator
             },
         ));
+        capabilities.push(capability(
+            "ledger.consumer.observe.v1",
+            Plane::Observation,
+        ));
     }
     capabilities.push(topology(hosted));
     capabilities
