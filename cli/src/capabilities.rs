@@ -556,6 +556,12 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         command: "agent-web-fetch",
         model_arguments: "exactly_one_https_url",
     },
+    AgentToolRoute {
+        component: "verification",
+        capability: "verification.result-envelope.validate.v1",
+        command: "verification-result-validate",
+        model_arguments: "none_when_exact_private_request_document_is_pinned",
+    },
 ];
 
 /// Component-native tool routes already enforced by their sovereign owner.
@@ -646,10 +652,10 @@ const FRONTIER_GAPS: &[AgentRoleGap] = &[
 const VERIFICATION_GAPS: &[AgentRoleGap] = &[
     ROLE_ACTIVATION_GAP,
     AgentRoleGap {
-        component: "verification",
+        component: "moira",
         surface: "tests.result.publish.v1",
-        missing: "an attributed, replay-safe verification result linked to the exact task attempt, source revision, test profile, and retained evidence",
-        next_boundary: "publish results through an owner contract; terminal exit or agent narration is not acceptance evidence",
+        missing: "a qualified adapter that publishes the validated verification envelope through Moira's replay-safe tool-continuation and content-addressed output owners",
+        next_boundary: "bind the exact validated request digest to Moira's attempt, gate, execution, profile evidence, output receipt, and storage revision; validation, terminal exit, or agent narration is not publication evidence",
     },
     AgentRoleGap {
         component: "chronos",
@@ -769,6 +775,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "runtimes.observe.v1",
             "artifacts.observe.v1",
             "verification.test.run.v1",
+            "verification.result-envelope.validate.v1",
         ],
         gaps: VERIFICATION_GAPS,
         human_gates: &[

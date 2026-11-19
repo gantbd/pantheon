@@ -15,6 +15,7 @@ mod hosted;
 pub mod management;
 pub mod moira_deliberation;
 pub mod native_host;
+mod private_document;
 pub mod profile;
 mod provider;
 pub mod reconfiguration;
@@ -23,6 +24,7 @@ pub mod task_agent;
 pub mod tellus_sme;
 mod terminal;
 pub mod vellum_document;
+pub mod verification_result;
 
 pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
 pub use terminal::{

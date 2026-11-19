@@ -2361,6 +2361,28 @@ Operational means observable completed work, not a configured role name:
   execution itself as missing. Result publication, asynchronous Chronos
   scheduling, role activation and worker lifecycle remain real blockers, so
   the role still reports `operational: false`.
+- `verification-result-validate` now closes the semantic handoff before result
+  publication. One owner-private, non-symlinked, single-link document binds the
+  exact task attempt, Vellum source revision/digest, governed test profile,
+  Daimon execution/evidence/output digests, bounded output and a coherent
+  disposition/exit code. The command exposes no model-selected path when used
+  from the deployment catalogue, shares its hardened private-document loader
+  with Agora publication, and reports `validated_not_published`. This narrows
+  the remaining result blocker to a qualified Moira adapter that must bind the
+  exact request digest to Moira's retained attempt, Aegis gate, process-profile
+  evidence, content-addressed output receipt and storage revision. Validation
+  alone cannot move Chronos, accept work or authorize release.
+- The same dogfood pass exposed an attach/read parity gap: the live hosted
+  Vellum presentation reported `Service Current` and rendered its admitted
+  documents, while an independently bounded `vellum-document-read` against the
+  same owner socket returned `NotSent`. The active Chronos TUI admitted
+  `vellum-attached-read-parity` as the third Open task at revision 3 and showed
+  the owner result `Task graph submission applied`. A subsequent standalone
+  Chronos observation similarly returned `NotSent` while the presentation held
+  the live owner, so the backlog receipt is the in-session owner projection,
+  not a claim of independently reattached headless parity. The task must
+  distinguish intended exclusive-client policy from missing federation,
+  reattachment or multi-client support before selecting a remedy.
 
 Operations presents one row per role with owner, lifecycle, exact task/attempt,
 provider/model, capability profile, last evidence, budget, failure orientation

@@ -2,9 +2,6 @@
 
 use std::{
     ffi::OsString,
-    fs::OpenOptions,
-    io::Read,
-    os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
     path::{Path, PathBuf},
     time::Duration,
 };
@@ -18,6 +15,8 @@ use agora_wire::WireLimits;
 use serde::Deserialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
+
+use crate::private_document;
 
 pub const EXECUTE_CAPABILITY: &str = "messages.actor-publication.execute.v1";
 pub const OBSERVE_CAPABILITY: &str = "messages.actor-publication.observe.v1";
@@ -162,12 +161,8 @@ fn load_publication(
     path: &Path,
     capability: &'static str,
 ) -> Result<LoadedPublication, Box<dyn std::error::Error>> {
-    let mut file = match OpenOptions::new()
-        .read(true)
-        .custom_flags(nix::libc::O_NOFOLLOW)
-        .open(path)
-    {
-        Ok(file) => file,
+    let bytes = match private_document::read(path, MAX_REQUEST_BYTES) {
+        Ok(bytes) => bytes,
         Err(error) => {
             return failure(
                 capability,
@@ -178,34 +173,6 @@ fn load_publication(
             );
         }
     };
-    let metadata = file.metadata()?;
-    if !metadata.file_type().is_file()
-        || metadata.permissions().mode() & 0o077 != 0
-        || metadata.nlink() != 1
-        || metadata.len() == 0
-        || metadata.len() > MAX_REQUEST_BYTES
-    {
-        return failure(
-            capability,
-            "request_refused",
-            "request document must be one nonempty private regular file of at most 65536 bytes",
-            None,
-            "stage the exact request with owner-only permissions and no hard or symbolic links",
-        );
-    }
-    let mut bytes = Vec::with_capacity(metadata.len() as usize);
-    file.by_ref()
-        .take(MAX_REQUEST_BYTES + 1)
-        .read_to_end(&mut bytes)?;
-    if bytes.len() as u64 != metadata.len() {
-        return failure(
-            capability,
-            "request_refused",
-            "request document changed while it was being read",
-            None,
-            "restage an immutable private request document",
-        );
-    }
     let request_digest = hex(&Sha256::digest(&bytes));
     let document: PublicationDocumentV1 = match serde_json::from_slice(&bytes) {
         Ok(document) => document,

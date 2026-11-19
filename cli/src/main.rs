@@ -164,7 +164,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     };
     if first == "--help" {
         println!(
-            "pantheon controls\npantheon agent-tools\npantheon agent-role-plan <product-manager|sre|frontier-collaborator|verification-worker> [SEMANTIC_CAPABILITY ...]\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
+            "pantheon controls\npantheon agent-tools\npantheon agent-role-plan <product-manager|sre|frontier-collaborator|verification-worker> [SEMANTIC_CAPABILITY ...]\npantheon verification-result-validate PRIVATE_REQUEST_JSON\npantheon reconfigure-plan CURRENT_PROFILE NEXT_PROFILE [--operation-id ID]\npantheon manage --workspace-profile PATH [--operation-id ID]\n{}\nhosted Vellum runtime admission: --vellum-allow-add-file",
             usage()
         );
         std::process::exit(0);
@@ -1274,6 +1274,12 @@ fn task_conversation_inspect(
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "verification-result-validate")
+    {
+        return pantheon_cli::verification_result::validate(std::env::args_os().skip(2));
+    }
     if std::env::args_os()
         .nth(1)
         .is_some_and(|arg| arg == "agora-message-publish")

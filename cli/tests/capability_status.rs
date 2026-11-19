@@ -284,12 +284,28 @@ fn verification_role_reuses_the_daimon_native_governed_test_catalog() {
     assert_eq!(tool["route_kind"], "component_owner_catalogue");
     assert_eq!(tool["owner_surface"], "acp_terminal.commands[]");
     assert_eq!(tool["candidate_disposition"], "included");
+    let envelope = plan["required_tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["semantic_capability"] == "verification.result-envelope.validate.v1")
+        .expect("closed verification result envelope");
+    assert_eq!(envelope["component"], "verification");
+    assert_eq!(envelope["route_kind"], "pantheon_gateway");
+    assert_eq!(envelope["candidate_disposition"], "missing");
     assert!(
         plan["structural_blockers"]
             .as_array()
             .unwrap()
             .iter()
             .all(|gap| gap["surface"] != "tests.allowlisted.execute.v1")
+    );
+    assert!(
+        plan["structural_blockers"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|gap| gap["component"] == "moira" && gap["surface"] == "tests.result.publish.v1")
     );
     assert_eq!(plan["operational"], false);
 }

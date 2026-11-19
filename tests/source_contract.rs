@@ -2911,3 +2911,36 @@ fn verification_role_reuses_daimon_owner_native_test_enforcement() {
         assert!(daimon.contains(required), "Daimon enforcement omits {required}");
     }
 }
+
+#[test]
+fn verification_result_validation_is_closed_private_and_not_publication() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = fs::read_to_string(root.join("cli/src/verification_result.rs"))
+        .expect("verification result adapter");
+    for required in [
+        "deny_unknown_fields",
+        "verification.result-envelope.validate.v1",
+        "verification.test.run.v1",
+        "validated_not_published",
+        "published\": false",
+        "qualified Moira verification-result adapter",
+        "grants no execution, publication, task settlement, acceptance, release, or rollout authority",
+    ] {
+        assert!(
+            source.contains(required),
+            "verification adapter omits {required}"
+        );
+    }
+    let private = fs::read_to_string(root.join("cli/src/private_document.rs"))
+        .expect("shared private document loader");
+    for required in [
+        "O_NOFOLLOW",
+        "permissions().mode() & 0o077",
+        "nlink() != 1",
+    ] {
+        assert!(private.contains(required), "private loader omits {required}");
+    }
+    let agora = fs::read_to_string(root.join("cli/src/agora_publish.rs"))
+        .expect("Agora actor publication adapter");
+    assert!(agora.contains("private_document::read"));
+}

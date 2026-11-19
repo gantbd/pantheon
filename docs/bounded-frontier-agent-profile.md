@@ -72,6 +72,17 @@ The initial authorities are distinct:
   snapshots the exact document, then releases the witness before Pantheon
   emits bounded content. The locator and witness are never returned; ranged
   reads retain whole-document revision, byte length and digest evidence.
+- `verification.result-envelope.validate.v1`: the deployment fixes one
+  owner-private request document and supplies no model argument. The closed V1
+  schema binds a fresh operation identity, exact Chronos task incarnation and
+  attempt, Vellum workspace/document revision and digest, governed test
+  capability/profile digest, Daimon execution/evidence/output digests, bounded
+  output size, duration and a disposition-consistent exit code. Unknown fields,
+  insecure links/permissions, wrong owners, zero identities and inconsistent
+  pass/fail claims refuse before any owner connection. Success is explicitly
+  `validated_not_published`: supplied references remain claims until their
+  owners are re-observed, and only the pending Moira adapter may create the
+  durable result receipt.
 - `moira.task-agent.catalogue.v1` and `moira.task-agent.observe.v1`: separate
   read-only Moira gateways. The deployment fixes the owner socket; the former
   takes no model argument and the latter takes one opaque owner identity and
@@ -162,8 +173,9 @@ in for Oculus. The product manager now has independently admissible alignment
 and stakeholder-ensemble reads, including exact pending human-gate references;
 changed Vellum-backed proposal authoring remains unavailable. Frontier
 workers retain their provider continuation and Aegis gaps. The verification
-worker now reuses Daimon's allowlisted exact-argv runner but still lacks
-result-publication and scheduling. These are executable
+worker now reuses Daimon's allowlisted exact-argv runner and has a closed
+pre-publication result envelope, but still lacks the Moira publication adapter
+and asynchronous scheduling. These are executable
 blocker inventories, not claims that named roles are running.
 
 Example Daimon terminal fragment (identifiers and paths are deployment-owned):
