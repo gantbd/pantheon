@@ -10,12 +10,13 @@ use pantheon_cli::{
     headless::{HeadlessObservation, HeadlessRequest, observe as observe_headless},
     management::LocalManagementSnapshot,
     native_host::{
-        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, DaimonProcessOptions,
-        HermesProcessOptions, MoiraProcessOptions, NativeHost,
+        AegisProcessOptions, AgoraProcessOptions, ChronosHostOptions, ChronosTrustedWorkerOptions,
+        DaimonProcessOptions, HermesProcessOptions, MoiraProcessOptions, NativeHost,
     },
     profile::{
-        AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, DeploymentMode,
-        HermesAccessProfile, HermesOpenMode, MoiraAgentWorkerProfile, WorkspaceProfile,
+        AegisOpenMode, AegisRole, AgoraProfile, AgoraTransportProfile, ChronosTrustedWorkerProfile,
+        DeploymentMode, HermesAccessProfile, HermesOpenMode, MoiraAgentWorkerProfile,
+        WorkspaceProfile,
     },
     registry::{HostedPeerId, RegistryLifecycle, ShutdownDisposition, TopologyShutdown},
     run_terminal_with_all_peers_managed_configuration,
@@ -94,6 +95,7 @@ struct Options {
     chronos_scheduling: bool,
     chronos_planning: Option<PathBuf>,
     chronos_cancel_receipts: bool,
+    chronos_trusted_worker: Option<ChronosTrustedWorkerProfile>,
     host_chronos: bool,
     host_vellum: bool,
     vellum_roots: Vec<PathBuf>,
@@ -209,6 +211,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
     let mut task_conversation_socket = None;
     let mut task_conversation_requires = Vec::new();
     let mut chronos_requires = Vec::new();
+    let mut chronos_trusted_worker = None;
     let mut host_chronos = false;
     let mut host_vellum = false;
     let mut vellum_roots = Vec::new();
@@ -384,6 +387,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         if let Some(chronos) = profile.chronos {
             host_chronos = chronos.deployment == DeploymentMode::Hosted;
             chronos_requires = chronos.requires;
+            chronos_trusted_worker = chronos.trusted_worker;
             chronos_planning = chronos.planning;
             moira_bindings = chronos
                 .moira
@@ -737,6 +741,7 @@ fn options() -> Result<Options, Box<dyn std::error::Error>> {
         chronos_scheduling,
         chronos_planning,
         chronos_cancel_receipts,
+        chronos_trusted_worker,
         host_chronos,
         host_vellum,
         vellum_roots,
@@ -3361,22 +3366,44 @@ fn start_native_host(options: &Options) -> Result<Option<NativeHost>, Box<dyn st
     if options.host_chronos && options.chronos_streams.is_empty() {
         return Err("--host-chronos requires at least one Chronos workstream".into());
     }
+    if options.chronos_trusted_worker.is_some() && !options.chronos_writes {
+        return Err("hosted Chronos trusted worker requires --chronos-allow-writes".into());
+    }
     let mut host = NativeHost::new();
     for workstream in &options.chronos_streams {
         if !options.host_chronos {
             break;
         }
-        host.start_chronos(
-            workstream.name.clone(),
-            &workstream.directory,
-            ChronosHostOptions {
-                allow_writes: options.chronos_writes,
-                atomic_state: options.chronos_watch || options.chronos_cancel_receipts,
-                observer_history: options.chronos_watch,
-                allocation_receipts: false,
-            },
-        )
-        .map_err(|failure| format!("hosted Chronos startup refused: {failure:?}"))?;
+        let host_options = ChronosHostOptions {
+            allow_writes: options.chronos_writes,
+            atomic_state: options.chronos_watch
+                || options.chronos_cancel_receipts
+                || options.chronos_trusted_worker.is_some(),
+            observer_history: options.chronos_watch,
+            allocation_receipts: false,
+        };
+        if let Some(worker) = options
+            .chronos_trusted_worker
+            .as_ref()
+            .filter(|worker| worker.workstream == workstream.name)
+        {
+            host.start_managed_chronos_worker(
+                workstream.name.clone(),
+                &workstream.directory,
+                host_options,
+                ChronosTrustedWorkerOptions {
+                    agent: worker.agent.clone(),
+                    grant_validity: std::time::Duration::from_secs(worker.grant_validity_seconds),
+                    lease_duration: std::time::Duration::from_secs(worker.lease_duration_seconds),
+                },
+            )
+            .map_err(|failure| {
+                format!("hosted Chronos trusted-worker startup refused: {failure:?}")
+            })?;
+        } else {
+            host.start_chronos(workstream.name.clone(), &workstream.directory, host_options)
+                .map_err(|failure| format!("hosted Chronos startup refused: {failure:?}"))?;
+        }
     }
     if options.host_vellum {
         host.start_vellum(
@@ -4076,13 +4103,20 @@ fn runtime_status_value(host: Option<&NativeHost>) -> serde_json::Value {
         return serde_json::json!({
             "lifecycle": "external",
             "hosted_peers": [],
+            "trusted_chronos_worker": null,
             "reconfiguration_allowed": false,
             "restart_receipts": [],
         });
     };
+    let trusted_worker = host.and_then(NativeHost::managed_chronos_worker_status);
     serde_json::json!({
         "lifecycle": registry_lifecycle_label(status.lifecycle),
         "hosted_peers": status.hosted_peers.iter().map(hosted_peer_value).collect::<Vec<_>>(),
+        "trusted_chronos_worker": trusted_worker.map(|worker| serde_json::json!({
+            "workstream": worker.workstream,
+            "state": worker.state,
+            "authority_boundary": "private in-process capability; no grant, lease, task key, or result is projected",
+        })),
         "reconfiguration_allowed": status.reconfiguration_allowed,
         "restart_receipts": status.restart_receipts.iter().map(|receipt| {
             let (peer, instance) = hosted_peer_identity(&receipt.peer);

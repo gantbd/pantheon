@@ -16,9 +16,8 @@ use std::{
     os::unix::fs::{FileTypeExt, MetadataExt, PermissionsExt},
     path::PathBuf,
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
-    time::Duration,
 };
-use std::{path::Path, thread};
+use std::{path::Path, thread, time::Duration};
 
 #[cfg(feature = "native-chronos")]
 use chronos_standalone::Server;
@@ -35,6 +34,8 @@ use vellum_daemon::{
 use vellum_host::authority::{AuthorityActionSetV1, AuthorityActionV1};
 
 use crate::reconfiguration::ReconfigurationPlan;
+#[cfg(feature = "native-chronos")]
+use crate::registry::StartError;
 use crate::registry::{
     HostRegistry, HostedPeerId, RegistryError, RegistryLifecycle, RestartFailure, RestartReceipt,
     RuntimeStatus, ShutdownDisposition, StartupFailure, TopologyShutdown,
@@ -66,6 +67,20 @@ pub enum TopologyRestartFailure<E> {
 
 pub struct NativeHost {
     registry: HostRegistry,
+    #[cfg(feature = "native-chronos")]
+    trusted_worker: Option<ManagedChronosWorker>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ManagedChronosWorkerStatus {
+    pub workstream: String,
+    pub state: &'static str,
+}
+
+#[cfg(feature = "native-chronos")]
+struct ManagedChronosWorker {
+    workstream: String,
+    worker: moira_chronos_worker::TrustedWorkerV1<chronos_standalone::TrustedWorkerHandle>,
 }
 
 #[cfg(unix)]
@@ -185,6 +200,15 @@ pub struct ChronosHostOptions {
     pub allocation_receipts: bool,
 }
 
+/// Deployment-neutral inputs for the one private worker capability retained
+/// with a hosted Chronos owner. These values contain no grant or task evidence.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ChronosTrustedWorkerOptions {
+    pub agent: String,
+    pub grant_validity: Duration,
+    pub lease_duration: Duration,
+}
+
 /// Explicit deployment inputs for a Pantheon-owned, sovereign Hermes daemon.
 #[cfg(unix)]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -260,11 +284,37 @@ impl NativeHost {
     pub fn new() -> Self {
         Self {
             registry: HostRegistry::new(),
+            #[cfg(feature = "native-chronos")]
+            trusted_worker: None,
         }
     }
 
     pub fn status(&self) -> RuntimeStatus {
         self.registry.status()
+    }
+
+    /// Credential-free status for the one private worker capability retained
+    /// with this topology. No grant, lease, task key, or result is projected.
+    pub fn managed_chronos_worker_status(&self) -> Option<ManagedChronosWorkerStatus> {
+        #[cfg(feature = "native-chronos")]
+        {
+            self.trusted_worker
+                .as_ref()
+                .map(|managed| ManagedChronosWorkerStatus {
+                    workstream: managed.workstream.clone(),
+                    state: if managed.worker.is_fenced() {
+                        "fenced"
+                    } else if managed.worker.active().is_some() {
+                        "active"
+                    } else {
+                        "idle"
+                    },
+                })
+        }
+        #[cfg(not(feature = "native-chronos"))]
+        {
+            None
+        }
     }
 
     /// Replaces one exact hosted peer after topology assembly. The peer's
@@ -380,6 +430,56 @@ impl NativeHost {
             moira_chronos_worker::TrustedWorkerV1::new(handle, configuration)
                 .map_err(|_| "Moira Chronos worker configuration refused".to_owned())
         })
+    }
+
+    /// Starts one hosted Chronos owner and retains its sole Moira-wrapped
+    /// worker capability inside the Pantheon-owned topology. Owner-derived
+    /// workflow code may use this capability later; presentation clients never
+    /// receive the handle itself.
+    pub fn start_managed_chronos_worker(
+        &mut self,
+        name: impl Into<String>,
+        directory: &Path,
+        options: ChronosHostOptions,
+        worker_options: ChronosTrustedWorkerOptions,
+    ) -> Result<(), StartupFailure<String>> {
+        #[cfg(feature = "native-chronos")]
+        {
+            if self.trusted_worker.is_some() {
+                return Err(StartupFailure {
+                    cause: StartError::Peer(
+                        "one trusted Chronos worker is already retained".into(),
+                    ),
+                    rollback: None,
+                });
+            }
+            let configuration = moira_chronos_worker::ConfigurationV1::new(
+                worker_options.agent,
+                worker_options.grant_validity,
+                worker_options.lease_duration,
+            )
+            .map_err(|_| StartupFailure {
+                cause: StartError::Peer("trusted Chronos worker configuration refused".into()),
+                rollback: None,
+            })?;
+            let workstream = name.into();
+            let worker =
+                self.start_chronos_worker(workstream.clone(), directory, options, configuration)?;
+            self.trusted_worker = Some(ManagedChronosWorker { workstream, worker });
+            Ok(())
+        }
+        #[cfg(not(feature = "native-chronos"))]
+        {
+            let name = name.into();
+            let _ = (directory, options, worker_options);
+            self.registry
+                .start_or_rollback(HostedPeerId::Chronos(name), || {
+                    Err::<((), fn() -> ShutdownDisposition), _>(
+                        "native Chronos trusted-worker hosting is not compiled into this deployment"
+                            .to_owned(),
+                    )
+                })
+        }
     }
 
     #[cfg(feature = "native-chronos")]
@@ -1311,6 +1411,43 @@ mod tests {
             Err(ErrorV1::OutcomeUnknown(_))
         ));
         assert!(worker.is_fenced());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn managed_worker_is_retained_and_projected_without_authority_material() {
+        let directory = scratch("managed-worker");
+        if directory.exists() {
+            fs::remove_dir_all(&directory).unwrap();
+        }
+        fs::create_dir(&directory).unwrap();
+        fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
+        let mut host = NativeHost::new();
+        host.start_managed_chronos_worker(
+            "Product",
+            &directory,
+            ChronosHostOptions {
+                allow_writes: true,
+                atomic_state: true,
+                ..Default::default()
+            },
+            ChronosTrustedWorkerOptions {
+                agent: "product-manager".into(),
+                grant_validity: Duration::from_secs(60),
+                lease_duration: Duration::from_secs(30),
+            },
+        )
+        .unwrap();
+        host.seal().unwrap();
+
+        assert_eq!(
+            host.managed_chronos_worker_status(),
+            Some(ManagedChronosWorkerStatus {
+                workstream: "Product".into(),
+                state: "idle",
+            })
+        );
+        assert!(host.shutdown().unwrap().clean());
         fs::remove_dir_all(directory).unwrap();
     }
 

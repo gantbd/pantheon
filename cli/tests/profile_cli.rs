@@ -475,6 +475,72 @@ fn management_session_observes_live_host_and_drains_on_command() {
 }
 
 #[test]
+fn management_session_retains_and_projects_private_trusted_chronos_worker() {
+    let scratch = Path::new("/private/tmp").join(format!(
+        "pantheon-management-trusted-worker-{}",
+        std::process::id()
+    ));
+    if scratch.exists() {
+        fs::remove_dir_all(&scratch).unwrap();
+    }
+    fs::create_dir(&scratch).unwrap();
+    fs::set_permissions(&scratch, fs::Permissions::from_mode(0o700)).unwrap();
+    let profile = scratch.join("workspace.json");
+    fs::write(
+        &profile,
+        r#"{"version":1,"name":"Managed worker","surfaces":["operations"],"chronos":{"deployment":"hosted","workstreams":[{"name":"Product","directory":"chronos"}],"requires":["tasks.observe.v1"],"moira":[],"daimon":[],"trusted_worker":{"workstream":"Product","agent":"product-manager","grant_validity_seconds":60,"lease_duration_seconds":30},"planning":null}}"#,
+    )
+    .unwrap();
+
+    let mut child = Command::new(env!("CARGO_BIN_EXE_pantheon"))
+        .args(["manage", "--workspace-profile"])
+        .arg(&profile)
+        .args([
+            "--chronos-allow-writes",
+            "--operation-id",
+            "management-trusted-worker-1",
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(b"status\ndrain\n")
+        .unwrap();
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let events = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str::<serde_json::Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(events.len(), 3);
+    for event in &events[..2] {
+        assert_eq!(
+            event["topology"]["trusted_chronos_worker"]["workstream"],
+            "Product"
+        );
+        assert_eq!(event["topology"]["trusted_chronos_worker"]["state"], "idle");
+        assert_eq!(
+            event["topology"]["trusted_chronos_worker"]["authority_boundary"],
+            "private in-process capability; no grant, lease, task key, or result is projected"
+        );
+    }
+    assert_eq!(events[2]["event"], "drain");
+    assert_eq!(events[2]["complete"], true);
+    assert!(!scratch.join("chronos/chronos.sock").exists());
+    fs::remove_dir_all(scratch).unwrap();
+}
+
+#[test]
 fn management_session_preflights_drains_and_execs_a_replacement_profile() {
     let scratch = Path::new("/private/tmp").join(format!(
         "pantheon-management-reconfigure-{}",

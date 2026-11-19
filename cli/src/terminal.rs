@@ -1001,8 +1001,25 @@ impl OperationsRuntime {
         };
         let hosted_peers = status
             .as_ref()
-            .map(|status| status.hosted_peers.iter().map(hosted_peer_label).collect())
+            .map(|status| {
+                status
+                    .hosted_peers
+                    .iter()
+                    .map(hosted_peer_label)
+                    .collect::<Vec<_>>()
+            })
             .unwrap_or_default();
+        let mut hosted_peers = hosted_peers;
+        if let Some(worker) = self
+            .host
+            .as_ref()
+            .and_then(NativeHost::managed_chronos_worker_status)
+        {
+            hosted_peers.push(format!(
+                "chronos/{0} · trusted worker {1} · private capability",
+                worker.workstream, worker.state
+            ));
+        }
         let receipts = self
             .retained
             .as_ref()

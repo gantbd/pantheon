@@ -620,6 +620,21 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   proves it fences after clean drain. The task-to-session runtime still needs to
   retain and use that capability; the live revision-18 task therefore remains
   Ready rather than being manually relabeled complete.
+- Pantheon now accepts one explicitly selected `trusted_worker` only on a hosted
+  Chronos profile, validates its exact workstream, bounded agent identity and
+  non-zero grant/lease durations, and retains the sole Moira-wrapped capability
+  inside the owned topology. Management/headless status and the Operations TUI
+  project only workstream plus idle/active/fenced state; grants, leases, task
+  keys and result evidence remain private. The focused live gate starts and
+  drains the real owner through management, restarts it in an isolated tmux TUI,
+  and proves both projections plus clean exit. This closes capability retention
+  and operational visibility, not owner-derived claim: Moira must still supply
+  the exact external task key and expected Chronos revision before the
+  task-to-session runtime may use the worker. The shared canonical session also
+  exposed that its Vellum tab is present while the Vellum service is absent;
+  read-only edit inspection was therefore impossible there, reinforcing the
+  existing configured-surface/readiness disclosure gap rather than creating a
+  second owner.
 - The live LM Studio gate now accepts a bounded review-context file and used the
   real Pantheon task-to-Daimon path for an independent Qwen critique. Qwen
   correctly prioritized reply-loss, restart, drop and persistence-fence tests,

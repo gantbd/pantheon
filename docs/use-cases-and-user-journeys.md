@@ -2156,6 +2156,13 @@ real Moira and Daimon sockets, verifies the exact revision-3 receipt, reconnects
 a fresh participation observer and proves Ready through both headless observation
 and durable reopen. `agent.worker.step.v1` is qualified owner-bound J1 evidence;
 dynamic task-to-participation admission and automatic routing remain open.
+For Pantheon-hosted Chronos, the workspace profile can now select one exact
+trusted worker workstream and bounded agent/grant/lease configuration. Pantheon
+retains the resulting Moira-wrapped capability inside the owned topology and
+exposes only credential-free idle/active/fenced status through management and
+Operations. It does not publish the handle, grant, lease, external task key or
+result binding, and it still cannot claim from presentation input: the durable
+workflow owner must provide the exact task key and expected Chronos revision.
 The proposed owner-safe implementation boundary is specified in
 [`j1-task-agent-workflow-contract.md`](j1-task-agent-workflow-contract.md): Moira
 owns the durable template/instance and derives workflow identities, while

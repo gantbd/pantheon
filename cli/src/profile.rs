@@ -364,7 +364,19 @@ pub struct ChronosProfile {
     pub moira: Vec<MoiraBinding>,
     #[serde(default)]
     pub daimon: Vec<DaimonBinding>,
+    /// Optional private in-process worker retained with one Pantheon-hosted
+    /// Chronos owner. It is configuration, not a claim or transferable grant.
+    pub trusted_worker: Option<ChronosTrustedWorkerProfile>,
     pub planning: Option<PathBuf>,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct ChronosTrustedWorkerProfile {
+    pub workstream: String,
+    pub agent: String,
+    pub grant_validity_seconds: u64,
+    pub lease_duration_seconds: u64,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq)]
@@ -1053,6 +1065,31 @@ impl WorkspaceProfile {
                     .any(|other| other.workstream == binding.workstream)
                 {
                     return Err("Daimon workstream bindings must be unique");
+                }
+            }
+            if let Some(worker) = &chronos.trusted_worker {
+                if chronos.deployment != DeploymentMode::Hosted {
+                    return Err("Chronos trusted worker requires hosted deployment");
+                }
+                if chronos
+                    .workstreams
+                    .iter()
+                    .filter(|workstream| workstream.name == worker.workstream)
+                    .count()
+                    != 1
+                {
+                    return Err("Chronos trusted worker must select one exact hosted workstream");
+                }
+                if worker.agent.is_empty()
+                    || worker.agent.len() > 128
+                    || worker.agent.chars().any(char::is_control)
+                {
+                    return Err(
+                        "Chronos trusted worker agent must be 1–128 bytes without control text",
+                    );
+                }
+                if worker.grant_validity_seconds == 0 || worker.lease_duration_seconds == 0 {
+                    return Err("Chronos trusted worker durations must be non-zero seconds");
                 }
             }
             if let Some(path) = &chronos.planning {
@@ -1812,6 +1849,37 @@ mod tests {
           "chronos":null,"vellum":null
         }"#;
         assert!(WorkspaceProfile::parse(hidden_agora, Path::new(".")).is_err());
+    }
+
+    #[test]
+    fn trusted_chronos_worker_selects_one_hosted_owner_without_serializing_authority() {
+        let valid = br#"{
+          "version":1,"name":"Trusted worker","surfaces":["chronos"],
+          "chronos":{"deployment":"hosted",
+            "workstreams":[{"name":"Product","directory":"chronos"}],
+            "moira":[],"daimon":[],
+            "trusted_worker":{"workstream":"Product","agent":"product-manager",
+              "grant_validity_seconds":60,"lease_duration_seconds":30},
+            "planning":null}
+        }"#;
+        let profile = WorkspaceProfile::parse(valid, Path::new("/tmp/workbench")).unwrap();
+        let worker = profile.chronos.unwrap().trusted_worker.unwrap();
+        assert_eq!(worker.workstream, "Product");
+        assert_eq!(worker.agent, "product-manager");
+
+        let attached = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("\"deployment\":\"hosted\",", "");
+        assert!(WorkspaceProfile::parse(attached.as_bytes(), Path::new(".")).is_err());
+        let missing_owner = String::from_utf8(valid.to_vec())
+            .unwrap()
+            .replace("\"workstream\":\"Product\"", "\"workstream\":\"Other\"");
+        assert!(WorkspaceProfile::parse(missing_owner.as_bytes(), Path::new(".")).is_err());
+        let zero_lease = String::from_utf8(valid.to_vec()).unwrap().replace(
+            "\"lease_duration_seconds\":30",
+            "\"lease_duration_seconds\":0",
+        );
+        assert!(WorkspaceProfile::parse(zero_lease.as_bytes(), Path::new(".")).is_err());
     }
 
     #[test]
