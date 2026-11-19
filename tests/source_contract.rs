@@ -1949,7 +1949,12 @@ fn local_ensemble_preflights_its_consumer_before_spending_model_budget() {
     for required in [
         "cargo metadata --manifest-path \"$moira_live_manifest\"",
         "--locked --offline --format-version 1",
+        "cargo clippy --manifest-path \"$moira_live_manifest\"",
+        "--all-targets --locked --offline -- -D warnings",
+        "does not pass its compile preflight",
         "No Hestia artifact was acquired and no local model was started",
+        "Retained local-ensemble evidence at",
+        "[ \"$status\" -ne 0 ]",
         "make qualify-moira-local-ensemble",
         "Admitted ensemble artifact",
         "Ready ensemble provider",

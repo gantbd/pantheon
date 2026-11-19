@@ -18,12 +18,13 @@ hestia_pid=
 moira_live_manifest="$workspace/moira/qualification/methodical-peer-live/Cargo.toml"
 
 cleanup() {
+  status=$?
   if [ -n "$hestia_pid" ] && kill -0 "$hestia_pid" 2>/dev/null; then
     kill "$hestia_pid" 2>/dev/null || true
     wait "$hestia_pid" 2>/dev/null || true
   fi
-  if [ "${PANTHEON_KEEP_LOCAL_MODEL_ENSEMBLE:-0}" = 1 ]; then
-    echo "Retained local-ensemble evidence at $scratch"
+  if [ "${PANTHEON_KEEP_LOCAL_MODEL_ENSEMBLE:-0}" = 1 ] || [ "$status" -ne 0 ]; then
+    echo "Retained local-ensemble evidence at $scratch (exit $status)"
   else
     rm -rf "$scratch"
   fi
@@ -38,6 +39,14 @@ if ! cargo metadata --manifest-path "$moira_live_manifest" \
   echo 'FAIL: Moira live-ensemble harness locked graph is not reproducible.' >&2
   echo 'No Hestia artifact was acquired and no local model was started.' >&2
   echo 'Next: reconcile the owner lockfile, then rerun make qualify-moira-local-ensemble.' >&2
+  exit 1
+fi
+if ! cargo fmt --manifest-path "$moira_live_manifest" -- --check \
+  || ! cargo clippy --manifest-path "$moira_live_manifest" \
+    --all-targets --locked --offline -- -D warnings; then
+  echo 'FAIL: Moira live-ensemble harness does not pass its compile preflight.' >&2
+  echo 'No Hestia artifact was acquired and no local model was started.' >&2
+  echo 'Next: reconcile owner source/API drift, then rerun make qualify-moira-local-ensemble.' >&2
   exit 1
 fi
 
