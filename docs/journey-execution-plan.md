@@ -259,6 +259,24 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   predates its current Tellus route: MCP grounding works, while
   `tellus.observe.v1` currently falls through with 500 until the owner is safely
   replaced or capability negotiation refuses the stale instance.
+- The next J33 slice now has an executable Moira review-exchange foundation.
+  It admits review only after every independent first pass, retains exact
+  findings and evidence, requires a different admitted member for rebuttal,
+  blocks owner disposition until challenge exists, preserves all seven finding
+  disposition families, binds policy-gated findings to the exact admitted
+  named-human response, and recovers an exact checkpoint without deriving
+  authority from Agora speech. The Moira–Agora adapter projects those retained
+  references only into explicitly addressed messages. Focused qualification is
+  green across 22 core deliberation/review tests and 9 full adapter tests.
+  Durable review-owner persistence, a real Agora round trip, outcome
+  correlation and Pantheon TUI/headless projection remain required before the
+  J33 checklist item closes.
+- Vellum dogfooding admitted the exact Moira–Agora source file but rejected a
+  three-file workspace at its configured limit. More importantly, it retained
+  a stale clean snapshot after an external source mutation and offered no
+  behavior-facade refresh action or conflict explanation. Chronos revision 50
+  now retains `vellum-external-change-refresh-conflict`; the existing bounded
+  symbol-context item retains the multi-file capacity evidence.
 - Live Pantheon/Chronos dogfood admitted four owner-visible Ready items at board
   revision 6: priority-9 `hestia-model-artifact-acquisition-devstral`, priority-2
   `daimon-openrouter-provider-integration`, priority-5
@@ -1324,7 +1342,11 @@ mature stakeholder ensemble.
   missing/excluded/overrepresented and assessor evidence; refuse substantive
   disposition on `no` and escalate rather than average away `contested`.
 - [ ] Retain independent first passes, correlation, dissent, material findings
-  and owner dispositions.
+  and owner dispositions. Moira now has a replay-safe in-memory review exchange
+  for first-pass admission, cross-member rebuttal, findings, seven explicit
+  owner dispositions and exact human-gate response binding, plus an addressed
+  Agora projection. Durable owner persistence, correlation, real room
+  publication/recovery and Pantheon presentation remain open.
 - [ ] Make an Agora room a durable shared-context venue for an equitable
   stakeholder ensemble, not merely a transcript or a fan-out prompt. Qualify
   the concrete operations dispute in which an SRE agent links recurring-issue
