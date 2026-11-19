@@ -71,6 +71,22 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   process-separated all-owner gate, composition-root configuration and recurring
   PM worker remain open, and the Ready tasks remain unsettled until Chronos observes
   prospective claim/evidence completion.
+- The first two real owner boundaries for that gate are now reusable rather
+  than in-process test doubles. Dendrite `50f8b0d` launches a bearer-protected
+  loopback Tellus owner, emits its token only to a mode-`0600` file, and exposes
+  exact method/fold/orthogonality plus selected authority/surface identities;
+  its qualification proves unauthenticated refusal and authenticated current
+  re-verification. Moira `7e989a9` seeds one public-protocol deliberation from
+  those Tellus facts with an actual affected stakeholder, an accountable
+  authorized product-manager representative and a technical frontier
+  supervisor. All three publish separate reports, the owner retains fitness
+  `Yes`, and the deliberately indeterminate resolution stops at an unanswered
+  human gate. The real `moira-deliberation-local` process reopened the exact
+  persisted capacity envelope and the real Moira TUI headless client observed
+  registry revision 6, all three members, all reports, exact grounding and the
+  pending gate. A mismatched runtime capacity envelope refused reopen. This is
+  truthful progress toward the process-separated all-owner gate, not yet the
+  Vellum/Chronos/listener composition or the recurring intelligent PM worker.
 - The task was created through Pantheon's central command palette and bounded
   Chronos form. Invalid priority input was refused without dispatch; the exact
   reviewed task then applied once. The form did not honor Emacs `C-u`, and the

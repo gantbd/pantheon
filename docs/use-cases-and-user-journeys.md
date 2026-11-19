@@ -2331,6 +2331,24 @@ the presentation cannot silently rewrite that immutable graph, so supersession
 or a separately authorized graph change remains an explicit product-owner
 decision.
 
+The process gate now has qualified real Tellus and Moira owner fixtures rather
+than invented in-process answers. Dendrite `50f8b0d` starts an authenticated
+loopback Tellus endpoint and publishes its bearer only through a mode-`0600`
+file; the fixture re-proves exact method, fold, orthogonality, selected
+authority and rendered-surface identities and rejects unauthenticated reads.
+Moira `7e989a9` consumes those facts through its public service mutation path
+to admit three separately accountable stakeholder positions: an actual affected
+stakeholder, an authorized product-manager representative with named
+accountable principal and mandate, and a technical frontier supervisor. Their
+three separate reports lead to an explicitly indeterminate resolution and an
+unanswered human gate; the PM does not approve its own proposal. The real local
+deliberation owner reopened the exact persisted capacity envelope, while a
+looser mismatched envelope was refused, and the real headless Moira TUI observed
+fitness `Yes`, exact grounding, all three reports and the pending gate at
+registry revision 6. Vellum goal/policy processes, the exact Chronos control
+task, the bound alignment listener and recurring PM scheduling are still
+required before this is an operational intelligent product manager.
+
 The same live pass exposed three presentation/operation findings without
 changing the owner result. Emacs `C-u` did not clear the Chronos numeric-priority
 field, although the malformed value was safely refused without dispatch. The
