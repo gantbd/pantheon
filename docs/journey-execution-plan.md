@@ -413,6 +413,23 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   transformation evidence, not full-document Vellum edit parity. The existing
   `vellum-root-limit-diagnostic` task owns the missing actionable limit and
   capacity guidance; no duplicate was admitted.
+- A focused local-ensemble attempt then admitted and started four distinct
+  Hestia-owned GGUF providers (SmolLM3 3B, OLMo2 1B, Granite 4 H Tiny and
+  Qwen2.5 Coder 1.5B); every exact model identity reached Ready and failure
+  cleanup stopped all four endpoints. Moira's downstream live-ensemble harness
+  refused before any member report because its owner lockfile is stale. This is
+  four-model hosting evidence, not ensemble completion or model-performance
+  evidence. The owner harness is directionally correct: it retains four
+  independently profiled members, technical-SME and agent-modeled stakeholder
+  representations, constituency facts, stakeholder-map/coverage/equity
+  digests, and an unresolved result. It does not by this fixture prove the
+  substantive digest contents, human-advocate standing, mandates or conflicts.
+  Commit `84f6c04` now performs a full locked Moira consumer preflight before
+  Hestia artifact acquisition or model startup, so the same failure takes no
+  model runtime or token budget. Existing
+  `pantheon-last-known-good-development-launch` and
+  `ensemble-stakeholder-selection` work own reproducibility and ensemble-fit
+  closure respectively; no duplicate task was admitted.
 - The default `make run` owner separately admitted priority-8
   `moira-reviewer-correlation-evidence` at revision 9 and reopened it exactly as
   Ready with its Moira-deliberation, Moira–Daimon and Pantheon-presentation
