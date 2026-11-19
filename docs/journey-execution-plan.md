@@ -2309,6 +2309,16 @@ Operational means observable completed work, not a configured role name:
   substitutes another ensemble. This closes a PM read boundary only: it grants
   no independence inference, gate response, role activation, task mutation,
   approval, sign-off or rollout authority.
+- The same reconciliation removed a second false blocker: Moira's exact
+  deliberation projection already carries the named reviewer, decision packet,
+  material revision, policy and pending/settled status, so the PM does not need
+  a parallel human-gate truth surface. Chronos's existing scope-bound
+  `product-alignment.observe.v1` endpoint is now separately agent-admissible as
+  `chronos-alignment-observe`. It reuses the aggregate headless adapter, with
+  the owner directory and scope deployment-pinned and no model arguments. A
+  process-separated command test proves a current exact owner reply and rejects
+  extra scope arguments. This closes the PM alignment read while preserving
+  the remaining changed-proposal authoring and persistent-worker gaps.
 - Live Chronos reconciliation found that the current `pantheon-goal-work` owner
   does not contain `oculus-observability-query-peer`, while the older dogfood
   owner returns a contract-invalid V9 reply to the new exact gateway. The
@@ -2321,6 +2331,13 @@ Operational means observable completed work, not a configured role name:
   friction is captured in Chronos as `reduce-agent-gateway-link-cost` at board
   revision 2. The recurrence now justifies a smaller gateway binary/crate
   boundary; it does not justify skipping owner-live qualification meanwhile.
+- The rebuilt capability and source-contract test executables also spent about
+  a minute asleep before the Rust harness started. A read-only process sample
+  placed the wait entirely in `_dyld_start`; once loaded, the eight capability
+  tests finished in 1.04s and the source assertion in 0.00s. This is macOS
+  dynamic-loader/startup evidence, not a capability-test or owner-runtime
+  failure, and further supports the same smaller independently linked gateway
+  boundary without conflating loader latency with Rust link time.
 - The gateway's real HTTPS qualification pinned the current `/usr/bin/curl`
   digest `b636262803922ee1dd0fbf614818473ffa53c811e44fd3278c2270d3af4759d3`,
   admitted only `example.com`, returned 577 UTF-8 bytes with content digest

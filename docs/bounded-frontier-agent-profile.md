@@ -55,6 +55,13 @@ The initial authorities are distinct:
   `tellus.sme-plan.v1`: each exact catalog entry fixes the Pantheon subcommand
   and deployment arguments; the model cannot append a different operation or
   infer a sibling component/control capability;
+- `product-alignment.observe.v1`: the deployment fixes one Chronos alignment
+  owner directory and one exact scope. The model supplies no arguments. The
+  shared owner client returns content-free current goal, control-task, cohort,
+  budget, evidence, dissent, human-gate, proposal and currentness facts. It
+  exposes neither the opaque owner configuration nor Vellum credentials and
+  grants no proposal creation/application, task mutation, reprioritization,
+  acceptance, sign-off, role activation or execution authority.
 - `agent.web.fetch.v1`: the `pantheon agent-web-fetch` gateway with the policy
   path fixed in the command prefix. Only the URL is model-supplied, and the
   gateway revalidates it against exact hosts and bounds.
@@ -140,9 +147,9 @@ The current profiles intentionally fail closed. In particular, the SRE still
 requires Oculus's catalogue/query owner, a durable Hermes trigger subscription,
 a typed Chronos incident-admission proposal and the shared role/worker owners;
 Hermes disclosure, shell output or Pantheon aggregate observation cannot stand
-in for Oculus. The product manager still requires owner-native alignment,
-Vellum proposal and named-human gate surfaces; its stakeholder-ensemble read is
-now independently admissible through Moira. Frontier
+in for Oculus. The product manager now has independently admissible alignment
+and stakeholder-ensemble reads, including exact pending human-gate references;
+changed Vellum-backed proposal authoring remains unavailable. Frontier
 and verification workers likewise retain their provider continuation, Aegis,
 allowlisted-test, result-publication and scheduling gaps. These are executable
 blocker inventories, not claims that named roles are running.

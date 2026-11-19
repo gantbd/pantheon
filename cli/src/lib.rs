@@ -5,6 +5,7 @@ pub mod agent_web;
 pub mod agora_observe;
 pub mod agora_publish;
 pub mod capabilities;
+pub mod chronos_alignment;
 pub mod chronos_task;
 pub mod daimon_observe;
 pub mod headless;

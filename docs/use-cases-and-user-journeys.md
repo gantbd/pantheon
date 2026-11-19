@@ -2232,6 +2232,12 @@ same bounded proposal, stakeholder cohort, currentness, evidence/dissent/gate
 counts and recommended next tasks; focused tests cover successful orientation,
 endpoint failure, exact binding validation and a real verified local-socket
 exchange. Neither consumer can apply, accept, claim, reprioritize or sign off.
+The same exact scope-bound endpoint is now independently agent-admissible as
+`product-alignment.observe.v1`: the deployment pins the owner directory and
+scope, the model supplies no arguments, and the gateway exposes neither owner
+configuration nor Vellum credentials. It reuses the headless adapter and grants
+no proposal creation/application, task mutation, acceptance, sign-off, role
+activation or execution authority.
 This closes presentation parity, not the intelligent product manager. The
 independent integration listener lifecycle now also has single-owner locking,
 safe attributable stale-endpoint recovery, identity fencing, readiness-driven

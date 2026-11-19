@@ -841,6 +841,7 @@ fn usage() -> &'static str {
         "pantheon agora-message-publish SOCKET PARTICIPANT REQUEST_JSON 'PUBLISH AGORA ACTOR MESSAGE OPERATION … REQUEST SHA256 …'\n",
         "pantheon agora-message-publication-observe SOCKET PARTICIPANT REQUEST_JSON\n",
         "pantheon agent-web-fetch POLICY_JSON HTTPS_URL\npantheon chronos-task-observe SERVICE_DIRECTORY TASK\n",
+        "pantheon chronos-alignment-observe DIRECTORY SCOPE\n",
         "pantheon vellum-document-read SOCKET CREDENTIAL_OR_- MAX_BYTES LOCATOR [START END]\n",
         "pantheon task-conversation-inspect SOCKET <task SCOPE TASK INCARNATION ATTEMPT_OR_- | conversation ROOM THREAD_ROOT_OR_->\n",
         "pantheon tellus-sme-plan LOOPBACK_HOST:PORT REQUEST_JSON [--token-file PATH]\n",
@@ -1308,6 +1309,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "chronos-task-observe")
     {
         return pantheon_cli::chronos_task::observe(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "chronos-alignment-observe")
+    {
+        return pantheon_cli::chronos_alignment::run(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)

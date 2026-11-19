@@ -2853,3 +2853,27 @@ fn bounded_moira_deliberation_agent_read_reuses_owner_projection() {
     assert!(live.contains("moira-deliberation-observe"));
     assert!(live.contains("agent-not-found.json"));
 }
+
+#[test]
+fn bounded_chronos_alignment_agent_read_reuses_owner_projection() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let adapter = fs::read_to_string(root.join("cli/src/chronos_alignment.rs"))
+        .expect("Chronos alignment agent adapter");
+    for required in [
+        "product-alignment.observe.v1",
+        "AlignmentLocalClient",
+        "grants no owner configuration",
+    ] {
+        assert!(adapter.contains(required), "agent adapter omits {required}");
+    }
+    let capabilities = fs::read_to_string(root.join("cli/src/capabilities.rs"))
+        .expect("agent capability catalogue");
+    assert!(capabilities.contains("none_when_owner_directory_and_scope_are_pinned"));
+    let headless = fs::read_to_string(root.join("cli/src/headless.rs")).expect("headless source");
+    assert!(headless.contains("crate::chronos_alignment::observe"));
+    assert!(!headless.contains("AlignmentLocalClient"));
+    let command = fs::read_to_string(root.join("cli/tests/chronos_alignment_command.rs"))
+        .expect("Chronos alignment command qualification");
+    assert!(command.contains("exact_alignment_owner_projection_is_independently_agent_readable"));
+    assert!(command.contains("another-scope"));
+}

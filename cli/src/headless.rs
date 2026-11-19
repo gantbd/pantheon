@@ -1995,62 +1995,26 @@ fn observe_chronos(workstream: Workstream) -> (serde_json::Value, bool) {
 }
 
 fn observe_chronos_alignment(binding: AlignmentBinding) -> (serde_json::Value, bool) {
-    use chronos_client::AlignmentWireClientV1;
-    use chronos_protocol::alignment_v1::{Command, Limits, Outcome, RefusalCode, Request};
-
     let capability = "product-alignment.observe.v1";
-    let limits = Limits {
-        max_field_bytes: 256,
-        max_evidence: 128,
-        max_next_tasks: 64,
-    };
-    let mut client = chronos_local::alignment::AlignmentLocalClient::new(binding.directory, limits);
-    match client.request_alignment_v1(Request {
-        version: 1,
-        command: Command::Observe {
-            chronos_scope: binding.scope.clone(),
-        },
-    }) {
-        Ok(response) => match response.outcome {
-            Outcome::Observed { observation } => (
-                serde_json::json!({
-                    "peer": "chronos-alignment",
-                    "instance": binding.workstream,
-                    "capability": capability,
-                    "status": "current",
-                    "scope": binding.scope,
-                    "observation": observation,
-                    "boundary": "authorized content-free observation only; no apply, accept, claim, reprioritize, or sign-off authority",
-                }),
-                true,
-            ),
-            Outcome::Refused { code } => (
-                peer_failure(
-                    "chronos-alignment",
-                    capability,
-                    match code {
-                        RefusalCode::InvalidRequest => "invalid_request",
-                        RefusalCode::UnsupportedVersion => "unsupported_version",
-                        RefusalCode::Unauthorized => "unauthorized",
-                        RefusalCode::Unavailable => "unavailable",
-                        RefusalCode::Limit => "limit",
-                        RefusalCode::Capacity => "capacity",
-                    },
-                    format!("alignment observation refused for {}", binding.workstream),
-                ),
-                false,
-            ),
-        },
-        Err(error) => (
+    match crate::chronos_alignment::observe(binding.directory, binding.scope.clone()) {
+        crate::chronos_alignment::Observation::Current(observation) => (
+            serde_json::json!({
+                "peer": "chronos-alignment",
+                "instance": binding.workstream,
+                "capability": capability,
+                "status": "current",
+                "scope": binding.scope,
+                "observation": observation,
+                "boundary": "authorized content-free observation only; no apply, accept, claim, reprioritize, or sign-off authority",
+            }),
+            true,
+        ),
+        crate::chronos_alignment::Observation::Failure { status, detail } => (
             peer_failure(
                 "chronos-alignment",
                 capability,
-                match error {
-                    chronos_local::CallError::NotSent => "not_sent",
-                    chronos_local::CallError::OutcomeUnknown => "outcome_unknown",
-                    chronos_local::CallError::InvalidResponse => "invalid_reply",
-                },
-                format!("alignment endpoint unavailable for {}", binding.workstream),
+                status,
+                format!("{detail} for {}", binding.workstream),
             ),
             false,
         ),

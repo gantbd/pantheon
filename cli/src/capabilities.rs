@@ -470,6 +470,12 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
         model_arguments: "exactly_one_task_id",
     },
     AgentToolRoute {
+        component: "chronos",
+        capability: "product-alignment.observe.v1",
+        command: "chronos-alignment-observe",
+        model_arguments: "none_when_owner_directory_and_scope_are_pinned",
+    },
+    AgentToolRoute {
         component: "tellus",
         capability: "tellus.sme-plan.v1",
         command: "tellus-sme-plan",
@@ -570,22 +576,10 @@ const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {
 const PRODUCT_MANAGER_GAPS: &[AgentRoleGap] = &[
     ROLE_ACTIVATION_GAP,
     AgentRoleGap {
-        component: "chronos",
-        surface: "alignment-frontier.observe.v1",
-        missing: "one bounded current goal, graph, attempt, lease, dependency, prior-grooming, and dual-frontier sample",
-        next_boundary: "publish an owner-native alignment sample gateway; exact-task observation cannot be promoted to portfolio truth",
-    },
-    AgentRoleGap {
         component: "vellum",
         surface: "workspace.proposal.publish.v1",
-        missing: "owner-returned immutable proposal publication with author, source revision, digest, and recovery receipt",
-        next_boundary: "add a Vellum-owned proposal staging/publication boundary rather than arbitrary filesystem write",
-    },
-    AgentRoleGap {
-        component: "moira",
-        surface: "human-gate.request.observe.v1",
-        missing: "an exact pending named-human decision packet for material goal, priority, acceptance, or rollout changes",
-        next_boundary: "admit observation of owner-published pending gates while retaining response authority for the named human",
+        missing: "changed PM-authored immutable proposal publication with author, source revision, digest, and recovery receipt through the existing owner composition",
+        next_boundary: "extend the qualified one-shot Chronos/Vellum proposal process with bounded authoring and unchanged-frontier coalescing rather than arbitrary filesystem write",
     },
     WORKER_LIFECYCLE_GAP,
 ];
@@ -659,6 +653,7 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
         objective: "sample current owner facts, coalesce unchanged alignment, and publish attributed recommendations without applying material decisions",
         required_tools: &[
             "tasks.workflow.observe.v9",
+            "product-alignment.observe.v1",
             "tellus.sme-plan.v1",
             "workspace.snapshot.v1",
             "moira.task-agent.observe.v1",
