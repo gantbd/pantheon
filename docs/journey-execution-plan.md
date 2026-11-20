@@ -2477,6 +2477,15 @@ Operational means observable completed work, not a configured role name:
   observations, call this prepare mutation, obtain a fresh exact-identity Aegis
   decision, dispatch once, reconcile absence/match/conflict at the participation
   owner and only then retain `ParticipationAdmitted`.
+- Moira `40cb58a` closes the deterministic participation-owner recovery law.
+  A prepared blueprint reconciles only to authoritative absence or an exact
+  current owner revision/phase; any binding substitution refuses even when the
+  participation identity is unchanged. Fourteen journey behavior tests and
+  strict all-target Clippy pass. This prevents a lost reply or restart from
+  blindly redispatching, but it deliberately grants no authority: the remaining
+  stateful composer must observe, prepare, reconcile, authorize only a necessary
+  dispatch, retain non-bearer decision attribution and bind the definitive
+  owner result into the journey.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

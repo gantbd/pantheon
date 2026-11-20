@@ -286,6 +286,14 @@ the exact blueprint while leaving the journey at `RoomReady`. The composer
 still must obtain the trusted workflow/deliberation observations, invoke the
 Aegis adapter freshly, dispatch once and reconcile the participation owner;
 prepared state alone is not participation admission or journey progression.
+Moira `40cb58a` now closes the pure recovery decision at that boundary. Given
+the durably prepared blueprint and the exact participation-owner observation,
+it returns authoritative absence or the current exact revision/phase and
+refuses any substituted binding, including a changed session under the same
+participation identity. Absence grants no retry authority and exact presence is
+not a journey transition. The stateful composer still must call this law,
+obtain fresh Aegis authority only when dispatch remains necessary, retain
+non-bearer decision attribution and bind the definitive owner result.
 
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
