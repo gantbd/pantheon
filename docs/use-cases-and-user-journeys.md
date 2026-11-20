@@ -2211,11 +2211,16 @@ commit atomically at the Chronos owner.
 Chronos revision `e0bb38c` now provides that owner boundary through public
 review V10 with exact lost-reply lookup, attempt-budget guards, checkpoint V5
 migration and content-free outcome signals. It does not make the Pantheon J1
-composition or human presentation complete: the behavior facade must still
-bind the qualified review-link evidence into the command, exercise the real
-RevisionRequired/re-execution/Accepted sequence and present the result without
-implying rollout. Long-lived task-centric review audit beyond bounded command
-retention also remains an explicit owner gap.
+composition or human presentation complete. Pantheon must first compose the
+separately qualified Daimon result, Moira actor publication,
+task-conversation link and Chronos review snapshot into one strict evidence
+identity, then bind an owner-issued UADD packet and verified human response to
+that exact composite. Approved and ChangesRequested may then drive Accepted and
+RevisionRequired; Deferred remains a held Maybe, and Rejected is not silently
+reclassified as rework. The behavior facade can then exercise the real
+re-execution/acceptance sequence and present it without implying rollout.
+Long-lived task-centric review audit beyond bounded command retention also
+remains an explicit owner gap.
 Refusal or uncertainty stops the chain. Agora's private-local owner now also
 supports a versioned, bounded create-time cohort, and the hosted lifecycle gate
 bootstraps distinct human and agent participants without granting Pantheon

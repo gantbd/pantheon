@@ -103,8 +103,14 @@ disclosure or commit-indeterminate review as J1 journeys. Command-scoped review
 evidence is durable only inside Chronos's bounded retained-invocation window;
 after eviction, `Done` persists but no task-centric public history currently
 resolves its disposition receipt. That is an explicit owner audit/history gap,
-not permission to infer acceptance. Pantheon's next bounded slice is a headless
-behavior-facade command that consumes review V10, then the real
-RevisionRequired/re-execution/review-link/Accepted sequence. TUI parity follows
-through the same behavior. Hermes and Oculus may publish or present committed
-owner facts; neither becomes the decision or mutation owner.
+not permission to infer acceptance. Pantheon's next bounded slice is the strict
+J1 evidence composite over the separately qualified Daimon result, Moira actor
+publication, task-conversation link and current Chronos review snapshot. A
+typed UADD packet/response must then bind the named human and verified authority
+to that exact composite. Only after those joins may the headless behavior facade
+consume review V10 and qualify the real
+RevisionRequired/re-execution/review-link/Accepted sequence. Approved and
+ChangesRequested map to those two commands; Deferred remains a held Maybe and
+Rejected remains distinct rather than being mislabeled as rework. TUI parity
+follows through the same behavior. Hermes and Oculus may publish or present
+committed owner facts; neither becomes the decision or mutation owner.

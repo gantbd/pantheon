@@ -92,9 +92,16 @@ read-only input until that repository settles.
   within the existing budget. Checkpoint V5 re-blocks unstarted dependents from
   V1-V4 state without inventing historical acceptance. Exact review commands
   and evidence digests survive lost replies and real Unix-service restart, and
-  content-free review outcome signals are exposed. Remaining J1 work is the
-  Pantheon headless behavior-facade command, real stale/reopened composition and
-  human presentation parity. Also owner-bind durable task-centric review audit
+  content-free review outcome signals are exposed. Remaining J1 work first
+  composes the separately qualified Daimon result, Moira actor publication,
+  task-conversation link and Chronos review snapshot into one strict evidence
+  identity; then a typed UADD packet/response must bind that exact composite to
+  the verified reviewer and authority. Only Approved may become Accepted, only
+  ChangesRequested may become RevisionRequired, Deferred remains a held Maybe,
+  and Rejected remains a distinct non-mutating outcome until an owner contract
+  defines its task effect. The Pantheon headless behavior-facade command, real
+  stale/reopened composition and human presentation parity follow that join.
+  Also owner-bind durable task-centric review audit
   after bounded invocation retention expires; persistent `Done` must not be
   presented as indefinitely self-proving once its command-scoped receipt is
   evicted. Pantheon must not hash an unbound task name, trust deployment

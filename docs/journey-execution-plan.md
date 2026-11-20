@@ -4075,9 +4075,17 @@ outcome counters remain content-free and do not count replay/lookup as new
 decisions.
 
 This closes the Chronos mutation owner, not J1 or the Maybe Machine. Deferred
-remains a held Maybe outside Chronos mutation. Pantheon still needs the
-headless behavior-facade command and real stale/reopened review-link sequence,
-followed by human presentation parity. A second honest gap remains: retained
+remains a held Maybe outside Chronos mutation. A center-out audit corrected the
+next ordering before code: the current review-link proves task, room, actor and
+review status, while the separate Daimon proof owns output, execution and task
+attempt. Neither proves that the published Agora message is the exact qualified
+result, and Moira's human-gate response is not yet typed against their
+composite. Pantheon must first issue one strict J1 evidence identity across
+those owner facts, then resolve a UADD packet and verified response bound to
+that identity. Approved may prepare Accepted; ChangesRequested may prepare
+RevisionRequired; Deferred stays held; Rejected is not reclassified as rework.
+The headless behavior facade and real stale/reopened sequence follow, then
+human presentation parity. A second honest gap remains: retained
 invocation commands are bounded and evictable, while `Done` persists. A
 task-centric audit/history owner must preserve or resolve long-lived review
 evidence; until then an evicted receipt is unavailable, never inferred.
