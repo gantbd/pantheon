@@ -2534,6 +2534,16 @@ Operational means observable completed work, not a configured role name:
   design decision because its grounding requires defined SLIs/SLOs. Revision
   78 retains P7 `dendrite-agent-supervision-stakeholder-fold-routes` so this
   manual route and its user friction are not lost.
+- Rune `356442d` establishes the non-weakening compiler baseline required before
+  parity implementation. A single obligation-bearing fixture now characterizes
+  all six executable Smith targets and deliberately fails if current preserved
+  behavior changes without an intentional matrix review. Every target retains
+  the structural edge; only Gleam currently enforces guard/invoke and enumerates
+  effects; no target yet enforces pre/postconditions or transition authority or
+  binds executable source provenance. The focused gate and all 23 Smith tests
+  pass. The baseline does not qualify runtime behavior and leaves
+  `rune-compiler-supervisor-semantic-parity` open; it prevents the blocked J1
+  supervisor from advancing on a least-common-denominator implementation.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

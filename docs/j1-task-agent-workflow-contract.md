@@ -120,6 +120,18 @@ qualified. Canonical Chronos work
 `rune-supervised-rosetta-work-unit-orchestration` owns the owner and fold
 contract; `rune-supervisor-production-composition` is blocked on both.
 
+Rune `356442d` now supplies the required executable characterization baseline
+without changing a generator. One obligation-bearing fixture crosses Rust,
+Erlang, Gleam, NIF, Elixir and TypeScript. The mutation-sensitive matrix proves
+that every target currently emits the structural transition; only Gleam also
+enforces the guard and invoked-machine checks and enumerates authored effects;
+none currently enforces the fixture's precondition, destination postcondition
+or authority on its public transition path, and none binds executable source/IR
+provenance. The focused gate and all 23 Smith tests pass. This is actionable
+defect evidence and a regression floor, not semantic qualification: real target
+compilation/runtime refusal, nested-refusal absorption, identity binding and
+obligation mutation testing remain open before the blocked supervisor may move.
+
 The first live Dendrite fold review used current fold identity
 `sha256:14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8`.
 The canonical tags `architecture-flow-review`, `external-calls`,
