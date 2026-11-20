@@ -36,7 +36,8 @@
       "sha256:61f3e579698e69cc648c81e8f1af1d3d302dba3a5addcb92c9ffb82f3036673e",
       "sha256:bd63847e492b69fd5f4078c93ecae0f1233ce045db4912f12ce5bb0754792406",
       "sha256:11355e90c0669955437dc1a095c2eef1fdcd31d50d43f11120b51433d3e9ebb4",
-      "sha256:f20c15fe1f530b45b36f9f0abfc64cbdf932e2c7deef70371fd561dc9496b038"
+      "sha256:f20c15fe1f530b45b36f9f0abfc64cbdf932e2c7deef70371fd561dc9496b038",
+      "sha256:64770b7d5a52591ef3a041bc422ab474445541992c66f3624f3ffd2cebf555b9"
     ],
     "dissent": [
       "Dendrite routed architecture, network, identity, data, security, distributed-systems, and humanism groundings, but formal-methods, agent-systems, operator, and ensemble roles have no fold routes for this context.",
@@ -59,7 +60,7 @@
     {
       "path": "$.machine.edges[publication-accepted->review-ready-with-result].precondition",
       "category": "owner-composition",
-      "question": "Which qualified Pantheon composite consumes Moira's exact effect/source/room/message/room-id/actor publication provenance, a qualified task-conversation relationship, the current exact Chronos ReadyForReview observation, an owner-issued binding from the Daimon/Moira external task key to that exact Chronos scope/task identity, and an owner-issued binding from the authenticated Agora actor to the exact admitted agent participation/session to produce J1 review-link evidence without parsing JSON, scanning a retention-bounded message page as if it were an exact receipt, trusting deployment configuration or caller-supplied aliases, or inventing delivery, acceptance, task mutation, or Done authority?"
+      "question": "Which qualified Pantheon composite consumes Moira's exact effect/source/room/message/room-id/actor publication provenance, Moira's owner-retained external-task-key/Chronos-task-ID/incarnation/revision provenance through a bounded observation port, a qualified task-conversation relationship that binds that task identity to the exact Chronos scope, the current exact Chronos ReadyForReview observation, and an owner-issued binding from the authenticated Agora actor to the exact admitted agent participation/session to produce J1 review-link evidence without parsing JSON, scanning a retention-bounded message page as if it were an exact receipt, trusting deployment configuration or caller-supplied aliases, or inventing scope, delivery, acceptance, task mutation, or Done authority?"
     },
     {
       "path": "$.projection.strict-evaluator",

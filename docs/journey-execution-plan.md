@@ -3692,3 +3692,34 @@ The revised request identity is
 `96395ec510d60b81ff824c9dee9440a48b4d45cd2f09999f7ace21ea7d9eec86`;
 the real `rune-author` remains `questions_pending` and emitted no candidate.
 
+### 2026-11-20 — Moira owner proves the retained Chronos task namespace
+
+The namespace descent reached a stronger owner boundary than Moira's configured
+current-attempt observer. `moira-execution-sqlite::ChronosReceiver` already
+commits the workflow effect, canonical task intent, exact Chronos task ID,
+incarnation and admission revision beside Chronos's checkpoint. Moira revision
+`9a5836a` adds `TaskBindingProvenanceV1` and a read-only
+`observe_task_binding` operation over that retained record. The operation checks
+the task reference against the recovered Chronos engine, redacts task identity
+from diagnostics and survives reopen without changing engine revision or
+command-usage counters.
+
+All 11 real `chronos_receiver_behavior` tests pass, including commit/reply loss,
+subprocess exit and recovery cases, and the complete
+`moira-execution-sqlite --all-targets` package check passes offline. The exact
+source evidence is
+`sha256:64770b7d5a52591ef3a041bc422ab474445541992c66f3624f3ffd2cebf555b9`.
+
+This closes only the owner-retained external-key to task-ID/incarnation/revision
+edge. It does not name ambient Chronos workspace scope, qualify the separately
+owned task-conversation link, bind an Agora actor to an admitted Moira agent
+participation, expose a bounded cross-process observation port, or grant lease,
+settlement, status-mutation, acceptance or Done authority. The J1 authoring hole
+now consumes this evidence explicitly and retains those smaller unresolved
+joins rather than continuing to describe the task ID itself as missing.
+The revised request identity is
+`dbc81243d3d9d56259b54a8a3fe9f92abefd93666f811155f226b568f5623eff`.
+The real `rune-author` binary returned `questions_pending` and
+`clarification-required`, emitted no candidate and retained the four genuine
+semantic paths plus the known duplicate ensemble-fit diagnostic.
+

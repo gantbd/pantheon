@@ -40,10 +40,14 @@ read-only input until that repository settles.
   delivery, acceptance or completion.
 - [ ] Close the remaining J1 namespace bindings at their owners. The trusted
   worker observes the external binary task key and exact Chronos task name but
-  the durable journey drops the name; participation binds the Daimon session
-  and task attempt but not the authenticated Agora actor. Add replayable,
-  versioned owner evidence for both relationships. Pantheon must not hash an
-  unbound task name, trust deployment configuration, or equate an Agora actor
+  the durable journey drops the name. Moira revision `9a5836a` now exposes a
+  versioned, read-only owner observation of the exact retained key/task-ID/
+  incarnation/admission-revision binding and validates it against the recovered
+  Chronos engine. Add its bounded cross-process observation port and qualify the
+  separate Chronos scope relationship. Participation also binds the Daimon
+  session and task attempt but not the authenticated Agora actor; add replayable
+  owner evidence for that relationship. Pantheon must not hash an unbound task
+  name, trust deployment configuration, infer scope, or equate an Agora actor
   label with an admitted agent session.
 - [ ] Make `rune-author` question output path-stable and nonduplicating without
   semantic loss. The revised J1 request has four unique unresolved paths, but
