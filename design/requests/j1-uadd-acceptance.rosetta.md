@@ -46,7 +46,12 @@ Live Tellus/Dendrite grounding was not claimed in this authoring pass. The
 existing loopback service requires a selected credential route that is not
 safely available in this execution context. The request therefore preserves a
 mandatory Tellus/ensemble review before admission rather than inventing SME
-output or bypassing authentication.
+output or bypassing authentication. The exact future ambient-expertise request
+is retained in `design/requests/j1-uadd-acceptance.sme-plan.json`; it routes
+architecture, network, identity, data, adversarial testing, user experience,
+humanism and live-verification concerns. Those Dendrite roles are advisory
+expertise, not substitutes for the equitable, attributable owner/stakeholder
+ensemble that Moira must admit separately.
 
 ## Rosetta
 
