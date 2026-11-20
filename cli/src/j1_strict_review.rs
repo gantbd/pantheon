@@ -83,9 +83,10 @@ pub enum StrictJ1ReviewRefusalV1 {
 /// Qualifies the exact owner-bound Daimon result as the exact Moira-attributed
 /// Agora publication currently linked to a Chronos task awaiting human review.
 ///
-/// A refusal is a typed Maybe-machine result. Callers must not substitute a
-/// similar task, room, actor, message, or body, and must not promote a refusal
-/// to a Boolean decision.
+/// A refusal is a typed operational return inside the Maybe Machine, not the
+/// parent claim's result and not Boolean false. Callers must not substitute a
+/// similar task, room, actor, message, or body, and only separately qualified
+/// evidence may admit the parent claim to Bool.
 pub fn qualify_strict_j1_review_evidence(
     review: &J1ReviewLinkEvidenceV1,
     participation: &ParticipationViewV1,
