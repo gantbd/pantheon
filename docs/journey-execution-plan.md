@@ -3654,3 +3654,40 @@ The real `rune-author` binary again returned `questions_pending`, with no
 candidate, and preserved the same four semantic gaps plus the already-recorded
 duplicate ensemble-fit diagnostic.
 
+### 2026-11-20 — actor provenance closes; namespace joins remain Maybe
+
+Agora now owns an additive exact actor-provenance observation rather than
+expanding or reinterpreting its compact acceptance receipt. The operation
+reuses the identical actor-scoped request under fresh `Observe` authority and
+returns the retained acceptance plus the Host-derived participant. A focused
+Host test proves the publishing bot receives its binding while Alice receives
+`Conflict`. The real durable Unix composition test proves independent
+reconnects, public-client wire round trip, Aegis action separation and 18
+pre-reply durable lifecycle commits. The complete Agora all-target workspace
+check passed. This is commit `1ddf972`.
+
+Moira's actor publisher now adapts that owner receipt into
+`ActorPublishedProvenanceV1`, retaining the full effect/source/room/message
+`PublishedV1`, authenticated actor and exact request room ID. The room ID is
+owner-observed because exact Agora replay accepted the same request; it is not a
+caller alias. Diagnostics expose only actor and room byte lengths. Focused
+adapter tests prove lost-reply reconciliation, absence, conflict and redaction.
+The qualified Moira commits are `13bfc6d` and `b475294`.
+
+The attempted typed J1 join then exposed two remaining namespace losses. The
+Moira trusted worker observes both the binary external task key and exact
+Chronos task name while claiming an attempt, but the durable journey retains
+only the key/incarnation/attempt. Separately, the admitted participation binds
+the Daimon session/profile/attempt, while no owner receipt binds that
+participation to the authenticated Agora actor. The task-conversation registry
+and deployment configuration cannot manufacture either relationship.
+
+The J1 edge therefore remains `Maybe`, now at lower altitude: actor and room
+provenance are proved, while task-namespace and actor-to-participation bindings
+are named owner-schema obligations. The Rune-author hole requires both and
+forbids hashing unbound names or trusting caller/configuration aliases. No
+Pantheon composite was written around these gaps.
+The revised request identity is
+`96395ec510d60b81ff824c9dee9440a48b4d45cd2f09999f7ace21ea7d9eec86`;
+the real `rune-author` remains `questions_pending` and emitted no candidate.
+

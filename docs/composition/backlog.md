@@ -29,13 +29,22 @@ read-only input until that repository settles.
   execution and task-attempt correlation without assistant bytes, prompts,
   credentials or raw authority material. Telemetry failure must remain visible
   and must not change the owner result or qualification outcome.
-- [ ] Preserve authenticated Agora actor provenance in the J1 publication
+- [x] Preserve authenticated Agora actor provenance in the J1 publication
   evidence path. `ActorPublicationAcceptedV1` proves the accepted message but
   drops the host-derived actor, while `PublishedV1` adds effect/source/room
-  binding without restoring it. Add an Agora-owner-issued exact publication to
-  actor binding (or an equally strong owner observation); do not trust a caller
-  author, reuse task-link provenance, or promote a retention-bounded message
-  page scan into an exact receipt.
+  binding without restoring it. Agora revision `1ddf972` adds a separately
+  typed, read-only, exact-request provenance observation through Host, durable
+  gating, wire, daemon and public client; actor substitution conflicts. Moira
+  revisions `13bfc6d` and `b475294` retain that actor and the owner-observed room
+  ID beside the full `PublishedV1`. Neither receipt claims task identity,
+  delivery, acceptance or completion.
+- [ ] Close the remaining J1 namespace bindings at their owners. The trusted
+  worker observes the external binary task key and exact Chronos task name but
+  the durable journey drops the name; participation binds the Daimon session
+  and task attempt but not the authenticated Agora actor. Add replayable,
+  versioned owner evidence for both relationships. Pantheon must not hash an
+  unbound task name, trust deployment configuration, or equate an Agora actor
+  label with an admitted agent session.
 - [ ] Make `rune-author` question output path-stable and nonduplicating without
   semantic loss. The revised J1 request has four unique unresolved paths, but
   `$.review.ensemble_fit` is emitted once from the explicit evidence-rich hole
