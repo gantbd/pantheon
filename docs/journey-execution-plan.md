@@ -4523,7 +4523,11 @@ unchanged publication profile against those bytes, and enters the existing
 packet publisher without a semantic handoff file or a duplicate owner call.
 Questions and complete high-risk work stop before Vellum. Preview leaves the
 parent merely `publication_eligible`; only the existing child's exact durable
-success advances the generated parent to `durable_published`.
+success advances the generated parent to `durable_published`. The focused
+owner-backed gate separately proves complete Gray work remains
+`caller_declared_not_verified`, retains the named sandbox/reversibility/expiry
+experiment contract and records zero publication invocations. Maybe does not
+borrow the moderate-risk publication rail.
 
 The owner-backed gate also compares the old manual handoff with the composed
 path while asserting equal packet identity. One observed run reduced Rune owner
@@ -4543,6 +4547,14 @@ run measured 4,718 ms manually and 2,397 ms composed while preserving the same
 two-to-one owner-request and one-to-zero handoff-file reductions. This
 corroborates direction across two samples but remains insufficient for an SLO
 or general performance distribution.
+
+The producer record is now independently Oculus-ready without claiming Oculus
+delivery: it binds the Pantheon capability, generated machine source/IR and
+exact request digest; declares one-invocation scope, complete-per-invocation
+sampling and content-free disclosure; and explicitly lists wall-clock,
+pre-code, rework, token/context, escaped-defect and owner-receipt gaps. Timing is
+honestly limited to total, blueprint and downstream stages; no finer parsing,
+authoring, risk, Vellum, approval, edit or persistence timing is claimed.
 
 Chronos dogfood then reconciled the roadmap through Pantheon's writable TUI.
 The revision-84 board already retained the five-node value-core dependency

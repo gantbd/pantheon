@@ -398,6 +398,10 @@ fn observation(
         .pointer("/observation/deterministic_revision_operations")
         .and_then(Value::as_u64)
         .unwrap_or(0);
+    let request_sha256 = blueprint
+        .pointer("/lineage/request_ast/current_sha256")
+        .and_then(Value::as_str)
+        .unwrap_or("not_observed");
     let packet_bytes = child
         .and_then(|value| value.get("packet_bytes"))
         .and_then(Value::as_u64)
@@ -408,6 +412,19 @@ fn observation(
         .unwrap_or(0);
     json!({
         "schema": "rune.blueprint-publication.observation.v1",
+        "source": {
+            "component": "pantheon",
+            "capability": CAPABILITY,
+            "machine_source_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.source_sha256,
+            "machine_typed_ir_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.typed_ir_sha256,
+            "request_sha256": request_sha256,
+        },
+        "scope": "one_composed_invocation",
+        "sampling": {
+            "status": "complete",
+            "population": "this_invocation",
+        },
+        "disclosure": "content_free",
         "duration_ms": duration_ms,
         "blueprint_duration_ms": blueprint_duration_ms,
         "downstream_duration_ms": duration_ms.saturating_sub(u128::from(blueprint_duration_ms)),
@@ -427,6 +444,15 @@ fn observation(
         "token_usage": "not_observed",
         "context_usage": "not_observed",
         "escaped_defects": "not_observed",
+        "gaps": [
+            "wall_clock_window",
+            "pre_code_findings",
+            "rework_operations",
+            "token_usage",
+            "context_usage",
+            "escaped_defects",
+            "oculus_owner_receipt",
+        ],
         "oculus_published": false,
     })
 }

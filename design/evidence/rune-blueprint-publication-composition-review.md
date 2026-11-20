@@ -203,7 +203,12 @@ owner invocation.
 
 The generated parent remains authoritative for advancement. Unresolved
 questions enter `questions_returned` without contacting Vellum. A complete
-high-risk request enters `refused` without contacting Vellum. Preview leaves
+high-risk request enters `refused` without contacting Vellum. The owner-backed
+gate now separately proves a complete Gray request retains
+`caller_declared_not_verified`, names the missing sandbox, reversibility and
+expiry experiment contract, and refuses with zero publication invocations.
+Gray therefore remains executable Maybe evidence rather than borrowing the
+moderate-risk rail. Preview leaves
 the parent at `publication_eligible`, because a preview is not durable child
 success. Publish advances to `durable_published` only when the invoked child
 returns its exact durable success; refusal or unknown cannot be laundered into
@@ -233,14 +238,17 @@ recovery.
 
 ## Instrumentation and value proof
 
-The composition emits one content-free observation with
-stage durations for blueprint parsing, Rune authoring, deterministic answer
-application, risk admission, packet preparation, Vellum observation, approval
-validation, edit and persistence. It should retain counts for owner questions,
-answers, deterministic revisions, refusals, packet/target/inserted bytes and
-configured saturation. Token/context cost and escaped defects remain
-`not_observed` until a real owner provides them. `oculus_published=false` stays
-explicit until Oculus receives the record.
+The composition emits one content-free observation with total, blueprint and
+downstream stage durations. It retains counts for owner questions,
+deterministic revisions, refusals, publication invocations, semantic handoff
+files and packet/inserted bytes. It does not yet claim per-substage timing for
+parsing, authoring, risk, Vellum observation, approval, edit or persistence.
+The record independently binds its Pantheon capability, generated machine
+source/IR and exact request digest; declares one-invocation scope,
+complete-per-invocation sampling and content-free disclosure; and lists every
+unavailable measure and owner receipt as an explicit gap. Token/context cost
+and escaped defects remain `not_observed` until a real owner provides them.
+`oculus_published=false` stays explicit until Oculus receives the record.
 
 The owner-backed real-slice gate compares the current manual request-file
 handoff against the composed path using the same canonical revised request and

@@ -147,6 +147,12 @@ printf '%s' "$preview" | jq -e '
   .observation.rune_owner_requests == 1 and
   .observation.questions_before == 0 and
   .observation.questions_after == 0 and
+  .observation.source.component == "pantheon" and
+  .observation.source.capability == "rune.blueprint-publication.v1" and
+  .observation.source.request_sha256 == .blueprint.lineage.request_ast.current_sha256 and
+  .observation.scope == "one_composed_invocation" and
+  .observation.sampling.status == "complete" and
+  .observation.disclosure == "content_free" and
   .observation.deterministic_revision_operations == 0 and
   .observation.publication_invocations == 1 and
   .observation.refusals == 0 and
@@ -160,6 +166,7 @@ printf '%s' "$preview" | jq -e '
   .observation.token_usage == "not_observed" and
   .observation.context_usage == "not_observed" and
   .observation.escaped_defects == "not_observed" and
+  (.observation.gaps | index("oculus_owner_receipt")) != null and
   .observation.oculus_published == false
 ' >/dev/null
 test "$(printf '%s' "$manual_preview" | jq -r '.packet_sha256')" = \

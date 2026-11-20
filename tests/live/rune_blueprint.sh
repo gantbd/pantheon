@@ -100,12 +100,21 @@ jq -e '
   .signal == "ClarificationRequired" and
   .packet_publication == null and
   [.blueprint.questions[].path] == ["$.holes", "$.review"] and
+  .observation.source.component == "pantheon" and
+  .observation.source.capability == "rune.blueprint-publication.v1" and
+  (.observation.source.machine_source_sha256 | startswith("sha256:")) and
+  (.observation.source.machine_typed_ir_sha256 | startswith("sha256:")) and
+  .observation.source.request_sha256 == .blueprint.lineage.request_ast.current_sha256 and
+  .observation.scope == "one_composed_invocation" and
+  .observation.sampling == {status: "complete", population: "this_invocation"} and
+  .observation.disclosure == "content_free" and
   .observation.refusals == 0 and
   .observation.refusal_stage == null and
   .observation.publication_invocations == 0 and
   .observation.pre_code_findings == "not_observed" and
   .observation.rework_operations == "not_observed" and
   .observation.context_usage == "not_observed" and
+  (.observation.gaps | index("oculus_owner_receipt")) != null and
   .observation.oculus_published == false
 ' "$scratch/composed-questions.json" >/dev/null
 
@@ -177,6 +186,7 @@ jq -e '
   .signal == "PublicationRefused" and
   .packet_publication == null and
   .blueprint.risk_policy.publication == "not_admitted" and
+  .blueprint.risk_policy.missing_contract == "owner-specific high-risk admission contract" and
   .observation.refusals == 1 and
   .observation.refusal_stage == "risk_admission" and
   .observation.publication_invocations == 0 and
@@ -188,6 +198,44 @@ jq -e '
   .observation.escaped_defects == "not_observed" and
   .observation.oculus_published == false
 ' "$scratch/composed-high-risk.json" >/dev/null
+
+jq '{
+  version: 1,
+  task: {
+    id: "qualify-gray-blueprint-publication",
+    prose: "Retain this exact complete projection as Maybe evidence while refusing publication until its bounded experiment contract exists.",
+    risk: "gray"
+  },
+  request: .
+}' "$qualified" >"$scratch/gray-blueprint.json"
+if "$pantheon" rune-blueprint-publication preview \
+    "$scratch/publication-profile.json" "$scratch/gray-blueprint.json" \
+    vdo1.3132333435363738393a3b3c3d3e3f40 \
+    >"$scratch/composed-gray.json" 2>"$scratch/composed-gray.stderr"; then
+  echo 'FAIL: composed Gray projection entered publication' >&2
+  cat "$scratch/composed-gray.json" >&2
+  exit 1
+fi
+jq -e '
+  .status == "publication_refused" and
+  .complete == false and
+  .machine_state == "refused" and
+  .signal == "PublicationRefused" and
+  .packet_publication == null and
+  .blueprint.task.risk == "gray" and
+  .blueprint.risk_policy.classification_authority == "caller_declared_not_verified" and
+  .blueprint.risk_policy.rune_baseline_weakened == false and
+  .blueprint.risk_policy.publication == "not_admitted" and
+  .blueprint.risk_policy.missing_contract == "sandbox, reversibility and expiry experiment contract" and
+  .observation.source.request_sha256 == .blueprint.lineage.request_ast.current_sha256 and
+  .observation.sampling.status == "complete" and
+  .observation.disclosure == "content_free" and
+  .observation.refusals == 1 and
+  .observation.refusal_stage == "risk_admission" and
+  .observation.publication_invocations == 0 and
+  .observation.semantic_handoff_files_materialized == 0 and
+  .observation.oculus_published == false
+' "$scratch/composed-gray.json" >/dev/null
 
 jq '{
   version: 1,
@@ -247,4 +295,4 @@ jq -e '
   (.detail | contains("exact current Rune request"))
 ' "$scratch/refused.json" >/dev/null
 
-echo 'PASS: prose -> typed Rune questions -> question-bound revision -> Scry -> Smith; stale answers and unfit ensemble refused'
+echo 'PASS: prose -> typed Rune questions -> question-bound revision -> Scry -> Smith; stale answers, unfit ensemble, High, and Gray publication refused'
