@@ -4516,8 +4516,24 @@ complete with no unsupported semantics. The parent owns only clarification,
 projection qualification, additive risk admission and upstream refusal; its
 single publication edge invokes `pantheon-rune-packet-publication`. It does not
 copy the child's preview, human arming, edit uncertainty or persistence law.
-The remaining critical work is the in-memory Pantheon adapter and a measured
-manual-versus-composed real slice; projection alone is not operational proof.
+
+The in-memory Pantheon adapter is now operationally qualified. It retains the
+exact canonical revised request bytes, verifies the qualified owner result and
+unchanged publication profile against those bytes, and enters the existing
+packet publisher without a semantic handoff file or a duplicate owner call.
+Questions and complete high-risk work stop before Vellum. Preview leaves the
+parent merely `publication_eligible`; only the existing child's exact durable
+success advances the generated parent to `durable_published`.
+
+The owner-backed gate also compares the old manual handoff with the composed
+path while asserting equal packet identity. One observed run reduced Rune owner
+invocations from two to one, semantic handoff files from one to zero, and
+preview duration from 4,875 ms to 2,446 ms. This is one real sample, not a
+general performance claim, but it proves that the composition removed one
+deterministic round trip and one materialization without weakening identity.
+Token/context cost, escaped defects and longitudinal rework remain
+`not_observed`; `oculus_published=false` remains explicit until the observation
+has an Oculus owner path.
 
 ### Non-critical discovery — bounded Rune-native executables
 
@@ -4553,4 +4569,13 @@ Generating C or Rust remains a useful bootstrap oracle, and WebAssembly may be
 a useful sandbox comparison, but neither is the final closed runtime claim.
 Direct native emission must refuse any obligation it cannot enforce and must
 not become a shortcut around the current Rune→Scry→Smith invocation gap.
+
+The current Rust build supplied additional but non-dispositive evidence for
+this discovery. Repeated builds sharing the repository incremental target
+stalled in uninterruptible filesystem I/O, while the same focused qualification
+completed from a private target with incremental compilation disabled. That
+may be cache or filesystem contention rather than an intrinsic Rust/toolchain
+cost. It justifies a bounded build-topology investigation and strengthens the
+case for measuring a smaller native projection; it does not select a backend or
+count as a native-security proof.
 

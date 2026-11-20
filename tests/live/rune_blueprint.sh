@@ -78,6 +78,30 @@ jq -e '
   .risk_policy.publication == "not_eligible_until_projection_complete"
 ' "$scratch/questions.json" >/dev/null
 
+# The composed command must expose the same exact questions without touching
+# Vellum.  Deliberately nonexistent absolute owner paths prove that the child
+# publication adapter is not entered while semantics remain unresolved.
+jq -n --arg rune_profile "$scratch/profile.json" '{
+  version: 1,
+  rune_profile: $rune_profile,
+  vellum_socket: "/tmp/pantheon-unreached-vellum.sock",
+  vellum_credential: "/tmp/pantheon-unreached-vellum.credential",
+  vellum_document: 1,
+  max_packet_bytes: 65536
+}' >"$scratch/publication-profile.json"
+"$pantheon" rune-blueprint-publication preview \
+  "$scratch/publication-profile.json" "$scratch/blueprint.json" \
+  vdo1.1112131415161718191a1b1c1d1e1f20 \
+  >"$scratch/composed-questions.json"
+jq -e '
+  .status == "questions_pending" and
+  .complete == false and
+  .machine_state == "questions_returned" and
+  .signal == "ClarificationRequired" and
+  .packet_publication == null and
+  [.blueprint.questions[].path] == ["$.holes", "$.review"]
+' "$scratch/composed-questions.json" >/dev/null
+
 base=$(jq -r '.lineage.request_ast.base_sha256' "$scratch/questions.json")
 review=$(jq '.review' "$qualified")
 jq -n --arg base "$base" --argjson review "$review" '{
@@ -121,6 +145,32 @@ jq -e '
   (.owner_outcome.owner_outcome.typed_ir | length) > 0 and
   (.owner_outcome.owner_outcome.projection | length) > 0
 ' "$scratch/projection.json" >/dev/null
+
+jq '{
+  version: 1,
+  task: {
+    id: "qualify-high-risk-blueprint-publication",
+    prose: "Retain this exact complete projection while refusing publication until its high-risk owner contract exists.",
+    risk: "high"
+  },
+  request: .
+}' "$qualified" >"$scratch/high-risk-blueprint.json"
+if "$pantheon" rune-blueprint-publication preview \
+    "$scratch/publication-profile.json" "$scratch/high-risk-blueprint.json" \
+    vdo1.2122232425262728292a2b2c2d2e2f30 \
+    >"$scratch/composed-high-risk.json" 2>"$scratch/composed-high-risk.stderr"; then
+  echo 'FAIL: composed high-risk projection entered publication' >&2
+  cat "$scratch/composed-high-risk.json" >&2
+  exit 1
+fi
+jq -e '
+  .status == "publication_refused" and
+  .complete == false and
+  .machine_state == "refused" and
+  .signal == "PublicationRefused" and
+  .packet_publication == null and
+  .blueprint.risk_policy.publication == "not_admitted"
+' "$scratch/composed-high-risk.json" >/dev/null
 
 jq '{
   version: 1,

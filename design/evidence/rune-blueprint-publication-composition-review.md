@@ -5,8 +5,9 @@ Date: 2026-11-20
 Status: named human sponsor approved the ensemble and option-one topology;
 source-level invoked-child preservation qualified at Rune commit `23bac56`;
 the thin composition Rune validates and has a complete Smith Rust projection;
-runtime adapter composition remains open, and no Vellum mutation, task effect,
-go/no-go or rollout authority follows
+the in-memory runtime adapter and one owner-backed manual-versus-composed slice
+are qualified; no task effect, design acceptance, go/no-go or rollout authority
+follows
 
 ## Exact owner question boundary
 
@@ -193,8 +194,22 @@ unsupported semantics. The parent contains only blueprint clarification,
 projection qualification, additive risk admission, upstream refusal and one
 invoked-child success edge. It does not copy the child's preview, arming, edit,
 uncertainty or persistence states. Projection qualification is compiler
-evidence, not proof that Pantheon's runtime adapter has completed the in-memory
-composition; that implementation and its real-slice measurement remain open.
+evidence rather than runtime proof. Pantheon's qualified adapter now supplies
+that separate runtime evidence: it retains the exact canonical revised request
+bytes in memory, verifies that the qualified owner result binds those bytes and
+that the publication profile did not change between stages, and passes both to
+the existing packet publisher without a semantic handoff file or a second Rune
+owner invocation.
+
+The generated parent remains authoritative for advancement. Unresolved
+questions enter `questions_returned` without contacting Vellum. A complete
+high-risk request enters `refused` without contacting Vellum. Preview leaves
+the parent at `publication_eligible`, because a preview is not durable child
+success. Publish advances to `durable_published` only when the invoked child
+returns its exact durable success; refusal or unknown cannot be laundered into
+parent advancement. The existing child still owns its human challenge,
+revision fence, minimal UTF-8-safe patch, single edit dispatch and persistence
+recovery.
 
 ## Threat and leakage review
 
@@ -218,7 +233,7 @@ composition; that implementation and its real-slice measurement remain open.
 
 ## Instrumentation and value proof
 
-The composition should emit one content-free observation with correlation and
+The composition emits one content-free observation with
 stage durations for blueprint parsing, Rune authoring, deterministic answer
 application, risk admission, packet preparation, Vellum observation, approval
 validation, edit and persistence. It should retain counts for owner questions,
@@ -227,11 +242,17 @@ configured saturation. Token/context cost and escaped defects remain
 `not_observed` until a real owner provides them. `oculus_published=false` stays
 explicit until Oculus receives the record.
 
-The real-slice comparison must measure the current manual request-file handoff
-against the composed path: operator steps, elapsed lead time, pre-code findings,
-rework operations, context/token cost where observable, refusals and escaped
-defects. A passing test without that comparison is qualification evidence, not
-proof of value unlock.
+The owner-backed real-slice gate compares the current manual request-file
+handoff against the composed path using the same canonical revised request and
+proves that both produce the same packet identity. In the observed run, the
+manual path required two Rune owner invocations, one materialized semantic
+handoff file and 4,875 ms; the composed path required one owner invocation,
+zero semantic handoff files and 2,446 ms. That is one measured sample of about
+50% lower preview lead time, not a universal benchmark. It proves removal of
+one deterministic owner round trip and one avoidable materialization without
+weakening packet identity. Token/context cost, pre-code findings, escaped
+defects and longitudinal rework remain unobserved, and the record is not yet
+published through Oculus.
 
 ## Advisory evidence and proposed stakeholder ensemble
 

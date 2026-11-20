@@ -95,50 +95,103 @@ jq -n \
   }' >"$scratch/publication-profile.json"
 
 fixture="$root/design/requests/rune-packet-publication-qualification.rune-author.json"
-preview=$(
+jq -n --slurpfile request "$fixture" '{
+  version: 1,
+  task: {
+    id: "qualify-rune-blueprint-publication",
+    prose: "Carry this exact already-reviewed Rune request through the thin in-memory composition into the existing human-gated Vellum publisher.",
+    risk: "moderate"
+  },
+  request: $request[0]
+}' >"$scratch/blueprint.json"
+
+# Baseline the former manual handoff: prepare the blueprint, materialize its
+# canonical request bytes, then invoke the publisher, which must re-enter the
+# Rune owner.  The composed path below must produce the same packet with one
+# owner request and zero semantic handoff files.
+"$pantheon" rune-blueprint "$scratch/rune-profile.json" \
+  "$scratch/blueprint.json" >"$scratch/manual-blueprint.json"
+jq -j -cS '.request' "$scratch/blueprint.json" >"$scratch/manual-request.json"
+manual_request_sha=$(shasum -a 256 "$scratch/manual-request.json" | awk '{print "sha256:" $1}')
+test "$manual_request_sha" = "$(jq -r '.lineage.request_ast.current_sha256' "$scratch/manual-blueprint.json")"
+manual_preview=$(
   "$pantheon" rune-packet-publication preview \
-    "$scratch/publication-profile.json" "$fixture" "$operation"
+    "$scratch/publication-profile.json" "$scratch/manual-request.json" "$operation"
+)
+printf '%s' "$manual_preview" | jq -e '
+  .status == "preview_returned" and
+  .observation.rune_owner_requests == 1
+' >/dev/null
+
+preview=$(
+  "$pantheon" rune-blueprint-publication preview \
+    "$scratch/publication-profile.json" "$scratch/blueprint.json" "$operation"
 )
 printf '%s' "$preview" | jq -e '
   .status == "preview_returned" and
   .complete == true and
-  .published == false and
-  .machine_state == "preview_returned" and
-  .signal == "preview-returned" and
-  .packet_bytes < 65536 and
-  .target.revision == 0 and
-  .target.bytes == 12 and
-  .patch.start == 0 and
-  .patch.end == 11 and
-  .patch.inserted_bytes == (.packet_bytes - 1) and
-  (.patch.inserted_sha256 | startswith("sha256:")) and
-  .observation.mutations == 0
+  .machine_state == "publication_eligible" and
+  .signal == "RiskAdmitted" and
+  .blueprint.status == "projection_qualified" and
+  .blueprint.risk_policy.publication == "eligible_for_separate_human_approved_vellum_patch" and
+  .packet_publication.published == false and
+  .packet_publication.machine_state == "preview_returned" and
+  .packet_publication.packet_bytes < 65536 and
+  .packet_publication.target.revision == 0 and
+  .packet_publication.target.bytes == 12 and
+  .packet_publication.patch.start == 0 and
+  .packet_publication.patch.end == 11 and
+  .packet_publication.patch.inserted_bytes == (.packet_publication.packet_bytes - 1) and
+  (.packet_publication.patch.inserted_sha256 | startswith("sha256:")) and
+  .packet_publication.observation.mutations == 0 and
+  .observation.rune_owner_requests == 1 and
+  .observation.questions_before == 0 and
+  .observation.questions_after == 0 and
+  .observation.deterministic_revision_operations == 0 and
+  .observation.publication_invocations == 1 and
+  .observation.semantic_handoff_files_materialized == 0 and
+  .observation.manual_handoff_files_avoided == 1 and
+  .observation.packet_bytes == .packet_publication.packet_bytes and
+  .observation.inserted_bytes == .packet_publication.patch.inserted_bytes and
+  .observation.oculus_published == false
 ' >/dev/null
+test "$(printf '%s' "$manual_preview" | jq -r '.packet_sha256')" = \
+  "$(printf '%s' "$preview" | jq -r '.packet_publication.packet_sha256')"
+test "$(jq -r '.observation.request_count' "$scratch/manual-blueprint.json")" = 1
+manual_duration_ms=$((
+  $(jq -r '.observation.duration_ms' "$scratch/manual-blueprint.json") +
+  $(printf '%s' "$manual_preview" | jq -r '.observation.duration_ms')
+))
+composed_duration_ms=$(printf '%s' "$preview" | jq -r '.observation.duration_ms')
+echo "VALUE: manual_owner_requests=2 composed_owner_requests=1 manual_semantic_handoff_files=1 composed_semantic_handoff_files=0 manual_duration_ms=$manual_duration_ms composed_duration_ms=$composed_duration_ms"
 test "$(cat "$source_file")" = 'unpublished'
-printf '%s' "$preview" | jq '.approval_template' >"$scratch/approval.json"
+printf '%s' "$preview" | jq '.packet_publication.approval_template' >"$scratch/approval.json"
 chmod 600 "$scratch/approval.json"
-printf '%s' "$preview" | jq -j '.packet' >"$scratch/expected-packet.json"
+printf '%s' "$preview" | jq -j '.packet_publication.packet' >"$scratch/expected-packet.json"
 
 published=$(
-  "$pantheon" rune-packet-publication publish \
-    "$scratch/publication-profile.json" "$fixture" "$operation" "$scratch/approval.json"
+  "$pantheon" rune-blueprint-publication publish \
+    "$scratch/publication-profile.json" "$scratch/blueprint.json" "$operation" \
+    "$scratch/approval.json"
 )
 printf '%s' "$published" | jq -e '
   .status == "durable_published" and
   .complete == true and
   .machine_state == "durable_published" and
-  .signal == "durable-published" and
-  .prior_revision == 0 and
-  .published_revision == 1 and
-  .durable_outcome == "durable" and
-  .disconnect == "clean"
+  .signal == "BlueprintPublished" and
+  .packet_publication.status == "durable_published" and
+  .packet_publication.prior_revision == 0 and
+  .packet_publication.published_revision == 1 and
+  .packet_publication.durable_outcome == "durable" and
+  .packet_publication.disconnect == "clean"
 ' >/dev/null
 cmp "$scratch/expected-packet.json" "$source_file"
 grep -Fq 'pantheon-rune-publication-qualification-fixture' "$source_file"
 
 if stale=$(
-  "$pantheon" rune-packet-publication publish \
-    "$scratch/publication-profile.json" "$fixture" "$operation" "$scratch/approval.json" 2>&1
+  "$pantheon" rune-blueprint-publication publish \
+    "$scratch/publication-profile.json" "$scratch/blueprint.json" "$operation" \
+    "$scratch/approval.json" 2>&1
 ); then
   echo 'FAIL: stale approval unexpectedly republished' >&2
   exit 1
@@ -192,30 +245,31 @@ done
 
 operation2='vdo1.9192939495969798999a9b9c9d9e9fa0'
 patch_preview=$(
-  "$pantheon" rune-packet-publication preview \
-    "$scratch/publication-profile.json" "$fixture" "$operation2"
+  "$pantheon" rune-blueprint-publication preview \
+    "$scratch/publication-profile.json" "$scratch/blueprint.json" "$operation2"
 )
 printf '%s' "$patch_preview" | jq -e '
   .status == "preview_returned" and
-  .patch.start > 0 and
-  .patch.end == (.patch.start + 1) and
-  .patch.inserted_bytes == 1 and
-  .target.bytes == .packet_bytes and
-  .observation.inserted_bytes == 1
+  .machine_state == "publication_eligible" and
+  .packet_publication.patch.start > 0 and
+  .packet_publication.patch.end == (.packet_publication.patch.start + 1) and
+  .packet_publication.patch.inserted_bytes == 1 and
+  .packet_publication.target.bytes == .packet_publication.packet_bytes and
+  .packet_publication.observation.inserted_bytes == 1
 ' >/dev/null
-printf '%s' "$patch_preview" | jq '.approval_template' >"$scratch/patch-approval.json"
+printf '%s' "$patch_preview" | jq '.packet_publication.approval_template' >"$scratch/patch-approval.json"
 chmod 600 "$scratch/patch-approval.json"
 patch_published=$(
-  "$pantheon" rune-packet-publication publish \
-    "$scratch/publication-profile.json" "$fixture" "$operation2" \
+  "$pantheon" rune-blueprint-publication publish \
+    "$scratch/publication-profile.json" "$scratch/blueprint.json" "$operation2" \
     "$scratch/patch-approval.json"
 )
 printf '%s' "$patch_published" | jq -e '
   .status == "durable_published" and
   .complete == true and
-  .prior_revision == 0 and
-  .published_revision == 1 and
-  .durable_outcome == "durable"
+  .packet_publication.prior_revision == 0 and
+  .packet_publication.published_revision == 1 and
+  .packet_publication.durable_outcome == "durable"
 ' >/dev/null
 cmp "$scratch/expected-packet.json" "$source_file"
 
@@ -225,4 +279,4 @@ daemon_pid=''
 [ ! -e "$socket" ]
 [ ! -e "$control" ]
 
-echo 'PASS: Rune -> Scry -> Smith packet -> minimal Vellum patch -> exact human gate -> durable save; no-change and oversized work refused'
+echo 'PASS: prose blueprint -> Rune -> Scry -> Smith -> in-memory composition -> minimal Vellum patch -> exact human gate -> durable save; no-change and oversized work refused'

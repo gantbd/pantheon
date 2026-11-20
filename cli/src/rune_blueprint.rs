@@ -84,6 +84,11 @@ struct Question {
     question: String,
 }
 
+pub(crate) struct PreparedBlueprint {
+    pub response: Value,
+    pub revised_request: Vec<u8>,
+}
+
 #[derive(Debug, Eq, PartialEq)]
 enum Segment {
     Key(String),
@@ -121,6 +126,14 @@ fn execute(
     blueprint_path: &Path,
     answers_path: Option<&Path>,
 ) -> Result<Value, Value> {
+    prepare(profile, blueprint_path, answers_path).map(|prepared| prepared.response)
+}
+
+pub(crate) fn prepare(
+    profile: &Path,
+    blueprint_path: &Path,
+    answers_path: Option<&Path>,
+) -> Result<PreparedBlueprint, Value> {
     let started = Instant::now();
     let blueprint_bytes = read_bounded(blueprint_path, MAX_BLUEPRINT_BYTES, "blueprint")?;
     let mut blueprint: BlueprintV1 = serde_json::from_slice(&blueprint_bytes)
@@ -135,43 +148,43 @@ fn execute(
     let mut current_questions = questions(&initial)?;
     current_questions.extend(risk_questions(blueprint.task.risk, &blueprint.request));
 
-    let (owner, revised_request_sha256, answer_count, revised_blueprint) = if let Some(
-        answers_path,
-    ) = answers_path
-    {
-        if current_questions.is_empty() {
-            return Err(refusal(
-                "answers",
-                "Rune owner returned no questions; answers cannot revise an already terminal request",
-            ));
-        }
-        let answer_bytes = read_bounded(answers_path, MAX_ANSWERS_BYTES, "answers")?;
-        let answers: AnswerSetV1 = serde_json::from_slice(&answer_bytes)
-            .map_err(|error| refusal("answers", format!("invalid closed answer set: {error}")))?;
-        validate_answers(&answers, &base_request_sha256, &current_questions)?;
-        for answer in &answers.answers {
-            set_path(&mut blueprint.request, &answer.path, answer.value.clone())?;
-            remove_resolved_hole(&mut blueprint.request, answer);
-        }
-        let revised_request = serde_json::to_vec(&blueprint.request).map_err(|error| {
-            refusal(
-                "request",
-                format!("serialize revised Rune request: {error}"),
+    let (owner, revised_request, revised_request_sha256, answer_count, revised_blueprint) =
+        if let Some(answers_path) = answers_path {
+            if current_questions.is_empty() {
+                return Err(refusal(
+                    "answers",
+                    "Rune owner returned no questions; answers cannot revise an already terminal request",
+                ));
+            }
+            let answer_bytes = read_bounded(answers_path, MAX_ANSWERS_BYTES, "answers")?;
+            let answers: AnswerSetV1 = serde_json::from_slice(&answer_bytes).map_err(|error| {
+                refusal("answers", format!("invalid closed answer set: {error}"))
+            })?;
+            validate_answers(&answers, &base_request_sha256, &current_questions)?;
+            for answer in &answers.answers {
+                set_path(&mut blueprint.request, &answer.path, answer.value.clone())?;
+                remove_resolved_hole(&mut blueprint.request, answer);
+            }
+            let revised_request = serde_json::to_vec(&blueprint.request).map_err(|error| {
+                refusal(
+                    "request",
+                    format!("serialize revised Rune request: {error}"),
+                )
+            })?;
+            let revised_request_sha256 = sha256(&revised_request);
+            let owner = crate::rune_author::execute_private_bytes(profile, &revised_request)?;
+            (
+                owner,
+                revised_request,
+                revised_request_sha256,
+                answers.answers.len(),
+                Some(serde_json::to_value(&blueprint).map_err(|error| {
+                    refusal("blueprint", format!("serialize revised blueprint: {error}"))
+                })?),
             )
-        })?;
-        let revised_request_sha256 = sha256(&revised_request);
-        let owner = crate::rune_author::execute_private_bytes(profile, &revised_request)?;
-        (
-            owner,
-            revised_request_sha256,
-            answers.answers.len(),
-            Some(serde_json::to_value(&blueprint).map_err(|error| {
-                refusal("blueprint", format!("serialize revised blueprint: {error}"))
-            })?),
-        )
-    } else {
-        (initial, base_request_sha256.clone(), 0, None)
-    };
+        } else {
+            (initial, base_request, base_request_sha256.clone(), 0, None)
+        };
 
     let mut after = questions(&owner)?;
     after.extend(risk_questions(blueprint.task.risk, &blueprint.request));
@@ -202,7 +215,7 @@ fn execute(
             })).collect::<Vec<_>>(),
         })
     });
-    Ok(json!({
+    let response = json!({
         "version": 1,
         "peer": "rune",
         "capability": CAPABILITY,
@@ -258,7 +271,11 @@ fn execute(
             "follow the Rune-owned refusal without deleting or weakening an obligation"
         },
         "boundary": BOUNDARY,
-    }))
+    });
+    Ok(PreparedBlueprint {
+        response,
+        revised_request,
+    })
 }
 
 fn risk_questions(risk: RiskV1, request: &Value) -> Vec<Question> {

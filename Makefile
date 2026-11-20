@@ -55,6 +55,8 @@ qualify-rune-packet-publication:
 
 qualify-rune-blueprint-publication-composition:
 	./tests/live/rune_blueprint_publication_composition.sh
+	$(MAKE) qualify-rune-blueprint
+	$(MAKE) qualify-rune-packet-publication
 
 qualify-bounded-agent-development:
 	./qualification/bounded-agent-development/qualify.sh

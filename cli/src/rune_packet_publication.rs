@@ -8,6 +8,7 @@ use std::{
     ffi::OsString,
     fs,
     path::{Path, PathBuf},
+    time::Instant,
 };
 use vellum_sdk_client::{
     protocol::{
@@ -104,6 +105,7 @@ struct Prepared {
     operation: DurableOperationRefV1,
     operation_text: String,
     confirmation: String,
+    rune_owner_requests: u8,
     client: Option<WorkspaceClientV1<Transport>>,
 }
 
@@ -157,13 +159,24 @@ fn execute(
     operation_text: &str,
     approval_path: Option<&Path>,
 ) -> Result<Value, Failure> {
-    let mut prepared = prepare(profile_path, request_path, operation_text)?;
+    let started = Instant::now();
+    let prepared = prepare(profile_path, request_path, operation_text)?;
+    execute_prepared(mode, profile_path, prepared, approval_path, started)
+}
+
+fn execute_prepared(
+    mode: &str,
+    profile_path: &Path,
+    mut prepared: Prepared,
+    approval_path: Option<&Path>,
+    started: Instant,
+) -> Result<Value, Failure> {
     let preview = advance(
         PantheonRunePacketPublicationState::INITIAL,
         PantheonRunePacketPublicationSignal::PreviewReturned,
     )?;
     if mode == "preview" {
-        let outcome = preview_json(&prepared, preview, false);
+        let outcome = preview_json(&prepared, preview, false, started.elapsed().as_millis());
         prepared
             .client
             .take()
@@ -315,6 +328,52 @@ fn execute(
     }))
 }
 
+pub(crate) struct PublicationProfileBinding {
+    pub rune_profile: PathBuf,
+    pub sha256: String,
+}
+
+pub(crate) fn publication_profile_binding(
+    profile_path: &Path,
+) -> Result<PublicationProfileBinding, Value> {
+    let profile_bytes =
+        read_regular(profile_path, MAX_PROFILE_BYTES, "profile").map_err(failure_json)?;
+    let profile_sha256 = sha256(&profile_bytes);
+    let profile: ProfileV1 = serde_json::from_slice(&profile_bytes).map_err(|error| {
+        failure_json(Failure {
+            stage: "profile",
+            reason: format!("invalid closed publication profile: {error}"),
+            next_action: "supply the deployment-owned version-one publication profile",
+        })
+    })?;
+    validate_profile(&profile).map_err(failure_json)?;
+    Ok(PublicationProfileBinding {
+        rune_profile: profile.rune_profile,
+        sha256: profile_sha256,
+    })
+}
+
+pub(crate) fn execute_qualified(
+    mode: &str,
+    profile_path: &Path,
+    exact_request: &[u8],
+    author: &Value,
+    expected_profile_sha256: &str,
+    operation_text: &str,
+    approval_path: Option<&Path>,
+) -> Result<Value, Value> {
+    let started = Instant::now();
+    let prepared = prepare_qualified(
+        profile_path,
+        exact_request,
+        author,
+        expected_profile_sha256,
+        operation_text,
+    )
+    .map_err(failure_json)?;
+    execute_prepared(mode, profile_path, prepared, approval_path, started).map_err(failure_json)
+}
+
 fn edit_unknown_json(
     prepared: &Prepared,
     state: PantheonRunePacketPublicationState,
@@ -378,6 +437,43 @@ fn prepare(
     request_path: &Path,
     operation_text: &str,
 ) -> Result<Prepared, Failure> {
+    let (profile, profile_sha256) = load_profile(profile_path)?;
+    let author = crate::rune_author::execute_private(&profile.rune_profile, request_path)
+        .map_err(|value| Failure {
+            stage: "rune_author",
+            reason: format!("bounded Rune owner refused: {}", compact_status(&value)),
+            next_action: "follow the Rune-owned next action; do not publish an incomplete or refused projection",
+        })?;
+    prepare_from_author(profile, profile_sha256, author, 1, operation_text)
+}
+
+fn prepare_qualified(
+    profile_path: &Path,
+    exact_request: &[u8],
+    author: &Value,
+    expected_profile_sha256: &str,
+    operation_text: &str,
+) -> Result<Prepared, Failure> {
+    let (profile, profile_sha256) = load_profile(profile_path)?;
+    if profile_sha256 != expected_profile_sha256 {
+        return Err(Failure {
+            stage: "profile_binding",
+            reason: "publication profile changed during in-memory composition".into(),
+            next_action: "restart from blueprint preparation with one exact deployment-owned publication profile",
+        });
+    }
+    let request_sha256 = sha256(exact_request);
+    if author.get("request_sha256").and_then(Value::as_str) != Some(request_sha256.as_str()) {
+        return Err(Failure {
+            stage: "request_binding",
+            reason: "qualified Rune result does not bind the exact revised request bytes".into(),
+            next_action: "recompute blueprint qualification from the exact current answers; do not reconstruct or substitute request bytes",
+        });
+    }
+    prepare_from_author(profile, profile_sha256, author.clone(), 0, operation_text)
+}
+
+fn load_profile(profile_path: &Path) -> Result<(ProfileV1, String), Failure> {
     let profile_bytes = read_regular(profile_path, MAX_PROFILE_BYTES, "profile")?;
     let profile_sha256 = sha256(&profile_bytes);
     let profile: ProfileV1 = serde_json::from_slice(&profile_bytes).map_err(|error| Failure {
@@ -386,13 +482,17 @@ fn prepare(
         next_action: "supply the deployment-owned version-one publication profile",
     })?;
     validate_profile(&profile)?;
+    Ok((profile, profile_sha256))
+}
+
+fn prepare_from_author(
+    profile: ProfileV1,
+    profile_sha256: String,
+    author: Value,
+    rune_owner_requests: u8,
+    operation_text: &str,
+) -> Result<Prepared, Failure> {
     let operation = parse_operation(operation_text)?;
-    let author = crate::rune_author::execute_private(&profile.rune_profile, request_path)
-        .map_err(|value| Failure {
-            stage: "rune_author",
-            reason: format!("bounded Rune owner refused: {}", compact_status(&value)),
-            next_action: "follow the Rune-owned next action; do not publish an incomplete or refused projection",
-        })?;
     if author.get("status").and_then(Value::as_str) != Some("projection_qualified")
         || author.get("complete").and_then(Value::as_bool) != Some(true)
     {
@@ -522,6 +622,7 @@ fn prepare(
         operation,
         operation_text: operation_text.to_owned(),
         confirmation,
+        rune_owner_requests,
         client: Some(client),
     })
 }
@@ -530,6 +631,7 @@ fn preview_json(
     prepared: &Prepared,
     advanced: PantheonRunePacketPublicationAdvanced,
     published: bool,
+    duration_ms: u128,
 ) -> Value {
     json!({
         "version": 1,
@@ -577,6 +679,8 @@ fn preview_json(
             "schema": "rune.packet-publication.observation.v1",
             "classification": "preview",
             "requests": 1,
+            "rune_owner_requests": prepared.rune_owner_requests,
+            "duration_ms": duration_ms,
             "mutations": 0,
             "packet_bytes": prepared.packet.len(),
             "target_bytes": prepared.target_bytes,
