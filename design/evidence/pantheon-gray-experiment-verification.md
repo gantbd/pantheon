@@ -130,7 +130,7 @@ The six routed roles are advisory SME coverage only. They do not answer “do we
 have the right ensemble?” and do not provide equitable stakeholder standing.
 The experiment owner, control owner, operator, and affected experiment subjects
 still require independently attributable Moira participation before any
-consequential Gray experiment can be admitted.
+consequential bounded experiment selected by the Maybe Machine can be admitted.
 
 ## Next admission boundaries
 
