@@ -55,7 +55,7 @@
     {
       "path": "$.machine.edges[publication-accepted->review-ready-with-result].precondition",
       "category": "owner-composition",
-      "question": "Which qualified Pantheon composite consumes Moira's existing exact effect/source/room-bound PublishedV1 and the current exact Chronos ReadyForReview observation to produce J1 review-link evidence without parsing JSON or inventing delivery, acceptance, task mutation, or Done authority?"
+      "question": "Which qualified Pantheon composite consumes Moira's existing exact effect/source/room-bound PublishedV1, owner-issued provenance binding that publication to the authenticated local-agent actor, and the current exact Chronos ReadyForReview observation to produce J1 review-link evidence without parsing JSON, scanning a retention-bounded message page as if it were an exact receipt, trusting a caller-supplied author, or inventing delivery, acceptance, task mutation, or Done authority?"
     },
     {
       "path": "$.projection.strict-evaluator",

@@ -29,6 +29,13 @@ read-only input until that repository settles.
   execution and task-attempt correlation without assistant bytes, prompts,
   credentials or raw authority material. Telemetry failure must remain visible
   and must not change the owner result or qualification outcome.
+- [ ] Preserve authenticated Agora actor provenance in the J1 publication
+  evidence path. `ActorPublicationAcceptedV1` proves the accepted message but
+  drops the host-derived actor, while `PublishedV1` adds effect/source/room
+  binding without restoring it. Add an Agora-owner-issued exact publication to
+  actor binding (or an equally strong owner observation); do not trust a caller
+  author, reuse task-link provenance, or promote a retention-bounded message
+  page scan into an exact receipt.
 - [ ] Make `rune-author` question output path-stable and nonduplicating without
   semantic loss. The revised J1 request has four unique unresolved paths, but
   `$.review.ensemble_fit` is emitted once from the explicit evidence-rich hole

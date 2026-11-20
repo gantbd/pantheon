@@ -3626,3 +3626,31 @@ fifth semantic gap. A backlog item requires path-stable deduplication that
 prefers or merges the richer explicit question; deleting the hole or falsely
 marking ensemble fit `yes` is not an acceptable workaround.
 
+### 2026-11-20 — Gray/Maybe descent preserves the Agora actor unknown
+
+Treating The Gray as the Maybe Machine supplied a concrete guard on the next J1
+composition attempt. Agora authenticates the actor, injects that participant
+into the publication command and scopes exact replay observation to the same
+actor. Its compact `ActorPublicationAcceptedV1` then intentionally returns only
+revision, message identity and message sequence. Moira's `PublishedV1` retains
+the effect/source/room relationship but does not restore the authenticated
+actor fact. An identified-message page exposes message authors, but it is a
+retention-bounded paginated observation rather than an exact actor-provenance
+receipt and cannot silently close the gap.
+
+The edge therefore remains `Maybe`: the known message/task receipts are
+preserved, the missing attribution is named, and the nearest grounding descent
+is an Agora-owner-issued binding between the exact accepted publication and the
+authenticated local-agent actor. Pantheon must not trust a caller author,
+reinterpret the task-conversation link principal, or scan a page and promote a
+match into stronger owner evidence. That owner binding may later be folded with
+`PublishedV1` and the exact Chronos `ReadyForReview` observation, but the fold
+still grants no acceptance, `Done`, Bool or rollout authority.
+
+The J1 Rune-author hole now states that full obligation. The revised request
+identity is
+`13659aeab7a819f5a8fa45f568539802001868f0d2cafcb47b4c454dc7d3e4b0`.
+The real `rune-author` binary again returned `questions_pending`, with no
+candidate, and preserved the same four semantic gaps plus the already-recorded
+duplicate ensemble-fit diagnostic.
+
