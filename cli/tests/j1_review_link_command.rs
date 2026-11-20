@@ -1,15 +1,45 @@
 #![cfg(unix)]
 
+use aegis_client::ServicePort as AegisServicePort;
+use aegis_protocol::{
+    CurrentPrincipalV1, DecisionHandleV1, DecisionSummaryV1, EngineNamespaceV1,
+    OutcomeV1 as AegisOutcomeV1, ReplyV1 as AegisReplyV1, SessionHandleV1 as AegisSessionHandleV1,
+};
+use agora_aegis_verifier::{AegisContextV1, AegisVerifierV1};
 use agora_chronos_adapter::task_conversation_local::{
     ConversationReferenceWireV1, LinkWireV1, LocalRequestV1, LocalServiceLimitsV1,
     TaskConversationLocalClientV1, TaskConversationLocalServiceV1, TaskReferenceWireV1,
 };
+use agora_engine::{
+    AdmissionPolicy, CommandV2 as AgoraCommandV2, Engine as AgoraEngine, LogicalTime,
+    OutcomeV2 as AgoraOutcomeV2, Participant, ParticipantId, ParticipantKind, RoomId,
+};
+use agora_host::{HostLimits, HostTimeV1, VerifiedSubjectV1, v2::HostV2};
+use agora_local_daemon::{
+    AuthenticatorV1 as AgoraAuthenticatorV1, DaemonLimitsV1, DaemonV1,
+    HostClockV1 as AgoraHostClockV1, ServerIncarnationV1,
+};
+use agora_service::v2::{ServiceLimitsV2, ServiceV2};
 use chronos_client::{WireClientV1, WorkflowWireClientV9};
 use chronos_engine::{Agent, CommandOutcomeV2, TaskState};
 use chronos_host::worker::{WorkerClientV1, WorkerRequestV1 as Work};
 use chronos_local::LocalClient;
 use chronos_wire::{
     Command, Outcome, Request, RetrySafety, Revision, TaskSpec, workflow_v9 as workflow,
+};
+use daimon_host::AuthenticatedSessionV1;
+use daimon_local_daemon::{
+    AgentServicePort,
+    unix::{AgentDaemon, AgentSessionPort, Authenticator as DaimonAuthenticator},
+};
+use daimon_protocol::{
+    AgentSessionIdV1 as DaimonSessionIdV1, AgentTurnIdV1 as DaimonTurnIdV1, ContentDigestV1,
+    ExecutionDispositionV1, ExecutionIdV1, HarnessProfileIdV1 as DaimonProfileIdV1, PrincipalIdV1,
+    SessionHandleV1 as DaimonSessionHandleV1, TaskAttemptRefV1,
+    agent::{
+        AgentCommandV1, AgentEventPageV1, AgentEventRecordV1, AgentEventV1, AgentOutcomeV1,
+        AgentRefusalV1, AgentReplyV1, AgentResultBindingV1, AgentTurnStopReasonV1,
+    },
 };
 use moira_core::{
     ChronosAttemptReceiptV1, ChronosTaskRefV1, WorkflowId,
@@ -26,11 +56,19 @@ use moira_core::{
 use moira_host::{
     TaskAgentJourneyMutationV1, TaskAgentJourneyStore, TaskAgentParticipationPreparationV1,
 };
+use moira_local_daemon::unix::{AgentParticipationAuthenticator, AgentParticipationDaemon};
 use moira_local_daemon::unix::{Authenticator, TaskAgentJourneyDaemon};
-use moira_protocol::{TaskRefV1, agent_participation::ProfileIdV1, task_agent_journey as public};
+use moira_protocol::{
+    TaskRefV1, agent_participation as participation, agent_participation::ProfileIdV1,
+    deliberation as public_deliberation, task_agent_journey as public,
+};
 use moira_service::{
     AccessV1,
+    agent_participation::AgentParticipationService,
     task_agent_journey::{TaskAgentJourneyService, TrustedTimeV1},
+};
+use moira_sqlite::agent_participation::{
+    AgentParticipationSqliteStore, AgentParticipationStoreLimitsV1,
 };
 use moira_sqlite::task_agent_journey::{
     TaskAgentJourneySqliteStore, TaskAgentJourneyStoreLimitsV1,
@@ -56,6 +94,10 @@ struct Fixture {
     chronos: PathBuf,
     moira_database: PathBuf,
     moira_socket: PathBuf,
+    participation_database: PathBuf,
+    participation_socket: PathBuf,
+    daimon_socket: PathBuf,
+    agora_socket: PathBuf,
     relationship_state: PathBuf,
     relationship_socket: PathBuf,
 }
@@ -72,6 +114,10 @@ impl Fixture {
         Self {
             moira_database: root.join("moira.db"),
             moira_socket: root.join("moira.sock"),
+            participation_database: root.join("participation.db"),
+            participation_socket: root.join("participation.sock"),
+            daimon_socket: root.join("daimon.sock"),
+            agora_socket: root.join("agora.sock"),
             relationship_state: root.join("relationships"),
             relationship_socket: root.join("relationships.sock"),
             chronos,
@@ -93,6 +139,9 @@ impl Fixture {
 impl Drop for Fixture {
     fn drop(&mut self) {
         let _ = fs::remove_file(&self.moira_socket);
+        let _ = fs::remove_file(&self.participation_socket);
+        let _ = fs::remove_file(&self.daimon_socket);
+        let _ = fs::remove_file(&self.agora_socket);
         let _ = fs::remove_file(&self.relationship_socket);
         let _ = fs::remove_dir_all(&self.root);
     }
@@ -121,6 +170,191 @@ impl Authenticator for Authentication {
             mutate: false,
         })
     }
+}
+
+#[derive(Clone, Copy)]
+struct ParticipationAuthentication;
+
+impl AgentParticipationAuthenticator for ParticipationAuthentication {
+    type Error = Infallible;
+
+    fn authenticate(&mut self, _: &UnixStream) -> Result<AccessV1, Self::Error> {
+        Ok(AccessV1 {
+            read: true,
+            mutate: false,
+        })
+    }
+
+    fn authorize_permission(
+        &mut self,
+        _: participation::PermissionSelectionV1,
+    ) -> Result<Option<moira_service::agent_participation::PermissionAccessV1>, Self::Error> {
+        Ok(None)
+    }
+}
+
+struct AgoraAuthority;
+
+impl AegisServicePort for AgoraAuthority {
+    type Error = ();
+
+    fn execute(
+        &mut self,
+        _: AegisSessionHandleV1,
+        command: aegis_protocol::CommandV1,
+    ) -> Result<AegisReplyV1, Self::Error> {
+        if command == aegis_protocol::CommandV1::CurrentPrincipal {
+            return Ok(AegisReplyV1::Accepted(AegisOutcomeV1::CurrentPrincipal(
+                CurrentPrincipalV1 { principal: [7; 16] },
+            )));
+        }
+        let aegis_protocol::CommandV1::Authorize { action, .. } = command else {
+            return Err(());
+        };
+        Ok(AegisReplyV1::Accepted(AegisOutcomeV1::Authorized(
+            DecisionSummaryV1 {
+                handle: DecisionHandleV1(1),
+                epoch: 1,
+                expires_at: u64::MAX,
+                engine: EngineNamespaceV1::Agora,
+                action,
+            },
+        )))
+    }
+}
+
+struct AgoraAuthentication;
+
+impl AgoraAuthenticatorV1 for AgoraAuthentication {
+    type Error = Infallible;
+
+    fn authenticate(&mut self, _: &UnixStream) -> Result<AegisContextV1, Self::Error> {
+        Ok(AegisContextV1::new(
+            "exact-agent",
+            VerifiedSubjectV1::from_verifier([7; 16]),
+            AegisSessionHandleV1(1),
+            aegis_protocol::GrantHandleV1(1),
+        ))
+    }
+}
+
+struct AgoraClock(u64);
+
+impl AgoraHostClockV1 for AgoraClock {
+    fn now(&mut self) -> HostTimeV1 {
+        let value = self.0;
+        self.0 += 1;
+        HostTimeV1(value)
+    }
+}
+
+struct DaimonAuthentication;
+
+impl DaimonAuthenticator for DaimonAuthentication {
+    type Error = Infallible;
+
+    fn authenticate(&mut self, _: &UnixStream) -> Result<AuthenticatedSessionV1, Self::Error> {
+        Ok(AuthenticatedSessionV1 {
+            principal: [35; 16],
+            authority_context: [44; 16],
+        })
+    }
+}
+
+struct DaimonPort;
+
+impl AgentSessionPort for DaimonPort {
+    fn open_agent_service_session(
+        &mut self,
+        _: AuthenticatedSessionV1,
+    ) -> Result<DaimonSessionHandleV1, AgentRefusalV1> {
+        Ok(DaimonSessionHandleV1(1))
+    }
+
+    fn close_agent_service_session(&mut self, session: DaimonSessionHandleV1) -> bool {
+        session == DaimonSessionHandleV1(1)
+    }
+}
+
+impl AgentServicePort for DaimonPort {
+    type Error = Infallible;
+
+    fn execute_agent(
+        &mut self,
+        session: DaimonSessionHandleV1,
+        command: AgentCommandV1,
+    ) -> Result<AgentReplyV1, Self::Error> {
+        assert_eq!(session, DaimonSessionHandleV1(1));
+        let result_session = DaimonSessionIdV1::new([33; 16]);
+        let result_turn = DaimonTurnIdV1::new([42; 16]);
+        let output_digest = ContentDigestV1::new(result_digest());
+        Ok(match command {
+            AgentCommandV1::Result { session, turn }
+                if session == result_session && turn == result_turn =>
+            {
+                AgentReplyV1::Accepted(AgentOutcomeV1::Result(AgentResultBindingV1 {
+                    session,
+                    turn,
+                    execution: ExecutionIdV1::new([41; 16]),
+                    task_attempt: TaskAttemptRefV1 {
+                        task_key: [9; 16],
+                        task_incarnation: 0,
+                        attempt_number: 1,
+                    },
+                    principal: PrincipalIdV1::new([35; 16]),
+                    profile: DaimonProfileIdV1::new([4; 16]),
+                    operation: daimon_protocol::IdempotencyKeyV1::new([40; 16]),
+                    authority_decision: [34; 16],
+                    authority_expires_at: 400,
+                    prompt_digest: ContentDigestV1::new([45; 32]),
+                    context_manifest_digest: ContentDigestV1::new([46; 32]),
+                    event_start_cursor: 1,
+                    terminal_cursor: 2,
+                    terminal_revision: 4,
+                    disposition: ExecutionDispositionV1::Completed,
+                    stop_reason: AgentTurnStopReasonV1::EndTurn,
+                    output_digest: Some(output_digest),
+                }))
+            }
+            AgentCommandV1::Events {
+                session,
+                after: Some(0),
+                limit: 2,
+            } if session == result_session => {
+                AgentReplyV1::Accepted(AgentOutcomeV1::Events(AgentEventPageV1 {
+                    session,
+                    entries: vec![
+                        AgentEventRecordV1 {
+                            cursor: 1,
+                            event: AgentEventV1::AssistantMessage {
+                                bytes: result_body().to_vec(),
+                            },
+                        },
+                        AgentEventRecordV1 {
+                            cursor: 2,
+                            event: AgentEventV1::TurnFinished {
+                                turn: result_turn,
+                                disposition: ExecutionDispositionV1::Completed,
+                                stop_reason: AgentTurnStopReasonV1::EndTurn,
+                                output_digest: Some(output_digest),
+                            },
+                        },
+                    ],
+                    next_after: None,
+                }))
+            }
+            other => panic!("unexpected strict J1 Daimon command: {other:?}"),
+        })
+    }
+}
+
+fn result_body() -> &'static [u8] {
+    b"The acceptance evidence is bounded and attributable."
+}
+
+fn result_digest() -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(result_body()).into()
 }
 
 struct ChronosOwner {
@@ -313,7 +547,57 @@ fn preview_request() -> public::PreviewRequestV1 {
     }
 }
 
-fn seed_moira(fixture: &Fixture) -> public::JourneyIdV1 {
+#[derive(Clone, Copy)]
+struct AgoraPublication {
+    room_revision: u64,
+    publication_revision: u64,
+    message_sequence: u64,
+    message_id: [u8; 16],
+}
+
+fn seeded_agora() -> (AgoraEngine, AgoraPublication) {
+    let mut engine = AgoraEngine::new();
+    engine
+        .apply(AgoraCommandV2::RegisterParticipant(Participant::new(
+            "exact-agent",
+            "Exact Agent",
+            ParticipantKind::Agent,
+        )))
+        .unwrap();
+    engine
+        .apply(AgoraCommandV2::CreateRoom {
+            room_id: RoomId::from("exact-room"),
+            name: "Exact J1 Review".into(),
+            owner: ParticipantId::from("exact-agent"),
+            admission: AdmissionPolicy::InviteOnly,
+        })
+        .unwrap();
+    let room_revision = engine.revision().0;
+    let AgoraOutcomeV2::MessageAccepted { room_id, sequence } = engine
+        .apply(AgoraCommandV2::Speak {
+            room_id: RoomId::from("exact-room"),
+            author: ParticipantId::from("exact-agent"),
+            at: LogicalTime(1),
+            body: std::str::from_utf8(result_body()).unwrap().into(),
+        })
+        .unwrap()
+    else {
+        panic!("Agora message acceptance expected")
+    };
+    let publication = AgoraPublication {
+        room_revision,
+        publication_revision: engine.revision().0,
+        message_sequence: sequence,
+        message_id: engine
+            .message(&room_id, sequence)
+            .unwrap()
+            .id()
+            .into_bytes(),
+    };
+    (engine, publication)
+}
+
+fn seed_moira(fixture: &Fixture, publication: AgoraPublication) -> public::JourneyIdV1 {
     let mut service = TaskAgentJourneyService::new(fixture.moira_store(), Time(100));
     let public::ReplyV1::Accepted(preview) = service
         .execute(public::CommandV1::Preview {
@@ -369,7 +653,7 @@ fn seed_moira(fixture: &Fixture) -> public::JourneyIdV1 {
     let room = domain::AgoraRoomReceiptV1 {
         source: domain_journey.owner.0,
         room_sequence: domain_journey.sequence,
-        agora_revision: 8,
+        agora_revision: publication.room_revision,
     };
     store
         .apply(
@@ -471,9 +755,9 @@ fn seed_moira(fixture: &Fixture) -> public::JourneyIdV1 {
                     source: room.source,
                     room_sequence: room.room_sequence,
                     room_id: "exact-room".into(),
-                    message_sequence: 3,
-                    message_id: [37; 16],
-                    agora_revision: 9,
+                    message_sequence: publication.message_sequence,
+                    message_id: publication.message_id,
+                    agora_revision: publication.publication_revision,
                     actor: "exact-agent".into(),
                     subject: authority.principal,
                 },
@@ -484,7 +768,154 @@ fn seed_moira(fixture: &Fixture) -> public::JourneyIdV1 {
     journey
 }
 
+fn participation_binding() -> participation::BindingV1 {
+    participation::BindingV1 {
+        participation: participation::ParticipationIdV1([32; 16]),
+        workflow: moira_protocol::WorkflowIdV1([20; 16]),
+        deliberation: public_deliberation::DeliberationIdV1([21; 16]),
+        member: public_deliberation::EnsembleMemberIdV1([22; 16]),
+        session: participation::AgentSessionIdV1([33; 16]),
+        profile: participation::ProfileIdV1([4; 16]),
+        attempt: participation::AttemptV1 {
+            task_key: [9; 16],
+            incarnation: 0,
+            attempt: 1,
+        },
+        method: public_deliberation::MethodRefV1 {
+            machine_digest: [23; 32],
+            state_digest: [24; 32],
+        },
+        grounding: public_deliberation::GroundingRefV1 {
+            authority_digest: [25; 32],
+            surface_digest: [26; 32],
+            depth: public_deliberation::SurfaceDepthV1::Activated,
+        },
+        persona: public_deliberation::PersonaLensV1::Researcher,
+    }
+}
+
+fn participation_limits() -> AgentParticipationStoreLimitsV1 {
+    AgentParticipationStoreLimitsV1 {
+        codec: moira_core::agent_participation::persistence::CodecLimitsV1 {
+            max_bytes: 65_536,
+            domain: ParticipationLimitsV1 {
+                max_participations: 4,
+            },
+        },
+        max_database_pages: 64,
+    }
+}
+
+fn apply_participation(
+    service: &mut AgentParticipationService<AgentParticipationSqliteStore>,
+    storage_revision: Option<u64>,
+    mutation: participation::MutationV1,
+) {
+    assert!(matches!(
+        service
+            .execute(participation::CommandV1::Apply {
+                expected_storage_revision: storage_revision,
+                mutation: Box::new(mutation),
+            })
+            .unwrap(),
+        participation::ReplyV1::Accepted(_)
+    ));
+}
+
+fn seed_terminal_participation(fixture: &Fixture) {
+    let store = AgentParticipationSqliteStore::open(
+        &fixture.participation_database,
+        [1; 16],
+        participation_limits(),
+    )
+    .unwrap();
+    let mut service = AgentParticipationService::new(store);
+    let binding = participation_binding();
+    apply_participation(
+        &mut service,
+        None,
+        participation::MutationV1::Admit(binding),
+    );
+    let open = participation::OperationV1::Open {
+        key: participation::IdempotencyKeyV1([38; 16]),
+        execution: participation::ExecutionIdV1([39; 16]),
+    };
+    apply_participation(
+        &mut service,
+        Some(0),
+        participation::MutationV1::Prepare {
+            participation: binding.participation,
+            expected_revision: 0,
+            operation: open,
+        },
+    );
+    apply_participation(
+        &mut service,
+        Some(1),
+        participation::MutationV1::Observe {
+            participation: binding.participation,
+            expected_revision: 1,
+            key: participation::IdempotencyKeyV1([38; 16]),
+            observation: participation::ObservationV1 {
+                phase: participation::PhaseV1::Ready,
+                session_revision: 1,
+                active_turn: None,
+                last_event_cursor: None,
+                profile_document_digest: [30; 32],
+                capabilities: participation::CapabilitiesV1::default(),
+                permission: None,
+                terminal: None,
+            },
+        },
+    );
+    let prompt = participation::OperationV1::Prompt {
+        key: participation::IdempotencyKeyV1([40; 16]),
+        turn: participation::AgentTurnIdV1([42; 16]),
+        execution: participation::ExecutionIdV1([41; 16]),
+        prompt_digest: [45; 32],
+        attempt: binding.attempt,
+    };
+    apply_participation(
+        &mut service,
+        Some(2),
+        participation::MutationV1::Prepare {
+            participation: binding.participation,
+            expected_revision: 2,
+            operation: prompt,
+        },
+    );
+    apply_participation(
+        &mut service,
+        Some(3),
+        participation::MutationV1::Observe {
+            participation: binding.participation,
+            expected_revision: 3,
+            key: participation::IdempotencyKeyV1([40; 16]),
+            observation: participation::ObservationV1 {
+                phase: participation::PhaseV1::Terminal,
+                session_revision: 4,
+                active_turn: None,
+                last_event_cursor: Some(2),
+                profile_document_digest: [30; 32],
+                capabilities: participation::CapabilitiesV1::default(),
+                permission: None,
+                terminal: Some(participation::TerminalEvidenceV1 {
+                    turn: participation::AgentTurnIdV1([42; 16]),
+                    disposition: participation::DispositionV1::Completed,
+                    stop_reason: participation::StopReasonV1::EndTurn,
+                    output_digest: result_digest(),
+                    provider_evidence_digest: [43; 32],
+                }),
+            },
+        },
+    );
+}
+
 fn start_moira(fixture: &Fixture) -> thread::JoinHandle<()> {
+    start_moira_connections(fixture, 1)
+}
+
+fn start_moira_connections(fixture: &Fixture, connections: usize) -> thread::JoinHandle<()> {
     let mut daemon = TaskAgentJourneyDaemon::bind_new(
         &fixture.moira_socket,
         TaskAgentJourneyService::new(fixture.moira_store(), Time(200)),
@@ -492,6 +923,78 @@ fn start_moira(fixture: &Fixture) -> thread::JoinHandle<()> {
         LimitsV1::default(),
         Duration::from_secs(3),
         8,
+    )
+    .unwrap();
+    thread::spawn(move || {
+        for _ in 0..connections {
+            daemon.serve_next().unwrap();
+        }
+    })
+}
+
+fn start_participation(fixture: &Fixture, connections: usize) -> thread::JoinHandle<()> {
+    let store = AgentParticipationSqliteStore::open(
+        &fixture.participation_database,
+        [1; 16],
+        participation_limits(),
+    )
+    .unwrap();
+    let mut daemon = AgentParticipationDaemon::bind_new(
+        &fixture.participation_socket,
+        AgentParticipationService::new(store),
+        ParticipationAuthentication,
+        moira_wire::LimitsV1::default(),
+        Duration::from_secs(3),
+        8,
+    )
+    .unwrap();
+    thread::spawn(move || {
+        for _ in 0..connections {
+            daemon.serve_next().unwrap();
+        }
+    })
+}
+
+fn start_daimon(fixture: &Fixture) -> thread::JoinHandle<()> {
+    let mut daemon = AgentDaemon::bind_new(
+        &fixture.daimon_socket,
+        DaimonPort,
+        DaimonAuthentication,
+        daimon_wire::LimitsV1::default(),
+        daimon_wire::agent::AgentWireLimitsV1::default(),
+        Duration::from_secs(3),
+        8,
+    )
+    .unwrap();
+    thread::spawn(move || daemon.serve_next().unwrap())
+}
+
+fn start_agora(fixture: &Fixture, engine: AgoraEngine) -> thread::JoinHandle<()> {
+    let host = HostV2::new(
+        ServiceV2::new(engine, ServiceLimitsV2::default()),
+        AegisVerifierV1::new(AgoraAuthority, [5; 16]),
+        HostLimits {
+            max_sessions: 4,
+            max_retired_sessions: 8,
+            wire: agora_wire::WireLimits {
+                max_frame_bytes: 8_192,
+                max_text_bytes: 16 * 1_024,
+                max_fields: 100_000,
+                max_list_items: 4_096,
+            },
+        },
+    );
+    let mut daemon = DaemonV1::bind_new(
+        &fixture.agora_socket,
+        host,
+        AgoraAuthentication,
+        AgoraClock(1),
+        ServerIncarnationV1::new([9; 16]),
+        DaemonLimitsV1 {
+            max_frame_bytes: 8_192,
+            max_frames_after_connect: 16,
+            io_timeout: Duration::from_secs(3),
+        },
     )
     .unwrap();
     thread::spawn(move || daemon.serve_next().unwrap())
@@ -545,6 +1048,45 @@ fn invoke_refusal(fixture: &Fixture, journey: public::JourneyIdV1) -> Value {
     serde_json::from_slice(&output.stdout).unwrap()
 }
 
+fn invoke_strict_output(fixture: &Fixture, journey: public::JourneyIdV1) -> std::process::Output {
+    Process::new(env!("CARGO_BIN_EXE_pantheon"))
+        .args([
+            "j1-strict-review-observe",
+            fixture.moira_socket.to_str().unwrap(),
+            fixture.participation_socket.to_str().unwrap(),
+            fixture.relationship_socket.to_str().unwrap(),
+            fixture.chronos.to_str().unwrap(),
+            fixture.daimon_socket.to_str().unwrap(),
+            fixture.agora_socket.to_str().unwrap(),
+            "exact-agent",
+            "conversation",
+            &hex(&journey.owner.0),
+            &journey.sequence.to_string(),
+        ])
+        .output()
+        .unwrap()
+}
+
+fn invoke_strict(fixture: &Fixture, journey: public::JourneyIdV1) -> Value {
+    let output = invoke_strict_output(fixture, journey);
+    assert!(
+        output.status.success(),
+        "strict command failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
+fn invoke_strict_refusal(fixture: &Fixture, journey: public::JourneyIdV1) -> Value {
+    let output = invoke_strict_output(fixture, journey);
+    assert!(
+        !output.status.success(),
+        "strict refusal unexpectedly succeeded"
+    );
+    serde_json::from_slice(&output.stdout).unwrap()
+}
+
 fn hex<const N: usize>(value: &[u8; N]) -> String {
     value.iter().map(|byte| format!("{byte:02x}")).collect()
 }
@@ -556,7 +1098,9 @@ fn production_command_composes_real_owners_and_survives_restart() {
     let chronos_revision = seed_chronos(&fixture.chronos, worker.as_mut().unwrap());
     drop(worker);
     assert!(chronos_revision >= 2);
-    let journey = seed_moira(&fixture);
+    let (_, publication) = seeded_agora();
+    let journey = seed_moira(&fixture, publication);
+    seed_terminal_participation(&fixture);
 
     let relationships = start_relationships(&fixture, false);
     let link_client = TaskConversationLocalClientV1::new(&fixture.relationship_socket);
@@ -579,7 +1123,7 @@ fn production_command_composes_real_owners_and_survives_restart() {
                 created_at_unix_seconds: 100,
                 visibility_principal_id: None,
                 chronos_revision: "2".into(),
-                agora_revision: 8,
+                agora_revision: publication.room_revision,
                 observed_at_unix_seconds: 101,
             },
         })
@@ -601,6 +1145,29 @@ fn production_command_composes_real_owners_and_survives_restart() {
             .contains("no result bytes")
     );
 
+    let moira = start_moira_connections(&fixture, 2);
+    let participation = start_participation(&fixture, 2);
+    let daimon = start_daimon(&fixture);
+    let (agora_engine, restarted_publication) = seeded_agora();
+    assert_eq!(
+        restarted_publication.message_id, publication.message_id,
+        "deterministic Agora restart fixture identity"
+    );
+    let agora = start_agora(&fixture, agora_engine);
+    let strict_first = invoke_strict(&fixture, journey);
+    moira.join().unwrap();
+    participation.join().unwrap();
+    daimon.join().unwrap();
+    agora.join().unwrap();
+    assert_eq!(strict_first["status"], "strict_review_evidence_issued");
+    assert_eq!(strict_first["task"]["id"], "j1-owned-task");
+    assert_eq!(strict_first["agent"]["participation"], hex(&[32; 16]));
+    assert_eq!(strict_first["publication"]["actor"], "exact-agent");
+    assert_eq!(
+        strict_first["content"],
+        std::str::from_utf8(result_body()).unwrap()
+    );
+
     link_client.request(&LocalRequestV1::Drain).unwrap();
     relationships.join().unwrap();
     chronos.stop();
@@ -614,7 +1181,40 @@ fn production_command_composes_real_owners_and_survives_restart() {
     assert_eq!(second["publication"], first["publication"]);
     assert_eq!(second["relationship"], first["relationship"]);
 
+    let moira = start_moira_connections(&fixture, 2);
+    let participation = start_participation(&fixture, 2);
+    let daimon = start_daimon(&fixture);
+    let (agora_engine, restarted_publication) = seeded_agora();
+    assert_eq!(restarted_publication.message_id, publication.message_id);
+    let agora = start_agora(&fixture, agora_engine);
+    let strict_second = invoke_strict(&fixture, journey);
+    moira.join().unwrap();
+    participation.join().unwrap();
+    daimon.join().unwrap();
+    agora.join().unwrap();
+    assert_eq!(
+        strict_second["receipt_digest"], strict_first["receipt_digest"],
+        "same owner state after restart must identify the same strict evidence"
+    );
+
     chronos.stop();
+    let moira = start_moira(&fixture);
+    let strict_unavailable = invoke_strict_refusal(&fixture, journey);
+    moira.join().unwrap();
+    assert_eq!(strict_unavailable["complete"], false);
+    assert_eq!(strict_unavailable["status"], "evidence_refused");
+    assert!(
+        strict_unavailable["detail"]
+            .as_str()
+            .unwrap()
+            .contains("initial J1 review-link observation refused")
+    );
+    assert!(
+        strict_unavailable["boundary"]
+            .as_str()
+            .unwrap()
+            .contains("Maybe Machine")
+    );
     let moira = start_moira(&fixture);
     let unavailable = invoke_refusal(&fixture, journey);
     moira.join().unwrap();
@@ -647,7 +1247,7 @@ fn production_command_composes_real_owners_and_survives_restart() {
                 created_at_unix_seconds: 102,
                 visibility_principal_id: None,
                 chronos_revision: "2".into(),
-                agora_revision: 8,
+                agora_revision: publication.room_revision,
                 observed_at_unix_seconds: 103,
             },
         })

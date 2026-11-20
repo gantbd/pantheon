@@ -105,10 +105,12 @@ read-only input until that repository settles.
   actor and message selectors from owners, folds at most eight
   revision-consistent Agora pages, and reobserves both Moira participation and
   Chronos-bearing review-link evidence after the Agora read. Focused fold tests,
-  leaf tests, strict all-target Clippy and the existing real review-link restart
-  gate pass. A real matching six-owner process gate still must qualify success,
-  staleness and restart before the operational cell closes; then a typed UADD
-  packet/response must
+  leaf tests and strict Clippy pass. The real matching owner gate now qualifies
+  exact success across both Moira profiles, Daimon, Agora, task-conversation and
+  Chronos, reproduces the same strict receipt after owner restart, and preserves
+  an unavailable Chronos observation as a structured Maybe-Machine refusal.
+  A real stale/reopened owner-state sequence remains before the operational cell
+  closes; then a typed UADD packet/response must
   bind that exact composite to the verified reviewer and authority. Only
   Approved may become Accepted, only
   ChangesRequested may become RevisionRequired, Deferred remains a held Maybe,

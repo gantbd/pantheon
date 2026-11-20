@@ -64,6 +64,16 @@ name = "agora-actor-publication-port"
 version = "0.1.0"
 
 [[package]]
+name = "agora-aegis-verifier"
+version = "0.1.0"
+dependencies = [
+ "aegis-client",
+ "aegis-protocol",
+ "agora-durable",
+ "agora-host",
+]
+
+[[package]]
 name = "agora-chronos-adapter"
 version = "0.1.0"
 dependencies = [
@@ -93,6 +103,58 @@ name = "agora-delivery-projection-port"
 version = "0.1.0"
 
 [[package]]
+name = "agora-durable"
+version = "0.1.0"
+dependencies = [
+ "agora-actor-publication-port",
+ "agora-delivery-projection-port",
+ "agora-federated-publication-port",
+ "agora-host",
+ "agora-interaction-port",
+ "agora-protocol",
+ "agora-retention-authority-port",
+ "agora-scheduled-publication-port",
+ "agora-service",
+ "agora-storage-observation",
+ "keystone-storage 0.0.1",
+]
+
+[[package]]
+name = "agora-engine"
+version = "0.3.0"
+
+[[package]]
+name = "agora-export-custody-port"
+version = "0.1.0"
+dependencies = [
+ "agora-engine",
+]
+
+[[package]]
+name = "agora-federated-publication-port"
+version = "0.1.0"
+
+[[package]]
+name = "agora-host"
+version = "0.1.0"
+dependencies = [
+ "agora-actor-publication-port",
+ "agora-delivery-projection-port",
+ "agora-export-custody-port",
+ "agora-federated-publication-port",
+ "agora-interaction-port",
+ "agora-protocol",
+ "agora-retention-authority-port",
+ "agora-scheduled-publication-port",
+ "agora-service",
+ "agora-wire",
+]
+
+[[package]]
+name = "agora-interaction-port"
+version = "0.1.0"
+
+[[package]]
 name = "agora-local-client"
 version = "0.1.0"
 dependencies = [
@@ -105,12 +167,64 @@ dependencies = [
 ]
 
 [[package]]
+name = "agora-local-daemon"
+version = "0.1.0"
+dependencies = [
+ "agora-aegis-verifier",
+ "agora-durable",
+ "agora-host",
+ "agora-local-transport",
+ "agora-wire",
+ "keystone-storage 0.0.1",
+]
+
+[[package]]
+name = "agora-local-transport"
+version = "0.1.0"
+dependencies = [
+ "agora-wire",
+]
+
+[[package]]
 name = "agora-protocol"
 version = "0.1.0"
 
 [[package]]
+name = "agora-retention-authority-port"
+version = "0.1.0"
+dependencies = [
+ "agora-engine",
+]
+
+[[package]]
 name = "agora-scheduled-publication-port"
 version = "0.1.0"
+
+[[package]]
+name = "agora-search-port"
+version = "0.1.0"
+
+[[package]]
+name = "agora-service"
+version = "0.1.0"
+dependencies = [
+ "agora-actor-publication-port",
+ "agora-delivery-projection-port",
+ "agora-engine",
+ "agora-federated-publication-port",
+ "agora-interaction-port",
+ "agora-protocol",
+ "agora-scheduled-publication-port",
+ "agora-search-port",
+ "agora-wire",
+]
+
+[[package]]
+name = "agora-storage-observation"
+version = "0.1.0"
+dependencies = [
+ "keystone-storage 0.0.1",
+]
 
 [[package]]
 name = "agora-tui"
@@ -407,9 +521,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "daimon-harness"
+version = "0.0.1"
+
+[[package]]
+name = "daimon-host"
+version = "0.1.0"
+dependencies = [
+ "daimon-protocol",
+]
+
+[[package]]
+name = "daimon-local-daemon"
+version = "0.1.0"
+dependencies = [
+ "daimon-client",
+ "daimon-host",
+ "daimon-protocol",
+ "daimon-service",
+ "daimon-wire",
+]
+
+[[package]]
 name = "daimon-protocol"
 version = "0.1.0"
 dependencies = [
+ "sha2",
+]
+
+[[package]]
+name = "daimon-service"
+version = "0.1.0"
+dependencies = [
+ "daimon-harness",
+ "daimon-host",
+ "daimon-protocol",
  "sha2",
 ]
 
@@ -1139,13 +1285,19 @@ dependencies = [
  "aegis-admin-session",
  "aegis-client",
  "aegis-local-client",
+ "aegis-protocol",
  "aegis-tui",
  "aegis-wire",
  "agora-actor-publication-port",
+ "agora-aegis-verifier",
  "agora-chronos-adapter",
  "agora-client",
+ "agora-engine",
+ "agora-host",
  "agora-local-client",
+ "agora-local-daemon",
  "agora-protocol",
+ "agora-service",
  "agora-tui",
  "agora-wire",
  "chronos-client",
@@ -1159,6 +1311,8 @@ dependencies = [
  "crossterm",
  "daimon-agent-command",
  "daimon-client",
+ "daimon-host",
+ "daimon-local-daemon",
  "daimon-protocol",
  "daimon-tui",
  "daimon-wire",

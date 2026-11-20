@@ -143,10 +143,41 @@ overlapping-sequence or repeated-identity folding. Existing J1 result tests,
 review-link tests, the real review-link
 restart gate, binary checks and strict all-target default-feature Clippy pass.
 
-This verification still does not claim a successful live strict multi-owner
-journey. No existing fixture simultaneously owns both Moira profiles, Daimon,
-Agora, task-conversation and Chronos with one matching result/publication. That
-six-owner process gate, restart/staleness refusals, UADD packet binding,
-verified reviewer response, Chronos V10 mutation, task-centric durable audit,
-TUI parity and rollout readiness remain open. Only a real successful strict
-receipt may enter a separately governed UADD request for the named human.
+## Real multi-owner gate
+
+The production-command integration now composes actual Unix owner boundaries
+for the Moira journey and participation profiles, Daimon result observation,
+Agora identified-message observation, task-conversation relationship and
+Chronos workflow. The fixture creates one real terminal participation and
+owner-bound result, publishes the exact result bytes through Agora's engine and
+authenticated host, and invokes the production `j1-strict-review-observe`
+binary. It requires `strict_review_evidence_issued` with the exact task,
+participation, actor and content.
+
+The gate then stops and reconstructs every restartable owner from durable state
+or the same deterministic owner facts and requires the identical strict receipt
+digest. With Chronos stopped, the same command must emit versioned structured
+refusal JSON whose boundary retains the unresolved join in the Maybe Machine.
+That refusal terminates the observation attempt; it is not the parent claim's
+Boolean `false`.
+
+```text
+cargo test --manifest-path cli/Cargo.toml \
+  --test j1_review_link_command -- --nocapture
+
+1 passed; 0 failed; runtime 1.52s
+```
+
+Strict target Clippy also passes with warnings denied. On this host, relinking
+the enlarged debug integration target took 4m29s and strict dependency checking
+took 4m52s while the journey itself took 1.52s. This is a qualification-harness
+cost and reuse signal, not domain latency; recurring gates should remain
+focused and eventually share owner fixtures without weakening their process
+boundaries.
+
+This closes successful live strict composition, same-evidence restart and
+unavailable-owner refusal. A real stale or reopened owner-state sequence, UADD
+packet binding, verified reviewer response, Chronos V10 composition,
+task-centric durable audit, TUI parity and rollout readiness remain open. Only
+this qualified strict receipt may enter a separately governed UADD request for
+the named human.

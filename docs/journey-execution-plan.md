@@ -4157,3 +4157,20 @@ feature-gated, so `--all-targets --no-default-features` cannot compile by
 construction even though portable library checks and the default native gate
 pass.
 
+### 2026-11-20 — strict J1 receipt crosses the real owner set
+
+The production-command gate now supplies matching real owner state across both
+Moira profiles, Daimon, Agora, task-conversation and Chronos. It invokes the
+unchanged `j1-strict-review-observe` binary, obtains one exact strict receipt,
+restarts the owner set and requires the same digest, then stops Chronos and
+requires the structured refusal boundary to retain the join in the Maybe
+Machine. The attempt terminates; the parent claim does not become Boolean
+false. Focused runtime is 1.52 seconds and strict target Clippy passes.
+
+The integration target exposed a separate cost problem: a small fixture change
+caused a 4m29s debug relink and the dependency-wide strict check took 4m52s.
+That favors reusable qualification fixtures and judicious cached gates, not a
+weaker in-process substitute. The next bounded proof is a real stale/reopened
+owner-state refusal. Only after that should the exact receipt enter a typed UADD
+packet and verified human-response composition.
+

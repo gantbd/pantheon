@@ -77,9 +77,17 @@ sha2 = "=0.10.9"
 nix = { version = "=0.29.0", default-features = false, features = ["process", "signal"] }
 
 [dev-dependencies]
+aegis-protocol = { version = "=0.1.0", path = "../../aegis/crates/aegis-protocol" }
+agora-aegis-verifier = { version = "=0.1.0", path = "../../agora/adapters/agora-aegis-verifier" }
+agora-engine = { version = "=0.3.0", path = "../../agora/engine/agora-engine" }
+agora-host = { version = "=0.1.0", path = "../../agora/host/agora-host" }
+agora-local-daemon = { version = "=0.1.0", path = "../../agora/applications/agora-local-daemon" }
+agora-service = { version = "=0.1.0", path = "../../agora/service/agora-service" }
 chronos-engine = { version = "=0.3.0", path = "../../chronos/engine/chronos-engine" }
 chronos-host = { version = "=0.1.0", path = "../../chronos/host/chronos-host" }
 chronos-wire = { version = "=0.1.0", path = "../../chronos/protocol/chronos-wire" }
+daimon-host = { version = "=0.1.0", path = "../../daimon/crates/daimon-host" }
+daimon-local-daemon = { version = "=0.1.0", path = "../../daimon/crates/daimon-local-daemon" }
 moira-core = { version = "=0.0.1", path = "../../moira" }
 moira-host = { version = "=0.1.0", path = "../../moira/crates/moira-host" }
 moira-local-daemon = { version = "=0.1.0", path = "../../moira/crates/moira-local-daemon" }
