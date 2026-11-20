@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "fold_load_id": "rune/sme/triggers",
+  "lattice_load_id": "pantheon/design/pantheon-concerns",
+  "tags": [
+    "access-control-decision",
+    "data-handling",
+    "diagnosing-failure",
+    "human-impact-decision",
+    "claiming-completion"
+  ],
+  "depth": "activated",
+  "max_roles": 8,
+  "max_surface_bytes": 131072
+}

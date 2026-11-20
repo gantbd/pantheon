@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "dialect": {
+    "kind": "machine",
+    "version": 1
+  },
+  "holes": [
+    {
+      "path": "$.packet.identity",
+      "category": "identity",
+      "question": "Which exact deterministic bytes constitute the private qualified Rune packet, and which request, canonical source, typed IR, Smith, rustc and projection identities must it bind?"
+    },
+    {
+      "path": "$.vellum.target",
+      "category": "ownership",
+      "question": "How is one pre-admitted Vellum workspace document selected and re-observed without granting membership, locator, filesystem or sibling-document authority?"
+    },
+    {
+      "path": "$.approval.binding",
+      "category": "authority",
+      "question": "Which exact packet digest, target identity, current target revision and durable operation identity must the accountable human approval bind before any edit is sent?"
+    },
+    {
+      "path": "$.edit.uncertainty",
+      "category": "reliability",
+      "question": "How does an unknown Vellum workspace-edit outcome fence persistence and expose exact recovery without retrying or assuming that the target changed?"
+    },
+    {
+      "path": "$.persistence.outcomes",
+      "category": "reliability",
+      "question": "How are accepted, refused and unknown durable-save outcomes represented after an accepted in-memory edit without collapsing a dirty publication into full refusal or success?"
+    },
+    {
+      "path": "$.observability.content_boundary",
+      "category": "observability",
+      "question": "Which RED, USE and golden-signal fields expose preparation, human gating, edit and persistence outcomes without logging packet, confirmation, credential, locator or document content?"
+    }
+  ],
+  "projection": "rust",
+  "machine": {
+    "name": "pantheon-rune-packet-publication",
+    "rosetta": {
+      "intent": "publish one exact private Rune-author projection packet into one pre-admitted Vellum document only after separate accountable human confirmation, preserving revision identity, edit uncertainty and durable-save recovery without granting the designing actor mutation authority",
+      "values": [
+        "semantic-preservation",
+        "human-agency",
+        "separation-of-duties",
+        "owner-preservation",
+        "revision-safety",
+        "lost-reply-safety",
+        "content-minimization",
+        "honest-persistence"
+      ],
+      "outcomes": [
+        "preview deterministically qualifies and buffers one exact Rune packet, observes one exact current pre-admitted Vellum document and returns a content-free confirmation challenge without mutation",
+        "execution repeats qualification and observation, requires an exact accountable human confirmation over the packet, target and durable operation identities, and refuses stale or substituted evidence before mutation",
+        "one accepted Vellum owner edit replaces the complete target at its exact revision and no edit is retried when delivery is unknown",
+        "an accepted edit is durably saved once under a caller-persisted operation identity, while refused or unknown persistence remains explicitly pending and recoverable through Vellum's existing lookup contract",
+        "no path grants workspace membership, arbitrary document selection, shell, approval inference, task mutation, artifact materialization, go-no-go or rollout authority"
+      ],
+      "who": "the accountable human reviewer, Pantheon's bounded Rune publication adapter, the deployment-owned Rune author and the sovereign Vellum workspace owner",
+      "what": "one two-phase preview-and-publish transaction for a single qualified packet document",
+      "when": "after Rune, Scry, Smith and target verification qualify a private packet and before any downstream artifact materialization or execution",
+      "where": "a deployment-pinned Rune profile and one deployment-pinned, pre-admitted Vellum workspace document",
+      "why": "the designing ensemble must not mutate source after independent verification, while the reviewed lossless packet needs a durable owner-controlled provenance boundary",
+      "how": "recompute the qualified packet, observe and digest the exact Vellum target, prepare an exact whole-document replacement, bind a human confirmation to every identity, submit once, then perform or recover one separately identified durable save",
+      "extent": "one packet and one existing Vellum document; no multi-document durable atomicity claim, packet-to-artifact extraction, membership change, agent-facing tool admission or operating-system sandbox claim",
+      "examples": [
+        "preview binds packet P to workspace W document D revision R and durable operation O; the human confirms that exact challenge and execution publishes P then returns a durable receipt",
+        "the target advances after preview, so execution refuses stale evidence before sending an edit",
+        "the edit is accepted but durable delivery becomes unknown, so the result remains persistence-pending with O and the existing exact Vellum lookup next action"
+      ]
+    }
+  }
+}
