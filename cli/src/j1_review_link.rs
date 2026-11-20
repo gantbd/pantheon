@@ -80,6 +80,154 @@ pub enum J1ReviewLinkRefusalV1 {
     NotReadyForReview,
 }
 
+#[derive(Clone, Debug)]
+pub struct ObservedJ1ReviewLinkV1 {
+    pub moira_status: journey::StatusV1,
+    pub evidence: J1ReviewLinkEvidenceV1,
+}
+
+#[derive(Debug)]
+pub enum J1ReviewLinkObservationErrorV1 {
+    MoiraUnavailable(&'static str),
+    MoiraEvidenceRefused(String),
+    MoiraFenced,
+    TaskConversationUnavailable,
+    ChronosUnavailable,
+    EvidenceRefused(J1ReviewLinkRefusalV1),
+}
+
+impl fmt::Display for J1ReviewLinkObservationErrorV1 {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MoiraUnavailable(detail) => formatter.write_str(detail),
+            Self::MoiraEvidenceRefused(detail) => formatter.write_str(detail),
+            Self::MoiraFenced => formatter
+                .write_str("Moira reports recovery required before this evidence can be current"),
+            Self::TaskConversationUnavailable => {
+                formatter.write_str("task-conversation relationship owner is unavailable")
+            }
+            Self::ChronosUnavailable => {
+                formatter.write_str("Chronos workflow owner is unavailable")
+            }
+            Self::EvidenceRefused(refusal) => {
+                write!(formatter, "J1 review-link evidence refused: {refusal:?}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for J1ReviewLinkObservationErrorV1 {}
+
+impl J1ReviewLinkObservationErrorV1 {
+    fn status(&self) -> &'static str {
+        match self {
+            Self::MoiraUnavailable(_) => "moira_unavailable",
+            Self::MoiraEvidenceRefused(_) => "moira_evidence_refused",
+            Self::MoiraFenced => "moira_fenced",
+            Self::TaskConversationUnavailable => "task_conversation_unavailable",
+            Self::ChronosUnavailable => "chronos_unavailable",
+            Self::EvidenceRefused(_) => "evidence_refused",
+        }
+    }
+
+    fn next_action(&self) -> &'static str {
+        match self {
+            Self::MoiraUnavailable(_) => {
+                "inspect or restart the selected Moira owner, then re-observe this exact journey"
+            }
+            Self::MoiraEvidenceRefused(_) => {
+                "inspect the selected Moira journey and its exact retained owner evidence; do not substitute another journey or task alias"
+            }
+            Self::MoiraFenced => {
+                "restart the selected Moira owner, then re-observe this exact journey"
+            }
+            Self::TaskConversationUnavailable => {
+                "start or reattach the selected task-conversation owner, then re-observe the publication room"
+            }
+            Self::ChronosUnavailable => {
+                "start or reattach the selected Chronos owner, then re-observe the exact task"
+            }
+            Self::EvidenceRefused(refusal) => refusal_next_action(*refusal),
+        }
+    }
+}
+
+/// Obtains one currently qualified J1 review link through public read-only
+/// owner clients. The journey is an owner identity, not caller authority.
+pub fn observe_j1_review_link(
+    moira_socket: impl AsRef<std::path::Path>,
+    task_conversation_socket: impl Into<PathBuf>,
+    chronos_directory: impl Into<PathBuf>,
+    selected_journey: journey::JourneyIdV1,
+) -> Result<ObservedJ1ReviewLinkV1, J1ReviewLinkObservationErrorV1> {
+    let port =
+        TaskAgentJourneyUnixPort::connect(moira_socket, TaskAgentJourneyClientLimitsV1::default())
+            .map_err(|_| {
+                J1ReviewLinkObservationErrorV1::MoiraUnavailable(
+                    "Moira task-agent journey owner is unavailable",
+                )
+            })?;
+    let mut moira = TaskAgentJourneyReadOnlyClient::new(port);
+    let status = accepted_status(moira.status().map_err(|_| {
+        J1ReviewLinkObservationErrorV1::MoiraUnavailable(
+            "Moira task-agent journey owner did not return status",
+        )
+    })?)
+    .map_err(|error| J1ReviewLinkObservationErrorV1::MoiraEvidenceRefused(error.to_string()))?;
+    if status.needs_reopen {
+        return Err(J1ReviewLinkObservationErrorV1::MoiraFenced);
+    }
+    let namespace = accepted_namespace(moira.task_attempt_namespace(selected_journey).map_err(
+        |_| {
+            J1ReviewLinkObservationErrorV1::MoiraUnavailable(
+                "Moira task-agent journey owner did not return the task-attempt namespace",
+            )
+        },
+    )?)
+    .map_err(|error| J1ReviewLinkObservationErrorV1::MoiraEvidenceRefused(error.to_string()))?;
+    let actor_participation = accepted_actor_participation(
+        moira
+            .actor_participation_relationship(selected_journey)
+            .map_err(|_| {
+                J1ReviewLinkObservationErrorV1::MoiraUnavailable(
+                    "Moira task-agent journey owner did not return actor-participation evidence",
+                )
+            })?,
+    )
+    .map_err(|error| J1ReviewLinkObservationErrorV1::MoiraEvidenceRefused(error.to_string()))?;
+
+    let task_conversation_reply = TaskConversationLocalClientV1::new(task_conversation_socket)
+        .request(&LocalRequestV1::ByConversation {
+            conversation: ConversationReferenceWireV1 {
+                room: actor_participation.publication.room_id.clone(),
+                thread_root: None,
+            },
+        })
+        .map_err(|_| J1ReviewLinkObservationErrorV1::TaskConversationUnavailable)?;
+
+    let chronos_request = workflow_v9::Request {
+        version: 9,
+        command: workflow_v9::Command::Snapshot {
+            task: namespace.chronos_task_id.clone(),
+        },
+    };
+    let chronos_response = chronos_local::LocalClient::new(chronos_directory)
+        .request_workflow_v9(chronos_request)
+        .map_err(|_| J1ReviewLinkObservationErrorV1::ChronosUnavailable)?;
+    let evidence = qualify_j1_review_link(
+        namespace,
+        actor_participation,
+        task_conversation_reply,
+        chronos_response,
+        CHRONOS_LIMITS,
+    )
+    .map_err(J1ReviewLinkObservationErrorV1::EvidenceRefused)?;
+    Ok(ObservedJ1ReviewLinkV1 {
+        moira_status: status,
+        evidence,
+    })
+}
+
 /// Executes the read-only operational composition without accepting semantic
 /// identity aliases from command-line arguments.
 pub fn run(mut args: impl Iterator<Item = OsString>) -> Result<(), Box<dyn std::error::Error>> {
@@ -106,140 +254,19 @@ pub fn run(mut args: impl Iterator<Item = OsString>) -> Result<(), Box<dyn std::
         sequence: journey_sequence,
     };
 
-    let port = match TaskAgentJourneyUnixPort::connect(
+    let observed = match observe_j1_review_link(
         &moira_socket,
-        TaskAgentJourneyClientLimitsV1::default(),
+        task_conversation_socket,
+        chronos_directory,
+        journey,
     ) {
-        Ok(port) => port,
-        Err(_) => {
-            return failure(
-                "moira_unavailable",
-                "Moira task-agent journey owner is unavailable",
-                "start or reattach the selected Moira owner, then re-observe this exact journey",
-            );
-        }
-    };
-    let mut moira = TaskAgentJourneyReadOnlyClient::new(port);
-    let status_reply = match moira.status() {
-        Ok(reply) => reply,
-        Err(_) => {
-            return failure(
-                "moira_unavailable",
-                "Moira task-agent journey owner did not return status",
-                "inspect or restart the selected Moira owner, then re-observe this exact journey",
-            );
-        }
-    };
-    let status = match accepted_status(status_reply) {
-        Ok(status) => status,
+        Ok(observed) => observed,
         Err(error) => {
-            return failure(
-                "moira_evidence_refused",
-                &error.to_string(),
-                "inspect the selected Moira owner and exact journey; do not substitute another journey",
-            );
+            return failure(error.status(), &error.to_string(), error.next_action());
         }
     };
-    if status.needs_reopen {
-        return failure(
-            "moira_fenced",
-            "Moira reports recovery required before this evidence can be current",
-            "restart the selected Moira owner, then re-observe this exact journey",
-        );
-    }
-    let namespace_reply = match moira.task_attempt_namespace(journey) {
-        Ok(reply) => reply,
-        Err(_) => {
-            return failure(
-                "moira_unavailable",
-                "Moira task-agent journey owner did not return the task-attempt namespace",
-                "inspect or restart the selected Moira owner, then re-observe this exact journey",
-            );
-        }
-    };
-    let namespace = match accepted_namespace(namespace_reply) {
-        Ok(namespace) => namespace,
-        Err(error) => {
-            return failure(
-                "moira_evidence_refused",
-                &error.to_string(),
-                "inspect the selected Moira journey's exact task-attempt binding; do not invent a task alias",
-            );
-        }
-    };
-    let actor_reply = match moira.actor_participation_relationship(journey) {
-        Ok(reply) => reply,
-        Err(_) => {
-            return failure(
-                "moira_unavailable",
-                "Moira task-agent journey owner did not return actor-participation evidence",
-                "inspect or restart the selected Moira owner, then re-observe this exact journey",
-            );
-        }
-    };
-    let actor_participation = match accepted_actor_participation(actor_reply) {
-        Ok(value) => value,
-        Err(error) => {
-            return failure(
-                "moira_evidence_refused",
-                &error.to_string(),
-                "inspect the selected Moira journey's admitted participation and publication evidence",
-            );
-        }
-    };
-
-    let task_conversation_reply = match TaskConversationLocalClientV1::new(task_conversation_socket)
-        .request(&LocalRequestV1::ByConversation {
-            conversation: ConversationReferenceWireV1 {
-                room: actor_participation.publication.room_id.clone(),
-                thread_root: None,
-            },
-        }) {
-        Ok(reply) => reply,
-        Err(_) => {
-            return failure(
-                "task_conversation_unavailable",
-                "task-conversation relationship owner is unavailable",
-                "start or reattach the selected task-conversation owner, then re-observe the publication room",
-            );
-        }
-    };
-
-    let chronos_request = workflow_v9::Request {
-        version: 9,
-        command: workflow_v9::Command::Snapshot {
-            task: namespace.chronos_task_id.clone(),
-        },
-    };
-    let chronos_response = match chronos_local::LocalClient::new(chronos_directory)
-        .request_workflow_v9(chronos_request)
-    {
-        Ok(response) => response,
-        Err(_) => {
-            return failure(
-                "chronos_unavailable",
-                "Chronos workflow owner is unavailable",
-                "start or reattach the selected Chronos owner, then re-observe the exact task",
-            );
-        }
-    };
-
-    let evidence = match qualify_j1_review_link(
-        namespace,
-        actor_participation,
-        task_conversation_reply,
-        chronos_response,
-        CHRONOS_LIMITS,
-    ) {
-        Ok(evidence) => evidence,
-        Err(refusal) => {
-            return failure(
-                "evidence_refused",
-                &format!("J1 review-link evidence refused: {refusal:?}"),
-                refusal_next_action(refusal),
-            );
-        }
-    };
+    let status = observed.moira_status;
+    let evidence = observed.evidence;
 
     let participation = evidence.actor_participation.participation;
     let publication = &evidence.actor_participation.publication;
@@ -527,7 +554,7 @@ fn accepted_actor_participation(
     }
 }
 
-fn parse_hex_16(value: &str) -> Result<[u8; 16], Box<dyn std::error::Error>> {
+pub(crate) fn parse_hex_16(value: &str) -> Result<[u8; 16], Box<dyn std::error::Error>> {
     if value.len() != 32 {
         return Err("journey owner must be exactly 32 hexadecimal digits".into());
     }

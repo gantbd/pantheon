@@ -100,9 +100,15 @@ read-only input until that repository settles.
   identity. A follow-up owner audit added the current Moira terminal
   participation so session and turn are owner-derived rather than caller
   aliases; seven focused adversarial tests pass. Remaining J1
-  work must acquire that evidence through bounded public owner clients,
-  reobserve Chronos after the Agora read to close the freshness race, and
-  qualify the real multi-owner sequence; then a typed UADD packet/response must
+  work now has a compiled headless `j1-strict-review-observe` projection through
+  bounded public owner clients. It derives participation, session, turn, room,
+  actor and message selectors from owners, folds at most eight
+  revision-consistent Agora pages, and reobserves both Moira participation and
+  Chronos-bearing review-link evidence after the Agora read. Focused fold tests,
+  leaf tests, strict all-target Clippy and the existing real review-link restart
+  gate pass. A real matching six-owner process gate still must qualify success,
+  staleness and restart before the operational cell closes; then a typed UADD
+  packet/response must
   bind that exact composite to the verified reviewer and authority. Only
   Approved may become Accepted, only
   ChangesRequested may become RevisionRequired, Deferred remains a held Maybe,
@@ -120,6 +126,22 @@ read-only input until that repository settles.
   the exact production types and owner contracts while moving deterministic
   proof leaves behind a smaller reusable crate or equivalent cached boundary;
   do not replace the real integration gate with mocks merely to improve time.
+- [ ] Feature-gate the native Chronos J1 integration fixture consistently with
+  `native-chronos`. `cargo test`/Clippy for the portable library with
+  `--no-default-features` pass, but `--all-targets --no-default-features`
+  attempts to compile `j1_review_link_command.rs` after deliberately removing
+  its `chronos-standalone` dependency. Preserve the default-feature real-owner
+  gate; make the unsupported target/profile combination explicit rather than
+  weakening or mocking it.
+- [ ] Reconcile the three currently failing root source-contract assertions
+  against their owners before treating the suite as a release gate. The
+  2026-11-20 run passed 62/65 and reported: Agora publication source no longer
+  contains the asserted `O_NOFOLLOW` token, agent-role capabilities no longer
+  contain asserted `versioned-owner-runtime`, and headless deliberation no
+  longer contains the asserted `moira_tui::deliberation_view_json` reuse. For
+  each, determine whether owner behavior regressed or the textual contract is
+  stale after a stronger abstraction; repair the behavior or the assertion
+  with real qualification rather than adding a token solely to satisfy search.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,

@@ -834,6 +834,8 @@ fn usage() -> &'static str {
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
         "pantheon daimon-agent-observe SOCKET AGENT_SESSION_HEX\n",
         "pantheon j1-agent-result-observe SOCKET AGENT_SESSION_HEX TURN_HEX\n",
+        "pantheon j1-review-link-observe MOIRA_SOCKET TASK_CONVERSATION_SOCKET CHRONOS_DIRECTORY JOURNEY_OWNER_HEX JOURNEY_SEQUENCE\n",
+        "pantheon j1-strict-review-observe MOIRA_JOURNEY_SOCKET MOIRA_PARTICIPATION_SOCKET TASK_CONVERSATION_SOCKET CHRONOS_DIRECTORY DAIMON_SOCKET AGORA_SOCKET AGORA_PARTICIPANT <conversation|composition> JOURNEY_OWNER_HEX JOURNEY_SEQUENCE\n",
         "pantheon hestia-runtime-observe SOCKET RUNTIME_HEX\n",
         "pantheon hestia-artifact-observe SOCKET ARTIFACT_ID\n",
         "pantheon hestia-artifact-catalog SOCKET\n",
@@ -1340,6 +1342,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "j1-review-link-observe")
     {
         return pantheon_cli::j1_review_link::run(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "j1-strict-review-observe")
+    {
+        return pantheon_cli::j1_strict_review_observe::run(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)

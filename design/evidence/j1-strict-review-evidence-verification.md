@@ -120,13 +120,33 @@ the cached rerun compiled the changed CLI in 5.14s. This is evidence of broad
 build-topology cost, not evidence that the proof needs a broader recurring test
 gate.
 
-## Nonclaims and next boundary
+## Operational projection and remaining nonclaims
 
-This verification does not claim an operational command, live multi-owner
-acquisition, a final post-acquisition Chronos reobservation, UADD packet
-binding, verified reviewer response, Chronos V10 mutation, task-centric durable
-audit, TUI parity or rollout readiness. The next center-out slice is the
-bounded operational acquisition that obtains identified Agora messages through
-the deployment-fixed participant and reobserves Chronos before issuing this
-receipt. Only then may a separately governed UADD packet bind the exact receipt
-for a named human response.
+`j1-strict-review-observe` now projects the read-only sequence through public
+owner clients without accepting task, participation, session, turn, room,
+actor, message or result aliases. Its deployment inputs are the distinct Moira
+journey and participation sockets, task-conversation socket, Chronos directory,
+Daimon and Agora sockets, deployment-fixed Agora participant/transport, and
+journey identity. The separate Moira sockets are required because journey and
+participation deliberately use distinct wire profiles.
+
+The command observes the initial review link, derives the exact participation,
+derives Daimon session and terminal turn from that participation, qualifies the
+owner-bound Daimon result, folds at most eight revision-consistent, globally
+ordered and identity-unique 64-message Agora identified-message pages,
+reobserves the exact Moira participation, and
+finally reobserves the review link and Chronos state before calling the strict
+composer. Missing arguments and owner refusals produce versioned actionable
+JSON whose boundary leaves the unresolved join in the Maybe Machine. Three pure
+tests qualify the bounded page fold and refuse cross-revision, cross-room,
+overlapping-sequence or repeated-identity folding. Existing J1 result tests,
+review-link tests, the real review-link
+restart gate, binary checks and strict all-target default-feature Clippy pass.
+
+This verification still does not claim a successful live strict multi-owner
+journey. No existing fixture simultaneously owns both Moira profiles, Daimon,
+Agora, task-conversation and Chronos with one matching result/publication. That
+six-owner process gate, restart/staleness refusals, UADD packet binding,
+verified reviewer response, Chronos V10 mutation, task-centric durable audit,
+TUI parity and rollout readiness remain open. Only a real successful strict
+receipt may enter a separately governed UADD request for the named human.

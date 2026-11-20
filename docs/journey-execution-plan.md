@@ -4125,3 +4125,35 @@ V10 mutation has been inferred here. The cold focused test build took 8m51s
 while the tests took 0.00s, exposing dependency/build topology as the dominant
 cost and supporting cached focused gates for this proof cell.
 
+### 2026-11-20 — Strict J1 headless acquisition reaches the real-owner gate
+
+The first operational projection now exists as
+`j1-strict-review-observe`. It reuses extracted read-only review-link and Daimon
+result acquisition rather than implementing parallel qualification. The
+command takes only deployment locations, the fixed Agora participant/transport
+profile and journey identity. It derives all semantic selectors from owners.
+Inspection of the real Moira topology corrected the initial draft: task-agent
+journey and participation use distinct wire profiles and therefore require
+distinct sockets; one configured socket cannot impersonate both.
+
+The live order closes the known freshness races: initial review link, exact
+current terminal participation, owner-derived Daimon result, bounded complete
+Agora identified-message fold, final participation, then final review-link and
+Chronos observation. The strict composer consumes only those final facts. The
+Agora fold is capped at eight 64-message pages, requires one revision, room and
+retention envelope, enforces global sequence ordering and message-identity
+uniqueness, detects cursor loops and refuses overflow. Its three focused tests
+pass. Leaf J1 tests pass, the pre-existing real review-link restart gate
+still passes against actual Unix owners, the binary emits structured Maybe
+Machine refusal feedback, and default-feature strict all-target Clippy passes.
+
+This is a compiled and partially qualified operational projection, not a live
+strict journey claim. The remaining acceptance boundary is a real matching
+six-owner process gate spanning the two Moira profiles, Daimon, Agora,
+task-conversation and Chronos, including restart and stale-owner refusals. That
+gate should be built as the next bounded slice before UADD packet work. A test
+profile gap was also exposed: the native Chronos integration target is not
+feature-gated, so `--all-targets --no-default-features` cannot compile by
+construction even though portable library checks and the default native gate
+pass.
+

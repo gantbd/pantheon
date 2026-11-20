@@ -4,7 +4,11 @@ use daimon_protocol::{
     agent::{AgentEventPageV1, AgentEventV1, AgentResultBindingV1, AgentTurnStopReasonV1},
 };
 use sha2::{Digest, Sha256};
-use std::{ffi::OsString, path::PathBuf, time::Duration};
+use std::{
+    ffi::OsString,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 pub const CAPABILITY: &str = "agents.result.observe.v1";
 
@@ -190,29 +194,17 @@ pub fn qualify_bound_agent_result(
     })
 }
 
-pub fn run(mut args: impl Iterator<Item = OsString>) -> Result<(), Box<dyn std::error::Error>> {
+/// Obtains and qualifies one exact Daimon-owned terminal result through the
+/// public read-only client. Session and turn must come from an owner
+/// observation at the caller; this function does not treat them as authority.
+pub fn observe_owner_bound_agent_result(
+    socket: impl AsRef<Path>,
+    session: AgentSessionIdV1,
+    turn: AgentTurnIdV1,
+) -> Result<OwnerBoundAgentResult, Box<dyn std::error::Error>> {
     use daimon_client::AgentReadOnlyClient;
     use daimon_protocol::agent::{AgentOutcomeV1, AgentReplyV1};
 
-    let usage = "J1 agent-result observation requires SOCKET SESSION_HEX TURN_HEX";
-    let socket = PathBuf::from(args.next().ok_or(usage)?);
-    let session_text = args
-        .next()
-        .ok_or(usage)?
-        .into_string()
-        .map_err(|_| "session identity must be UTF-8")?;
-    let turn_text = args
-        .next()
-        .ok_or(usage)?
-        .into_string()
-        .map_err(|_| "turn identity must be UTF-8")?;
-    if args.next().is_some() {
-        return Err(usage.into());
-    }
-    let session = daimon_tui::parse_agent_session(&session_text)
-        .ok_or("session identity must be exactly 32 hexadecimal digits")?;
-    let turn = daimon_tui::parse_agent_turn(&turn_text)
-        .ok_or("turn identity must be exactly 32 hexadecimal digits")?;
     let (service_session, port) = daimon_client::unix::connect_agent(
         socket,
         daimon_wire::LimitsV1::default(),
@@ -240,8 +232,31 @@ pub fn run(mut args: impl Iterator<Item = OsString>) -> Result<(), Box<dyn std::
             event_count,
         )
         .ok_or("Daimon refused the exact result event interval")?;
-    let result = qualify_bound_agent_result(&page, &binding, 4_096)
-        .map_err(|refusal| format!("Daimon result qualification refused: {refusal:?}"))?;
+    qualify_bound_agent_result(&page, &binding, 4_096)
+        .map_err(|refusal| format!("Daimon result qualification refused: {refusal:?}").into())
+}
+
+pub fn run(mut args: impl Iterator<Item = OsString>) -> Result<(), Box<dyn std::error::Error>> {
+    let usage = "J1 agent-result observation requires SOCKET SESSION_HEX TURN_HEX";
+    let socket = PathBuf::from(args.next().ok_or(usage)?);
+    let session_text = args
+        .next()
+        .ok_or(usage)?
+        .into_string()
+        .map_err(|_| "session identity must be UTF-8")?;
+    let turn_text = args
+        .next()
+        .ok_or(usage)?
+        .into_string()
+        .map_err(|_| "turn identity must be UTF-8")?;
+    if args.next().is_some() {
+        return Err(usage.into());
+    }
+    let session = daimon_tui::parse_agent_session(&session_text)
+        .ok_or("session identity must be exactly 32 hexadecimal digits")?;
+    let turn = daimon_tui::parse_agent_turn(&turn_text)
+        .ok_or("turn identity must be exactly 32 hexadecimal digits")?;
+    let result = observe_owner_bound_agent_result(socket, session, turn)?;
     let content = String::from_utf8(result.bytes.clone())
         .map_err(|_| "qualified assistant result was not UTF-8")?;
     println!(

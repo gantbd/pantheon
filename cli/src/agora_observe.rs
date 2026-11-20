@@ -169,12 +169,17 @@ pub fn messages(
     }
 }
 
-fn connect(
+#[derive(Debug)]
+pub(crate) enum AgoraConnectionErrorV1 {
+    InvalidTransport,
+    Unavailable(String),
+}
+
+pub(crate) fn connect_client(
     socket: PathBuf,
     participant: &str,
     transport: &str,
-    capability: &'static str,
-) -> Result<ClientV2<LocalServicePort>, Box<dyn std::error::Error>> {
+) -> Result<ClientV2<LocalServicePort>, AgoraConnectionErrorV1> {
     let result = match transport {
         "conversation" => {
             LocalServicePort::connect(&socket, participant, LocalClientLimits::default())
@@ -184,7 +189,25 @@ fn connect(
             participant,
             LocalClientLimits::default(),
         ),
-        _ => {
+        _ => return Err(AgoraConnectionErrorV1::InvalidTransport),
+    };
+    match result {
+        Ok((client, port)) => Ok(ClientV2::new(client, port)),
+        Err(error) => Err(AgoraConnectionErrorV1::Unavailable(format!(
+            "Agora connection failed: {error:?}"
+        ))),
+    }
+}
+
+fn connect(
+    socket: PathBuf,
+    participant: &str,
+    transport: &str,
+    capability: &'static str,
+) -> Result<ClientV2<LocalServicePort>, Box<dyn std::error::Error>> {
+    match connect_client(socket, participant, transport) {
+        Ok(client) => Ok(client),
+        Err(AgoraConnectionErrorV1::InvalidTransport) => {
             failure(
                 capability,
                 "configuration_refused",
@@ -193,14 +216,11 @@ fn connect(
             )?;
             unreachable!("failure always returns an error")
         }
-    };
-    match result {
-        Ok((client, port)) => Ok(ClientV2::new(client, port)),
-        Err(error) => {
+        Err(AgoraConnectionErrorV1::Unavailable(detail)) => {
             failure(
                 capability,
                 "owner_unavailable",
-                &format!("Agora connection failed: {error:?}"),
+                &detail,
                 "verify the deployment-fixed Agora owner socket, participant, and transport profile",
             )?;
             unreachable!("failure always returns an error")
