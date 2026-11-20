@@ -145,6 +145,30 @@ closes structural target acceptance only and strengthens the outstanding
 source/IR/compiler/target identity requirement; obligation evaluation remains
 open.
 
+The accountable human sponsor then selected the closed Boolean rail: Smith must
+not emit an executable that weakens authored obligations. Rune `ab05e55`
+centralizes one compatibility analyzer across public `compile`, typed-IR
+`codegen` and multi-output `build`. All six executable targets now refuse before
+writing bytes when semantics or executable provenance are unsupported; build
+preflights the complete material set so a refusal leaves no partial outputs.
+Presentation projections remain available under their lossless-source contract.
+The focused refusal qualification and all 25 Smith tests pass. This closes the
+weak-emission defect, not semantic parity: the supervisor remains blocked until
+the targets implement and qualify the missing obligations and provenance.
+
+The same Rune contract now defines the intended economical design-proof rail.
+An immutable signed lineage bundle will join canonical versioned machine,
+typed IR, Scry/Smith build identity, target projection, compatibility report,
+test oracles, instrumentation contract and runtime telemetry identity. That
+allows design falsification, test/instrumentation shaping and evolutionary
+drift detection before expensive target work. A signature attests provenance
+and authorization under a stated trust policy; it does not prove correctness.
+Until that bundle and its verification boundary are qualified,
+`executable-source-ir-provenance` remains unsupported and executable emission
+correctly refuses. The existing Chronos item
+`rune-compiler-supervisor-semantic-parity` owns this slice rather than creating
+a duplicate.
+
 The first live Dendrite fold review used current fold identity
 `sha256:14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8`.
 The canonical tags `architecture-flow-review`, `external-calls`,

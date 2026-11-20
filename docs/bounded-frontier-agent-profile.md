@@ -149,6 +149,59 @@ controls, not autonomous-agent conveniences.
 An unavailable entry is keyed by both `component` and `surface`; it does not
 withdraw or weaken independently admitted sibling surfaces on that component.
 
+## Typed development toolchain target
+
+The intended development profile replaces general shell/filesystem access with
+independently admissible semantic tools wherever the work is expressible:
+
+1. Tellus asks Dendrite for a pinned, provenance-bearing stakeholder/SME plan;
+   Moira retains equitable participation, dissent and any required human gate.
+2. Rune admits and validates the exact versioned machine/plan, including its
+   obligations and refusal states. A model cannot weaken the machine to make a
+   later target compile.
+3. Smith accepts only that admitted Rune/typed-IR identity and emits a
+   compatible projection or a named refusal. It receives no arbitrary output
+   path and cannot publish directly into the host filesystem.
+4. Vellum exposes an exact bounded workspace snapshot and receives the Smith
+   projection as a revision-bound proposed change set. Vellum owns validation,
+   diff, conflict handling and atomic publication; “Smith forges into Vellum”
+   is composition through those owner contracts, not Smith acquiring editor or
+   filesystem authority.
+5. Daimon and Aegis bind each invocation to one current task attempt, semantic
+   capability, budget and effect authority. Oculus correlates events, logs,
+   metrics and traces with the same lineage without treating telemetry as the
+   outcome oracle.
+
+The minimum independently admitted capability classes are therefore
+`tellus.sme-plan`, `moira.deliberation`, `rune.machine.validate`,
+`smith.projection.prepare`, `vellum.workspace.snapshot`,
+`vellum.changeset.propose`, governed verification and lineage observation.
+Names and schemas are design targets until their sovereign owners publish and
+qualify them; Pantheon must not invent a generic gateway in the interim.
+
+This profile can eliminate shell access for the covered development algebra,
+not by assertion for every possible engineering operation. Dependency
+acquisition, target-toolchain execution, packaging, signing and deployment need
+their own closed owner tools or must refuse as unsupported. There is no fallback
+from an unavailable semantic capability to shell, interpreter, arbitrary
+Pantheon command or ambient file write.
+
+Every accepted projection must join one signed, immutable lineage bundle:
+canonical machine/version/digest, typed IR, Rune/Scry/Smith build identities,
+target and executable digest, compatibility report, Vellum input/output
+revisions, test and instrumentation identities, task/agent attempt and runtime
+telemetry identity. The signature attests lineage and authorization under its
+stated policy; it does not prove ensemble adequacy, design correctness or
+runtime fitness. Missing or mismatched lineage is inconclusive and cannot
+satisfy review, completion or rollout gates.
+
+This target is shared by existing Chronos work rather than a new umbrella item:
+`pantheon-frontier-capability-sandbox` owns deny-default agent admission,
+`rune-compiler-supervisor-semantic-parity` owns non-weakening projection and
+lineage, and Vellum's existing bounded workspace/change-set items own editor
+publication. Their dependency linkage must remain visible before the frontier
+worker can become operational.
+
 ## Role admission planning
 
 `pantheon agent-role-plan ROLE [SEMANTIC_CAPABILITY ...]` evaluates a candidate

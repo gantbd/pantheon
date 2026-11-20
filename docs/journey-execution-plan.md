@@ -2554,6 +2554,40 @@ Operational means observable completed work, not a configured role name:
   that exact artifact. Structural target acceptance is earned; semantic
   obligation refusal and executable identity binding remain open under the same
   P9 task rather than being split into a duplicate backlog item.
+- The accountable human sponsor selected fail-closed executable emission. Rune
+  `ab05e55` now uses one compatibility analyzer for public `compile`, typed-IR
+  `codegen` and multi-output `build`; every unsupported executable target
+  refuses before bytes are written, and complete build preflight prevents a
+  mixed presentation/executable order from leaving partial output. Presentation
+  projection remains available. All 25 Smith tests and the focused public-entry
+  refusal qualifier pass across all six executable targets. The compiler defect
+  is contained rather than mislabeled complete: parity implementation, nested
+  refusal absorption and executable provenance remain in P9
+  `rune-compiler-supervisor-semantic-parity`, while production composition stays
+  blocked.
+- Rune's governing contract now frames the cheaper design-proof path explicitly:
+  a signed, immutable lineage bundle must join versioned machine, typed IR,
+  compiler/target identity, executable digest, compatibility report, test and
+  instrumentation identities, and runtime telemetry identity. This makes
+  evolutionary drift detectable and lets tests and Oculus instrumentation be
+  designed before costly target implementation. Signature proves lineage and
+  stated authorization, not behavioral correctness; unmatched lineage is
+  inconclusive rather than green.
+- The bounded-frontier design now carries that rail into agent tooling. The
+  target development profile admits Tellus/Dendrite stakeholder planning,
+  equitable Moira deliberation, Rune validation, fail-closed Smith projection,
+  revision-bound Vellum change-set publication, governed verification and
+  Oculus lineage observation as separate capabilities. Smith never receives an
+  arbitrary output path or silently acquires Vellum/filesystem authority.
+  Unsupported engineering operations refuse; there is no fallback to a shell,
+  interpreter or generic Pantheon gateway. This can remove shell access for the
+  covered development algebra while staying honest that acquisition, target
+  execution, packaging, signing and deployment still need qualified closed
+  owner tools. Existing work owns the path:
+  `pantheon-frontier-capability-sandbox`,
+  `rune-compiler-supervisor-semantic-parity`, and the bounded Vellum
+  workspace/change-set items must be dependency-linked rather than replaced by
+  another umbrella task.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
