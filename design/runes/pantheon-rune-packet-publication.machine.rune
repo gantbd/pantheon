@@ -1,0 +1,411 @@
+(machine pantheon-rune-packet-publication
+  (rosetta
+    (intent "publish one exact private Rune-author projection packet into one pre-admitted Vellum document only after separate accountable human confirmation, preserving revision identity, edit uncertainty and durable-save recovery without granting the designing actor mutation authority")
+    (values semantic-preservation human-agency separation-of-duties owner-preservation revision-safety lost-reply-safety content-minimization honest-persistence)
+    (outcomes "preview deterministically qualifies and buffers one exact Rune packet, observes one exact current pre-admitted Vellum document and returns a content-free confirmation challenge without mutation" "execution repeats qualification and observation, requires an exact accountable human confirmation over the packet, target and durable operation identities, and refuses stale or substituted evidence before mutation" "one accepted Vellum owner edit replaces the complete target at its exact revision and no edit is retried when delivery is unknown" "an accepted edit is durably saved once under a caller-persisted operation identity, while refused or unknown persistence remains explicitly pending and recoverable through Vellum's existing lookup contract" "no path grants workspace membership, arbitrary document selection, shell, approval inference, task mutation, artifact materialization, go-no-go or rollout authority")
+    (who "the accountable human reviewer, Pantheon's bounded Rune publication adapter, the deployment-owned Rune author and the sovereign Vellum workspace owner")
+    (what "one two-phase preview-and-publish transaction for a single qualified packet document")
+    (when "after Rune, Scry, Smith and target verification qualify a private packet and before any downstream artifact materialization or execution")
+    (where "a deployment-pinned Rune profile and one deployment-pinned, pre-admitted Vellum workspace document")
+    (why "the designing ensemble must not mutate source after independent verification, while the reviewed lossless packet needs a durable owner-controlled provenance boundary")
+    (how "recompute the qualified packet, observe and digest the exact Vellum target, prepare an exact whole-document replacement, bind a human confirmation to every identity, submit once, then perform or recover one separately identified durable save")
+    (extent "one packet and one existing Vellum document; no multi-document durable atomicity claim, packet-to-artifact extraction, membership change, agent-facing tool admission or operating-system sandbox claim")
+    (examples "preview binds packet P to workspace W document D revision R and durable operation O; the human confirms that exact challenge and execution publishes P then returns a durable receipt" "the target advances after preview, so execution refuses stale evidence before sending an edit" "the edit is accepted but durable delivery becomes unknown, so the result remains persistence-pending with O and the existing exact Vellum lookup next action"))
+  (initial publication-request-received)
+
+  (state publication-request-received
+    (context data-handling access-control-decision)
+
+    (rosetta
+      (intent "admit one exact authoring request, deployment publication profile and caller-persisted durable operation without mutation")
+      (values exact-input deployment-ownership least-authority)
+      (outcomes "bounded request and profile bytes are read once and digested" "the profile fixes Rune tools, Vellum endpoint, credential and one document ordinal while the caller selects none of those effects" "invalid or mutable identity evidence refuses before author or Vellum mutation")
+      (who "the Pantheon publication adapter and deployment configuration owner")
+      (what "one inert publication request")
+      (when "at preview or execute admission")
+      (where "bounded adapter-owned memory")
+      (why "all later evidence must remain correlated to one exact request and deployment boundary")
+      (how "validate closed documents, fixed limits, regular private approval material and one nonzero durable operation identity")
+      (extent "admission only; no author verdict, Vellum edit, save or approval inference")
+      (examples "a profile names exactly one pre-admitted document ordinal and pinned Rune toolchain")))
+
+  (state preview-returned
+    (context data-handling human-impact-decision)
+
+    (rosetta
+      (intent "return one exact qualified packet and revision-bound human confirmation challenge without mutation")
+      (values reviewability content-minimization human-agency)
+      (outcomes "the deterministic packet binds request and toolchain identities plus the complete closed projection-qualified owner outcome" "one current Vellum workspace, document, revision, byte count and content digest are bound without disclosing target content" "the exact confirmation binds packet, replacement, target and durable operation identities")
+      (who "Pantheon, Rune, Vellum and the accountable human reviewer")
+      (what "one private preview packet and challenge")
+      (when "after author qualification and target observation")
+      (where "the private headless result boundary")
+      (why "the reviewer needs exact evidence before any authority-bearing action")
+      (how "serialize the deterministic packet without runtime observations, refresh the owner target, compute all digests and render one literal confirmation")
+      (extent "review material only; no edit, save, membership change or inferred approval")
+      (examples "preview returns packet digest P and target revision R while the file remains unchanged")))
+
+  (state publication-armed
+    (context access-control-decision human-impact-decision)
+
+    (rosetta
+      (intent "admit only a fresh exact accountable confirmation for one unchanged packet and target")
+      (values explicit-consent freshness substitution-resistance)
+      (outcomes "execution recomputes the packet and target evidence rather than trusting preview output" "the private approval document exactly matches the generated challenge and bound operation identity" "stale, missing, malformed or substituted approval refuses before mutation")
+      (who "the accountable human operator and Pantheon adapter")
+      (what "one armed single-use publication attempt")
+      (when "immediately before Vellum edit dispatch")
+      (where "the local operator-to-Pantheon authority boundary")
+      (why "preview evidence must not become ambient or replayable mutation authority")
+      (how "read a closed private approval document, compare every bound identity in constant semantic form and advance only on exact equality")
+      (extent "one attempt; literal confirmation is not cryptographic human authentication and grants no other authority")
+      (examples "the reviewer approves P for W/D/R under O and execution reobserves the same facts")))
+
+  (state in-memory-published
+    (context external-calls data-handling)
+
+    (rosetta
+      (intent "preserve Vellum's accepted owner-atomic whole-document edit as a dirty publication before persistence")
+      (values owner-truth single-dispatch honest-dirty-state)
+      (outcomes "one workspace edit replaces bytes zero through the exact current length at the bound revision" "the accepted receipt binds the same workspace and document and yields the exact packet bytes at a new revision" "persistence is attempted only after this accepted receipt")
+      (who "Vellum workspace owner and Pantheon adapter")
+      (what "one accepted in-memory packet publication")
+      (when "after exact confirmation")
+      (where "the sovereign Vellum workspace")
+      (why "edit truth belongs to Vellum and must remain distinct from durable storage")
+      (how "submit one single-document workspace edit and validate the complete receipt and resulting snapshot")
+      (extent "dirty owner state only; no durable, design-acceptance or execution claim")
+      (examples "Vellum accepts replacement P and advances D from revision R to R plus one")))
+
+  (state edit-outcome-unknown
+    (context diagnosing-failure external-calls)
+
+    (rosetta
+      (intent "fence all continuation when Vellum edit delivery is unknown")
+      (values uncertainty-preservation no-blind-retry)
+      (outcomes "no durable save is sent" "the exact packet, target and operation digests remain available for authoritative investigation without content disclosure" "the result never claims that the edit happened or did not happen")
+      (who "Pantheon operator and Vellum owner")
+      (what "one terminal unknown edit outcome")
+      (when "when the owner transport cannot settle the edit")
+      (where "the Vellum edit boundary")
+      (why "retrying an uncertain mutation could duplicate or overwrite newer work")
+      (how "abandon the uncertain client, emit bounded correlation evidence and require owner re-observation or a future receipt contract")
+      (extent "terminal in version one; no retry or persistence")
+      (examples "the socket drops after dispatch and the workflow stops before save")))
+
+  (state persistence-pending
+    (context diagnosing-failure external-calls)
+
+    (rosetta
+      (intent "retain an accepted dirty edit whose durable outcome is not proven")
+      (values honest-persistence recoverability owner-truth)
+      (outcomes "the accepted edit receipt and new revision remain explicit" "the durable operation identity and exact existing lookup command are retained" "refused, retired, conflict, unavailable, not-durable and unknown outcomes remain distinguishable")
+      (who "Pantheon operator and Vellum durable-effect owner")
+      (what "one terminal dirty or uncertain persistence disposition")
+      (when "after an accepted edit and a non-durable save result")
+      (where "the Vellum durable-effect boundary")
+      (why "failure to prove persistence cannot erase an accepted edit or become success")
+      (how "classify the exact Vellum durable outcome and orient lookup or operator remediation without retry")
+      (extent "terminal in version one; recovery is a separate owner operation")
+      (examples "save O becomes outcome_unknown, so D remains dirty and lookup O is the next action")))
+
+  (state durable-published
+    (context claiming-completion)
+
+    (rosetta
+      (intent "report durable packet publication only from Vellum's exact completed receipt")
+      (values evidence-bound-completion owner-preservation)
+      (outcomes "the receipt matches the bound document and post-edit revision" "application and synchronization succeeded, the adapter is quiescent, no future effects remain and baseline publication is true" "completion remains publication only and implies no design acceptance, execution or rollout")
+      (who "Vellum owner, Pantheon observer and accountable human")
+      (what "one durable packet publication receipt")
+      (when "after an accepted edit and exact durable success")
+      (where "the private publication result boundary")
+      (why "only the persistence owner can establish durable completion")
+      (how "validate every strong durable receipt field and emit content-free lineage and recovery evidence")
+      (extent "packet persistence only")
+      (examples "Vellum reports written, synchronized, quiescent, baseline-published and outcome-known for D at the new revision")))
+
+  (state refused
+    (context diagnosing-failure)
+
+    (rosetta
+      (intent "refuse before mutation or preserve a definite owner refusal without weakening another boundary")
+      (values fail-closed actionable-orientation no-invention)
+      (outcomes "the responsible admission, author, target, approval or edit stage is named" "no candidate or response bytes from an invalid boundary are admitted" "a definite pre-edit or edit refusal sends no durable save")
+      (who "Pantheon operator and the owner of the refusing boundary")
+      (what "one terminal typed refusal")
+      (when "when a required fact or definite owner operation refuses")
+      (where "the private result boundary")
+      (why "refusal must remain attributable and must not be repaired by inference")
+      (how "emit bounded stage, identities and next action without content, retry or obligation deletion")
+      (extent "terminal refusal; accepted edits never enter this state after later persistence failure")
+      (examples "a stale target revision refuses before edit dispatch")))
+
+  (edge
+    (from publication-request-received)
+    (to preview-returned)
+    (emit preview-returned)
+
+    (rosetta
+      (intent "prepare exact review evidence without mutation")
+      (values review-before-effect)
+      (outcomes "qualified packet and current target evidence become reviewable under one challenge")
+      (who "Pantheon adapter")
+      (what "preview transition")
+      (when "after all read-only qualifications pass")
+      (where "private preparation boundary")
+      (why "human review requires exact current facts")
+      (how "qualify author output, packet serialization and Vellum observation")
+      (extent "no mutation")
+      (examples "preview succeeds"))
+    (precondition "the exact bounded request and deployment profile qualify; Rune author returns projection_qualified; every packet digest recomputes; the configured Vellum document is a current pre-admitted member; and one deterministic confirmation challenge binds the packet, target and durable operation identities"))
+
+  (edge
+    (from publication-request-received)
+    (to refused)
+    (emit publication-refused)
+
+    (rosetta
+      (intent "refuse invalid preparation")
+      (values fail-closed)
+      (outcomes "no preview or mutation is admitted")
+      (who "Pantheon adapter")
+      (what "preparation refusal")
+      (when "when admission, author qualification or target observation fails")
+      (where "pre-effect boundary")
+      (why "invalid review evidence cannot authorize later mutation")
+      (how "classify the exact refusing stage")
+      (extent "no retry or effect")
+      (examples "author questions remain a non-publishable refusal for this capability"))
+    (precondition "profile, request, operation, author outcome, packet lineage, Vellum connection, inventory membership, target snapshot, size bound or confirmation construction fails"))
+
+  (edge
+    (from preview-returned)
+    (to publication-armed)
+    (emit publication-armed)
+
+    (rosetta
+      (intent "bind fresh exact human confirmation")
+      (values explicit-consent freshness)
+      (outcomes "only the unchanged preview identities become armed")
+      (who "accountable human and Pantheon adapter")
+      (what "arming transition")
+      (when "after execute recomputes preview facts")
+      (where "private approval boundary")
+      (why "review must bind current evidence")
+      (how "validate the closed private approval document against the recomputed challenge")
+      (extent "one publication attempt only")
+      (examples "exact approval matches"))
+    (precondition "execution independently reproduces the exact packet and target evidence; the private approval document is closed, current and exact; its literal decision is approve; and every packet, workspace, document, revision, content, replacement and durable operation identity equals the generated challenge"))
+
+  (edge
+    (from preview-returned)
+    (to refused)
+    (emit publication-refused)
+
+    (rosetta
+      (intent "refuse stale or substituted approval")
+      (values human-agency substitution-resistance)
+      (outcomes "no edit is sent")
+      (who "Pantheon adapter")
+      (what "approval refusal")
+      (when "when execute evidence or approval differs")
+      (where "pre-edit boundary")
+      (why "silence and stale consent are not approval")
+      (how "compare all current facts and fail closed")
+      (extent "no mutation")
+      (examples "target revision changed"))
+    (precondition "the packet or target no longer matches preview, the approval is absent, malformed, non-approve, permission-unsafe, stale, or any bound identity differs"))
+
+  (edge
+    (from publication-armed)
+    (to in-memory-published)
+    (emit edit-accepted)
+
+    (rosetta
+      (intent "submit and preserve one exact accepted owner edit")
+      (values single-dispatch owner-truth)
+      (outcomes "the packet becomes the exact dirty document bytes")
+      (who "Pantheon adapter and Vellum owner")
+      (what "accepted edit transition")
+      (when "after arming")
+      (where "Vellum workspace boundary")
+      (why "only the owner receipt can establish edit success")
+      (how "send one whole-document workspace edit and validate its receipt")
+      (extent "one document and one dispatch")
+      (examples "edit accepted"))
+    (precondition "the exact armed replacement remains within Vellum limits; one workspace edit is dispatched once; and Vellum returns an accepted receipt for the same workspace and document with a snapshot whose bytes equal the packet and whose revision is exactly the expected successor"))
+
+  (edge
+    (from publication-armed)
+    (to edit-outcome-unknown)
+    (emit edit-outcome-unknown)
+
+    (rosetta
+      (intent "fence uncertain edit delivery")
+      (values maybe-preservation no-blind-retry)
+      (outcomes "persistence is not attempted")
+      (who "Pantheon adapter")
+      (what "unknown edit transition")
+      (when "when delivery cannot settle")
+      (where "Vellum transport boundary")
+      (why "unknown mutation cannot be retried safely")
+      (how "retain correlation and stop")
+      (extent terminal)
+      (examples "connection drops after dispatch"))
+    (precondition "the edit request may have been sent but no authoritative accepted or refused Vellum outcome is available"))
+
+  (edge
+    (from publication-armed)
+    (to refused)
+    (emit publication-refused)
+
+    (rosetta
+      (intent "preserve a definite Vellum edit refusal")
+      (values owner-preservation)
+      (outcomes "no durable save is sent")
+      (who "Vellum owner and Pantheon adapter")
+      (what "edit refusal transition")
+      (when "when Vellum definitely refuses")
+      (where "workspace boundary")
+      (why "a definite refusal is neither unknown nor success")
+      (how "return the owner refusal with orientation")
+      (extent terminal)
+      (examples "stale edit refused"))
+    (precondition "Vellum returns a definite edit refusal before changing the configured document"))
+
+  (edge
+    (from in-memory-published)
+    (to durable-published)
+    (emit durable-published)
+
+    (rosetta
+      (intent "admit only exact durable completion")
+      (values evidence-bound-completion)
+      (outcomes "the dirty edit is proven durably published")
+      (who "Vellum durable owner")
+      (what "durable success transition")
+      (when "after accepted edit")
+      (where "durable-effect boundary")
+      (why "persistence truth belongs to Vellum")
+      (how "execute the bound durable operation once and validate every receipt field")
+      (extent "no rollout implication")
+      (examples "save receipt is fully durable"))
+    (precondition "the exact durable operation is executed once for the accepted post-edit revision and Vellum reports written and synchronized, no future effects, quiescent, no adapter or cleanup failure, baseline published and outcome known"))
+
+  (edge
+    (from in-memory-published)
+    (to persistence-pending)
+    (emit persistence-pending)
+
+    (rosetta
+      (intent "retain every non-durable save disposition")
+      (values honest-persistence recoverability)
+      (outcomes "the dirty edit and lookup identity remain explicit")
+      (who "Pantheon adapter and Vellum durable owner")
+      (what "pending persistence transition")
+      (when "after non-durable save outcome")
+      (where "durable-effect boundary")
+      (why "non-success cannot erase the accepted edit")
+      (how "classify the exact outcome and provide lookup orientation")
+      (extent "terminal in version one")
+      (examples "save outcome unknown"))
+    (precondition "the durable operation is refused, retired, conflicting, unavailable, absent or foreign, completed without full durable invariants, outcome unknown, or access or disconnect prevents exact durable proof"))
+
+  (signal preview-returned
+    (rosetta
+      (intent "announce exact review material")
+      (values reviewability)
+      (outcomes "packet and challenge availability is observable without content")
+      (who "Pantheon observers")
+      (what "preview signal")
+      (when "after read-only preparation")
+      (where "publication adapter")
+      (why "operators need orientation before effect")
+      (how "emit bounded identities and limits")
+      (extent "no approval")
+      (examples "preview ready")))
+
+  (signal publication-armed
+    (rosetta
+      (intent "announce exact approval admission")
+      (values human-agency)
+      (outcomes "arming is distinguishable from preview and mutation")
+      (who "Pantheon observers")
+      (what "armed signal")
+      (when "after exact confirmation")
+      (where "publication adapter")
+      (why "explicit consent must be visible")
+      (how "emit content-free approval correlation")
+      (extent "no edit result")
+      (examples "publication armed")))
+
+  (signal edit-accepted
+    (rosetta
+      (intent "announce accepted dirty publication")
+      (values owner-truth)
+      (outcomes "edit success remains distinct from persistence")
+      (who "Pantheon observers")
+      (what "edit signal")
+      (when "after owner receipt")
+      (where "publication adapter")
+      (why "dirty truth must remain visible")
+      (how "emit workspace document revision and packet digests")
+      (extent "no content or durable claim")
+      (examples "edit accepted")))
+
+  (signal edit-outcome-unknown
+    (rosetta
+      (intent "announce fenced edit uncertainty")
+      (values maybe-preservation)
+      (outcomes "unknown delivery stops continuation")
+      (who "Pantheon observers")
+      (what "unknown edit signal")
+      (when "when transport cannot settle")
+      (where "publication adapter")
+      (why "operators must not retry blindly")
+      (how "emit stage and correlation without content")
+      (extent terminal)
+      (examples "edit unknown")))
+
+  (signal persistence-pending
+    (rosetta
+      (intent "announce non-durable accepted publication")
+      (values honest-persistence)
+      (outcomes "lookup identity and next action are visible")
+      (who "Pantheon observers")
+      (what "persistence pending signal")
+      (when "after non-durable save disposition")
+      (where "publication adapter")
+      (why "accepted dirty state needs recovery orientation")
+      (how "emit durable status and operation identity")
+      (extent "no retry")
+      (examples "save pending")))
+
+  (signal durable-published
+    (rosetta
+      (intent "announce exact durable packet publication")
+      (values evidence-bound-completion)
+      (outcomes "durability is observable without implying acceptance")
+      (who "Pantheon observers")
+      (what "durable signal")
+      (when "after exact owner receipt")
+      (where "publication adapter")
+      (why "completion should be attributable")
+      (how "emit content-free receipt facts")
+      (extent "publication only")
+      (examples "packet durable")))
+
+  (signal publication-refused
+    (rosetta
+      (intent "announce an attributable refusal")
+      (values fail-closed)
+      (outcomes "stage and next safe action are visible")
+      (who "Pantheon observers")
+      (what "refusal signal")
+      (when "when a definite boundary refuses")
+      (where "publication adapter")
+      (why "operators need orientation without leaked content")
+      (how "emit bounded refusal classification")
+      (extent "no inference or retry")
+      (examples "stale target refused"))))

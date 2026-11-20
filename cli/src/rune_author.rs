@@ -133,6 +133,14 @@ pub fn run(mut args: impl Iterator<Item = OsString>) -> Result<(), Box<dyn std::
     }
 }
 
+/// Reuses the exact bounded owner adapter without projecting its private
+/// packet through stdout. Composition callers receive the same closed success
+/// or refusal document; they gain no executable selection or publication
+/// authority from this function.
+pub(crate) fn execute_private(profile_path: &Path, request_path: &Path) -> Result<Value, Value> {
+    execute(profile_path, request_path).map_err(|refusal| refusal_json(&refusal))
+}
+
 fn execute(profile_path: &Path, request_path: &Path) -> Result<Value, AdapterRefusal> {
     let profile = qualify_profile(profile_path)?;
     let request = read_bounded_regular(request_path, MAX_REQUEST_BYTES, "request")?;

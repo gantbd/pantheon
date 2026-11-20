@@ -5,8 +5,8 @@
     "version": 1
   },
   "review": {
-    "human": "Pending Brian, declared human sponsor in the governing Pantheon thread",
-    "ensemble_fit": "contested",
+    "human": "Brian, declared human sponsor in the governing Pantheon thread, approved the version-one ensemble and stable core on 2026-11-20; maturity gaps remain explicit Chronos work and may grow without weakening this decision boundary",
+    "ensemble_fit": "yes",
     "evidence": [
       "sha256:88e4aa16f24cc451010c2c1b8a99383bc19e3ff4f155e2a482a72871c5a239fb",
       "sha256:7e065399a0df6d36e6f43bf6a660b40b06715bfc40ada5ba7e27586bd8907fbf",

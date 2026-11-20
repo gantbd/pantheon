@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "dialect": {"kind": "machine", "version": 1},
+  "review": {
+    "human": "Brian, declared human sponsor, approved the version-one Rune packet publication stable core on 2026-11-20; this authority-free fixture only qualifies that exact transport boundary",
+    "ensemble_fit": "yes",
+    "evidence": [
+      "sha256:88e4aa16f24cc451010c2c1b8a99383bc19e3ff4f155e2a482a72871c5a239fb",
+      "sha256:7e065399a0df6d36e6f43bf6a660b40b06715bfc40ada5ba7e27586bd8907fbf",
+      "sha256:40a1e6da710d768b7dcc186b7f8e5d2b5656567baac65cf9cbf25abd428f8106",
+      "sha256:9da415b103c0f09415643ff2e1ef1fbe1d3e94788302cbf7cd497679b16e9ece",
+      "sha256:75c6acd4f367ebc35aa187ea9ef4a04266796d2c49ae2b22e661a021370d2673",
+      "sha256:35e743059455c7c3c7538d5c59f81fb27c2bd0cc1155612cd1f5991d5ad904f2"
+    ],
+    "dissent": [
+      "This fixture proves bounded transport behavior only; it grants no product, execution, deployment, go-no-go, or rollout authority.",
+      "A passing fixture does not waive the packet-size ceiling or establish authenticated human identity."
+    ]
+  },
+  "holes": [],
+  "projection": "rust",
+  "machine": {
+    "name": "pantheon-rune-publication-qualification-fixture",
+    "rosetta": {
+      "intent": "provide one semantically complete but authority-free Rune projection small enough to qualify Pantheon's exact Vellum packet publication boundary",
+      "values": ["semantic-preservation", "bounded-qualification", "no-authority"],
+      "outcomes": ["one exact signal advances one inert state", "the resulting complete projection packet can be previewed, explicitly approved, published and durably saved without granting domain authority"],
+      "who": "the Rune, Pantheon and Vellum qualification harnesses and the accountable human operator",
+      "what": "one inert publication qualification machine",
+      "when": "while qualifying the version-one packet publication adapter",
+      "where": "an isolated private Vellum workspace fixture",
+      "why": "the real owner path needs a payload within its reviewed bound before larger domain packets can be admitted",
+      "how": "forge one compelled transition and preserve it through Rune, Scry, Smith, Pantheon and Vellum",
+      "extent": "qualification evidence only; no business action, agent authority or rollout",
+      "examples": ["ready advances to recorded under the exact record signal"]
+    },
+    "initial": "ready",
+    "states": [
+      {
+        "name": "ready",
+        "context": ["reproducing-failure"],
+        "rosetta": {
+          "intent": "hold one inert qualification value before recording",
+          "values": ["exact-input"],
+          "outcomes": ["the fixture is ready and no effect has occurred"],
+          "who": "the qualification harness",
+          "what": "an inert initial state",
+          "when": "before the record signal",
+          "where": "bounded test memory",
+          "why": "the transition needs an exact source state",
+          "how": "retain the closed state identity",
+          "extent": "no effect",
+          "examples": ["ready"]
+        }
+      },
+      {
+        "name": "recorded",
+        "context": ["claiming-completion"],
+        "rosetta": {
+          "intent": "record that the inert qualification transition completed",
+          "values": ["observable-completion"],
+          "outcomes": ["the exact record signal and destination are visible"],
+          "who": "the qualification harness",
+          "what": "one terminal inert state",
+          "when": "after the compelled record transition",
+          "where": "bounded test memory",
+          "why": "qualification needs a closed observable outcome",
+          "how": "retain the generated transition receipt",
+          "extent": "one inert receipt",
+          "examples": ["recorded"]
+        }
+      }
+    ],
+    "signals": [
+      {
+        "name": "record",
+        "rosetta": {
+          "intent": "announce the one inert qualification transition",
+          "values": ["observability"],
+          "outcomes": ["the transition is distinguishable without content"],
+          "who": "the qualification observer",
+          "what": "one record signal",
+          "when": "the fixture advances",
+          "where": "the generated controller",
+          "why": "the path must be observable",
+          "how": "emit the closed signal identity",
+          "extent": "no domain effect",
+          "examples": ["record"]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "ready",
+        "to": "recorded",
+        "signal": "record",
+        "precondition": "the qualification harness supplies the exact inert record signal",
+        "rosetta": {
+          "intent": "advance the inert fixture exactly once",
+          "values": ["determinism"],
+          "outcomes": ["ready becomes recorded under record"],
+          "who": "the generated controller",
+          "what": "one compelled transition",
+          "when": "the exact precondition holds",
+          "where": "bounded test memory",
+          "why": "the publication path needs a semantically complete forged payload",
+          "how": "evaluate the precondition and emit the destination",
+          "extent": "one inert transition",
+          "examples": ["ready plus record yields recorded"]
+        }
+      }
+    ]
+  }
+}

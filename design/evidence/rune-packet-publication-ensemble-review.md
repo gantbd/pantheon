@@ -2,8 +2,10 @@
 
 Date: 2026-11-20
 
-Status: human ensemble-fit decision required; no publication machine or
-mutation capability is admitted yet.
+Status: Brian, the declared human sponsor, approved the version-one ensemble
+and stable core on 2026-11-20. Maturity gaps remain explicit Chronos work and
+may grow as evidence requires; approval does not waive any dissent, owner
+boundary, qualification gate, go/no-go decision or rollout authority below.
 
 ## Stable core under review
 
@@ -31,8 +33,8 @@ receipt lookup remains the recovery owner.
 
 ## Rune author questions and proposed answers
 
-The exact request at
-`design/requests/rune-packet-publication.rune-author.json` has SHA-256
+The pre-decision request at
+`design/requests/rune-packet-publication.rune-author.json` had SHA-256
 `b9e285227256489ba6ebacb0fddbaf2029e51662f073852318d7f58f947807b1`.
 The first real Pantheon-to-Rune run returned eleven questions and no candidate.
 After the owner answers and complete topology below were authored with
@@ -40,6 +42,19 @@ After the owner answers and complete topology below were authored with
 one question—`$.review.ensemble_fit: What must change before this ensemble is
 fit for this exact design?`—and still emitted no candidate, typed IR or
 projection bytes.
+
+Brian then approved the version-one ensemble and stable core, while retaining
+the maturity path in Chronos. The resulting exact request has SHA-256
+`82c9d1233ba4c888bcd2022aaa80cc40997e56a0986df92deb1f4dd301260a0e`.
+Pantheon's bounded owner rerun returned `projection_qualified`, complete
+compatibility with no unsupported semantics, and the Rune→Scry→Smith outputs
+now preserved at:
+
+- `design/runes/pantheon-rune-packet-publication.machine.rune`
+- `design/generated/pantheon_rune_packet_publication.rs`
+
+This is approval to preserve and exercise the topology, not approval to expose
+the mutation capability to an agent or to roll it out.
 
 - Packet identity: deterministic pretty JSON containing schema/version, exact
   author request digest, Rune-author/Scry/Smith/rustc identities, confinement
@@ -145,11 +160,64 @@ Dissent retained for the decision:
 - Neither successful publication nor durable persistence is acceptance of the
   generated design, authorization to execute it, go/no-go or rollout approval.
 
-## Human gate
+## Human gate decision
 
-The exact question is: **do we have the right ensemble and the right stable
+The exact question was: **do we have the right ensemble and the right stable
 core for this bounded version-one publication machine?**
 
-An affirmative decision admits topology authoring and another exact Rune-author
-run. It does not approve implementation, publication of any particular packet,
-agent exposure, or rollout.
+Brian answered affirmatively on 2026-11-20 and directed the maturity path to be
+captured in Chronos and grown as needed. That admitted topology authoring, the
+exact Rune-author rerun and bounded qualification. It did not approve agent
+exposure, acceptance of any generated design, go/no-go, or rollout.
+
+## Implementation qualification and discovered bounds
+
+The approved request produced canonical Rune SHA-256
+`4c0ddb5e67f825e996b1414d26f694db852b2e34ace3942104f2795f480f5bac`
+and generated Rust SHA-256
+`abb6681f7a122a53072135d5b00609908cbfebbcc0dcbee042b52593b685e620`.
+Recompiling the canonical Rune through the pinned Smith and Scry reproduces the
+checked-in Rust byte for byte, and `rustc` accepts it as a library. Smith's
+Rust `roundtrip` command intentionally refuses because executable Rust carries
+lineage and Rosetta context but no recoverable `@rune:source` section. This is
+source→IR→projection preservation, not a claim of self-contained Rust→Rune
+reversal.
+
+The real qualified publication packet is 137,312 bytes. Vellum's exact
+owner-atomic workspace-edit protocol admits at most 65,536 inserted bytes, so
+the adapter refuses this packet at `packet_limit` before connecting or
+mutating. It does not truncate, compress, split, switch owner operations or
+raise the peer limit. Larger packet publication is a maturity decision, not an
+implementation convenience.
+
+`design/requests/rune-packet-publication-qualification.rune-author.json` is an
+authority-free, semantically complete qualification Rune whose owner result is
+30,212 bytes. The live gate `tests/live/rune_packet_publication.sh` proves the
+actual bounded path:
+
+1. Rune→Scry→Smith produces the exact qualified packet.
+2. Preview observes one pre-admitted Vellum document and performs zero
+   mutations.
+3. A private, non-linked, mode-0600 approval binds the fresh packet, target and
+   durable operation identities.
+4. Publish recomputes all evidence, sends one revision-bound owner edit, and
+   performs one durable save under the persisted operation identity.
+5. The exact packet bytes are durable; replaying stale approval and attempting
+   the oversized real packet both refuse without changing the document.
+
+Accepted-edit receipt ambiguity becomes `edit-outcome-unknown` and sends no
+save. An accepted exact edit whose persistence cannot settle becomes
+`persistence-pending`; it is never restyled as refusal or rolled back.
+
+The isolated Pantheon Chronos board advanced to revision 11. The approved human
+review and implementation tasks retain their dependency, and three discovered
+maturity items are now durable work rather than scope drift:
+
+- `rune-packet-large-artifact-publication`
+- `rune-rust-reverse-projection-provenance`
+- `rune-publication-authenticated-human-principal`
+
+Pantheon's current task-batch surface creates these as `open`; it does not yet
+offer the workflow-status transition needed to place noncritical discoveries
+directly in `backlog` or settle the completed human gate. That is an interface
+friction finding, not permission to falsify board state through another path.

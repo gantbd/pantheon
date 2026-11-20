@@ -3055,3 +3055,38 @@ fn verification_result_validation_is_closed_private_and_not_publication() {
         assert!(journey.contains(required), "activation owner omits {required}");
     }
 }
+
+#[test]
+fn rune_packet_publication_preserves_forged_control_and_owner_uncertainty() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = fs::read_to_string(root.join("cli/src/rune_packet_publication.rs"))
+        .expect("Rune packet publication adapter");
+    for required in [
+        "pantheon_rune_packet_publication.rs",
+        "execute_private",
+        "private_document::read",
+        "MAX_WORKSPACE_EDIT_PAYLOAD_BYTES_V1",
+        "EditOutcomeUnknown",
+        "PersistencePending",
+        "run_durable_save_v1",
+        "no membership, arbitrary target, shell, agent-tool",
+    ] {
+        assert!(
+            source.contains(required),
+            "publication adapter omits {required}"
+        );
+    }
+    let live = fs::read_to_string(root.join("tests/live/rune_packet_publication.sh"))
+        .expect("Rune packet publication live gate");
+    for required in [
+        "preview_returned",
+        "durable_published",
+        "stale approval unexpectedly republished",
+        "oversized packet unexpectedly reached preview",
+    ] {
+        assert!(live.contains(required), "publication gate omits {required}");
+    }
+    let capabilities = fs::read_to_string(root.join("cli/src/capabilities.rs"))
+        .expect("Pantheon capability catalogue");
+    assert!(!capabilities.contains("rune-packet-publication"));
+}
