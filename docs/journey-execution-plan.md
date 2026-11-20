@@ -4192,3 +4192,28 @@ for UADD packet design. The next center-out slice must bind this exact receipt
 and challenged content to one verified human request/response without granting
 the request, presenter or agent disposition authority.
 
+### 2026-11-20 — UADD boundary retains challenge before acceptance
+
+The canonical Rune UADD machine was re-read and its owner suite passes all 17
+checks. It requires the named user or authorized delegate to adversarially
+challenge the same verified version, triage findings, and only then make a
+separate explicit acceptance decision. Moira's generic human gate is reusable
+owner substrate, but `Approved` alone is therefore not UADD completion.
+
+`design/requests/j1-uadd-acceptance.rosetta.md` now records the bounded owner
+request. It binds the strict J1 receipt, human-readable challenged material,
+criteria, STRIDE inventory, user-owned challenge, finding disposition and later
+Aegis-authorized response before any Chronos V10 mapping. Only Approved may
+prepare Accepted and ChangesRequested may prepare RevisionRequired; Deferred
+remains in the Maybe Machine, while Rejected remains a distinct non-mutating
+outcome until an owner contract says otherwise. No mapping grants rollout.
+
+Live Tellus SME review remains deliberately unclaimed. The running Dendrite
+profile requires an authenticated route whose credential was not safely
+available in this execution context; the probe stopped at that boundary rather
+than reading shared session secrets or treating source archaeology as an
+ensemble run. The designing ensemble must still answer “do we have the right
+ensemble?” with the human acceptance principal, security/threat, UX, Moira,
+Chronos, Aegis, Vellum, observability and audit stakeholders before a candidate
+Rune is admitted.
+

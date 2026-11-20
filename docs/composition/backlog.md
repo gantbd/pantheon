@@ -122,7 +122,14 @@ read-only input until that repository settles.
   Also owner-bind durable task-centric review audit
   after bounded invocation retention expires; persistent `Done` must not be
   presented as indefinitely self-proving once its command-scoped receipt is
-  evicted. Pantheon must not hash an unbound task name, trust deployment
+  evicted. The owner request is now explicit in
+  `design/requests/j1-uadd-acceptance.rosetta.md`: reuse Rune's canonical UADD
+  ordering, require an actual named-user adversarial challenge over the same
+  strict receipt, dispose findings, and only then admit a separate acceptance
+  response. The canonical UADD suite passes 17/17. Before machine admission,
+  complete an authenticated Tellus-grounded ensemble review; the current live
+  service credential route was not safely available and must not be bypassed.
+  Pantheon must not hash an unbound task name, trust deployment
   configuration or infer scope.
 - [ ] Isolate pure proof-cell tests from Pantheon's broad CLI link topology.
   The seven strict J1 composer tests execute in 0.00s, but small fixture-only
