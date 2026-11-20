@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "task": {
+    "id": "compose-blueprint-publication",
+    "prose": "Design the smallest Pantheon-owned composition that carries one exact question-bound Rune blueprint revision into the existing human-gated minimal Vellum packet publisher entirely in memory. Reuse the existing Rune author and publication boundaries; do not duplicate authoring, publication, approval, or Vellum semantics. Low and moderate risk may proceed only when Rune projection is complete and the additive Pantheon risk policy says eligible. High and Gray must remain non-publishable until their named owner contracts exist. Preview and publish must independently recompute the same blueprint answers, request digest, risk eligibility, projection packet, Vellum target, minimal patch, and approval binding. Preserve accountable human confirmation, owner authority, no-retry uncertainty, full-successor verification, provenance, and all existing tool strength. Expose content-free observations of stage latency, questions, deterministic revisions, refusals, and patch size without claiming Oculus publication. No task mutation, code mutation, agent tool admission, go-no-go, or rollout authority.",
+    "risk": "moderate"
+  },
+  "request": null
+}
