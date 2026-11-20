@@ -651,6 +651,21 @@ raw profile-path command remains human/operator-facing. Run
 `make qualify-rune-author-review` for the authenticated Tellus/Dendrite review
 chain.
 
+Use `pantheon rune-blueprint RUNE_PROFILE_JSON BLUEPRINT_JSON
+[ANSWER_SET_JSON]` to begin one step earlier without turning prose into
+unreviewed semantics. The closed blueprint retains an exact task ID, prose and
+risk class, injects only Rune's fixed machine-v1/Rust framing, and sends the
+result through the same pinned `rune-author` adapter. It returns exact typed
+owner questions and a ready-to-fill answer template. An answer set must bind
+the exact current request digest and repeat the exact path, category and
+question; Pantheon applies only that path, removes only an exactly matching
+explicit hole, and invokes Rune again. The result distinguishes the retained
+prose LST from the request AST and reports question counts, deterministic
+revision operations, duration and honest unobserved metrics. It performs no
+prose inference, semantic invention, publication or human-review substitution.
+Run `make qualify-rune-blueprint` for the real task → questions → answers →
+Scry → Smith gate and stale-answer refusal.
+
 Use `pantheon agent-web-fetch POLICY_JSON HTTPS_URL` only through a
 Daimon-governed command capability. The policy pins the exact curl executable
 by SHA-256, exact lowercase hosts, response and time bounds, and a fixed user

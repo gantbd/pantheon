@@ -1,4 +1,4 @@
-.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-j1 qualify-j1-result qualify-rune-author-review qualify-rune-author qualify-rune-packet-publication qualify-bounded-agent-development qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-diagnostic qualify-hestia-real-model-daimon qualify-hestia-model-bench
+.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-j1 qualify-j1-result qualify-rune-author-review qualify-rune-author qualify-rune-blueprint qualify-rune-packet-publication qualify-bounded-agent-development qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-diagnostic qualify-hestia-real-model-daimon qualify-hestia-model-bench
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -46,6 +46,9 @@ qualify-rune-author-review:
 
 qualify-rune-author:
 	./tests/live/rune_author_capability.sh
+
+qualify-rune-blueprint:
+	./tests/live/rune_blueprint.sh
 
 qualify-rune-packet-publication:
 	./tests/live/rune_packet_publication.sh

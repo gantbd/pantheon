@@ -141,10 +141,31 @@ pub(crate) fn execute_private(profile_path: &Path, request_path: &Path) -> Resul
     execute(profile_path, request_path).map_err(|refusal| refusal_json(&refusal))
 }
 
+/// Reuses the same qualified owner adapter for an in-memory request assembled
+/// by another bounded Pantheon capability. The caller cannot select tools or
+/// bypass owner-response validation; exact request bytes remain the unit of
+/// provenance.
+pub(crate) fn execute_private_bytes(profile_path: &Path, request: &[u8]) -> Result<Value, Value> {
+    if request.len() as u64 > MAX_REQUEST_BYTES {
+        return Err(refusal_json(&refusal(
+            "request",
+            "Rune request exceeds 256 KiB",
+            None,
+            None,
+            false,
+        )));
+    }
+    execute_bytes(profile_path, request).map_err(|refusal| refusal_json(&refusal))
+}
+
 fn execute(profile_path: &Path, request_path: &Path) -> Result<Value, AdapterRefusal> {
-    let profile = qualify_profile(profile_path)?;
     let request = read_bounded_regular(request_path, MAX_REQUEST_BYTES, "request")?;
-    let request_sha256 = sha256(&request);
+    execute_bytes(profile_path, &request)
+}
+
+fn execute_bytes(profile_path: &Path, request: &[u8]) -> Result<Value, AdapterRefusal> {
+    let profile = qualify_profile(profile_path)?;
+    let request_sha256 = sha256(request);
     let invoked = advance(
         PantheonRuneAuthorCapabilityState::INITIAL,
         PantheonRuneAuthorCapabilitySignal::AuthorInvoked,
@@ -159,7 +180,7 @@ fn execute(profile_path: &Path, request_path: &Path) -> Result<Value, AdapterRef
         )
     })?;
 
-    let result = invoke(&profile, &request).map_err(|mut refusal| {
+    let result = invoke(&profile, request).map_err(|mut refusal| {
         refusal.detail.request_sha256 = Some(request_sha256.clone());
         refusal.detail.author_sha256 = Some(profile.rune_author.sha256.clone());
         refusal.detail.invoked = true;

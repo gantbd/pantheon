@@ -4375,3 +4375,40 @@ remains unchanged and `questions_pending` until the named sponsor answers both
 “do we have the right ensemble?” and whether Moira owns this version-one
 contract. That answer is a design gate only, never J1 acceptance or rollout.
 
+### 2026-11-20 — value-unlock goal moves the authoring boundary one step upstream
+
+The sponsor redirected the critical path from broad journey execution to the
+working core that should make those journeys cheaper to deliver. The retained
+invariants remain constraints: no invented semantics, weakened Rune/Scry/Smith,
+owner substitution, hidden Maybe, agent-authored human decision or implicit
+rollout. The delivery test is now whether Pantheon measurably reduces manual
+translation, rework and lead time on a real slice rather than producing more
+ceremony.
+
+The first operational slice is `pantheon rune-blueprint`. It retains exact task
+prose as a lossless-source witness but explicitly marks it
+`retained_not_inferred`. It constructs only fixed machine-v1/Rust framing,
+obtains typed questions from the real Rune owner, and emits an exact answer
+template. A revision must bind the current request digest and repeat the exact
+owner path/category/question tuple. Pantheon changes only that path, removes
+only an exactly matching explicit hole, and re-enters the existing pinned
+Rune→Scry→Smith boundary. Stale answers refuse.
+
+The focused live gate proves one moderate-risk real request moves from two
+typed questions through two deterministic revisions to Scry-valid Rune,
+complete Smith compatibility and target-verified Rust. It also proves stale
+answer lineage refuses. The observation exposes question counts, revision
+operations, duration and explicit `not_observed` token/escaped-defect fields;
+it states `oculus_published=false` until Oculus has a sovereign owner path.
+
+This is material but incomplete value. It removes unsafe manual JSON surgery;
+it does not infer topology or per-node Rosettas, publish a bounded Vellum patch,
+enforce the declared risk class beyond Rune's baseline, or yet prove improved
+end-to-end lead time. Chronos revision 84 holds the explicit dependency chain:
+question-bound blueprint, risk-scaled admission, Vellum patch publication,
+focused qualification and measured real-slice proof. The newer headless client
+correctly refused the long-running board owner's older V9 reply as invalid;
+the owner-compatible attached TUI accepted the graph. Paginated cross-board
+search still cannot prove global absence and is already retained as its own
+Chronos capability gap.
+
