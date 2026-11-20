@@ -4499,3 +4499,38 @@ Rust invocation seam before Pantheon claims a holofractal composition. This is
 directionally correct substrate with a real missing projection, not permission
 to weaken the machine or return to JSON as authority.
 
+### Non-critical discovery — bounded Rune-native executables
+
+The sponsor identified a strong later Smith target: compile Rune's deliberately
+non-Turing machines into small ahead-of-time executables rather than projecting
+through a general-purpose source language. The plausible value is material:
+total transition logic, statically bounded memory and work, no allocator or
+ambient shell/network/filesystem surface, capability-shaped effect imports,
+and state-machine dispatch that can plausibly approach C efficiency.
+
+“Native” is not itself a security proof. A generated binary still trusts its
+compiler, object emitter, verifier, CPU, loader/kernel and every admitted effect
+adapter. A custom backend also becomes new trusted code. The honest target is a
+small pure transition kernel with no syscalls and an explicit bounded ABI,
+hosted by a separately sandboxed capability shell. Build-time compilation
+should be reproducible and signed; runtime code generation, writable-executable
+memory, general FFI and ambient authority are outside the intended posture.
+
+The maturity path should remain separate from the active Pantheon slice:
+
+1. finish source/IR semantic preservation for invoke, effects, authority and
+   child refusal/unknown absorption;
+2. define a tiny versioned Rune execution IR plus verifier and exact resource
+   bounds;
+3. qualify a reference interpreter against Scry and every preserved obligation;
+4. add one AOT architecture backend, initially arm64, with differential and
+   mutation-sensitive tests against the interpreter;
+5. introduce a minimal capability ABI, signed lineage bundle and sandboxed
+   host; and
+6. expand architectures only from measured demand.
+
+Generating C or Rust remains a useful bootstrap oracle, and WebAssembly may be
+a useful sandbox comparison, but neither is the final closed runtime claim.
+Direct native emission must refuse any obligation it cannot enforce and must
+not become a shortcut around the current Rune→Scry→Smith invocation gap.
+
