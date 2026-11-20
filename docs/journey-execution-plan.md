@@ -3987,3 +3987,29 @@ four genuine paths plus the known duplicate ensemble-fit diagnostic. Its J1
 proof-leaf question now asks only for real stale/reopened owner-status
 evolution; it does not rediscover the already-qualified adapter.
 
+### 2026-11-20 — reopened J1 proof resolves to an existing Chronos owner gap
+
+Source audit and live dogfood narrowed the remaining status-evolution proof.
+Chronos has `Engine::transition_task_status`, but no public protocol, client or
+durable mutation owner exposes it. The engine's transition table nominally
+allows `ReadyForReview -> InProgress`; the same validation then rejects that
+edge because a completed task remains `Succeeded` while `InProgress` requires
+`Running` or `Uncertain`. A J1 adapter cannot resolve that contradiction by
+inventing a new attempt, relabeling `Blocked`, or directly mutating the engine.
+
+The live revision-83 board already retains
+`chronos-task-lifecycle-transition-controls` at priority 2 and incarnation 69,
+so no duplicate ticket was created. The existing
+`chronos-blocked-resolution-link-contract` owns the resolution-link law. The
+J1 proof leaf is logically dependent on those controls, but the current TUI
+cannot express that status/dependency update—the missing lifecycle control is
+also what would record it. The inspector shows only phase, priority,
+incarnation, attempt and counts, not the task intent or resolution linkage;
+`chronos-human-inspection-layout` already owns that presentation gap.
+
+This is an honest blocker linkage, not a reason to weaken the J1 proof. The
+next Chronos design must define the human-authorized rejection/reopen operation,
+its exact task/revision and acceptance-evidence inputs, execution-state effect,
+attempt-budget semantics, durable receipt, lost-reply lookup and refusal laws.
+Only then can the real stale/reopened production-command qualification close.
+

@@ -83,8 +83,15 @@ read-only input until that repository settles.
   canonical first incarnation zero while retaining nonzero task-key and
   attempt fences. The remaining work is a real stale/reopened status sequence
   and human presentation parity—not a new relationship schema or adapter
-  design. Pantheon must not hash an unbound task name, trust deployment
-  configuration or infer scope.
+  design. The status sequence is explicitly dependent on the already-retained
+  `chronos-task-lifecycle-transition-controls`, not a duplicate task: Chronos
+  currently has no public status-transition owner protocol, and the engine's
+  nominal `ReadyForReview -> InProgress` edge conflicts with its own execution
+  guard for a completed `Succeeded` task. Rejection/reopen semantics need a
+  human-authorized, revision-bound, receipted owner operation. Link that
+  dependency through `chronos-blocked-resolution-link-contract` once the
+  lifecycle surface can represent it. Pantheon must not hash an unbound task
+  name, trust deployment configuration or infer scope.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,

@@ -152,6 +152,18 @@ states above. The next slice must:
 2. present the same evidence in the human review surface without implying
    acceptance or `Done`.
 
+The first item is linked to the existing Chronos backlog owner
+`chronos-task-lifecycle-transition-controls` (live revision 83, incarnation
+69), not a duplicate J1 ticket. Source audit confirms why it is a real
+dependency: `Engine::transition_task_status` has no public owner protocol or
+client, and its nominal `ReadyForReview -> InProgress` edge is rejected by the
+same function because the completed task remains `Succeeded` while
+`InProgress` requires `Running` or `Uncertain`. Rejection/reopen semantics must
+therefore be defined and exposed with human authority and receipts before this
+proof can be run. The existing
+`chronos-blocked-resolution-link-contract` owns the corresponding inspectable
+resolution-link requirement.
+
 The headless adapter itself is no longer the J1 hole. Current-status evolution
 and human presentation remain `Maybe` at the next lower boundaries.
 
