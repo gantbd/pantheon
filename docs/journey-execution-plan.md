@@ -2598,13 +2598,16 @@ Operational means observable completed work, not a configured role name:
   the exact machine and selected its first substantive question, “do we have
   the right ensemble?” The machine therefore supplies executable backlog and
   acceptance structure without pretending the no-shell runtime is operational.
-- Pantheon now exposes the safe design-proof subset as four independently
+- Pantheon now exposes the safe design-proof subset as three independently
   admissible component-native owner-tool catalogue entries:
-  `rune.source.validate.v1`, `rune.machine-path.validate.v1`,
-  `smith.compatibility.inspect.v1`, and `smith.presentation.prepare.v1`.
+  `rune.machine-path.validate.v1`, `smith.compatibility.inspect.v1`, and
+  `smith.presentation.prepare.v1`.
   Frontier-role planning requires them, fixes every command to a
   deployment-owned complete argv with no model-supplied arguments, and remains
-  `operational=false`. `pantheon agent-tools` separately reports executable
+  `operational=false`. Dogfooding rejected `rune.source.validate.v1` from the
+  catalogue because current Scry success emits the complete typed IR; a larger
+  output ceiling would bound but not minimize that disclosure. `pantheon
+  agent-tools` separately reports content-minimal Rune validation, executable
   Smith projection and Vellum change-set proposal as unavailable with
   `aggregate_fallback=false`. `make qualify-bounded-agent-development` proves
   the catalogue/role boundary and reruns the Rune graph, grounding, round-trip,

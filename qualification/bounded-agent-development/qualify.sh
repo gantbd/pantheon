@@ -20,7 +20,6 @@ cargo run -p pantheon-cli --bin pantheon --locked --offline -- agent-tools \
   >"$scratch/tools.json"
 cargo run -p pantheon-cli --bin pantheon --locked --offline -- \
   agent-role-plan frontier-collaborator \
-  rune.source.validate.v1 \
   rune.machine-path.validate.v1 \
   smith.compatibility.inspect.v1 \
   smith.presentation.prepare.v1 \
@@ -36,7 +35,6 @@ with open(sys.argv[2], encoding="utf-8") as source:
     role = json.load(source)
 
 expected = {
-    "rune.source.validate.v1",
     "rune.machine-path.validate.v1",
     "smith.compatibility.inspect.v1",
     "smith.presentation.prepare.v1",
@@ -55,6 +53,7 @@ for capability in expected:
 
 gaps = {(entry["component"], entry["surface"]): entry for entry in tools["unavailable"]}
 for gap in [
+    ("rune", "rune.source.validate.v1"),
     ("smith", "smith.executable-projection.prepare.v1"),
     ("vellum", "workspace.changeset.propose.v1"),
 ]:

@@ -576,13 +576,6 @@ pub const AGENT_OWNER_TOOL_ROUTES: &[AgentOwnerToolRoute] = &[
     },
     AgentOwnerToolRoute {
         component: "rune",
-        capability: "rune.source.validate.v1",
-        owner_surface: "acp_terminal.commands[]",
-        model_arguments: "none_when_exact_source_and_scry_executable_are_pinned",
-        enforcement: "Daimon canonicalizes the Rune workspace and Scry executable; Aegis reauthorizes the command-specific capability; the exact admitted source is fixed in the complete argv; the environment and bounded validation output contain no arbitrary path, shell, write, or network authority",
-    },
-    AgentOwnerToolRoute {
-        component: "rune",
         capability: "rune.machine-path.validate.v1",
         owner_surface: "acp_terminal.commands[]",
         model_arguments: "none_when_exact_machine_terminal_and_mandatory_stages_are_pinned",
@@ -613,6 +606,12 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
         surface: "owner-query-runtime",
         missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
         next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
+    },
+    AgentToolGap {
+        component: "rune",
+        surface: "rune.source.validate.v1",
+        missing: "a content-minimal validation verdict bound to exact source identity; current Scry success emits the complete typed IR",
+        next_boundary: "add and qualify a Rune-owned quiet validation verdict without duplicating Scry semantics; do not treat a larger Daimon output bound as disclosure minimization",
     },
     AgentToolGap {
         component: "smith",
@@ -793,7 +792,6 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "artifacts.observe.v1",
             "artifacts.catalog.v1",
             "agent.web.fetch.v1",
-            "rune.source.validate.v1",
             "rune.machine-path.validate.v1",
             "smith.compatibility.inspect.v1",
             "smith.presentation.prepare.v1",
@@ -1079,7 +1077,6 @@ mod tests {
     #[test]
     fn bounded_development_tools_are_fixed_owner_commands_without_shell_or_publish_authority() {
         for capability in [
-            "rune.source.validate.v1",
             "rune.machine-path.validate.v1",
             "smith.compatibility.inspect.v1",
             "smith.presentation.prepare.v1",
@@ -1101,6 +1098,7 @@ mod tests {
         assert!(presentation.enforcement.contains("Vellum publication"));
         assert!(presentation.enforcement.contains("rollout authority"));
         for unavailable in [
+            ("rune", "rune.source.validate.v1"),
             ("smith", "smith.executable-projection.prepare.v1"),
             ("vellum", "workspace.changeset.propose.v1"),
         ] {
