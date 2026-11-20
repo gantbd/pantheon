@@ -84,6 +84,43 @@ back to the canonical roadmap before the slice is considered settled.
   Periodic grooming may propose dependency, duplicate and priority changes but
   cannot apply contested changes or declare implementation complete.
 
+### Task intent, clarification and pattern review
+
+A Chronos task is not adequately specified by identity, priority and dependency
+edges alone. Its executable packet links a versioned Rune/Rosetta context
+artifact whose compass retains intent, values and outcomes and whose narrative
+retains relevant context, non-goals, constraints, affected stakeholders,
+acceptance evidence and provenance. Rosetta is residual context: it does not
+grant authority, create behavior, settle ambiguity or replace owner facts.
+
+When missing or conflicting context could materially change scope, acceptance,
+risk, authority or stakeholder impact, asking for clarification is the correct
+bounded result. The question, available evidence, respondent/owner and resulting
+answer or unresolved gate remain attributable. An agent must not fill the gap
+with a plausible invented contract merely to keep work moving.
+
+Agents and product-management roles may inspect the wider board for emergent
+patterns: duplicate intent, recurring friction, shared root causes, missing
+dependencies, systemic capability gaps, inconsistent acceptance criteria and
+critical-path drift. Pattern output is a proposal linked to the sampled board
+revision and task evidence. It cannot silently merge, close, reprioritize,
+rewrite or unblock work.
+
+### Vellum interaction modes
+
+Vellum presentations start in a visibly read-only navigation mode. Movement,
+search, selection, inspection and copy do not imply edit intent. Entering edit
+mode is explicit and visibly persistent; only then are text-producing keys,
+paste, deletion, indentation and multi-cursor input translated into bounded
+edit behaviors. Mode exit, save, discard, conflict and stale-revision handling
+remain explicit settlements.
+
+Presentation mode is not filesystem authority. Read/write admission, document
+membership, durable-save authority and Aegis decisions remain owner-controlled
+and independently observable. Vim, Emacs or other key profiles may choose how
+mode transitions are expressed, but every path uses the same behavior facade
+and mode/state contract.
+
 ## Product and dogfood requirements
 
 - Use Vellum for working context and editable delivery artifacts, Chronos for

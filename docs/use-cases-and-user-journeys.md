@@ -2254,6 +2254,16 @@ provenance packet, then classified as critical-path, required follow-up or
 backlog without silently changing sponsor-approved priority. Chronos revision
 74 owns the enforcement, capture and scratch-to-canonical reconciliation work;
 the reconciliation task is dependency-blocked on the first two contracts.
+Tasks also link a versioned Rune/Rosetta context envelope rather than asking an
+agent to infer intent from an identifier. The compass retains intent, values
+and outcomes; narrative context retains bounds, stakeholders, provenance and
+acceptance evidence. It guides interpretation but grants neither behavior nor
+authority. Material ambiguity may settle as an attributable clarification
+request. Board-wide pattern analysis may propose duplicate, dependency,
+systemic-friction or critical-path findings against an exact board revision but
+cannot apply them. Chronos revision 75 owns this intent/clarification contract
+and a separate Vellum read-only-first modal editing contract whose edit inputs
+still route through the common behavior facade and independent owner authority.
 An isolated live gate admits a real P10 dependency-blocked task, verifies the
 same inspect-only agenda entry through the TUI and a concurrently attached
 headless Pantheon client, and proves clean hosted-owner drain. The long-running

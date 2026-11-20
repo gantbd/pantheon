@@ -1273,6 +1273,19 @@ actually blocked on the first two exact prerequisites. This makes the
 revision-73 roadmap, now revision 74, the canonical owner while the revision-8
 goal-work board remains a bounded scratch surface pending reconciliation.
 
+Chronos revision 75 now owns the next intent/presentation layer. P9
+`chronos-rosetta-task-intent-context-envelope` binds executable work to
+versioned Rune/Rosetta intent, values, outcomes, narrative, bounds, stakeholder
+and acceptance context without treating context as behavior or authority. P8
+`chronos-clarification-emergent-board-pattern-loop` is actually blocked on that
+envelope and owns attributable clarification plus board-revision-bound pattern
+proposals. P8 `vellum-readonly-first-modal-edit-contract` owns a visible
+read-only default, explicit edit mode and common behavior-facade routing across
+key profiles. The live TUI owner applied the atomic graph at revision 75. The
+current Pantheon headless observer returned a contract-invalid V9 reply for all
+three exact tasks; the existing live-owner/headless-readiness item owns that
+parity failure, so no duplicate was created and no task absence was inferred.
+
 ### Chronos operator agenda
 
 - [ ] Project one operator agenda across owner-native approvals, sign-offs,
