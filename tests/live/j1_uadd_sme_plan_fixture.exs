@@ -6,8 +6,7 @@ token_file = System.fetch_env!("PANTHEON_J1_UADD_TOKEN_FILE")
 {:ok, registry} =
   RuneMcp.Server.start_link(
     namespace_map: %{
-      "rune" => Path.join(rune_root, "sme"),
-      "axon-sme" => Path.join(workspace, "axon/sme")
+      "rune" => Path.join(rune_root, "sme")
     },
     rune_loader_path: Path.join(rune_root, "bin/rune_loader"),
     ref_resolve_path: Path.join(rune_root, "bin/ref_resolve"),
@@ -21,13 +20,6 @@ token_file = System.fetch_env!("PANTHEON_J1_UADD_TOKEN_FILE")
     registry,
     "rune/sme/triggers",
     Path.join(rune_root, "sme/triggers.fold.rune")
-  )
-
-:ok =
-  RuneMcp.Server.load(
-    registry,
-    "axon/sme/axon-concerns",
-    Path.join(workspace, "axon/sme/axon-concerns.lattice.rune")
   )
 
 :ok =

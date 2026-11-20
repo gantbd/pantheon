@@ -48,9 +48,11 @@ architecture, network, identity, data, adversarial testing, user experience,
 humanism and live-verification concerns. Those Dendrite roles are advisory
 expertise, not substitutes for the equitable, attributable owner/stakeholder
 ensemble that Moira must admit separately. The first authenticated request
-correctly refused because selected roles lacked Axon concern registration. The
-Rune/Axon owners now register the four exact UADD roles without changing their
-scope, and the unchanged request returns all eight roles as `review_required`.
+correctly refused because selected roles lacked concern registration in the
+then-current Axon prior-art lattice. The established concern pairs required by
+the UADD plans now live in Pantheon's owned concern lattice without changing
+the roles' scope, and the unchanged request returns all eight roles as
+`review_required`.
 The state-local security plan separately retains its three correlated security
 roles rather than presenting them as independent agreement. Initial refusal,
 owner repair and repeatable live evidence are retained in
@@ -208,6 +210,6 @@ bound result is recorded in
 The designing ensemble must first answer “do we have the right ensemble?”,
 include the actual human advocate/acceptance principal, security/threat, UX,
 Moira, Chronos, Aegis, Vellum, observability and audit stakeholders, and obtain
-a live Tellus-grounded review after the Rune/Axon concern-registration refusal
-is resolved by its owners. Only an admitted Rune and qualified owner
+a live Tellus-grounded review after the historical concern-registration refusal
+is resolved by the current Pantheon owner. Only an admitted Rune and qualified owner
 implementation may advance this request.

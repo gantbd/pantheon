@@ -111,3 +111,29 @@ security-stage request returns security, STRIDE, adversarial-tester and live
 verification with exactly the three security-role correlations. Both plans are
 honestly `review_required`, retain “do we have the right ensemble?”, and state
 that SME routing is not stakeholder equity, authority, approval or proof.
+
+## Pantheon ownership migration
+
+Axon is prior art, not a current Pantheon dependency or namespace owner. The
+two established UADD concern pairs absent from Pantheon's lattice were migrated
+without changing their names, relationships or independence claims:
+
+- `threat-modeling / stride-categorization`; and
+- `security-testing / adversarial-validation`.
+
+Both UADD SME plans now load
+`pantheon/design/pantheon-concerns`. The live fixture no longer registers or
+loads an Axon namespace. Scry admits the Pantheon lattice and the same live gate
+passes both authenticated plans with the same role sets and correlation facts.
+This is an ownership correction, not a new semantic claim; the historical Axon
+digests above remain evidence of the refusal and first repair.
+
+Current identities:
+
+- Pantheon concern lattice SHA-256:
+  `ae4d8c034772ac22ebcf28633723f23a5a304f98d985076b6235a1375491dfa2`;
+- exact eight-role plan SHA-256:
+  `35f6c873833faaff0946674141e3cba1504dc57096e15e5daa75c81301ab5374`;
+  and
+- state-local security plan SHA-256:
+  `4c9bc5fcc743467527cc533efb26b6ed94f43812a9b3de497fcc3e15011443dd`.

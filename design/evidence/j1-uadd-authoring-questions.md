@@ -62,9 +62,9 @@ a new request digest; the current digest must not be silently reinterpreted.
 
 The first authenticated Tellus attempt and its owner resolution are bound in
 `design/evidence/j1-uadd-sme-review-refusal.md`. Transport and authentication
-passed, but the real Axon lattice initially refused selected roles without
-concern registrations. The owners registered their existing semantics without
-dropping the adversarial review; repeatable live requests now return
+passed, but the then-current Axon prior-art lattice initially refused selected
+roles without concern registrations. The established concern pairs now live in
+Pantheon's owned lattice without dropping the adversarial review; repeatable live requests now return
 `review_required`. That routing result remains advisory and does not answer the
 accountable review or topology questions above.
 

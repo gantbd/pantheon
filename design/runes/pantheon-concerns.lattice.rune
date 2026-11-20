@@ -31,7 +31,9 @@
   (facet data-domain
     (member data-semantics provenance))
   (facet risk-protection
-    (member application-security threat-modeling))
+    (member application-security threat-modeling)
+    (member threat-modeling stride-categorization)
+    (member security-testing adversarial-validation))
   (facet human-outcomes
     (member user-experience usability-accessibility)
     (member humane-systems human-agency)))

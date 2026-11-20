@@ -61,6 +61,7 @@ printf '%s' "$report" | jq -e '
   .status == "review_required" and
   .complete == false and
   .ensemble_question == "do we have the right ensemble?" and
+  .lattice.load_id == "pantheon/design/pantheon-concerns" and
   [.roles[].role] == [
     "architecture",
     "network",
@@ -94,6 +95,7 @@ printf '%s' "$security_report" | jq -e '
   .capability == "tellus.sme-plan.v1" and
   .status == "review_required" and
   .complete == false and
+  .lattice.load_id == "pantheon/design/pantheon-concerns" and
   [.roles[].role] == [
     "security",
     "security.stride",

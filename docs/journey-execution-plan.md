@@ -4334,3 +4334,44 @@ sandbox confinement, immutable artifact provenance, supervised local service,
 authenticated remote service, WASI capability runtime and a pinned outward MCP
 agent facade.
 
+### 2026-11-20 — UADD advisory grounding moves from Axon prior art to Pantheon ownership
+
+Axon remains historical evidence for the initial concern-registration refusal,
+but it is no longer a runtime namespace or lattice owner for the two UADD SME
+plans. Pantheon's owned concern lattice now carries the established
+`threat-modeling / stride-categorization` and
+`security-testing / adversarial-validation` relationships without changing
+role scope or claiming false independence. Both plans load
+`pantheon/design/pantheon-concerns`; the live fixture loads no Axon namespace.
+
+Scry admits the revised lattice. The authenticated live gate passes the broad
+eight-role and state-local four-role plans with the same correlation facts,
+ensemble question and no stakeholder authority. The owner migration and new
+digests are retained in `design/evidence/j1-uadd-sme-review-refusal.md`.
+
+### 2026-11-20 — UADD owner options and equitable human gate are explicit
+
+The owner audit found Moira to be the only existing owner aligned with typed
+UADD runtime evidence: it already owns attributable deliberation, findings,
+revision-bound human-gate requests and Aegis-authorized responses. Chronos
+remains the sole task-effect owner, Aegis the authority owner, Vellum the
+material owner, Rune the method/compiler owner and Pantheon the effect-free
+composer. Inflating generic Moira `Approved`, moving evidence into Chronos or
+Pantheon, and creating a new component were retained with their tradeoffs in
+`design/evidence/j1-uadd-owner-ensemble-review.md`.
+
+The recommended stable core is a versioned Moira-owned UADD sub-contract that
+cannot accept unrelated generic approval, keeps challenge distinct from later
+acceptance, invalidates old evidence after delivery changes, preserves
+`Deferred` and non-mutating `Rejected`, and permits only exact Chronos lookup
+after a lost reply. RED/USE and golden-signal fields remain content-free and
+state `oculus_published=false` until a sovereign publication path exists.
+
+The proposed stakeholder ensemble separately includes the named human sponsor,
+each affected owner, operator/user advocacy, independent adversarial and audit
+standing, and consulted observability ownership. Advisory Tellus/Dendrite roles
+do not gain stakeholder or human authority. The exact Rune-author request
+remains unchanged and `questions_pending` until the named sponsor answers both
+“do we have the right ensemble?” and whether Moira owns this version-one
+contract. That answer is a design gate only, never J1 acceptance or rollout.
+

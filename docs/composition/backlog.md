@@ -15,8 +15,8 @@ read-only input until that repository settles.
   still an admitted toolchain gap.
 - [x] Restore state-local Tellus SME-plan admission without weakening the
   orthogonality check. The Rune owners now retain exact concern pairs for
-  security, STRIDE, adversarial-tester and live-verification, and the Axon
-  owner registers them in their actual correlated facets. A reusable
+  security, STRIDE, adversarial-tester and live-verification, and Pantheon's
+  owned concern lattice registers them in their actual correlated facets. A reusable
   authenticated live gate proves the four-role security plan returns
   `review_required` with all three security correlations visible; no default
   facet or independence was invented.
@@ -138,9 +138,10 @@ read-only input until that repository settles.
   typed questions and zero candidate/IR/projection bytes because accountable
   review and topology are not yet admitted. Resolve those holes through the
   actual owners and review ensemble rather than hand-authoring around the
-  refusal. Before machine admission,
-  complete an authenticated Tellus-grounded ensemble review; the current live
-  service credential route was not safely available and must not be bypassed.
+  refusal. Authenticated Tellus-grounded advisory routing is now live-qualified
+  through Pantheon's own lattice; before machine admission, obtain the separate
+  accountable stakeholder ensemble-fit and Moira owner decision recorded in
+  `design/evidence/j1-uadd-owner-ensemble-review.md`.
   Pantheon must not hash an unbound task name, trust deployment
   configuration or infer scope.
 - [ ] Isolate pure proof-cell tests from Pantheon's broad CLI link topology.

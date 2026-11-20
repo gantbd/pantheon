@@ -1,7 +1,7 @@
 {
   "version": 1,
   "fold_load_id": "rune/sme/triggers",
-  "lattice_load_id": "axon/sme/axon-concerns",
+  "lattice_load_id": "pantheon/design/pantheon-concerns",
   "tags": [
     "security-test-design",
     "adversarial-security-validation",
