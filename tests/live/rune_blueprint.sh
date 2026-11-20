@@ -71,7 +71,11 @@ jq -e '
   .observation.questions_after == 2 and
   .observation.answers_applied == 0 and
   .observation.token_usage == "not_observed" and
-  .observation.oculus_published == false
+  .observation.oculus_published == false and
+  .risk_policy.declared_risk == "moderate" and
+  .risk_policy.classification_authority == "caller_declared_not_verified" and
+  .risk_policy.rune_baseline_weakened == false and
+  .risk_policy.publication == "not_eligible_until_projection_complete"
 ' "$scratch/questions.json" >/dev/null
 
 base=$(jq -r '.lineage.request_ast.base_sha256' "$scratch/questions.json")
@@ -110,12 +114,35 @@ jq -e '
   .observation.questions_after == 0 and
   .observation.answers_applied == 2 and
   .observation.deterministic_revision_operations == 2 and
+  .risk_policy.publication == "eligible_for_separate_human_approved_vellum_patch" and
   .owner_outcome.owner_outcome.compatibility.status == "complete" and
   .owner_outcome.owner_outcome.compatibility.unsupported == [] and
   (.owner_outcome.owner_outcome.canonical_candidate | length) > 0 and
   (.owner_outcome.owner_outcome.typed_ir | length) > 0 and
   (.owner_outcome.owner_outcome.projection | length) > 0
 ' "$scratch/projection.json" >/dev/null
+
+jq '{
+  version: 1,
+  task: {
+    id: "moderate-risk-needs-dissent",
+    prose: "Do not let a moderate-risk projection erase the limits of its review.",
+    risk: "moderate"
+  },
+  request: (.review.dissent = [])
+}' "$qualified" >"$scratch/no-dissent.json"
+"$pantheon" rune-blueprint "$scratch/profile.json" "$scratch/no-dissent.json" \
+  >"$scratch/risk-question.json"
+jq -e '
+  .status == "questions_pending" and
+  .complete == false and
+  [.questions[].path] == ["$.review.dissent"] and
+  .questions[0].category == "risk" and
+  .owner_outcome.status == "projection_qualified" and
+  .owner_outcome.complete == true and
+  .risk_policy.publication == "not_eligible_until_projection_complete" and
+  .risk_policy.rune_baseline_weakened == false
+' "$scratch/risk-question.json" >/dev/null
 
 jq '.base_request_sha256 = "sha256:0000000000000000000000000000000000000000000000000000000000000000"' \
   "$scratch/answers.json" >"$scratch/stale.json"

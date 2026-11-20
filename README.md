@@ -663,6 +663,10 @@ explicit hole, and invokes Rune again. The result distinguishes the retained
 prose LST from the request AST and reports question counts, deterministic
 revision operations, duration and honest unobserved metrics. It performs no
 prose inference, semantic invention, publication or human-review substitution.
+Risk scaling only adds gates: moderate risk retains material dissent; high risk
+cannot publish without an owner-specific admission contract; Gray cannot
+publish without sandbox, reversibility and expiry. A caller-declared class is
+reported as unverified and never treated as authority.
 Run `make qualify-rune-blueprint` for the real task → questions → answers →
 Scry → Smith gate and stale-answer refusal.
 

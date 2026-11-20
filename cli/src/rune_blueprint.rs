@@ -132,7 +132,8 @@ fn execute(
         .map_err(|error| refusal("request", format!("serialize Rune request: {error}")))?;
     let base_request_sha256 = sha256(&base_request);
     let initial = crate::rune_author::execute_private_bytes(profile, &base_request)?;
-    let current_questions = questions(&initial)?;
+    let mut current_questions = questions(&initial)?;
+    current_questions.extend(risk_questions(blueprint.task.risk, &blueprint.request));
 
     let (owner, revised_request_sha256, answer_count, revised_blueprint) = if let Some(
         answers_path,
@@ -172,15 +173,23 @@ fn execute(
         (initial, base_request_sha256.clone(), 0, None)
     };
 
-    let after = questions(&owner)?;
-    let status = owner
+    let mut after = questions(&owner)?;
+    after.extend(risk_questions(blueprint.task.risk, &blueprint.request));
+    let owner_status = owner
         .get("status")
         .and_then(Value::as_str)
         .ok_or_else(|| refusal("owner", "Rune adapter response omits status"))?;
-    let complete = owner
+    let owner_complete = owner
         .get("complete")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let complete = owner_complete && after.is_empty();
+    let status = if after.is_empty() {
+        owner_status
+    } else {
+        "questions_pending"
+    };
+    let risk_policy = risk_policy(blueprint.task.risk, complete);
     let answer_template = (!after.is_empty()).then(|| {
         json!({
             "version": 1,
@@ -223,6 +232,7 @@ fn execute(
         "questions": after.iter().map(question_json).collect::<Vec<_>>(),
         "answer_template": answer_template,
         "revised_blueprint": revised_blueprint,
+        "risk_policy": risk_policy,
         "owner_outcome": owner,
         "observation": {
             "schema": "rune.blueprint.observation.v1",
@@ -236,15 +246,70 @@ fn execute(
             "escaped_defects": "not_observed",
             "oculus_published": false,
         },
-        "next_action": if complete {
-            "inspect the exact private projection packet, then separately authorize bounded Vellum publication"
-        } else if status == "questions_pending" {
+        "next_action": if !after.is_empty() {
             "answer only exact returned questions; preserve dissent and submit a new answer-bound revision"
+        } else if complete && matches!(blueprint.task.risk, RiskV1::Low | RiskV1::Moderate) {
+            "inspect the exact private projection packet, then separately authorize bounded Vellum publication"
+        } else if complete && matches!(blueprint.task.risk, RiskV1::High) {
+            "retain the projection for review and qualify an owner-specific high-risk admission contract before publication"
+        } else if complete && matches!(blueprint.task.risk, RiskV1::Gray) {
+            "retain the projection as experimental evidence and qualify sandbox, reversibility and expiry before publication"
         } else {
             "follow the Rune-owned refusal without deleting or weakening an obligation"
         },
         "boundary": BOUNDARY,
     }))
+}
+
+fn risk_questions(risk: RiskV1, request: &Value) -> Vec<Question> {
+    if !matches!(risk, RiskV1::Moderate) || request.get("review").is_none() {
+        return Vec::new();
+    }
+    let dissent = request
+        .pointer("/review/dissent")
+        .and_then(Value::as_array)
+        .is_some_and(|values| {
+            !values.is_empty()
+                && values
+                    .iter()
+                    .all(|value| value.as_str().is_some_and(|text| !text.is_empty()))
+        });
+    if dissent {
+        Vec::new()
+    } else {
+        vec![Question {
+            path: "$.review.dissent".into(),
+            category: "risk".into(),
+            question:
+                "Which retained dissent or material limitation bounds this moderate-risk design?"
+                    .into(),
+        }]
+    }
+}
+
+fn risk_policy(risk: RiskV1, projection_complete: bool) -> Value {
+    let (publication, missing) = match risk {
+        RiskV1::Low | RiskV1::Moderate if projection_complete => (
+            "eligible_for_separate_human_approved_vellum_patch",
+            Value::Null,
+        ),
+        RiskV1::Low | RiskV1::Moderate => ("not_eligible_until_projection_complete", Value::Null),
+        RiskV1::High => (
+            "not_admitted",
+            json!("owner-specific high-risk admission contract"),
+        ),
+        RiskV1::Gray => (
+            "not_admitted",
+            json!("sandbox, reversibility and expiry experiment contract"),
+        ),
+    };
+    json!({
+        "declared_risk": risk.name(),
+        "classification_authority": "caller_declared_not_verified",
+        "rune_baseline_weakened": false,
+        "publication": publication,
+        "missing_contract": missing,
+    })
 }
 
 fn validate_blueprint(value: &BlueprintV1) -> Result<(), Value> {
@@ -585,6 +650,30 @@ mod tests {
                 Segment::Key("rosetta".into()),
                 Segment::Key("intent".into()),
             ]
+        );
+    }
+
+    #[test]
+    fn moderate_risk_requires_retained_dissent_without_weakening_rune() {
+        let request = json!({"review": {"dissent": []}});
+        let questions = risk_questions(RiskV1::Moderate, &request);
+        assert_eq!(questions.len(), 1);
+        assert_eq!(questions[0].path, "$.review.dissent");
+        assert_eq!(
+            risk_policy(RiskV1::Moderate, false)["rune_baseline_weakened"],
+            false
+        );
+    }
+
+    #[test]
+    fn high_and_gray_projection_do_not_admit_publication() {
+        assert_eq!(
+            risk_policy(RiskV1::High, true)["publication"],
+            "not_admitted"
+        );
+        assert_eq!(
+            risk_policy(RiskV1::Gray, true)["publication"],
+            "not_admitted"
         );
     }
 }

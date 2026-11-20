@@ -4412,3 +4412,12 @@ the owner-compatible attached TUI accepted the graph. Paginated cross-board
 search still cannot prove global absence and is already retained as its own
 Chronos capability gap.
 
+The risk-scaled admission step is now enforced at this boundary without
+weakening Rune. Low risk retains Rune's baseline and the later human Vellum
+gate. Moderate risk additionally requires nonempty retained dissent; if the
+Rune owner qualifies a projection while dissent is absent, Pantheon still
+returns an exact risk question and refuses publication eligibility. High risk
+stops after projection until an owner-specific high-risk contract exists. Gray
+stops until sandbox, reversibility and expiry are qualified. The declared risk
+class is explicitly `caller_declared_not_verified`; it never grants authority.
+
