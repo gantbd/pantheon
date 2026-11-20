@@ -99,7 +99,14 @@ jq -e '
   .machine_state == "questions_returned" and
   .signal == "ClarificationRequired" and
   .packet_publication == null and
-  [.blueprint.questions[].path] == ["$.holes", "$.review"]
+  [.blueprint.questions[].path] == ["$.holes", "$.review"] and
+  .observation.refusals == 0 and
+  .observation.refusal_stage == null and
+  .observation.publication_invocations == 0 and
+  .observation.pre_code_findings == "not_observed" and
+  .observation.rework_operations == "not_observed" and
+  .observation.context_usage == "not_observed" and
+  .observation.oculus_published == false
 ' "$scratch/composed-questions.json" >/dev/null
 
 base=$(jq -r '.lineage.request_ast.base_sha256' "$scratch/questions.json")
@@ -169,7 +176,17 @@ jq -e '
   .machine_state == "refused" and
   .signal == "PublicationRefused" and
   .packet_publication == null and
-  .blueprint.risk_policy.publication == "not_admitted"
+  .blueprint.risk_policy.publication == "not_admitted" and
+  .observation.refusals == 1 and
+  .observation.refusal_stage == "risk_admission" and
+  .observation.publication_invocations == 0 and
+  .observation.semantic_handoff_files_materialized == 0 and
+  .observation.pre_code_findings == "not_observed" and
+  .observation.rework_operations == "not_observed" and
+  .observation.token_usage == "not_observed" and
+  .observation.context_usage == "not_observed" and
+  .observation.escaped_defects == "not_observed" and
+  .observation.oculus_published == false
 ' "$scratch/composed-high-risk.json" >/dev/null
 
 jq '{

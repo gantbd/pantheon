@@ -149,10 +149,17 @@ printf '%s' "$preview" | jq -e '
   .observation.questions_after == 0 and
   .observation.deterministic_revision_operations == 0 and
   .observation.publication_invocations == 1 and
+  .observation.refusals == 0 and
+  .observation.refusal_stage == null and
   .observation.semantic_handoff_files_materialized == 0 and
   .observation.manual_handoff_files_avoided == 1 and
   .observation.packet_bytes == .packet_publication.packet_bytes and
   .observation.inserted_bytes == .packet_publication.patch.inserted_bytes and
+  .observation.pre_code_findings == "not_observed" and
+  .observation.rework_operations == "not_observed" and
+  .observation.token_usage == "not_observed" and
+  .observation.context_usage == "not_observed" and
+  .observation.escaped_defects == "not_observed" and
   .observation.oculus_published == false
 ' >/dev/null
 test "$(printf '%s' "$manual_preview" | jq -r '.packet_sha256')" = \

@@ -81,9 +81,27 @@ fn execute(
     approval_path: Option<&std::path::Path>,
 ) -> Result<Value, Value> {
     let started = Instant::now();
-    let profile = crate::rune_packet_publication::publication_profile_binding(publication_profile)?;
+    let profile = crate::rune_packet_publication::publication_profile_binding(publication_profile)
+        .map_err(|failure| {
+            refusal(
+                "publication_profile",
+                "the deployment-owned publication profile refused before blueprint invocation",
+                &Value::Null,
+                Some(failure),
+                started,
+            )
+        })?;
     let prepared =
-        crate::rune_blueprint::prepare(&profile.rune_profile, blueprint_path, answers_path)?;
+        crate::rune_blueprint::prepare(&profile.rune_profile, blueprint_path, answers_path)
+            .map_err(|failure| {
+                refusal(
+                    "blueprint",
+                    "the Rune blueprint owner refused preparation",
+                    &failure,
+                    None,
+                    started,
+                )
+            })?;
     let blueprint = prepared.response;
     let status = blueprint
         .get("status")
@@ -96,7 +114,7 @@ fn execute(
             PantheonRuneBlueprintPublicationSignal::ClarificationRequired,
             PantheonRuneBlueprintPublicationInvocationVerdict::Unknown,
         )
-        .map_err(|detail| refusal("composition", detail, &blueprint, None))?;
+        .map_err(|detail| refusal("composition", detail, &blueprint, None, started))?;
         return Ok(response(
             "questions_pending",
             false,
@@ -105,6 +123,7 @@ fn execute(
             blueprint,
             None,
             started,
+            None,
         ));
     }
 
@@ -116,6 +135,7 @@ fn execute(
             "Rune blueprint did not produce one complete qualified projection",
             &blueprint,
             None,
+            started,
         ));
     }
 
@@ -124,7 +144,7 @@ fn execute(
         PantheonRuneBlueprintPublicationSignal::ProjectionAdmitted,
         PantheonRuneBlueprintPublicationInvocationVerdict::Unknown,
     )
-    .map_err(|detail| refusal("composition", detail, &blueprint, None))?;
+    .map_err(|detail| refusal("composition", detail, &blueprint, None, started))?;
     let eligible = blueprint
         .pointer("/risk_policy/publication")
         .and_then(Value::as_str)
@@ -135,7 +155,7 @@ fn execute(
             PantheonRuneBlueprintPublicationSignal::PublicationRefused,
             PantheonRuneBlueprintPublicationInvocationVerdict::Unknown,
         )
-        .map_err(|detail| refusal("composition", detail, &blueprint, None))?;
+        .map_err(|detail| refusal("composition", detail, &blueprint, None, started))?;
         return Err(response(
             "publication_refused",
             false,
@@ -144,6 +164,7 @@ fn execute(
             blueprint,
             None,
             started,
+            Some("risk_admission"),
         ));
     }
     let admitted = advance(
@@ -151,7 +172,7 @@ fn execute(
         PantheonRuneBlueprintPublicationSignal::RiskAdmitted,
         PantheonRuneBlueprintPublicationInvocationVerdict::Unknown,
     )
-    .map_err(|detail| refusal("composition", detail, &blueprint, None))?;
+    .map_err(|detail| refusal("composition", detail, &blueprint, None, started))?;
 
     let owner = blueprint.get("owner_outcome").ok_or_else(|| {
         refusal(
@@ -159,6 +180,7 @@ fn execute(
             "qualified blueprint omitted the exact Rune owner outcome",
             &blueprint,
             None,
+            started,
         )
     })?;
     let child = match crate::rune_packet_publication::execute_qualified(
@@ -182,6 +204,7 @@ fn execute(
                 "the existing packet-publication owner refused",
                 &blueprint,
                 Some(child),
+                started,
             ));
         }
     };
@@ -195,6 +218,7 @@ fn execute(
             blueprint,
             Some(child),
             started,
+            None,
         ));
     }
 
@@ -223,6 +247,7 @@ fn execute(
             blueprint,
             Some(child),
             started,
+            None,
         )),
         _ => Ok(response(
             &child_status,
@@ -232,6 +257,7 @@ fn execute(
             blueprint,
             Some(child),
             started,
+            None,
         )),
     }
 }
@@ -301,6 +327,55 @@ fn response(
     blueprint: Value,
     child: Option<Value>,
     started: Instant,
+    refusal_stage: Option<&str>,
+) -> Value {
+    let observation = observation(&blueprint, child.as_ref(), started, refusal_stage);
+    json!({
+        "version": 1,
+        "capability": CAPABILITY,
+        "status": status,
+        "complete": complete,
+        "machine_state": state_name(state),
+        "signal": signal_name(signal),
+        "blueprint": blueprint,
+        "packet_publication": child,
+        "lineage": {
+            "source_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.source_sha256,
+            "typed_ir_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.typed_ir_sha256,
+            "smith_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.smith_sha256,
+        },
+        "observation": observation,
+        "boundary": BOUNDARY,
+    })
+}
+
+fn refusal(
+    stage: &str,
+    detail: impl Into<String>,
+    blueprint: &Value,
+    child: Option<Value>,
+    started: Instant,
+) -> Value {
+    let observation = observation(blueprint, child.as_ref(), started, Some(stage));
+    json!({
+        "version": 1,
+        "capability": CAPABILITY,
+        "status": "refused",
+        "complete": false,
+        "stage": stage,
+        "detail": detail.into(),
+        "blueprint": blueprint,
+        "packet_publication": child,
+        "observation": observation,
+        "boundary": BOUNDARY,
+    })
+}
+
+fn observation(
+    blueprint: &Value,
+    child: Option<&Value>,
+    started: Instant,
+    refusal_stage: Option<&str>,
 ) -> Value {
     let duration_ms = started.elapsed().as_millis();
     let blueprint_duration_ms = blueprint
@@ -324,67 +399,35 @@ fn response(
         .and_then(Value::as_u64)
         .unwrap_or(0);
     let packet_bytes = child
-        .as_ref()
         .and_then(|value| value.get("packet_bytes"))
         .and_then(Value::as_u64)
         .unwrap_or(0);
     let inserted_bytes = child
-        .as_ref()
         .and_then(|value| value.pointer("/patch/inserted_bytes"))
         .and_then(Value::as_u64)
         .unwrap_or(0);
     json!({
-        "version": 1,
-        "capability": CAPABILITY,
-        "status": status,
-        "complete": complete,
-        "machine_state": state_name(state),
-        "signal": signal_name(signal),
-        "blueprint": blueprint,
-        "packet_publication": child,
-        "lineage": {
-            "source_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.source_sha256,
-            "typed_ir_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.typed_ir_sha256,
-            "smith_sha256": PANTHEONRUNEBLUEPRINTPUBLICATION_LINEAGE.smith_sha256,
-        },
-        "observation": {
-            "schema": "rune.blueprint-publication.observation.v1",
-            "duration_ms": duration_ms,
-            "blueprint_duration_ms": blueprint_duration_ms,
-            "downstream_duration_ms": duration_ms.saturating_sub(u128::from(blueprint_duration_ms)),
-            "rune_owner_requests": owner_requests,
-            "questions_before": questions_before,
-            "questions_after": questions_after,
-            "deterministic_revision_operations": deterministic_revisions,
-            "publication_invocations": u8::from(child.is_some()),
-            "semantic_handoff_files_materialized": 0,
-            "manual_handoff_files_avoided": u8::from(child.is_some()),
-            "packet_bytes": packet_bytes,
-            "inserted_bytes": inserted_bytes,
-            "token_usage": "not_observed",
-            "escaped_defects": "not_observed",
-            "oculus_published": false,
-        },
-        "boundary": BOUNDARY,
-    })
-}
-
-fn refusal(
-    stage: &str,
-    detail: impl Into<String>,
-    blueprint: &Value,
-    child: Option<Value>,
-) -> Value {
-    json!({
-        "version": 1,
-        "capability": CAPABILITY,
-        "status": "refused",
-        "complete": false,
-        "stage": stage,
-        "detail": detail.into(),
-        "blueprint": blueprint,
-        "packet_publication": child,
-        "boundary": BOUNDARY,
+        "schema": "rune.blueprint-publication.observation.v1",
+        "duration_ms": duration_ms,
+        "blueprint_duration_ms": blueprint_duration_ms,
+        "downstream_duration_ms": duration_ms.saturating_sub(u128::from(blueprint_duration_ms)),
+        "rune_owner_requests": owner_requests,
+        "questions_before": questions_before,
+        "questions_after": questions_after,
+        "deterministic_revision_operations": deterministic_revisions,
+        "publication_invocations": u8::from(child.is_some()),
+        "refusals": u8::from(refusal_stage.is_some()),
+        "refusal_stage": refusal_stage,
+        "semantic_handoff_files_materialized": 0,
+        "manual_handoff_files_avoided": u8::from(child.is_some()),
+        "packet_bytes": packet_bytes,
+        "inserted_bytes": inserted_bytes,
+        "pre_code_findings": "not_observed",
+        "rework_operations": "not_observed",
+        "token_usage": "not_observed",
+        "context_usage": "not_observed",
+        "escaped_defects": "not_observed",
+        "oculus_published": false,
     })
 }
 

@@ -254,6 +254,31 @@ weakening packet identity. Token/context cost, pre-code findings, escaped
 defects and longitudinal rework remain unobserved, and the record is not yet
 published through Oculus.
 
+The follow-up instrumentation gate now requires that shape on every composed
+outcome rather than only success. Questions and previews report zero refusals;
+typed risk and downstream-owner refusals report one. Every outcome retains
+stage duration, owner-request, question, deterministic-revision, publication,
+handoff and patch counts. Pre-code findings, rework operations, token/context
+usage and escaped defects remain the literal `not_observed`; the adapter does
+not restyle questions as defects or deterministic revision as rework. A second
+owner-backed run measured 4,718 ms for the manual path and 2,397 ms for the
+composed path while preserving the same two-to-one owner-request and one-to-zero
+semantic-file reductions. Two samples corroborate direction, not a performance
+distribution or SLO.
+
+Pantheon then dogfooded the current writable Chronos TUI against the
+authoritative roadmap. Revision 84 already contained the five-node value-core
+chain, `oculus-observability-query-peer`, and
+`chronos-external-work-admission-contract`; no duplicate tasks were admitted.
+The delivered value-core nodes remain `open` or `blocked` because this session
+has no legitimate external-delivery evidence/review transition. They were not
+falsely claimed or marked done. The independently observed shared incremental
+target stall was absent from both bounded pages, so the reviewed composer
+admitted only `pantheon-shared-target-build-stall-diagnostic` at priority 5
+with capability `build-diagnostics`, advancing Chronos to revision 85. The
+separate `chronos-task-observe` gateway confirmed incarnation 123, revision 85,
+status `open`, execution `ready`, one required capability and no blocker.
+
 ## Advisory evidence and proposed stakeholder ensemble
 
 An isolated authenticated Dendrite owner loaded `rune/sme/triggers` and

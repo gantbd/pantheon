@@ -4535,6 +4535,28 @@ Token/context cost, escaped defects and longitudinal rework remain
 `not_observed`; `oculus_published=false` remains explicit until the observation
 has an Oculus owner path.
 
+The follow-up gate made that observation symmetric across outcomes. Questions
+and previews report zero refusals; typed risk or owner refusals report one.
+Pre-code findings, rework operations, token/context usage and escaped defects
+remain explicit `not_observed` values rather than inferred proxies. A second
+run measured 4,718 ms manually and 2,397 ms composed while preserving the same
+two-to-one owner-request and one-to-zero handoff-file reductions. This
+corroborates direction across two samples but remains insufficient for an SLO
+or general performance distribution.
+
+Chronos dogfood then reconciled the roadmap through Pantheon's writable TUI.
+The revision-84 board already retained the five-node value-core dependency
+chain, `oculus-observability-query-peer`, and
+`chronos-external-work-admission-contract`, preventing three duplicate tasks.
+The delivered value-core work remains `open`/`blocked`: this session cannot
+legitimately convert external delivery evidence into claim, report and review
+transitions, so no status was manufactured. The new shared incremental-target
+stall was absent from both bounded pages. Pantheon's reviewed composer admitted
+only `pantheon-shared-target-build-stall-diagnostic` at priority 5 with the
+`build-diagnostics` capability, advancing the owner to revision 85. A separate
+bounded `chronos-task-observe` read confirmed the exact task at incarnation 123,
+revision 85, workflow status `open` and execution phase `ready`.
+
 ### Non-critical discovery — bounded Rune-native executables
 
 The sponsor identified a strong later Smith target: compile Rune's deliberately
