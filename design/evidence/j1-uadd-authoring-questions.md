@@ -60,11 +60,13 @@ then review the exact revised request. Relevant owners must answer the ten
 contract questions before topology is treated as law. Any resolution produces
 a new request digest; the current digest must not be silently reinterpreted.
 
-The first authenticated Tellus attempt is now bound separately in
-`design/evidence/j1-uadd-sme-review-refusal.md`: transport and authentication
-passed, but the real Axon lattice refused the selected adversarial-tester
-because its Rune grounding has no concern registration. That owner gap must be
-resolved without dropping the adversarial review before an SME plan exists.
+The first authenticated Tellus attempt and its owner resolution are bound in
+`design/evidence/j1-uadd-sme-review-refusal.md`. Transport and authentication
+passed, but the real Axon lattice initially refused selected roles without
+concern registrations. The owners registered their existing semantics without
+dropping the adversarial review; repeatable live requests now return
+`review_required`. That routing result remains advisory and does not answer the
+accountable review or topology questions above.
 
 Only then may `rune-author` be rerun. A candidate is review material, not an
 admitted machine. Exact Scry validation, complete Smith compatibility, private

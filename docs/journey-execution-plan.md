@@ -4208,13 +4208,13 @@ prepare Accepted and ChangesRequested may prepare RevisionRequired; Deferred
 remains in the Maybe Machine, while Rejected remains a distinct non-mutating
 outcome until an owner contract says otherwise. No mapping grants rollout.
 
-Tellus SME review remains deliberately unclaimed. An authenticated isolated
-owner now accepts the transport but refuses the plan because the selected
-`rune:adversarial-tester` has no concern registration in the Axon lattice; no
-shared credential was read and no advisory output was invented. The designing
-ensemble must still answer “do we have the right ensemble?” with the human
-acceptance principal, security/threat, UX, Moira, Chronos, Aegis, Vellum,
-observability and audit stakeholders before a candidate Rune is admitted.
+Tellus SME routing is now live-qualified, but ensemble review remains
+deliberately unclaimed. The unchanged eight-role plan returns
+`review_required`, retains its correlated human-outcomes pair, and explicitly
+denies stakeholder authority. The designing ensemble must still answer “do we
+have the right ensemble?” with the human acceptance principal,
+security/threat, UX, Moira, Chronos, Aegis, Vellum, observability and audit
+stakeholders before a candidate Rune is admitted.
 
 ### 2026-11-20 — Rune authoring preserves the unresolved UADD boundary
 
@@ -4232,8 +4232,8 @@ projection bytes. The result is bound in
 `design/evidence/j1-uadd-authoring-questions.md`.
 
 This is the desired semantic guard, not a reason to hand-write around the
-toolchain. The next admissible transition is an authenticated Tellus ambient
-review plus an equitable Moira owner/stakeholder ensemble and named-human
+toolchain. Authenticated Tellus routing is now qualified; the next admissible
+transition is an equitable Moira owner/stakeholder ensemble plus named-human
 review of the exact request. Their answers must produce a new digest before
 topology can be constructed. Scry, Smith and Vellum publication remain later
 gates; no current artifact claims acceptance, task mutation or rollout.
@@ -4262,4 +4262,28 @@ Axon lattice owner must jointly register the actual concern or explicitly
 declare the role ineligible with preserved dissent. Only then should the exact
 plan be rerun against the revised digests; a successful advisory plan would
 still not replace Moira stakeholder equity or named-human review.
+
+### 2026-11-20 — UADD concern owners restore advisory routing without false independence
+
+The owner audit followed the initial refusal through both actual UADD plans.
+Security, STRIDE and adversarial-tester now carry distinct scope-derived
+concern pairs in Axon's shared `risk-protection` facet; live-verification's
+existing pair is registered under `epistemic-discipline`. This fixes corpus
+addressability without changing any role's substantive scope. The focused Axon
+gate requires the three security roles to remain pairwise non-orthogonal and
+live-verification to remain correlated with Rigor and Auditor.
+
+The reusable `tests/live/j1_uadd_sme_plan.sh` gate cold-loads the real corpus
+into an isolated authenticated Dendrite owner and drives Pantheon's production
+client. The unchanged eight-role request returns `review_required` with the
+User Experience/Humanism pair visible. The state-local security request returns
+security, STRIDE, adversarial-tester and live-verification with exactly the
+three security correlations. Both retain the ensemble question and advisory
+boundary; neither supplies stakeholder equity, human review or admission.
+
+The Dendrite development fold also surfaced a process defect: this corpus
+metadata repair began without selecting its activity FSM or folding
+`changing-existing-behavior`. That usage gap is retained in Axon's Dendrite
+utility telemetry rather than retroactively erased. It does not invalidate the
+owner evidence, but it is a concrete dogfooding improvement for the next slice.
 

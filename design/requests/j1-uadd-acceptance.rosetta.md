@@ -47,14 +47,16 @@ The exact ambient-expertise request is retained in
 architecture, network, identity, data, adversarial testing, user experience,
 humanism and live-verification concerns. Those Dendrite roles are advisory
 expertise, not substitutes for the equitable, attributable owner/stakeholder
-ensemble that Moira must admit separately. An authenticated live request
-against an isolated Dendrite owner over the real corpus correctly refused with
-no SME output: the fold selects all eight roles, but `rune:adversarial-tester`
-has no `(concern …)` registration in the selected Axon lattice. The exact
-evidence is retained in
-`design/evidence/j1-uadd-sme-review-refusal.md`. This request preserves the
-mandatory review rather than dropping the adversarial role, inventing its
-concern, bypassing authentication or calling a refused plan evidence.
+ensemble that Moira must admit separately. The first authenticated request
+correctly refused because selected roles lacked Axon concern registration. The
+Rune/Axon owners now register the four exact UADD roles without changing their
+scope, and the unchanged request returns all eight roles as `review_required`.
+The state-local security plan separately retains its three correlated security
+roles rather than presenting them as independent agreement. Initial refusal,
+owner repair and repeatable live evidence are retained in
+`design/evidence/j1-uadd-sme-review-refusal.md` and
+`tests/live/j1_uadd_sme_plan.sh`. This is routed advisory expertise, not an
+ensemble-fit answer or design admission.
 
 ## Rosetta
 

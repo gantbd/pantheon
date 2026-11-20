@@ -13,20 +13,18 @@ read-only input until that repository settles.
   Bool. The existing `pantheon-gray-experiment` Rune is one child path, not the
   parent. Do not fake composition while Rune invocation/typed-return support is
   still an admitted toolchain gap.
-- [ ] Restore state-local Tellus SME-plan admission without weakening the
-  orthogonality check: the fold currently routes `rune:security`, but that
-  grounding has no authored `(concern …)` clause, so
-  `axon/sme/axon-concerns` correctly returns `role_missing_concern`. The Rune
-  corpus owner must register the concern or explicitly declare the role
-  ineligible; Pantheon must not invent a default facet or independence.
-- [ ] Restore the J1 UADD adversarial SME review without weakening its selected
-  ensemble. The exact eight-role plan is authenticated and reaches Tellus, but
-  `rune:adversarial-tester` has no `(concern …)` clause, so the Axon concern
-  lattice correctly refuses orthogonality and Tellus emits no plan. The Rune
-  grounding owner and Axon lattice owner must register the role's real concern
-  or explicitly declare it ineligible and preserve the resulting review-design
-  dissent. Do not drop or substitute the adversarial role merely to get a green
-  plan. Evidence: `design/evidence/j1-uadd-sme-review-refusal.md`.
+- [x] Restore state-local Tellus SME-plan admission without weakening the
+  orthogonality check. The Rune owners now retain exact concern pairs for
+  security, STRIDE, adversarial-tester and live-verification, and the Axon
+  owner registers them in their actual correlated facets. A reusable
+  authenticated live gate proves the four-role security plan returns
+  `review_required` with all three security correlations visible; no default
+  facet or independence was invented.
+- [x] Restore the J1 UADD adversarial SME review without weakening its selected
+  ensemble. The unchanged exact eight-role request now returns through Tellus,
+  retains the User Experience/Humanism correlation, asks “do we have the right
+  ensemble?”, and grants no stakeholder authority. Initial refusal and owner
+  resolution: `design/evidence/j1-uadd-sme-review-refusal.md`.
 - [ ] Make Tellus load discovery continuable and semantically unambiguous. The
   current observation can return 64 fresh entries with `truncated: true` and no
   cursor while also reporting `complete`; expose continuation and distinguish

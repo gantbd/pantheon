@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "fold_load_id": "rune/sme/triggers",
+  "lattice_load_id": "axon/sme/axon-concerns",
+  "tags": [
+    "security-test-design",
+    "adversarial-security-validation",
+    "claiming-completion"
+  ],
+  "depth": "activated",
+  "max_roles": 4,
+  "max_surface_bytes": 65536
+}
