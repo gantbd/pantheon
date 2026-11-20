@@ -2422,6 +2422,17 @@ Operational means observable completed work, not a configured role name:
   trusted owner observers, durable blueprint checkpoint, Aegis-authorized
   participation dispatch, replay/lost-reply recovery and journey transition
   remain open.
+- Moira `64d5b24` closes the reusable authority-adapter portion without
+  claiming dispatch. One session-local Aegis grant authorizes `Submit` for the
+  exact owner-issued participation identity and a changed identity refuses;
+  the returned receipt carries principal, epoch, expiry and domain-separated
+  decision attribution but no bearer grant. All eight public Aegis journey
+  tests and strict all-target Clippy pass. The remaining activation boundary is
+  the trusted observer plus durable composer: persist the qualified blueprint,
+  obtain that fresh decision, dispatch once, reconcile lost replies from the
+  participation owner and only then retain the journey transition. No adapter
+  constructor, grant handle or successful unit call is itself evidence that a
+  participation exists.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

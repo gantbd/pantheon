@@ -271,9 +271,15 @@ the retained “do we have the right ensemble?” admission evidence; malformed,
 non-affirmative, substituted or missing coverage/equity facts refuse. Initial
 owner revision zero remains valid. This result is deliberately not persisted
 and is not `ParticipationAdmitted`: trusted workflow-relationship and
-deliberation observers, durable prepare-before-dispatch, fresh command-scoped
-Aegis authorization, participation-owner admission, lost-reply recovery and a
-retained journey transition remain required.
+deliberation observers, durable prepare-before-dispatch, participation-owner
+admission, lost-reply recovery and a retained journey transition remain
+required. Moira `64d5b24` now supplies the independently qualified Aegis
+adapter for the dispatch boundary: it authorizes `Submit` for one exact
+owner-issued participation identity, rejects substituted identity, requires a
+current non-expired decision and returns only non-bearer decision attribution.
+The session-local grant is never persisted. The composer still must invoke
+that adapter freshly after durable prepare and before dispatch; adapter
+availability alone is not participation admission or journey progression.
 
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
@@ -298,9 +304,9 @@ step. Its observer now renders `TaskAttemptReady` and the exact retained claim
 when Moira publishes it, while keeping Aegis delegation, participation, Daimon
 session and completion explicitly absent. This completes cut 1, the headless
 admission portion of cut 3 and the first trusted evidence transition. Current
-owner-derived room and participation effects, fresh command-scoped Aegis
-authorization at their dispatch boundaries, aggregate profile configuration,
-operator-agenda projection and TUI parity remain open.
+owner-derived participation dispatch and reconciliation, composition of the
+qualified fresh command-scoped Aegis adapter at that boundary, aggregate
+profile configuration, operator-agenda projection and TUI parity remain open.
 
 ### Reuse boundary
 
