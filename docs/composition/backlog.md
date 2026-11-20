@@ -90,7 +90,14 @@ read-only input until that repository settles.
   guard for a completed `Succeeded` task. Rejection/reopen semantics need a
   human-authorized, revision-bound, receipted owner operation. Link that
   dependency through `chronos-blocked-resolution-link-contract` once the
-  lifecycle surface can represent it. Pantheon must not hash an unbound task
+  lifecycle surface can represent it. The canonical
+  `chronos-review-disposition.machine.rune` now defines Accepted,
+  RevisionRequired, Deferred, exact lost-reply reconciliation and exhausted
+  budget refusal. It also exposes a deeper owner leak: dependency satisfaction
+  currently follows execution `Succeeded`, but must remain held until the
+  human disposition commits `Done`. Implement and live-qualify that atomic
+  owner contract before returning to the stale/reopened J1 proof. Pantheon must
+  not hash an unbound task
   name, trust deployment configuration or infer scope.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only

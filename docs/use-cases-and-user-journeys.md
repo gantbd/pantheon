@@ -2201,6 +2201,13 @@ must preserve authenticated-call provenance because Agora's compact acceptance
 receipt does not itself contain the author. `Done` remains outside this result
 settlement path: final acceptance requires an owner-issued UADD acceptance
 packet and a separately authorized, revision-bound atomic Chronos transition.
+The transition is a closed review disposition, not a generic status setter:
+Accepted retains the exact named-human receipt and moves the task to `Done`;
+RevisionRequired retains attributable feedback and reopens to `Open` only when
+authorized attempt budget remains; Deferred preserves a held Maybe without
+mutation. Dependency satisfaction is gated by committed `Done`, not agent
+execution success or `ReadyForReview`, so review and dependent release must
+commit atomically at the Chronos owner.
 Refusal or uncertainty stops the chain. Agora's private-local owner now also
 supports a versioned, bounded create-time cohort, and the hosted lifecycle gate
 bootstraps distinct human and agent participants without granting Pantheon

@@ -1,0 +1,602 @@
+(machine chronos-review-disposition
+  (rosetta
+    (intent "apply one exact named-human review disposition to one exact Chronos task without confusing execution success, human acceptance, dependency release, or an unresolved Maybe")
+    (values human-agency exact-identity owner-atomicity maybe-preservation dependency-safety bounded-rework recoverable-effects observable-outcomes)
+    (outcomes "Accepted atomically retains the exact review receipt, moves the exact ReadyForReview task to Done, and only then permits dependents to become runnable" "RevisionRequired atomically retains attributable feedback and returns the exact task to Open and execution-ready only when an already-authorized attempt remains" "Deferred retains a typed held Maybe and leaves task, execution, dependency, and attempt state unchanged" "missing ambiguous stale unauthorized conflicting outcome-unknown or budget-exhausted evidence never becomes a disposition or an implicit retry")
+    (who "the named human acceptance authority, the Chronos review-disposition owner, the task/result evidence owners, affected stakeholders, and observing operator")
+    (what "one durable revision-bound Chronos human-review operation")
+    (when "an exact task is currently ReadyForReview after a retained execution attempt and the named human has inspectable version-bound evidence")
+    (where "Chronos's authenticated atomic invocation boundary, with owner-native evidence references and telemetry projected through Hermes and Oculus")
+    (why "agent completion is not human acceptance, and releasing dependent work before acceptance turns a presentation label into a boundary leak")
+    (how "retain and qualify exact task, attempt, challenged artifact, criteria, authority and findings; preserve a held decision as Maybe; otherwise prepare one closed atomic command; execute once; reconcile a lost reply by exact command lookup; and expose an attributable receipt or actionable refusal")
+    (extent "one task disposition only; no feedback-content ownership, attempt-budget expansion, agent invocation, stakeholder impersonation, dependent execution, rollout, go-no-go, theorem status, or automatic Bool promotion")
+    (examples "a sponsor accepts task T incarnation 4 attempt 2 against result digest D and criteria C, Chronos records receipt R, moves T to Done, then opens its satisfied dependents" "the reviewer requests changes but T has exhausted its authorized attempts, so Chronos refuses with the exact resolution requirement rather than silently granting another attempt"))
+  (initial review-request-retained)
+
+  (state review-request-retained
+    (context user-acceptance-review identity-design-decision architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "retain the exact proposed review operation and its nonclaims before interpreting it")
+      (values provenance exactness no-ambient-authority)
+      (outcomes "the request binds operation identity, expected Chronos revision, exact task reference incarnation and attempt, expected ReadyForReview status, challenged artifact/result identity and digest, criteria identity and digest, human principal, authority evidence, findings/feedback references, requested disposition, expiry and nonclaims")
+      (who "the caller and Chronos review-disposition owner")
+      (what "one bounded review-disposition request")
+      (when "before evidence or authority qualification")
+      (where "the authenticated Chronos request boundary")
+      (why "a mutable label or nearby result cannot identify what the human actually reviewed")
+      (how "validate the closed request shape and retain exact owner-native references without copying feedback content")
+      (extent "request retention only; no task or dependency mutation")
+      (examples "request Q names task T incarnation 4 attempt 2 at revision 91 and exact result and criteria digests")))
+
+  (state review-evidence-qualified
+    (context user-acceptance-review identity-design-decision architecture-flow-review)
+
+    (rosetta
+      (intent "prove the request challenges the exact current task result under current named-human authority")
+      (values current-owner-truth authority-separation version-binding)
+      (outcomes "current Chronos evidence is the exact ReadyForReview succeeded attempt and revision" "authority evidence identifies the exact human principal, mandate and scope without treating authentication as acceptance" "artifact, criteria, findings and feedback references are current, complete and independently inspectable" "no dependent is released merely by execution success")
+      (who "Chronos, the named human authority owner, evidence owners, and reviewer")
+      (what "one exact review-evidence proof")
+      (when "after request retention and before disposition interpretation")
+      (where "the owner-composition boundary")
+      (why "green execution, login, copied prose, or stale evidence cannot establish a human decision")
+      (how "re-observe each owner; compare exact identities, digests, scope, attempt, status and monotonic revisions; require complete challenge evidence and dependency hold")
+      (extent "evidence qualification only; no disposition or mutation")
+      (examples "the currently succeeded attempt equals the result linked from the review request while the task remains ReadyForReview")))
+
+  (state disposition-pending
+    (context user-acceptance-review human-impact-decision)
+
+    (rosetta
+      (intent "present the qualified evidence to the named human without selecting a decision")
+      (values human-agency recourse accessible-review maybe-honesty)
+      (outcomes "Accepted, RevisionRequired and Deferred are distinct explicit choices" "silence timeout model confidence tests telemetry and prior sponsorship remain no decision" "the human can inspect, contest, correct, defer or decline within the exact mandate")
+      (who "the named human acceptance authority and affected stakeholders")
+      (what "one pending human review gate")
+      (when "qualified evidence is available")
+      (where "the headless or TUI review surface with parity")
+      (why "the Maybe Machine must not turn absence of a human disposition into a Boolean")
+      (how "show exact challenged version, criteria, findings, consequences, authority scope and next actions; await an explicit signed or owner-attributed choice")
+      (extent "presentation and decision capture only; no task mutation")
+      (examples "the reviewer defers because a required accessibility finding is unresolved, leaving the task ReadyForReview")))
+
+  (state acceptance-invocation-prepared
+    (context identity-design-decision architecture-flow-review)
+
+    (rosetta
+      (intent "prepare one replay-safe atomic acceptance command")
+      (values least-authority idempotency dependency-safety)
+      (outcomes "the command binds the exact accepted decision, task reference, expected revision/status/attempt, evidence digests and invocation key" "its atomic effect retains the review receipt, moves ReadyForReview to Done, and only then reevaluates dependent readiness")
+      (who "the Chronos atomic mutation owner")
+      (what "one Accepted review command")
+      (when "the named human explicitly accepts the exact challenged version")
+      (where "Chronos's durable invocation protocol")
+      (why "acceptance and dependency release must share one committed owner boundary")
+      (how "derive a stable non-secret intent key from the exact disposition identity, bind the observed next serial and expected revision, and admit one closed command")
+      (extent "command preparation only; no effect before owner commit")
+      (examples "command A accepts T/4/2 at revision 91 and contains no bearer credential or copied review prose")))
+
+  (state revision-invocation-prepared
+    (context identity-design-decision architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "prepare one replay-safe atomic return-for-revision command without inventing capacity")
+      (values bounded-rework feedback-attribution dependency-safety)
+      (outcomes "the command binds the exact RevisionRequired decision and feedback references" "the current attempt count remains historical and unchanged" "the command is admissible only when attempts are below the already-authorized maximum" "its atomic effect retains the review receipt and changes Succeeded/ReadyForReview to Ready/Open without releasing dependents")
+      (who "the named human reviewer and Chronos atomic mutation owner")
+      (what "one RevisionRequired review command")
+      (when "the human explicitly requests correction and authorized attempt budget remains")
+      (where "Chronos's durable invocation protocol")
+      (why "feedback should enable correction without disguising a new resource grant")
+      (how "bind exact feedback references and current budget evidence into a closed expected-revision command")
+      (extent "command preparation only; no budget change, claim or agent invocation")
+      (examples "attempt 2 of 3 returns to Open; attempt 3 of 3 refuses and links to a separate budget-resolution decision")))
+
+  (state review-accepted
+    (context user-acceptance-review claiming-completion)
+
+    (rosetta
+      (intent "retain the exact applied acceptance and resulting dependency-safe owner state")
+      (values accountable-acceptance durable-proof honest-closure)
+      (outcomes "the owner receipt binds prior ReadyForReview, current Done, exact task/attempt, decision/evidence identities, invocation and committed revision" "dependents may become eligible only from this committed Done state" "the receipt grants no rollout or go-no-go authority")
+      (who "Chronos, the named human acceptance authority, and observing operator")
+      (what "one applied Accepted outcome")
+      (when "the exact atomic command commits")
+      (where "Chronos retained state and review presentation")
+      (why "completion must be attributable to the human gate rather than inferred from agent success")
+      (how "return the retained owner outcome and independently re-observe current task and affected dependent states")
+      (extent "task acceptance only")
+      (examples "receipt R proves T moved to Done and dependent U moved from dependency-blocked to Open in the same revision")))
+
+  (state revision-requested
+    (context user-acceptance-review claiming-completion)
+
+    (rosetta
+      (intent "retain the exact applied correction request and bounded reopened state")
+      (values attributable-feedback bounded-rework no-false-completion)
+      (outcomes "the receipt binds prior ReadyForReview, current Open/Ready, unchanged attempt count and maximum, exact feedback references, invocation and committed revision" "dependents remain unreleased" "a future claimant must create a new attempt through the normal owner path")
+      (who "Chronos, the named human reviewer, and observing operator")
+      (what "one applied RevisionRequired outcome")
+      (when "the exact atomic command commits with remaining attempt budget")
+      (where "Chronos retained state and review presentation")
+      (why "correction work must be visible without erasing the reviewed attempt")
+      (how "return the retained owner outcome and re-observe task, budget and dependent hold")
+      (extent "reopen only; no automatic claim, retry or budget expansion")
+      (examples "T returns to Open at attempt count 2 of 3 and awaits an ordinary capability-qualified claim")))
+
+  (state review-held
+    (context user-acceptance-review human-impact-decision)
+
+    (rosetta
+      (intent "retain an explicit Deferred or still-undecidable review as a Maybe")
+      (values held-uncertainty human-agency no-timeout-promotion)
+      (outcomes "the held receipt names unresolved evidence, dissent, expiry or reconsideration condition" "task status, execution state, attempt budget and dependents remain byte-for-byte unchanged")
+      (who "the named human reviewer and affected stakeholders")
+      (what "one held review outcome")
+      (when "the human explicitly defers or the decision remains legitimately undecidable")
+      (where "the Maybe Machine and review presentation")
+      (why "not yet is meaningful state, not rejection, acceptance or failure")
+      (how "retain the reason and next evidence or human-return condition without issuing a Chronos mutation")
+      (extent "held review only")
+      (examples "the reviewer defers until an affected stakeholder can examine the result")))
+
+  (state acceptance-outcome-unknown
+    (context external-calls claiming-completion)
+
+    (rosetta
+      (intent "preserve uncertainty after an admitted invocation loses its reply")
+      (values effect-uncertainty no-blind-retry reconciliation)
+      (outcomes "the exact invocation and command remain available for lookup" "no retry, opposite disposition, status claim or dependent-release claim is permitted before reconciliation")
+      (who "the Chronos client and atomic owner")
+      (what "one uncertain acceptance invocation outcome")
+      (when "delivery or commit acknowledgement is lost")
+      (where "the Chronos invocation boundary")
+      (why "a missing reply says nothing about whether the owner committed")
+      (how "perform exact LookupCommand with current disclosure authorization and return the retained original outcome or remain unknown")
+      (extent "reconciliation only")
+      (examples "the connection closes after acceptance send, so the caller looks up that exact command instead of submitting another disposition")))
+
+  (state revision-outcome-unknown
+    (context external-calls claiming-completion)
+
+    (rosetta
+      (intent "preserve uncertainty after an admitted revision request loses its reply")
+      (values effect-uncertainty no-blind-retry reconciliation command-lineage)
+      (outcomes "the exact revision invocation and command remain available for lookup" "no retry, acceptance command, status claim or dependent-release claim is permitted before reconciliation")
+      (who "the Chronos client and atomic owner")
+      (what "one uncertain revision invocation outcome")
+      (when "delivery or commit acknowledgement is lost")
+      (where "the Chronos invocation boundary")
+      (why "a missing reply says nothing about whether the revision request committed and must not erase which command was sent")
+      (how "perform exact LookupCommand with current disclosure authorization and return the retained original revision outcome or remain unknown")
+      (extent "reconciliation of the exact revision command only")
+      (examples "the connection closes after revision send, so the caller looks up that exact command instead of submitting acceptance")))
+
+  (state review-refused
+    (context user-acceptance-review identity-design-decision human-impact-decision)
+
+    (rosetta
+      (intent "retain an actionable refusal without mutating review or task truth")
+      (values epistemic-honesty safe-failure recourse)
+      (outcomes "the refusal identifies the exact failed owner boundary and nearest safe resolution" "stale evidence, invalid authority, changed status, conflicting decision, exhausted budget, persistence failure or unauthorized disclosure cannot partially apply")
+      (who "Chronos, evidence owners, reviewer and operator")
+      (what "one typed review refusal")
+      (when "any qualification, admission, commit or reconciliation invariant fails safely")
+      (where "the responsible owner boundary")
+      (why "visible refusal is safer than repaired authority or half-applied status")
+      (how "return a closed reason, current inspectable fact and resolution reference; keep the pre-command state when no commit occurred")
+      (extent "refusal and orientation only")
+      (examples "attempt budget exhausted links to the exact budget-resolution work rather than incrementing max_attempts")))
+
+  (edge
+    (from review-request-retained)
+    (to review-evidence-qualified)
+    (emit review-evidence-qualified)
+
+    (rosetta
+      (intent "qualify exact review evidence")
+      (values exactness)
+      (outcomes "evidence may be presented")
+      (who owners)
+      (what "qualification edge")
+      (when "all evidence is current")
+      (where owner-boundary)
+      (why "review requires exact evidence")
+      (how "compare owner facts")
+      (extent "no decision")
+      (examples qualified))
+    (precondition "the closed request validates; exact current Chronos, authority, artifact, criteria, findings and feedback observations agree on task, incarnation, attempt, challenged version, scope and expected revision; the task is Succeeded and ReadyForReview; dependents remain unreleased"))
+
+  (edge
+    (from review-request-retained)
+    (to review-refused)
+    (emit review-refused)
+
+    (rosetta
+      (intent "refuse invalid or stale review evidence")
+      (values honest-failure)
+      (outcomes "no review mutation occurs")
+      (who owners)
+      (what "qualification refusal")
+      (when "evidence fails")
+      (where owner-boundary)
+      (why "missing evidence grants nothing")
+      (how "name exact failure")
+      (extent "refusal only")
+      (examples stale))
+    (precondition "the request is malformed expired unauthorized ambiguous conflicting stale, names a noncurrent task attempt or version, or any required owner evidence is missing incomplete or refused"))
+
+  (edge
+    (from review-evidence-qualified)
+    (to disposition-pending)
+    (emit disposition-pending)
+
+    (rosetta
+      (intent "present qualified review")
+      (values human-agency)
+      (outcomes "human choice remains open")
+      (who reviewer)
+      (what "human gate")
+      (when "evidence qualifies")
+      (where review-surface)
+      (why "automation cannot accept")
+      (how "present exact evidence")
+      (extent "no mutation")
+      (examples pending))
+    (precondition "qualified evidence and nonclaims remain current and the named human has a usable inspectable review path"))
+
+  (edge
+    (from disposition-pending)
+    (to acceptance-invocation-prepared)
+    (emit acceptance-invocation-prepared)
+
+    (rosetta
+      (intent "prepare explicit acceptance")
+      (values exact-authority)
+      (outcomes "one command is ready")
+      (who reviewer owner)
+      (what "acceptance preparation")
+      (when "Accepted is explicit")
+      (where invocation-boundary)
+      (why "acceptance needs atomic effect")
+      (how "bind decision")
+      (extent "no effect yet")
+      (examples accepted))
+    (precondition "the named human explicitly selects Accepted for the exact still-current challenged version under current mandate; the decision is singular, attributable and unexpired"))
+
+  (edge
+    (from disposition-pending)
+    (to revision-invocation-prepared)
+    (emit revision-invocation-prepared)
+
+    (rosetta
+      (intent "prepare explicit revision request")
+      (values bounded-rework)
+      (outcomes "one command is ready")
+      (who reviewer owner)
+      (what "revision preparation")
+      (when "RevisionRequired is explicit")
+      (where invocation-boundary)
+      (why "rework needs exact feedback and budget")
+      (how "bind decision and feedback")
+      (extent "no effect yet")
+      (examples revision))
+    (precondition "the named human explicitly selects RevisionRequired for the exact still-current challenged version; feedback references are complete; current attempts are less than max_attempts; the decision is singular attributable and unexpired"))
+
+  (edge
+    (from disposition-pending)
+    (to review-held)
+    (emit review-held)
+
+    (rosetta
+      (intent "preserve deferred review")
+      (values maybe-honesty)
+      (outcomes "review remains held")
+      (who reviewer)
+      (what "held edge")
+      (when "Deferred is explicit or decision is absent")
+      (where maybe-machine)
+      (why "not yet is not false")
+      (how "retain reconsideration condition")
+      (extent "no mutation")
+      (examples deferred))
+    (precondition "the human explicitly selects Deferred, or no singular current disposition exists and the request remains safely holdable; no owner mutation has been admitted"))
+
+  (edge
+    (from disposition-pending)
+    (to review-refused)
+    (emit review-refused)
+
+    (rosetta
+      (intent "refuse an invalid disposition")
+      (values authority-integrity)
+      (outcomes "no command exists")
+      (who owners)
+      (what "decision refusal")
+      (when "decision cannot qualify")
+      (where human-gate)
+      (why "ambiguity grants nothing")
+      (how "name exact conflict")
+      (extent "refusal only")
+      (examples exhausted))
+    (precondition "a purported decision is conflicting forged stale outside mandate or requests RevisionRequired after authorized attempt budget is exhausted"))
+
+  (edge
+    (from acceptance-invocation-prepared)
+    (to review-accepted)
+    (emit review-accepted)
+
+    (rosetta
+      (intent "commit acceptance atomically")
+      (values durable-acceptance)
+      (outcomes "Done and dependent release are attributable")
+      (who chronos)
+      (what "acceptance commit")
+      (when "command applies")
+      (where atomic-owner)
+      (why "effects must share revision")
+      (how "commit and reobserve")
+      (extent "task acceptance")
+      (examples done))
+    (precondition "Chronos admits the exact invocation and atomically retains the decision receipt, changes the exact task from Succeeded/ReadyForReview to Succeeded/Done, advances revision once, and only then reevaluates dependency readiness; re-observation matches the retained outcome"))
+
+  (edge
+    (from revision-invocation-prepared)
+    (to revision-requested)
+    (emit revision-requested)
+
+    (rosetta
+      (intent "commit revision request atomically")
+      (values bounded-rework)
+      (outcomes "Open ready work is attributable")
+      (who chronos)
+      (what "revision commit")
+      (when "command applies")
+      (where atomic-owner)
+      (why "reopen must preserve history")
+      (how "commit and reobserve")
+      (extent "no claim or retry")
+      (examples reopened))
+    (precondition "Chronos admits the exact invocation and atomically retains the decision receipt, preserves attempt counters, changes the exact task from Succeeded/ReadyForReview to Ready/Open, advances revision once and keeps dependents unreleased; re-observation matches the retained outcome"))
+
+  (edge
+    (from acceptance-invocation-prepared)
+    (to acceptance-outcome-unknown)
+    (emit outcome-unknown)
+
+    (rosetta
+      (intent "retain uncertain acceptance effect")
+      (values no-blind-retry)
+      (outcomes "lookup is required")
+      (who client owner)
+      (what "unknown edge")
+      (when "reply is lost")
+      (where transport-boundary)
+      (why "effect may have committed")
+      (how "retain exact command")
+      (extent "no retry")
+      (examples disconnected))
+    (precondition "the exact command may have reached Chronos but no valid owner outcome was received"))
+
+  (edge
+    (from revision-invocation-prepared)
+    (to revision-outcome-unknown)
+    (emit outcome-unknown)
+
+    (rosetta
+      (intent "retain uncertain revision effect")
+      (values no-blind-retry)
+      (outcomes "lookup is required")
+      (who client owner)
+      (what "unknown edge")
+      (when "reply is lost")
+      (where transport-boundary)
+      (why "effect may have committed")
+      (how "retain exact command")
+      (extent "no retry")
+      (examples disconnected))
+    (precondition "the exact command may have reached Chronos but no valid owner outcome was received"))
+
+  (edge
+    (from acceptance-outcome-unknown)
+    (to review-accepted)
+    (emit review-accepted)
+
+    (rosetta
+      (intent "reconcile committed acceptance")
+      (values exact-replay)
+      (outcomes "original outcome returns")
+      (who client owner)
+      (what "acceptance reconciliation")
+      (when "lookup finds exact command")
+      (where atomic-owner)
+      (why "lost reply must not duplicate effect")
+      (how LookupCommand)
+      (extent "observation only")
+      (examples reconciled))
+    (precondition "exact LookupCommand under current disclosure authority returns the retained Applied acceptance outcome and current state matches it"))
+
+  (edge
+    (from revision-outcome-unknown)
+    (to revision-requested)
+    (emit revision-requested)
+
+    (rosetta
+      (intent "reconcile committed revision request")
+      (values exact-replay)
+      (outcomes "original outcome returns")
+      (who client owner)
+      (what "revision reconciliation")
+      (when "lookup finds exact command")
+      (where atomic-owner)
+      (why "lost reply must not duplicate effect")
+      (how LookupCommand)
+      (extent "observation only")
+      (examples reconciled))
+    (precondition "exact LookupCommand under current disclosure authority returns the retained Applied revision outcome and current state matches it"))
+
+  (edge
+    (from acceptance-invocation-prepared)
+    (to review-refused)
+    (emit review-refused)
+
+    (rosetta
+      (intent "refuse unapplied acceptance")
+      (values atomic-failure)
+      (outcomes "prestate remains")
+      (who chronos)
+      (what "command refusal")
+      (when "owner refuses")
+      (where atomic-owner)
+      (why "partial acceptance is invalid")
+      (how "return closed reason")
+      (extent "refusal only")
+      (examples conflict))
+    (precondition "Chronos returns a valid non-applied outcome before commit because authorization revision status identity evidence capacity or persistence admission fails"))
+
+  (edge
+    (from revision-invocation-prepared)
+    (to review-refused)
+    (emit review-refused)
+
+    (rosetta
+      (intent "refuse unapplied revision request")
+      (values atomic-failure)
+      (outcomes "prestate remains")
+      (who chronos)
+      (what "command refusal")
+      (when "owner refuses")
+      (where atomic-owner)
+      (why "partial reopen is invalid")
+      (how "return closed reason")
+      (extent "refusal only")
+      (examples conflict))
+    (precondition "Chronos returns a valid non-applied outcome before commit because authorization revision status identity evidence budget capacity or persistence admission fails"))
+
+  (signal review-evidence-qualified
+    (rosetta
+      (intent "announce evidence qualification")
+      (values exactness)
+      (outcomes "review may be presented")
+      (who composer)
+      (what "qualified signal")
+      (when "proof passes")
+      (where review-boundary)
+      (why "proof and choice differ")
+      (how "raise signal")
+      (extent "no choice")
+      (examples qualified)))
+
+  (signal disposition-pending
+    (rosetta
+      (intent "announce pending human gate")
+      (values human-agency)
+      (outcomes "no decision is inferred")
+      (who reviewer)
+      (what "pending signal")
+      (when "evidence is shown")
+      (where review-surface)
+      (why "human choice is distinct")
+      (how "raise signal")
+      (extent "no mutation")
+      (examples pending)))
+
+  (signal acceptance-invocation-prepared
+    (rosetta
+      (intent "announce prepared acceptance")
+      (values least-authority)
+      (outcomes "one command may be invoked")
+      (who owner)
+      (what "prepared signal")
+      (when "decision qualifies")
+      (where invocation-boundary)
+      (why "effects are explicit")
+      (how "raise signal")
+      (extent "no effect")
+      (examples prepared)))
+
+  (signal revision-invocation-prepared
+    (rosetta
+      (intent "announce prepared revision request")
+      (values bounded-rework)
+      (outcomes "one command may be invoked")
+      (who owner)
+      (what "prepared signal")
+      (when "decision and budget qualify")
+      (where invocation-boundary)
+      (why "effects are explicit")
+      (how "raise signal")
+      (extent "no effect")
+      (examples prepared)))
+
+  (signal review-accepted
+    (rosetta
+      (intent "announce applied acceptance")
+      (values attributable-closure)
+      (outcomes "Done is inspectable")
+      (who chronos)
+      (what "accepted signal")
+      (when "commit is proved")
+      (where owner-state)
+      (why "completion needs receipt")
+      (how "raise signal")
+      (extent "no rollout")
+      (examples done)))
+
+  (signal revision-requested
+    (rosetta
+      (intent "announce applied revision request")
+      (values bounded-rework)
+      (outcomes "Open is inspectable")
+      (who chronos)
+      (what "revision signal")
+      (when "commit is proved")
+      (where owner-state)
+      (why "rework needs receipt")
+      (how "raise signal")
+      (extent "no retry")
+      (examples reopened)))
+
+  (signal review-held
+    (rosetta
+      (intent "announce held Maybe")
+      (values uncertainty-honesty)
+      (outcomes "no decision or mutation is implied")
+      (who reviewer)
+      (what "held signal")
+      (when "review is deferred")
+      (where maybe-machine)
+      (why "not yet is meaningful")
+      (how "raise signal")
+      (extent "no effect")
+      (examples deferred)))
+
+  (signal outcome-unknown
+    (rosetta
+      (intent "announce uncertain owner effect")
+      (values reconciliation)
+      (outcomes "lookup is required")
+      (who client)
+      (what "unknown signal")
+      (when "reply is lost")
+      (where transport-boundary)
+      (why "missing reply is not failure")
+      (how "raise signal")
+      (extent "no retry")
+      (examples unknown)))
+
+  (signal review-refused
+    (rosetta
+      (intent "announce actionable refusal")
+      (values safe-failure)
+      (outcomes "resolution is oriented")
+      (who owner)
+      (what "refusal signal")
+      (when "an invariant fails")
+      (where responsible-boundary)
+      (why "refusal preserves truth")
+      (how "raise signal")
+      (extent "no mutation")
+      (examples refused)))
+  (epistemic-tier maybe))

@@ -4013,3 +4013,35 @@ its exact task/revision and acceptance-evidence inputs, execution-state effect,
 attempt-budget semantics, durable receipt, lost-reply lookup and refusal laws.
 Only then can the real stale/reopened production-command qualification close.
 
+### 2026-11-20 — review disposition descends through the Maybe Machine
+
+The Gray correction materially changed the next J1 design: The Gray is the
+Maybe Machine, so absent, deferred and outcome-unknown review states cannot be
+treated as failed Boolean transitions. A canonical
+`chronos-review-disposition.machine.rune` now preserves an explicit held Maybe,
+separate Accepted and RevisionRequired commands, and separate uncertain-effect
+states for those commands. The first machine-path run proved why that lineage
+matters: a shared unknown state could reconcile to the opposite disposition.
+Splitting the states removed that semantic path without removing legitimate
+held, revision or refusal terminals. Scry admits the result and Smith reports
+complete Rust compatibility with no unsupported semantics.
+
+Authenticated Pantheon-to-Tellus dogfooding routed architecture, network,
+identity, data, user-experience and humanism surfaces. The result remains
+`review_required` because the two human-centered roles share one concern
+facet; that correlation is retained and actual stakeholder standing remains
+outside SME routing. The live call also found a Dendrite/Tellus DTO mismatch:
+Dendrite returned fold tag-to-role projections where the typed client requires
+the exact requested tags. The owner projection and focused endpoint test are
+repaired; Pantheon's strict parser was not relaxed, and the same shipped command
+then decoded the six-role response.
+
+Source audit exposed the more important Chronos invariant. Execution
+`Succeeded` currently satisfies dependencies while the human status is only
+`ReadyForReview`. That releases downstream work before acceptance. The review
+operation must therefore atomically retain the exact named-human disposition,
+move Accepted to `Done`, and only then reevaluate dependents. RevisionRequired
+returns to `Ready/Open` only when existing attempt budget remains; Deferred
+does not mutate Chronos. The full design and qualification record is retained
+in `design/evidence/chronos-review-disposition-design-verification.md`.
+
