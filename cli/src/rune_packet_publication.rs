@@ -65,6 +65,9 @@ struct ApprovalV1 {
     target_revision: u64,
     target_sha256: String,
     replacement_sha256: String,
+    patch_start: u64,
+    patch_end: u64,
+    inserted_sha256: String,
     durable_operation: String,
 }
 
@@ -96,10 +99,23 @@ struct Prepared {
     target_bytes: usize,
     target_sha256: String,
     replacement_sha256: String,
+    patch: crate::vellum_patch::MinimalPatch,
+    inserted_sha256: String,
     operation: DurableOperationRefV1,
     operation_text: String,
     confirmation: String,
     client: Option<WorkspaceClientV1<Transport>>,
+}
+
+struct ConfirmationBinding<'a> {
+    workspace: u64,
+    document: u64,
+    revision: u64,
+    target_sha256: &'a str,
+    replacement_sha256: &'a str,
+    patch_start: usize,
+    patch_end: usize,
+    inserted_sha256: &'a str,
 }
 
 #[derive(Debug)]
@@ -182,13 +198,17 @@ fn execute(
         document: prepared.document,
         expected_revision: prepared.target_revision,
         replacements: vec![WorkspaceReplacementV1 {
-            start: 0,
-            end: u64::try_from(prepared.target_bytes).map_err(|_| Failure {
+            start: u64::try_from(prepared.patch.start).map_err(|_| Failure {
                 stage: "target",
-                reason: "Vellum target length is not representable".into(),
+                reason: "Vellum patch start is not representable".into(),
                 next_action: "use a bounded pre-admitted packet document",
             })?,
-            inserted: prepared.packet.clone(),
+            end: u64::try_from(prepared.patch.end).map_err(|_| Failure {
+                stage: "target",
+                reason: "Vellum patch end is not representable".into(),
+                next_action: "use a bounded pre-admitted packet document",
+            })?,
+            inserted: prepared.patch.inserted.clone(),
         }],
     };
     let receipt = match prepared
@@ -453,13 +473,38 @@ fn prepare(
     let target_bytes = snapshot.text.len();
     let target_sha256 = sha256(snapshot.text.as_bytes());
     let replacement_sha256 = packet_sha256.clone();
+    let patch = crate::vellum_patch::minimal_patch(snapshot.text.as_ref(), &packet);
+    if !patch.changed() {
+        return Err(Failure {
+            stage: "no_change",
+            reason: "the exact qualified packet is already the current Vellum document".into(),
+            next_action: "retain the current Vellum revision; do not manufacture an edit or durable save",
+        });
+    }
+    if patch.inserted.len() > MAX_WORKSPACE_EDIT_PAYLOAD_BYTES_V1 {
+        return Err(Failure {
+            stage: "patch_limit",
+            reason: format!(
+                "minimal Vellum patch inserts {} bytes; owner workspace-edit allows {}",
+                patch.inserted.len(),
+                MAX_WORKSPACE_EDIT_PAYLOAD_BYTES_V1
+            ),
+            next_action: "split the reviewed artifact at a semantic boundary or qualify a larger owner contract; do not expand the patch span or truncate bytes",
+        });
+    }
+    let inserted_sha256 = sha256(patch.inserted.as_bytes());
     let confirmation = confirmation(
         &packet_sha256,
-        workspace,
-        document.get(),
-        target_revision,
-        &target_sha256,
-        &replacement_sha256,
+        &ConfirmationBinding {
+            workspace,
+            document: document.get(),
+            revision: target_revision,
+            target_sha256: &target_sha256,
+            replacement_sha256: &replacement_sha256,
+            patch_start: patch.start,
+            patch_end: patch.end,
+            inserted_sha256: &inserted_sha256,
+        },
         operation_text,
     );
     Ok(Prepared {
@@ -472,6 +517,8 @@ fn prepare(
         target_bytes,
         target_sha256,
         replacement_sha256,
+        patch,
+        inserted_sha256,
         operation,
         operation_text: operation_text.to_owned(),
         confirmation,
@@ -503,6 +550,12 @@ fn preview_json(
             "sha256": prepared.target_sha256,
         },
         "replacement_sha256": prepared.replacement_sha256,
+        "patch": {
+            "start": prepared.patch.start,
+            "end": prepared.patch.end,
+            "inserted_bytes": prepared.patch.inserted.len(),
+            "inserted_sha256": prepared.inserted_sha256,
+        },
         "durable_operation": prepared.operation_text,
         "confirmation": prepared.confirmation,
         "approval_template": {
@@ -515,6 +568,9 @@ fn preview_json(
             "target_revision": prepared.target_revision,
             "target_sha256": prepared.target_sha256,
             "replacement_sha256": prepared.replacement_sha256,
+            "patch_start": prepared.patch.start,
+            "patch_end": prepared.patch.end,
+            "inserted_sha256": prepared.inserted_sha256,
             "durable_operation": prepared.operation_text,
         },
         "observation": {
@@ -524,6 +580,7 @@ fn preview_json(
             "mutations": 0,
             "packet_bytes": prepared.packet.len(),
             "target_bytes": prepared.target_bytes,
+            "inserted_bytes": prepared.patch.inserted.len(),
             "workspace": prepared.workspace,
             "document": prepared.document.get(),
             "revision": prepared.target_revision,
@@ -572,6 +629,9 @@ fn validate_approval(path: &Path, prepared: &Prepared) -> Result<(), Failure> {
         || approval.target_revision != prepared.target_revision
         || approval.target_sha256 != prepared.target_sha256
         || approval.replacement_sha256 != prepared.replacement_sha256
+        || usize::try_from(approval.patch_start).ok() != Some(prepared.patch.start)
+        || usize::try_from(approval.patch_end).ok() != Some(prepared.patch.end)
+        || approval.inserted_sha256 != prepared.inserted_sha256
         || approval.durable_operation != prepared.operation_text
     {
         return Err(Failure {
@@ -683,17 +743,17 @@ fn compact_status(value: &Value) -> String {
     )
 }
 
-fn confirmation(
-    packet: &str,
-    workspace: u64,
-    document: u64,
-    revision: u64,
-    target: &str,
-    replacement: &str,
-    operation: &str,
-) -> String {
+fn confirmation(packet: &str, binding: &ConfirmationBinding<'_>, operation: &str) -> String {
     format!(
-        "PUBLISH RUNE PACKET {packet} TO VELLUM WORKSPACE {workspace} DOCUMENT {document} REVISION {revision} CONTENT {target} REPLACEMENT {replacement} DURABLE {operation}"
+        "PUBLISH RUNE PACKET {packet} TO VELLUM WORKSPACE {} DOCUMENT {} REVISION {} CONTENT {} REPLACEMENT {} PATCH {} {} INSERTED {} DURABLE {operation}",
+        binding.workspace,
+        binding.document,
+        binding.revision,
+        binding.target_sha256,
+        binding.replacement_sha256,
+        binding.patch_start,
+        binding.patch_end,
+        binding.inserted_sha256,
     )
 }
 

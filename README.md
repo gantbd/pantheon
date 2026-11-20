@@ -670,6 +670,27 @@ reported as unverified and never treated as authority.
 Run `make qualify-rune-blueprint` for the real task → questions → answers →
 Scry → Smith gate and stale-answer refusal.
 
+Use `pantheon rune-packet-publication <preview|publish>
+PUBLICATION_PROFILE_JSON REQUEST_JSON vdo1.OPERATION_HEX
+[PRIVATE_APPROVAL_JSON]` to publish one privately qualified Rune-author packet
+through one pre-admitted Vellum document. Preview requalifies the packet,
+observes the exact target revision, and derives the smallest single replacement
+that preserves the longest common UTF-8-safe prefix and suffix. Its literal
+human confirmation binds the complete packet and target digests, patch byte
+span, inserted-byte digest, and caller-persisted durable operation. Publish
+recomputes all of that evidence, dispatches the edit once, verifies that the
+complete successor document exactly equals the qualified packet, then uses
+Vellum's separately receipted durable-save path. An already-current document
+returns `no_change` without manufacturing a revision or save.
+
+Version one still admits only complete packets within the profile's bounded
+`max_packet_bytes` ceiling (currently at most 64 KiB), even when the minimal
+inserted patch would be smaller. This milestone proves content-minimal mutation;
+it does not claim large-artifact admission. Run
+`make qualify-rune-packet-publication` for whole-packet publication, exact
+approval, no-change refusal, packet-limit refusal, and a live one-byte Vellum
+patch whose durable successor is checked byte-for-byte.
+
 Use `pantheon agent-web-fetch POLICY_JSON HTTPS_URL` only through a
 Daimon-governed command capability. The policy pins the exact curl executable
 by SHA-256, exact lowercase hosts, response and time bounds, and a fixed user

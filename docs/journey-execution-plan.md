@@ -4421,3 +4421,33 @@ stops after projection until an owner-specific high-risk contract exists. Gray
 stops until sandbox, reversibility and expiry are qualified. The declared risk
 class is explicitly `caller_declared_not_verified`; it never grants authority.
 
+### 2026-11-20 — Rune packets publish through a minimal Vellum patch
+
+The publication FSM was strengthened before its adapter changed. The Rune
+Rosetta and request now require the longest-common-prefix-and-suffix,
+UTF-8-safe single replacement, bind its exact byte span and inserted digest
+into accountable human confirmation, and still require the complete accepted
+successor to equal the privately qualified packet. Real Rune authoring, Scry,
+Smith and rustc requalified that contract; the committed generated Rust is the
+fresh Smith projection rather than a hand-maintained surrogate.
+
+Pantheon's existing `rune-packet-publication` boundary now derives that patch,
+refuses an already-current target without an edit or save, refuses inserted
+bytes beyond Vellum's owner limit, dispatches exactly once, and verifies the
+entire successor before durable save. The focused owner-backed gate publishes
+the initial packet, proves a repeated publication returns `no_change`, then
+changes one offline fixture byte and proves the next live publication sends a
+one-byte insertion while the durable document still equals the full packet.
+The first publication also preserved the target's shared trailing newline,
+which independently exposed that the algorithm was not performing the former
+whole-document replacement.
+
+This closes content-minimal mutation, not large-artifact admission. Version
+one intentionally retains its complete-packet ceiling of 64 KiB, so a 137 KiB
+qualified artifact still refuses even when a later delta could be small. The
+next owner contract must separate a bounded artifact/read budget from the
+bounded inserted-patch budget without silently reinterpreting the existing
+profile. Direct blueprint-to-publication composition and measured lead-time,
+rework, context/token and escaped-defect evidence also remain on the critical
+path.
+

@@ -1,6 +1,6 @@
 // @rune:context — carried by smith (ADR-0150 lens). Residual, not behaviour.
-// (compass (intent "publish one exact private Rune-author projection packet into one pre-admitted Vellum document only after separate accountable human confirmation, preserving revision identity, edit uncertainty and durable-save recovery without granting the designing actor mutation authority") (values semantic-preservation human-agency separation-of-duties owner-preservation revision-safety lost-reply-safety content-minimization honest-persistence) (outcomes "preview deterministically qualifies and buffers one exact Rune packet, observes one exact current pre-admitted Vellum document and returns a content-free confirmation challenge without mutation" "execution repeats qualification and observation, requires an exact accountable human confirmation over the packet, target and durable operation identities, and refuses stale or substituted evidence before mutation" "one accepted Vellum owner edit replaces the complete target at its exact revision and no edit is retried when delivery is unknown" "an accepted edit is durably saved once under a caller-persisted operation identity, while refused or unknown persistence remains explicitly pending and recoverable through Vellum's existing lookup contract" "no path grants workspace membership, arbitrary document selection, shell, approval inference, task mutation, artifact materialization, go-no-go or rollout authority"))
-// (narrative (who "the accountable human reviewer, Pantheon's bounded Rune publication adapter, the deployment-owned Rune author and the sovereign Vellum workspace owner") (what "one two-phase preview-and-publish transaction for a single qualified packet document") (when "after Rune, Scry, Smith and target verification qualify a private packet and before any downstream artifact materialization or execution") (where "a deployment-pinned Rune profile and one deployment-pinned, pre-admitted Vellum workspace document") (why "the designing ensemble must not mutate source after independent verification, while the reviewed lossless packet needs a durable owner-controlled provenance boundary") (how "recompute the qualified packet, observe and digest the exact Vellum target, prepare an exact whole-document replacement, bind a human confirmation to every identity, submit once, then perform or recover one separately identified durable save") (extent "one packet and one existing Vellum document; no multi-document durable atomicity claim, packet-to-artifact extraction, membership change, agent-facing tool admission or operating-system sandbox claim") (examples "preview binds packet P to workspace W document D revision R and durable operation O; the human confirms that exact challenge and execution publishes P then returns a durable receipt" "the target advances after preview, so execution refuses stale evidence before sending an edit" "the edit is accepted but durable delivery becomes unknown, so the result remains persistence-pending with O and the existing exact Vellum lookup next action"))
+// (compass (intent "publish one exact private Rune-author projection packet into one pre-admitted Vellum document only after separate accountable human confirmation, preserving revision identity, edit uncertainty and durable-save recovery without granting the designing actor mutation authority") (values semantic-preservation human-agency separation-of-duties owner-preservation revision-safety lost-reply-safety content-minimization honest-persistence) (outcomes "preview deterministically qualifies and buffers one exact Rune packet, observes one exact current pre-admitted Vellum document and returns a content-free confirmation challenge without mutation" "execution repeats qualification and observation, requires an exact accountable human confirmation over the packet, target, minimal patch and durable operation identities, and refuses stale or substituted evidence before mutation" "one accepted Vellum owner edit applies the smallest UTF-8-safe single replacement at the exact target revision and the accepted successor must still reproduce the complete packet" "no edit is retried when delivery is unknown" "an accepted edit is durably saved once under a caller-persisted operation identity, while refused or unknown persistence remains explicitly pending and recoverable through Vellum's existing lookup contract" "no path grants workspace membership, arbitrary document selection, shell, approval inference, task mutation, artifact materialization, go-no-go or rollout authority"))
+// (narrative (who "the accountable human reviewer, Pantheon's bounded Rune publication adapter, the deployment-owned Rune author and the sovereign Vellum workspace owner") (what "one two-phase preview-and-publish transaction for a single qualified packet document") (when "after Rune, Scry, Smith and target verification qualify a private packet and before any downstream artifact materialization or execution") (where "a deployment-pinned Rune profile and one deployment-pinned, pre-admitted Vellum workspace document") (why "the designing ensemble must not mutate source after independent verification, while the reviewed lossless packet needs a durable owner-controlled provenance boundary") (how "recompute the qualified packet, observe and digest the exact Vellum target, derive the longest-common-prefix-and-suffix UTF-8-safe single replacement, bind its span and inserted digest into the human confirmation, submit once, verify the complete successor, then perform or recover one separately identified durable save") (extent "one packet and one existing Vellum document; no multi-document durable atomicity claim, packet-to-artifact extraction, membership change, agent-facing tool admission or operating-system sandbox claim") (examples "preview binds packet P to workspace W document D revision R and durable operation O; the human confirms that exact challenge and execution publishes P then returns a durable receipt" "the target advances after preview, so execution refuses stale evidence before sending an edit" "the edit is accepted but durable delivery becomes unknown, so the result remains persistence-pending with O and the existing exact Vellum lookup next action"))
 // @rune:end
 
 // Generated by smith from the typed IR of pantheon-rune-packet-publication.rune. Do not edit by hand.
@@ -74,8 +74,8 @@ pub struct PantheonRunePacketPublicationLineage {
     pub format_version: u32,
 }
 pub const PANTHEONRUNEPACKETPUBLICATION_LINEAGE: PantheonRunePacketPublicationLineage = PantheonRunePacketPublicationLineage {
-    source_sha256: "sha256:4c0ddb5e67f825e996b1414d26f694db852b2e34ace3942104f2795f480f5bac",
-    typed_ir_sha256: "sha256:342aaca96cd5c3447269c76514db0043bb2b861a7e952cc8bfb585f4d64aac7a",
+    source_sha256: "sha256:5e4a549a7517aeed881b346f8bd5b54cf0f48ed9c4a08fd52616096b2cbaa2a7",
+    typed_ir_sha256: "sha256:7cd29a5e8c4e36da59cf0e1eaa70400cc3ec1888723907cd253856522bd3ebd5",
     smith_sha256: "sha256:3288271a2dcae7bd833ddfea15a16562c5fb4335b16e0373e34c45bfa998504c",
     target: "rust",
     format_version: 1u32,
@@ -369,14 +369,32 @@ impl PantheonRunePacketPublicationState {
                                 to: stringify!(PreviewReturned),
                                 signal: stringify!(PreviewReturned),
                                 kind: PantheonRunePacketPublicationObligationKind::Postcondition,
-                                digest: "sha256:d9591c75b92256230af05a37fa57ea3db221ba1a87451ffb145c27bc8ca7104b",
-                                expression: "the exact confirmation binds packet, replacement, target and durable operation identities",
+                                digest: "sha256:8cdff1d42b1e65d145b27443690ce968d426c91708c29966d63cb0895d443182",
+                                expression: "the smallest UTF-8-safe single replacement binds exact start and end offsets plus inserted-byte digest",
                             };
                             *evaluated_obligations = evaluated_obligations
                                 .saturating_add(1);
                             if !evaluator.evaluate(&obligation) {
                                 return Err(PantheonRunePacketPublicationRefusal::PostconditionDenied {
-                                    obligation_digest: "sha256:d9591c75b92256230af05a37fa57ea3db221ba1a87451ffb145c27bc8ca7104b",
+                                    obligation_digest: "sha256:8cdff1d42b1e65d145b27443690ce968d426c91708c29966d63cb0895d443182",
+                                });
+                            }
+                        }
+                        {
+                            let obligation = PantheonRunePacketPublicationObligation {
+                                machine: "pantheon-rune-packet-publication",
+                                from: stringify!(PublicationRequestReceived),
+                                to: stringify!(PreviewReturned),
+                                signal: stringify!(PreviewReturned),
+                                kind: PantheonRunePacketPublicationObligationKind::Postcondition,
+                                digest: "sha256:8750bc8e38b22bd763b6e409ea32a056e3d7b7556e79e47230f9a3220e789149",
+                                expression: "the exact confirmation binds packet, replacement, target, patch and durable operation identities",
+                            };
+                            *evaluated_obligations = evaluated_obligations
+                                .saturating_add(1);
+                            if !evaluator.evaluate(&obligation) {
+                                return Err(PantheonRunePacketPublicationRefusal::PostconditionDenied {
+                                    obligation_digest: "sha256:8750bc8e38b22bd763b6e409ea32a056e3d7b7556e79e47230f9a3220e789149",
                                 });
                             }
                         }
@@ -461,8 +479,8 @@ impl PantheonRunePacketPublicationState {
                         to: stringify!(PublicationArmed),
                         signal: stringify!(PublicationArmed),
                         kind: PantheonRunePacketPublicationObligationKind::Precondition,
-                        digest: "sha256:2f961da7bbe5fe8fd716a48f5a2ad2ca3bfdc2c80fcbd62157947b604d6495c1",
-                        expression: "execution independently reproduces the exact packet and target evidence; the private approval document is closed, current and exact; its literal decision is approve; and every packet, workspace, document, revision, content, replacement and durable operation identity equals the generated challenge",
+                        digest: "sha256:6a7c745923266c36bd3fae31fb40a9822f65e92bbdaeda7d5bef7ea045c4717a",
+                        expression: "execution independently reproduces the exact packet, target and minimal patch evidence; the private approval document is closed, current and exact; its literal decision is approve; and every packet, workspace, document, revision, content, replacement, patch span, inserted digest and durable operation identity equals the generated challenge",
                     };
                     *evaluated_obligations = evaluated_obligations.saturating_add(1);
                     if evaluator.evaluate(&obligation) {
@@ -474,7 +492,7 @@ impl PantheonRunePacketPublicationState {
                             });
                     } else if first_denied_precondition.is_none() {
                         first_denied_precondition = Some(
-                            "sha256:2f961da7bbe5fe8fd716a48f5a2ad2ca3bfdc2c80fcbd62157947b604d6495c1",
+                            "sha256:6a7c745923266c36bd3fae31fb40a9822f65e92bbdaeda7d5bef7ea045c4717a",
                         );
                     }
                 }
@@ -554,14 +572,14 @@ impl PantheonRunePacketPublicationState {
                                 to: stringify!(PublicationArmed),
                                 signal: stringify!(PublicationArmed),
                                 kind: PantheonRunePacketPublicationObligationKind::Postcondition,
-                                digest: "sha256:208a64de4d66c29fb5523d7b1f239abab530b20324b41659d6ce3d329a433a1a",
-                                expression: "execution recomputes the packet and target evidence rather than trusting preview output",
+                                digest: "sha256:adfc941b8ec77cfe273be413bfd9d0d9e8e1230ea8438d0490b668738df6491c",
+                                expression: "execution recomputes the packet, target and minimal patch evidence rather than trusting preview output",
                             };
                             *evaluated_obligations = evaluated_obligations
                                 .saturating_add(1);
                             if !evaluator.evaluate(&obligation) {
                                 return Err(PantheonRunePacketPublicationRefusal::PostconditionDenied {
-                                    obligation_digest: "sha256:208a64de4d66c29fb5523d7b1f239abab530b20324b41659d6ce3d329a433a1a",
+                                    obligation_digest: "sha256:adfc941b8ec77cfe273be413bfd9d0d9e8e1230ea8438d0490b668738df6491c",
                                 });
                             }
                         }
@@ -572,14 +590,14 @@ impl PantheonRunePacketPublicationState {
                                 to: stringify!(PublicationArmed),
                                 signal: stringify!(PublicationArmed),
                                 kind: PantheonRunePacketPublicationObligationKind::Postcondition,
-                                digest: "sha256:a93f06f25e56ac576bccee1ba76f97bccfecb2fad3fb82fffa3f63b39bb93e49",
-                                expression: "the private approval document exactly matches the generated challenge and bound operation identity",
+                                digest: "sha256:368b21d98ccf0d427c5384f7eea6861119a5316d7e9062ec9c135ef865333ab9",
+                                expression: "the private approval document exactly matches the generated challenge, patch span, inserted digest and bound operation identity",
                             };
                             *evaluated_obligations = evaluated_obligations
                                 .saturating_add(1);
                             if !evaluator.evaluate(&obligation) {
                                 return Err(PantheonRunePacketPublicationRefusal::PostconditionDenied {
-                                    obligation_digest: "sha256:a93f06f25e56ac576bccee1ba76f97bccfecb2fad3fb82fffa3f63b39bb93e49",
+                                    obligation_digest: "sha256:368b21d98ccf0d427c5384f7eea6861119a5316d7e9062ec9c135ef865333ab9",
                                 });
                             }
                         }
@@ -682,8 +700,8 @@ impl PantheonRunePacketPublicationState {
                         to: stringify!(InMemoryPublished),
                         signal: stringify!(EditAccepted),
                         kind: PantheonRunePacketPublicationObligationKind::Precondition,
-                        digest: "sha256:c52a9c782919bc50b1fc018cff402a3ac8762ec296de28ad35fccb3eeb261588",
-                        expression: "the exact armed replacement remains within Vellum limits; one workspace edit is dispatched once; and Vellum returns an accepted receipt for the same workspace and document with a snapshot whose bytes equal the packet and whose revision is exactly the expected successor",
+                        digest: "sha256:6e2ff9c37d639ce6299d68967127f1fed9b70b023eed4e2086a330b1c914f72e",
+                        expression: "the exact armed inserted bytes remain within Vellum limits; the patch offsets remain UTF-8 boundaries in the exact target; one workspace edit is dispatched once; and Vellum returns an accepted receipt for the same workspace and document with a snapshot whose complete bytes equal the packet and whose revision is exactly the expected successor",
                     };
                     *evaluated_obligations = evaluated_obligations.saturating_add(1);
                     if evaluator.evaluate(&obligation) {
@@ -695,7 +713,7 @@ impl PantheonRunePacketPublicationState {
                             });
                     } else if first_denied_precondition.is_none() {
                         first_denied_precondition = Some(
-                            "sha256:c52a9c782919bc50b1fc018cff402a3ac8762ec296de28ad35fccb3eeb261588",
+                            "sha256:6e2ff9c37d639ce6299d68967127f1fed9b70b023eed4e2086a330b1c914f72e",
                         );
                     }
                 }
@@ -799,14 +817,14 @@ impl PantheonRunePacketPublicationState {
                                 to: stringify!(InMemoryPublished),
                                 signal: stringify!(EditAccepted),
                                 kind: PantheonRunePacketPublicationObligationKind::Postcondition,
-                                digest: "sha256:bffa3afc74ff3aedb3e41253d95daa4e3c64456ab3294e570d785366365d5496",
-                                expression: "one workspace edit replaces bytes zero through the exact current length at the bound revision",
+                                digest: "sha256:7e1b8f1ae3770207a06fe5943fe01f90e0f5974eef8151d992e89c924fb65b16",
+                                expression: "one workspace edit replaces only the derived UTF-8-safe byte span at the bound revision",
                             };
                             *evaluated_obligations = evaluated_obligations
                                 .saturating_add(1);
                             if !evaluator.evaluate(&obligation) {
                                 return Err(PantheonRunePacketPublicationRefusal::PostconditionDenied {
-                                    obligation_digest: "sha256:bffa3afc74ff3aedb3e41253d95daa4e3c64456ab3294e570d785366365d5496",
+                                    obligation_digest: "sha256:7e1b8f1ae3770207a06fe5943fe01f90e0f5974eef8151d992e89c924fb65b16",
                                 });
                             }
                         }
@@ -817,14 +835,14 @@ impl PantheonRunePacketPublicationState {
                                 to: stringify!(InMemoryPublished),
                                 signal: stringify!(EditAccepted),
                                 kind: PantheonRunePacketPublicationObligationKind::Postcondition,
-                                digest: "sha256:3c3fb8ceff361b97370e52be461dcb94e704dcd1ae86dff46adccee3f3d4ad6d",
-                                expression: "the accepted receipt binds the same workspace and document and yields the exact packet bytes at a new revision",
+                                digest: "sha256:32574e8b02d88d6e3616674027177ceb0b753a8e3593a61378b5c27058c08d83",
+                                expression: "the accepted receipt binds the same workspace and document and yields the complete exact packet bytes at a new revision",
                             };
                             *evaluated_obligations = evaluated_obligations
                                 .saturating_add(1);
                             if !evaluator.evaluate(&obligation) {
                                 return Err(PantheonRunePacketPublicationRefusal::PostconditionDenied {
-                                    obligation_digest: "sha256:3c3fb8ceff361b97370e52be461dcb94e704dcd1ae86dff46adccee3f3d4ad6d",
+                                    obligation_digest: "sha256:32574e8b02d88d6e3616674027177ceb0b753a8e3593a61378b5c27058c08d83",
                                 });
                             }
                         }

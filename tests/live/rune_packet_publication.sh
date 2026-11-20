@@ -108,6 +108,10 @@ printf '%s' "$preview" | jq -e '
   .packet_bytes < 65536 and
   .target.revision == 0 and
   .target.bytes == 12 and
+  .patch.start == 0 and
+  .patch.end == 11 and
+  .patch.inserted_bytes == (.packet_bytes - 1) and
+  (.patch.inserted_sha256 | startswith("sha256:")) and
   .observation.mutations == 0
 ' >/dev/null
 test "$(cat "$source_file")" = 'unpublished'
@@ -139,7 +143,7 @@ if stale=$(
   echo 'FAIL: stale approval unexpectedly republished' >&2
   exit 1
 fi
-printf '%s' "$stale" | grep -Fq 'approval does not exactly bind the freshly recomputed packet'
+printf '%s' "$stale" | grep -Fq '"stage": "no_change"'
 cmp "$scratch/expected-packet.json" "$source_file"
 
 if oversized=$(
@@ -160,4 +164,65 @@ daemon_pid=''
 [ ! -e "$socket" ]
 [ ! -e "$control" ]
 
-echo 'PASS: Rune -> Scry -> Smith packet -> read-only preview -> exact human gate -> one Vellum edit -> durable save; stale and oversized work refused'
+# Prove a large current document is restored with a one-byte patch rather than
+# a whole-document replacement. The owner is offline while the fixture is
+# prepared, so no live workspace state is bypassed.
+perl -0pi -e 's/qualification-fixture/qualification-fixturE/' "$source_file"
+if cmp -s "$scratch/expected-packet.json" "$source_file"; then
+  echo 'FAIL: minimal-patch fixture did not differ' >&2
+  exit 1
+fi
+"$daemon" --socket "$socket" --control "$control" --credential "$credential" \
+  --allow-edit --allow-save -- "$source_file" >"$daemon_log" 2>&1 &
+daemon_pid=$!
+attempt=0
+while [ ! -S "$socket" ]; do
+  if ! kill -0 "$daemon_pid" 2>/dev/null; then
+    cat "$daemon_log" >&2
+    echo 'FAIL: Vellum owner stopped before minimal-patch readiness' >&2
+    exit 1
+  fi
+  if [ "$attempt" -eq 240 ]; then
+    echo 'FAIL: Vellum owner did not publish the minimal-patch endpoint' >&2
+    exit 1
+  fi
+  attempt=$((attempt + 1))
+  sleep 0.025
+done
+
+operation2='vdo1.9192939495969798999a9b9c9d9e9fa0'
+patch_preview=$(
+  "$pantheon" rune-packet-publication preview \
+    "$scratch/publication-profile.json" "$fixture" "$operation2"
+)
+printf '%s' "$patch_preview" | jq -e '
+  .status == "preview_returned" and
+  .patch.start > 0 and
+  .patch.end == (.patch.start + 1) and
+  .patch.inserted_bytes == 1 and
+  .target.bytes == .packet_bytes and
+  .observation.inserted_bytes == 1
+' >/dev/null
+printf '%s' "$patch_preview" | jq '.approval_template' >"$scratch/patch-approval.json"
+chmod 600 "$scratch/patch-approval.json"
+patch_published=$(
+  "$pantheon" rune-packet-publication publish \
+    "$scratch/publication-profile.json" "$fixture" "$operation2" \
+    "$scratch/patch-approval.json"
+)
+printf '%s' "$patch_published" | jq -e '
+  .status == "durable_published" and
+  .complete == true and
+  .prior_revision == 0 and
+  .published_revision == 1 and
+  .durable_outcome == "durable"
+' >/dev/null
+cmp "$scratch/expected-packet.json" "$source_file"
+
+"$daemon" --shutdown "$control"
+wait "$daemon_pid"
+daemon_pid=''
+[ ! -e "$socket" ]
+[ ! -e "$control" ]
+
+echo 'PASS: Rune -> Scry -> Smith packet -> minimal Vellum patch -> exact human gate -> durable save; no-change and oversized work refused'

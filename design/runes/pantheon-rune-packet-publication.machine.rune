@@ -2,13 +2,13 @@
   (rosetta
     (intent "publish one exact private Rune-author projection packet into one pre-admitted Vellum document only after separate accountable human confirmation, preserving revision identity, edit uncertainty and durable-save recovery without granting the designing actor mutation authority")
     (values semantic-preservation human-agency separation-of-duties owner-preservation revision-safety lost-reply-safety content-minimization honest-persistence)
-    (outcomes "preview deterministically qualifies and buffers one exact Rune packet, observes one exact current pre-admitted Vellum document and returns a content-free confirmation challenge without mutation" "execution repeats qualification and observation, requires an exact accountable human confirmation over the packet, target and durable operation identities, and refuses stale or substituted evidence before mutation" "one accepted Vellum owner edit replaces the complete target at its exact revision and no edit is retried when delivery is unknown" "an accepted edit is durably saved once under a caller-persisted operation identity, while refused or unknown persistence remains explicitly pending and recoverable through Vellum's existing lookup contract" "no path grants workspace membership, arbitrary document selection, shell, approval inference, task mutation, artifact materialization, go-no-go or rollout authority")
+    (outcomes "preview deterministically qualifies and buffers one exact Rune packet, observes one exact current pre-admitted Vellum document and returns a content-free confirmation challenge without mutation" "execution repeats qualification and observation, requires an exact accountable human confirmation over the packet, target, minimal patch and durable operation identities, and refuses stale or substituted evidence before mutation" "one accepted Vellum owner edit applies the smallest UTF-8-safe single replacement at the exact target revision and the accepted successor must still reproduce the complete packet" "no edit is retried when delivery is unknown" "an accepted edit is durably saved once under a caller-persisted operation identity, while refused or unknown persistence remains explicitly pending and recoverable through Vellum's existing lookup contract" "no path grants workspace membership, arbitrary document selection, shell, approval inference, task mutation, artifact materialization, go-no-go or rollout authority")
     (who "the accountable human reviewer, Pantheon's bounded Rune publication adapter, the deployment-owned Rune author and the sovereign Vellum workspace owner")
     (what "one two-phase preview-and-publish transaction for a single qualified packet document")
     (when "after Rune, Scry, Smith and target verification qualify a private packet and before any downstream artifact materialization or execution")
     (where "a deployment-pinned Rune profile and one deployment-pinned, pre-admitted Vellum workspace document")
     (why "the designing ensemble must not mutate source after independent verification, while the reviewed lossless packet needs a durable owner-controlled provenance boundary")
-    (how "recompute the qualified packet, observe and digest the exact Vellum target, prepare an exact whole-document replacement, bind a human confirmation to every identity, submit once, then perform or recover one separately identified durable save")
+    (how "recompute the qualified packet, observe and digest the exact Vellum target, derive the longest-common-prefix-and-suffix UTF-8-safe single replacement, bind its span and inserted digest into the human confirmation, submit once, verify the complete successor, then perform or recover one separately identified durable save")
     (extent "one packet and one existing Vellum document; no multi-document durable atomicity claim, packet-to-artifact extraction, membership change, agent-facing tool admission or operating-system sandbox claim")
     (examples "preview binds packet P to workspace W document D revision R and durable operation O; the human confirms that exact challenge and execution publishes P then returns a durable receipt" "the target advances after preview, so execution refuses stale evidence before sending an edit" "the edit is accepted but durable delivery becomes unknown, so the result remains persistence-pending with O and the existing exact Vellum lookup next action"))
   (initial publication-request-received)
@@ -35,13 +35,13 @@
     (rosetta
       (intent "return one exact qualified packet and revision-bound human confirmation challenge without mutation")
       (values reviewability content-minimization human-agency)
-      (outcomes "the deterministic packet binds request and toolchain identities plus the complete closed projection-qualified owner outcome" "one current Vellum workspace, document, revision, byte count and content digest are bound without disclosing target content" "the exact confirmation binds packet, replacement, target and durable operation identities")
+      (outcomes "the deterministic packet binds request and toolchain identities plus the complete closed projection-qualified owner outcome" "one current Vellum workspace, document, revision, byte count and content digest are bound without disclosing target content" "the smallest UTF-8-safe single replacement binds exact start and end offsets plus inserted-byte digest" "the exact confirmation binds packet, replacement, target, patch and durable operation identities")
       (who "Pantheon, Rune, Vellum and the accountable human reviewer")
       (what "one private preview packet and challenge")
       (when "after author qualification and target observation")
       (where "the private headless result boundary")
       (why "the reviewer needs exact evidence before any authority-bearing action")
-      (how "serialize the deterministic packet without runtime observations, refresh the owner target, compute all digests and render one literal confirmation")
+      (how "serialize the deterministic packet without runtime observations, refresh the owner target, compute longest common prefix and suffix only on UTF-8 character boundaries, digest the inserted bytes and render one literal confirmation")
       (extent "review material only; no edit, save, membership change or inferred approval")
       (examples "preview returns packet digest P and target revision R while the file remains unchanged")))
 
@@ -51,7 +51,7 @@
     (rosetta
       (intent "admit only a fresh exact accountable confirmation for one unchanged packet and target")
       (values explicit-consent freshness substitution-resistance)
-      (outcomes "execution recomputes the packet and target evidence rather than trusting preview output" "the private approval document exactly matches the generated challenge and bound operation identity" "stale, missing, malformed or substituted approval refuses before mutation")
+      (outcomes "execution recomputes the packet, target and minimal patch evidence rather than trusting preview output" "the private approval document exactly matches the generated challenge, patch span, inserted digest and bound operation identity" "stale, missing, malformed or substituted approval refuses before mutation")
       (who "the accountable human operator and Pantheon adapter")
       (what "one armed single-use publication attempt")
       (when "immediately before Vellum edit dispatch")
@@ -65,9 +65,9 @@
     (context external-calls data-handling)
 
     (rosetta
-      (intent "preserve Vellum's accepted owner-atomic whole-document edit as a dirty publication before persistence")
+      (intent "preserve Vellum's accepted owner-atomic minimal patch as a dirty publication before persistence")
       (values owner-truth single-dispatch honest-dirty-state)
-      (outcomes "one workspace edit replaces bytes zero through the exact current length at the bound revision" "the accepted receipt binds the same workspace and document and yields the exact packet bytes at a new revision" "persistence is attempted only after this accepted receipt")
+      (outcomes "one workspace edit replaces only the derived UTF-8-safe byte span at the bound revision" "the accepted receipt binds the same workspace and document and yields the complete exact packet bytes at a new revision" "persistence is attempted only after this accepted receipt")
       (who "Vellum workspace owner and Pantheon adapter")
       (what "one accepted in-memory packet publication")
       (when "after exact confirmation")
@@ -196,7 +196,7 @@
       (how "validate the closed private approval document against the recomputed challenge")
       (extent "one publication attempt only")
       (examples "exact approval matches"))
-    (precondition "execution independently reproduces the exact packet and target evidence; the private approval document is closed, current and exact; its literal decision is approve; and every packet, workspace, document, revision, content, replacement and durable operation identity equals the generated challenge"))
+    (precondition "execution independently reproduces the exact packet, target and minimal patch evidence; the private approval document is closed, current and exact; its literal decision is approve; and every packet, workspace, document, revision, content, replacement, patch span, inserted digest and durable operation identity equals the generated challenge"))
 
   (edge
     (from preview-returned)
@@ -231,10 +231,10 @@
       (when "after arming")
       (where "Vellum workspace boundary")
       (why "only the owner receipt can establish edit success")
-      (how "send one whole-document workspace edit and validate its receipt")
+      (how "send one workspace edit containing only the exact minimal replacement and validate the complete successor receipt")
       (extent "one document and one dispatch")
       (examples "edit accepted"))
-    (precondition "the exact armed replacement remains within Vellum limits; one workspace edit is dispatched once; and Vellum returns an accepted receipt for the same workspace and document with a snapshot whose bytes equal the packet and whose revision is exactly the expected successor"))
+    (precondition "the exact armed inserted bytes remain within Vellum limits; the patch offsets remain UTF-8 boundaries in the exact target; one workspace edit is dispatched once; and Vellum returns an accepted receipt for the same workspace and document with a snapshot whose complete bytes equal the packet and whose revision is exactly the expected successor"))
 
   (edge
     (from publication-armed)

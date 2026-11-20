@@ -32,6 +32,7 @@ pub mod task_agent;
 pub mod tellus_sme;
 mod terminal;
 pub mod vellum_document;
+mod vellum_patch;
 pub mod verification_result;
 
 pub use hosted::{run_hosted_terminal, run_hosted_terminal_with_agora};
