@@ -1,0 +1,35 @@
+(lattice pantheon-concerns
+  (rosetta
+    (intent "classify the exact concern boundaries used by Pantheon's Rune-author capability review so Tellus can expose correlated advice without depending on Axon's prior-art taxonomy")
+    (values owner-locality mechanical-meets honest-correlation minimal-scope)
+    (outcomes
+      "every Rune role selected for the bounded author-capability review has one registered concern pair"
+      "Tellus computes pairwise shared-facet correlation mechanically and never promotes correlated agreement into independent convergence"
+      "new concerns remain absent until an actual Pantheon review depends on them and their owner semantics are inspected")
+    (who "Pantheon's Tellus-facing review boundary and the human or agent evaluating the proposed ensemble")
+    (what "the minimal Pantheon-owned concern lattice for the Rune-author capability's architecture, security, implementation, test, and verification roles")
+    (when "before the capability design treats retrieved Rune SME surfaces as a fit review cohort")
+    (where "Pantheon's canonical design corpus, loaded read-only by Dendrite for Tellus planning")
+    (why "Axon is prior art rather than Pantheon's operational taxonomy, while unclassified roles make the real Tellus plan fail closed")
+    (how "register each role's existing two-atom concern under one facet; validate with Scry and lattice_check; retain shared-facet pairs as nonorthogonal")
+    (extent "only concerns required by the Rune-author capability review; no claim of stakeholder standing, substantive independence, approval, or a complete Pantheon-wide taxonomy")
+    (examples "network and distributed-systems share the distributed-communication facet, while live verification remains epistemically distinct from Rust ownership engineering"))
+  (facet epistemic-discipline
+    (member rigor falsifiability)
+    (member empirical-verification production-reality))
+  (facet lifecycle-process
+    (member architecture-description structural-decomposition)
+    (member rust-systems-engineering ownership-and-safety)
+    (member test-environment synchronization-and-lifecycle))
+  (facet distributed-communication
+    (member network-protocol flow-control)
+    (member distributed-systems fault-tolerance-and-consistency))
+  (facet identity-domain
+    (member digital-identity access-authority))
+  (facet data-domain
+    (member data-semantics provenance))
+  (facet risk-protection
+    (member application-security threat-modeling))
+  (facet human-outcomes
+    (member user-experience usability-accessibility)
+    (member humane-systems human-agency)))

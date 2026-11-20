@@ -4287,3 +4287,50 @@ metadata repair began without selecting its activity FSM or folding
 utility telemetry rather than retroactively erased. It does not invalidate the
 owner evidence, but it is a concrete dogfooding improvement for the next slice.
 
+### 2026-11-20 — Pantheon crosses the bounded Rune author boundary
+
+The first center-out automation slice is operational as the headless
+`pantheon rune-author RUNE_PROFILE_JSON REQUEST_JSON` command. Its
+human/deployment-owned version-one profile pins the exact Rune author, Scry,
+Smith and rustc bytes. The adapter reads one bounded request, clears the child
+environment except those fixed tool identities, bounds time and channels,
+requalifies tool identities after execution and validates one closed Rune-owned
+response. It preserves `questions_pending`, typed Rune refusal and
+`projection_qualified` as distinct outcomes; malformed transport, identity or
+lineage becomes an adapter refusal rather than a semantic verdict.
+
+The implementation is governed by
+`design/runes/pantheon-rune-author-capability.machine.rune`, admitted by real
+Scry and projected by real Smith into
+`design/generated/pantheon_rune_author_capability.rs`. Their exact current
+SHA-256 identities are `0df6d6ccd3068fdde0cd3bac7e3509e40af41cbeb7ecbd95c19a60f8bbbb02ea`
+and `6081d0fc141a35261205dfc717025d7fb7d1a94d39854b9afa1eda0d175ddcd6`.
+The prerequisite Rune owner tranche is committed locally as `2ae2bad`; that
+checkout has no configured remote, so Pantheon must not claim the peer commit
+is remotely reproducible until repository publication is configured.
+The focused live gate traverses that forged controller through typed questions,
+a qualified private projection, a Rune-owned refusal and a Pantheon adapter
+refusal. The Tellus review gate independently reloads the Pantheon-owned concern
+lattice through authenticated Dendrite and confirms both advisory cohorts
+before the exact private projection. Strict Clippy, 146 CLI library tests and
+both focused live gates pass.
+
+Each result includes content-free RED/golden-signal and bounded-resource
+observations: classification, request count, adapter error count, duration,
+channel traffic and configured saturation limits. This is explicitly an inline
+private observation with `oculus_published=false`; Pantheon does not pretend
+that the absent sovereign Oculus publication path exists.
+
+The boundary remains intentionally modest. `process_contract` means fixed
+binaries, cleared environment, bounded channels and no intentionally passed
+workspace, credential or network capability. It is not an operating-system
+sandbox and does not revoke ambient access available to Pantheon's process
+identity. The raw command is therefore retained for the accountable
+human/deployment owner and is not advertised as an agent tool: until a runtime
+pins the profile and request binding, a model-selectable profile path would
+reintroduce executable-selection authority. Chronos revision 9 retains the
+maturity path as seven distinct tasks: version-one process contract, local
+sandbox confinement, immutable artifact provenance, supervised local service,
+authenticated remote service, WASI capability runtime and a pinned outward MCP
+agent facade.
+

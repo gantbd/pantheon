@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "fold_load_id": "rune/sme/triggers",
+  "lattice_load_id": "pantheon/design/pantheon-concerns",
+  "tags": [
+    "external-calls",
+    "rust-code",
+    "designing-test-harness",
+    "claiming-completion"
+  ],
+  "depth": "activated",
+  "max_roles": 8,
+  "max_surface_bytes": 131072
+}

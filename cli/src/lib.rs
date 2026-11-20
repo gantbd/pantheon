@@ -25,6 +25,7 @@ pub mod profile;
 mod provider;
 pub mod reconfiguration;
 pub mod registry;
+pub mod rune_author;
 pub mod task_agent;
 pub mod tellus_sme;
 mod terminal;

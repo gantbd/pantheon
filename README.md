@@ -638,6 +638,19 @@ and a disclosure-byte bound. The result retains fold, lattice, authority and
 surface digests, asks `do we have the right ensemble?`, and cannot imply
 stakeholder equity, independence, approval, authority or proof.
 
+Use `pantheon rune-author RUNE_PROFILE_JSON REQUEST_JSON` for one bounded
+deployment-owned Rune author transaction. The closed profile pins the exact
+Rune author, Scry, Smith and rustc bytes and declares
+`confinement=process_contract`; the result preserves typed questions,
+Rune-owned refusal or a private qualified projection and reports content-free
+latency, traffic, error and channel-limit observations. This is not an
+operating-system sandbox, publication path or agent tool. Until deployment
+configuration pins the profile and request binding outside model control, the
+raw profile-path command remains human/operator-facing. Run
+`make qualify-rune-author` for the focused four-outcome live gate and
+`make qualify-rune-author-review` for the authenticated Tellus/Dendrite review
+chain.
+
 Use `pantheon agent-web-fetch POLICY_JSON HTTPS_URL` only through a
 Daimon-governed command capability. The policy pins the exact curl executable
 by SHA-256, exact lowercase hosts, response and time bounds, and a fixed user

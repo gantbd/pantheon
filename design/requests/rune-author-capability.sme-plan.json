@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "fold_load_id": "rune/sme/triggers",
+  "lattice_load_id": "pantheon/design/pantheon-concerns",
+  "tags": [
+    "stating-a-design-decision",
+    "architecture-flow-review",
+    "access-control-decision",
+    "user-experience-decision",
+    "human-impact-decision"
+  ],
+  "depth": "activated",
+  "max_roles": 8,
+  "max_surface_bytes": 131072
+}

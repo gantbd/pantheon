@@ -1,0 +1,489 @@
+{
+  "version": 1,
+  "dialect": {
+    "kind": "machine",
+    "version": 1
+  },
+  "review": {
+    "human": "Brian, declared human sponsor in the governing Pantheon thread",
+    "ensemble_fit": "yes",
+    "evidence": [
+      "sha256:88e4aa16f24cc451010c2c1b8a99383bc19e3ff4f155e2a482a72871c5a239fb",
+      "sha256:bd4fc0d817416e87dd3525dff1a0aa6060b92e1869b4b0d86e0a1165e08b45c9",
+      "sha256:009b40b5c88ee9a6bb4a71bc32b3ed8f2d70a2710c3e0c495697a4ecb0ba5f65",
+      "sha256:acd8acc54a66307fc28e3a7ef4cf27c67e81362c0ba287d97eb5de48c932cfeb",
+      "sha256:60acba7fb15921c5d1e3e84526febbeef571b925fd2e8c6d9732e921771b2a6a",
+      "sha256:9da415b103c0f09415643ff2e1ef1fbe1d3e94788302cbf7cd497679b16e9ece",
+      "sha256:75c6acd4f367ebc35aa187ea9ef4a04266796d2c49ae2b22e661a021370d2673",
+      "sha256:6dd2f34270a277c99ba68f5a02469f0148e1259a63f14aedd7f7837abdb7c4bc",
+      "sha256:03346e30a87ac21a33dbadce89c119801175de3d136a06e1fb5634dbe7ad8629",
+      "sha256:449d690a491f30f91c5e12a1c27e0b7f91946726f0e087cb1959a61ba4fa7e56",
+      "sha256:4ef1125ae63eea16edaade07b3d9e5f2752a29d681fe32c7e2df9f47be87dc4d",
+      "sha256:d48a42de378740ec769063d7aec6ebcabeb4906cc2325295cf0f9c8259d0ac13",
+      "sha256:5014d46fe0f9c736b0a50589250ad53f2664fd16868d8b137671c61db2c11246",
+      "sha256:28a4a149d1153b3e730733e390e12090c66025e803de07e49c4df85ec5a9e948",
+      "sha256:474f745c3da80663e07a61da2e8b0101bceb941de107426856d04bfc3d1698e7",
+      "sha256:35e743059455c7c3c7538d5c59f81fb27c2bd0cc1155612cd1f5991d5ad904f2",
+      "sha256:4eabe18d46aacfda00edbaac4d402424ad8ffafbec8e68a3a74ffa036fab26e4",
+      "sha256:d913e8238718eb57b20cdd6bdb72bc8553650cc7b7889724d97bf1d2a39cc66c",
+      "sha256:e1b9b0d98cd95e7c9c0f95aadd81a5721505a8bfb3a370e0dbfcdaa2c47745ed",
+      "sha256:31ad8078909f4f0abf4bda6935b4b3db9511faeab297f37b13f8f070a30cafde"
+    ],
+    "dissent": [
+      "Tellus admitted rigor, architecture, network, identity, data, and security as six orthogonal advisory lenses; this does not establish stakeholder standing, approval, or authority.",
+      "Tellus also admitted user-experience and humanism; both share the human-outcomes facet, so their complementary agreement is retained as correlated rather than independent evidence.",
+      "Tellus admitted network, distributed-systems, Rust engineering, test-harness engineering, and live verification for the compiler cohort; network and distributed-systems share one distributed-communication facet, while Rust and test-harness engineering share one lifecycle-process facet, so their agreement is not counted as independent convergence.",
+      "A local subprocess adapter is a bounded first deployment, not a decision that Rune must remain process-coupled rather than expose a future service protocol.",
+      "Version one reports process-contract confinement honestly: fixed binaries, cleared environment, bounded channels, no caller-selected paths, and no intentionally passed workspace, credential, or network capability do not by themselves form an operating-system sandbox or prevent access available to Pantheon's process identity.",
+      "Chronos owns the maturity path from process-contract confinement through stronger local sandboxing and immutable artifact provenance to supervised local service, authenticated remote service, or WASI-style capability confinement when actual scale, distribution, or threat evidence justifies each transition.",
+      "The adapter returns private review material and may never publish it or treat a successful projection as human acceptance."
+    ]
+  },
+  "holes": [],
+  "projection": "rust",
+  "machine": {
+    "name": "pantheon-rune-author-capability",
+    "rosetta": {
+      "intent": "let Pantheon submit one exact reviewed authoring request to the deployment-owned Rune author and return its exact questions, typed refusal, or private Scry-and-Smith-qualified projection packet without shell authority, semantic invention, or publication",
+      "values": [
+        "component-ownership",
+        "semantic-preservation",
+        "least-authority",
+        "bounded-transport",
+        "typed-uncertainty",
+        "private-preparation",
+        "confinement-honesty"
+      ],
+      "outcomes": [
+        "one bounded exact request is correlated with one deployment-owned Rune author invocation and one exact response",
+        "questions-pending and typed author refusals are returned as valid owner outcomes rather than repaired or collapsed into transport failure",
+        "a projection packet is returned only when its request, canonical Rune, Scry IR, Smith compatibility, Rust projection, compiler identities, and digests remain internally consistent",
+        "timeout, malformed output, excess bytes, identity mismatch, or process failure returns an actionable adapter refusal with no admitted candidate",
+        "every outcome names the configured confinement level and never represents process-contract controls as an operating-system sandbox",
+        "no path grants workspace mutation, publication, approval, task mutation, rollout, or ambient shell authority"
+      ],
+      "who": "Pantheon's bounded Rune capability adapter, the deployment configuration owner, the Rune author component, and the accountable human reviewer",
+      "what": "one headless component request from exact private authoring bytes to an exact private Rune-author outcome",
+      "when": "after structured intent and explicit holes exist and before any candidate is published or used as executable authority",
+      "where": "a bounded Pantheon-to-Rune capability boundary using only the configured deployment-owned transport",
+      "why": "agents need the deterministic authoring toolchain without receiving general shell access or bypassing Rune's refusal and human-review boundaries",
+      "how": "validate and digest bounded request bytes, invoke only the pinned Rune author with an empty ambient environment and bounded channels, classify its closed response, verify identities and byte digests, report the deployment's real confinement level, and return one private typed result",
+      "extent": "version-one local authoring transaction under explicitly reported process-contract confinement; no claim of operating-system sandboxing, prose interpretation, ensemble authority, executable selection by the caller, intentionally passed workspace or network capability, Vellum publication, approval, task effect, go-no-go, or rollout",
+      "examples": [
+        "an incomplete J1 UADD request returns fifteen typed questions and no candidate",
+        "a reviewed complete request returns canonical Rune, Scry IR, a complete Smith compatibility report, and target-verified Rust in one private packet",
+        "a timed-out or malformed Rune author response becomes an adapter refusal and cannot be presented as an author verdict"
+      ]
+    },
+    "initial": "request-received",
+    "states": [
+      {
+        "name": "request-received",
+        "context": [
+          "access-control-decision",
+          "data-handling"
+        ],
+        "rosetta": {
+          "intent": "bind one exact bounded author request without interpreting or publishing it",
+          "values": [
+            "exact-input",
+            "content-minimization"
+          ],
+          "outcomes": [
+            "the exact bytes, byte count, request digest, selected capability version, and private handling boundary are retained",
+            "oversized, non-file, mutable-after-check, or caller-tool-selected input refuses before Rune invocation"
+          ],
+          "who": "the Pantheon Rune capability adapter",
+          "what": "one inert Rune author request document",
+          "when": "at capability admission",
+          "where": "bounded adapter-owned memory",
+          "why": "the invoked component must receive exactly the material the caller asked to review",
+          "how": "read once under a fixed byte bound, reject unsupported invocation options, and bind SHA-256 before process start",
+          "extent": "input admission only; no semantic validation, authoring, or mutation",
+          "examples": [
+            "the exact J1 request is retained under one digest before invocation"
+          ]
+        }
+      },
+      {
+        "name": "author-invoked",
+        "context": [
+          "external-calls",
+          "access-control-decision"
+        ],
+        "rosetta": {
+          "intent": "invoke only the deployment-owned Rune author over bounded private channels",
+          "values": [
+            "least-authority",
+            "deployment-identity",
+            "bounded-execution"
+          ],
+          "outcomes": [
+            "the configured executable identity is retained and the exact request bytes are written once to standard input",
+            "arguments, environment, duration, stdout, and stderr remain closed and bounded",
+            "the invocation records process-contract confinement and does not claim that clearing environment or omitting bindings removes ambient filesystem or network access inherited from Pantheon's operating-system principal",
+            "process completion alone makes no claim about the Rune author outcome"
+          ],
+          "who": "the Pantheon adapter and deployment-owned Rune author process",
+          "what": "one local component invocation",
+          "when": "after request admission",
+          "where": "the configured local Rune capability boundary",
+          "why": "a model-selected executable or ambient shell would escape Pantheon's tool constraints",
+          "how": "spawn the exact configured regular executable with no caller arguments, clear ambient environment except fixed deployment tool identities, pass no workspace, credential, or network binding intentionally, pipe exact bytes, enforce time and channel limits, record the actual confinement mode, and reap the process",
+          "extent": "one invocation under process-contract confinement; no retry, shell, caller workspace path selection, operating-system sandbox claim, or publication",
+          "examples": [
+            "Rune author receives the admitted request on stdin and returns one JSON result on stdout"
+          ]
+        }
+      },
+      {
+        "name": "questions-returned",
+        "context": [
+          "human-impact-decision"
+        ],
+        "rosetta": {
+          "intent": "return Rune's exact typed clarification result without manufacturing answers",
+          "values": [
+            "typed-uncertainty",
+            "human-agency"
+          ],
+          "outcomes": [
+            "status questions_pending, the exact request digest, all typed questions, boundary, state, and signal validate under the closed response schema",
+            "candidate, IR, projection, approval, and effect fields are absent"
+          ],
+          "who": "the Rune author component and accountable reviewer",
+          "what": "one private clarification packet",
+          "when": "the exact request remains semantically incomplete or contested",
+          "where": "Pantheon's headless private result boundary",
+          "why": "missing meaning must remain actionable without becoming machine law",
+          "how": "validate the closed response and return it unchanged with adapter correlation metadata",
+          "extent": "questions only; no auto-answer, retry, mutation, or publication",
+          "examples": [
+            "the incomplete UADD request returns owner-contract and topology questions"
+          ]
+        }
+      },
+      {
+        "name": "author-refusal-returned",
+        "context": [
+          "diagnosing-failure"
+        ],
+        "rosetta": {
+          "intent": "preserve a valid Rune-owned refusal as the authoritative authoring outcome",
+          "values": [
+            "refusal-absorption",
+            "owner-preservation"
+          ],
+          "outcomes": [
+            "a closed refused, scry_refused, or smith_refused response retains its exact stage, diagnostics, identities, next action, and zero-output guarantees",
+            "Pantheon does not rewrite a Rune refusal into adapter success or transport failure"
+          ],
+          "who": "the Rune author component and observing operator",
+          "what": "one typed author refusal",
+          "when": "Rune, Scry, Smith, or target verification refuses the request",
+          "where": "the private result boundary",
+          "why": "the component that owns authoring semantics must own its refusal meaning",
+          "how": "validate the status-specific closed schema and correlate it to the exact request and executable identity",
+          "extent": "one returned refusal; no repair, retry, obligation deletion, or publication",
+          "examples": [
+            "Smith reports an unsupported obligation and emits no Rust projection"
+          ]
+        }
+      },
+      {
+        "name": "projection-packet-returned",
+        "context": [
+          "claiming-completion",
+          "data-handling"
+        ],
+        "rosetta": {
+          "intent": "return one internally consistent private projection packet for separate human review",
+          "values": [
+            "semantic-preservation",
+            "exact-lineage",
+            "private-preparation"
+          ],
+          "outcomes": [
+            "status projection_qualified binds the exact request, canonical Rune, typed IR, Scry, Smith, Rust verifier, compatibility report, Rust projection, and every reported digest",
+            "compatibility is complete with an empty unsupported set and the projection bytes carry the same lineage",
+            "the result remains review material with no publication or approval implication"
+          ],
+          "who": "Rune author, Scry, Smith, the Pantheon adapter, and accountable human reviewer",
+          "what": "one private authoring review packet",
+          "when": "all deterministic authoring and target-verification checks succeed",
+          "where": "bounded adapter memory and the authorized private response channel",
+          "why": "a coherent packet lets review proceed without filesystem mutation or inferred authority",
+          "how": "validate the closed packet, recompute content digests, verify lineage agreement and bounded sizes, then return exact bytes with adapter correlation",
+          "extent": "private preparation only; no Vellum write, canonical admission, execution, acceptance, task transition, or rollout",
+          "examples": [
+            "a reviewed adapter request yields Scry-valid Rune and target-verified Rust for human inspection"
+          ]
+        }
+      },
+      {
+        "name": "adapter-refused",
+        "context": [
+          "diagnosing-failure",
+          "reproducing-failure"
+        ],
+        "rosetta": {
+          "intent": "surface an actionable Pantheon boundary failure without impersonating Rune",
+          "values": [
+            "boundary-honesty",
+            "fail-closed"
+          ],
+          "outcomes": [
+            "timeout, spawn failure, excess output, malformed schema, contradictory status, request mismatch, digest mismatch, or unexpected exit is classified with the responsible boundary and next safe action",
+            "no candidate, IR, or projection is admitted from an untrusted response"
+          ],
+          "who": "the Pantheon Rune capability adapter and operator",
+          "what": "one typed adapter refusal",
+          "when": "the transport or response cannot establish a valid Rune-owned outcome",
+          "where": "the Pantheon component boundary",
+          "why": "an invalid wrapper result must not be mistaken for a compiler verdict",
+          "how": "retain bounded content-free diagnostics, request and executable identities, failure stage, and an orienting next action",
+          "extent": "adapter refusal only; no automatic retry, fallback executable, shell, mutation, or semantic conclusion",
+          "examples": [
+            "a truncated JSON response is classified as invalid-response rather than Scry refusal"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "request-received",
+        "to": "author-invoked",
+        "signal": "author-invoked",
+        "precondition": "the request is within the fixed byte bound, its exact digest is retained, the human-owned deployment configuration supplies one qualified Rune author identity, fixed child tool identities, and an explicit confinement mode, the selected policy admits that mode for this bounded slice, and the caller supplies no executable, argument, environment, publication, or mutation authority",
+        "rosetta": {
+          "intent": "start one least-authority Rune author transaction",
+          "values": [
+            "exact-input",
+            "least-authority"
+          ],
+          "outcomes": [
+            "one exact bounded invocation begins"
+          ],
+          "who": "the Pantheon adapter",
+          "what": "request-to-invocation transition",
+          "when": "admission and deployment identity checks pass",
+          "where": "the configured local capability boundary",
+          "why": "only admitted bytes may enter the author",
+          "how": "spawn and pipe exact bytes once",
+          "extent": "one invocation",
+          "examples": [
+            "the J1 request digest is fixed before process start"
+          ]
+        }
+      },
+      {
+        "from": "request-received",
+        "to": "adapter-refused",
+        "signal": "adapter-refused",
+        "precondition": "request admission, exact digest binding, deployment executable qualification, confinement-mode policy, or the no-caller-tool-authority check fails before invocation",
+        "rosetta": {
+          "intent": "refuse an inadmissible request or deployment selection",
+          "values": [
+            "fail-closed"
+          ],
+          "outcomes": [
+            "no Rune author process starts and the failed admission check is named"
+          ],
+          "who": "the Pantheon adapter",
+          "what": "pre-invocation refusal",
+          "when": "admission fails",
+          "where": "the adapter boundary",
+          "why": "bad inputs cannot be repaired by execution",
+          "how": "return bounded typed diagnostics",
+          "extent": "no invocation",
+          "examples": [
+            "a caller-selected executable is refused"
+          ]
+        }
+      },
+      {
+        "from": "author-invoked",
+        "to": "questions-returned",
+        "signal": "questions-returned",
+        "precondition": "the bounded process returns a closed version-one questions_pending response whose request digest equals the admitted bytes, whose state and signal are questions_pending and clarification-required, whose question array is nonempty, and which contains no candidate, typed IR, projection, compatibility, or approval field",
+        "rosetta": {
+          "intent": "return exact typed questions",
+          "values": [
+            "typed-uncertainty"
+          ],
+          "outcomes": [
+            "the complete clarification packet is available without candidate bytes"
+          ],
+          "who": "Rune author and Pantheon adapter",
+          "what": "valid questions transition",
+          "when": "Rune reports questions_pending",
+          "where": "the private response boundary",
+          "why": "questions are a valid outcome",
+          "how": "validate and correlate the closed response",
+          "extent": "one packet",
+          "examples": [
+            "fifteen UADD questions are returned"
+          ]
+        }
+      },
+      {
+        "from": "author-invoked",
+        "to": "author-refusal-returned",
+        "signal": "author-refusal-returned",
+        "precondition": "the bounded process returns one closed status-specific Rune refusal with the expected nonzero exit code, matching request identity where the owner schema carries it, complete stage and diagnostic fields, and no output bytes forbidden by that refusal",
+        "rosetta": {
+          "intent": "return an authoritative Rune-owned refusal",
+          "values": [
+            "owner-preservation"
+          ],
+          "outcomes": [
+            "the refusal remains distinguishable from wrapper failure"
+          ],
+          "who": "Rune author and Pantheon adapter",
+          "what": "valid author-refusal transition",
+          "when": "Rune returns a typed refusal",
+          "where": "the private response boundary",
+          "why": "semantic refusal belongs to Rune",
+          "how": "validate its closed schema and exit contract",
+          "extent": "one refusal",
+          "examples": [
+            "Scry refusal remains scry_refused"
+          ]
+        }
+      },
+      {
+        "from": "author-invoked",
+        "to": "projection-packet-returned",
+        "signal": "projection-packet-returned",
+        "precondition": "the bounded process exits successfully with one closed projection_qualified response; request and tool identities match the admitted invocation; canonical Rune, typed IR, compatibility, and Rust projection are present within bounds; all reported digests recompute; compatibility is complete with no unsupported obligations; and generated lineage agrees with the packet",
+        "rosetta": {
+          "intent": "return a fully correlated private projection packet",
+          "values": [
+            "semantic-preservation",
+            "exact-lineage"
+          ],
+          "outcomes": [
+            "the deterministic authoring result is ready for separate human review"
+          ],
+          "who": "Rune author, Pantheon adapter, and human reviewer",
+          "what": "valid projection transition",
+          "when": "all packet checks pass",
+          "where": "the private response boundary",
+          "why": "success requires exact coherent evidence",
+          "how": "recompute and compare every identity before returning bytes",
+          "extent": "review packet only",
+          "examples": [
+            "canonical Rune and generated Rust share exact lineage"
+          ]
+        }
+      },
+      {
+        "from": "author-invoked",
+        "to": "adapter-refused",
+        "signal": "adapter-refused",
+        "precondition": "the process cannot be started, exceeds a time or channel bound, exits without a matching closed owner response, returns malformed or contradictory data, mismatches request or tool identity, or fails any required digest or zero-output invariant",
+        "rosetta": {
+          "intent": "refuse an untrustworthy invocation outcome",
+          "values": [
+            "boundary-honesty"
+          ],
+          "outcomes": [
+            "no untrusted authoring bytes are admitted and the failed wrapper check is named"
+          ],
+          "who": "the Pantheon adapter",
+          "what": "invocation-to-adapter-refusal transition",
+          "when": "transport or response validation fails",
+          "where": "the component boundary",
+          "why": "wrapper failure is not Rune truth",
+          "how": "classify the stage and preserve content-free diagnostics",
+          "extent": "one refusal; no retry",
+          "examples": [
+            "timeout remains adapter-refused"
+          ]
+        }
+      }
+    ],
+    "signals": [
+      {
+        "name": "author-invoked",
+        "rosetta": {
+          "intent": "announce one exact Rune author invocation",
+          "values": ["observability"],
+          "outcomes": ["traffic and invocation identity are observable without content"],
+          "who": "Pantheon observers",
+          "what": "invocation signal",
+          "when": "the process starts",
+          "where": "the adapter",
+          "why": "RED traffic needs a start boundary",
+          "how": "emit content-free correlation",
+          "extent": "no author outcome",
+          "examples": ["one invocation started"]
+        }
+      },
+      {
+        "name": "questions-returned",
+        "rosetta": {
+          "intent": "announce a valid clarification outcome",
+          "values": ["typed-uncertainty"],
+          "outcomes": ["questions are distinguishable from failure and success"],
+          "who": "Pantheon observers",
+          "what": "questions signal",
+          "when": "a valid questions packet returns",
+          "where": "the adapter",
+          "why": "Maybe must remain visible",
+          "how": "derive from the closed owner response",
+          "extent": "no candidate",
+          "examples": ["questions_pending returned"]
+        }
+      },
+      {
+        "name": "author-refusal-returned",
+        "rosetta": {
+          "intent": "announce a valid Rune-owned refusal",
+          "values": ["owner-preservation"],
+          "outcomes": ["semantic refusal is distinguishable from adapter failure"],
+          "who": "Pantheon observers",
+          "what": "author-refusal signal",
+          "when": "a valid typed refusal returns",
+          "where": "the adapter",
+          "why": "ownership must remain visible",
+          "how": "derive from the closed owner response",
+          "extent": "no repair",
+          "examples": ["smith_refused returned"]
+        }
+      },
+      {
+        "name": "projection-packet-returned",
+        "rosetta": {
+          "intent": "announce a private qualified projection packet",
+          "values": ["exact-lineage"],
+          "outcomes": ["review material availability is observable without implying publication"],
+          "who": "Pantheon observers",
+          "what": "projection signal",
+          "when": "all packet checks pass",
+          "where": "the adapter",
+          "why": "successful preparation should be orienting",
+          "how": "derive from validated packet identities",
+          "extent": "no approval or mutation",
+          "examples": ["projection_qualified packet returned"]
+        }
+      },
+      {
+        "name": "adapter-refused",
+        "rosetta": {
+          "intent": "announce a Pantheon boundary refusal",
+          "values": ["fail-closed"],
+          "outcomes": ["the failed stage and next safe action are observable"],
+          "who": "Pantheon observers",
+          "what": "adapter-refusal signal",
+          "when": "admission, transport, or response validation fails",
+          "where": "the adapter",
+          "why": "operators need actionable orientation",
+          "how": "emit bounded content-free classification",
+          "extent": "no Rune semantic verdict",
+          "examples": ["invalid response refused"]
+        }
+      }
+    ]
+  }
+}

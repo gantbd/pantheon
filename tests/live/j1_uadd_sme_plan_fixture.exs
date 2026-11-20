@@ -30,6 +30,13 @@ token_file = System.fetch_env!("PANTHEON_J1_UADD_TOKEN_FILE")
     Path.join(workspace, "axon/sme/axon-concerns.lattice.rune")
   )
 
+:ok =
+  RuneMcp.Server.load(
+    registry,
+    "pantheon/design/pantheon-concerns",
+    Path.join(workspace, "pantheon/design/runes/pantheon-concerns.lattice.rune")
+  )
+
 secret = :crypto.strong_rand_bytes(32) |> Base.url_encode64(padding: false)
 {:ok, auth} = Dendrite.Auth.start_link(clients: %{"pantheon-j1-uadd" => secret})
 
