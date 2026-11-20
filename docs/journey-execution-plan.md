@@ -2588,6 +2588,16 @@ Operational means observable completed work, not a configured role name:
   `rune-compiler-supervisor-semantic-parity`, and the bounded Vellum
   workspace/change-set items must be dependency-linked rather than replaced by
   another umbrella task.
+- Rune `16615a0` converts that design into the canonical 11-state,
+  18-transition `bounded-agent-development` machine and runs the proposed
+  toolchain on itself. Scry and Dendrite corpus validation pass; graph proof
+  shows ensemble fit, machine validation, change proposal, verification and
+  human review cannot be bypassed; Smith's Markdown projection round-trips;
+  and its Rust projection writes no bytes while executable provenance and
+  precondition enforcement remain unsupported. Pantheon-hosted Vellum loaded
+  the exact machine and selected its first substantive question, “do we have
+  the right ensemble?” The machine therefore supplies executable backlog and
+  acceptance structure without pretending the no-shell runtime is operational.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

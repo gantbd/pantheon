@@ -202,6 +202,16 @@ lineage, and Vellum's existing bounded workspace/change-set items own editor
 publication. Their dependency linkage must remain visible before the frontier
 worker can become operational.
 
+Rune `16615a0` now dogfoods this target as the canonical
+`bounded-agent-development` machine. Its 11 states and 18 transitions make
+ensemble fitness, design admission, machine validation, fail-closed projection,
+Vellum proposal/publication reconciliation, independent verification and human
+acceptance explicit. Focused qualification proves every authored context is
+fold-resolvable, mandatory stages dominate terminal acceptance, Markdown
+projection is losslessly recoverable, and the current Rust executable refuses
+before bytes because precondition and provenance semantics are still missing.
+That refusal is the intended current result, not a failed demonstration.
+
 ## Role admission planning
 
 `pantheon agent-role-plan ROLE [SEMANTIC_CAPABILITY ...]` evaluates a candidate
