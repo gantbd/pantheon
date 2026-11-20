@@ -587,8 +587,8 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
 const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
     component: "moira-aegis-progression",
     surface: "task-agent.activation.v1",
-    missing: "production composition of Moira's tested durable Agora room effect with fresh command-scoped Aegis authorization at dispatch, followed by exact participation/worker/session lifecycle and completed-work receipts",
-    next_boundary: "back the RoomReady adapter checkpoint with a production owner store, qualify it through a real authenticated Agora/Aegis port, retain only non-bearer decision attribution, then derive participation from the durable room and task-attempt evidence",
+    missing: "exact owner-derived participation admission from the retained task-attempt and room evidence, fresh command-scoped Aegis authorization at dispatch, subsequent worker/session lifecycle and completed-work receipts; the qualified same-client room path also does not yet retain standalone-process non-bearer Aegis decision attribution",
+    next_boundary: "derive and durably admit the exact participation binding from the journey template, task attempt, and room; qualify replay plus fresh Aegis-authorized dispatch, retain only non-bearer decision attribution, then prepare the Daimon open effect",
 };
 
 const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {
