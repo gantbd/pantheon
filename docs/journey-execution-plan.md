@@ -2482,10 +2482,58 @@ Operational means observable completed work, not a configured role name:
   current owner revision/phase; any binding substitution refuses even when the
   participation identity is unchanged. Fourteen journey behavior tests and
   strict all-target Clippy pass. This prevents a lost reply or restart from
-  blindly redispatching, but it deliberately grants no authority: the remaining
-  stateful composer must observe, prepare, reconcile, authorize only a necessary
-  dispatch, retain non-bearer decision attribution and bind the definitive
-  owner result into the journey.
+  blindly redispatching, but it deliberately grants no authority by itself.
+  Moira `aa7e9ea` now supplies the stateful owner/effect adapter: it observes
+  before every dispatch decision, binds exact presence without reauthorization,
+  authorizes and dispatches once only after definitive absence, persists
+  non-bearer attribution and reopens the result through checkpoint V5. An
+  additive participation observation command preserves the prior journey wire
+  payload. Focused wire and production SQLite reopen tests, component checks
+  and strict Clippy pass. This is the callable adapter beneath the future Rune
+  supervisor, not a claim that the compiled end-to-end supervisor is live.
+- A Rune/Dendrite re-review changed the orchestration boundary before that
+  composer became the permanent architecture. Rune already owns executable
+  machines with per-state/edge Rosettas, guards, invoked sub-machines, typed
+  effects and a compiler; Dendrite already owns one open-world context-tag fold
+  table for demand-driven grounded SMEs. The durable journey should therefore
+  be a Moira-owned instance of a versioned compiled Rune machine. Each
+  transition binds one Chronos task Rosetta and can be delegated as a bounded
+  work unit to a worker or equitable stakeholder ensemble; typed receipts fold
+  back through the deterministic supervisor. A supervising agent may propose
+  decomposition and synthesis, but cannot allocate identities, advance the
+  machine, accept child work or turn a model result into authority. Dendrite
+  enriches a transition from actual context—network/security experts can join
+  a TDD step without rewriting TDD or hard-coding those roles into its FSM.
+  Algebraically, the stable transition plus task Rosetta and owner evidence is
+  prepared first; Dendrite is then read on demand and its grounded roles,
+  provenance and acceptance implications are folded into that bounded work
+  unit. The fold may change who contributes and what evidence is required, but
+  not the machine graph, transition law or authority. This keeps TDD as TDD
+  while allowing boundary-specific expertise to be retrieved rather than
+  predicted at machine-authoring time.
+  Rune `c2b9a3d` now captures the bounded journey as a six-state, seven-edge
+  canonical machine; `scry`, formatting and path qualification pass. Inspection
+  also found a legitimate Rune readiness gap: its Rust and Erlang
+  generators currently emit bare state/event lookup and omit runtime guard,
+  `invoke` and effect semantics carried by the IR, while Gleam preserves more
+  of the contract. The canonical Chronos board advanced through revisions 76
+  and 77: P9 `rune-supervised-rosetta-work-unit-orchestration` owns the fold
+  and supervisor contract; P9 `rune-compiler-supervisor-semantic-parity` owns
+  compiler/runtime parity; `rune-supervisor-production-composition` is
+  explicitly blocked on both. The full decision and component boundaries are
+  recorded in `docs/j1-task-agent-workflow-contract.md`.
+- Live Dendrite dogfood then resolved the architecture's actual context through
+  fold digest `sha256:14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8`.
+  Correct canonical tags selected architecture, network, identity, data,
+  distributed-systems, security, humanism and tester groundings. Plausible
+  invented tags returned empty, and `list_fold_rules` supplied the bounded
+  recovery path. The “right ensemble?” check found that the directly relevant
+  grounded `agent-systems` and `agentic` roles have no fold routes; the former
+  was consulted explicitly for message isolation and supervisor restart policy
+  instead of being silently omitted. SRE was deliberately excluded from this
+  design decision because its grounding requires defined SLIs/SLOs. Revision
+  78 retains P7 `dendrite-agent-supervision-stakeholder-fold-routes` so this
+  manual route and its user friction are not lost.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

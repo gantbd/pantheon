@@ -31,6 +31,121 @@ This is not a new Pantheon orchestration engine. The Boolean center is one
 durable owner-issued journey reference whose typed links resolve to independent
 owner facts without copying their semantic state.
 
+## Executable blueprint and supervised work-unit composition
+
+The journey's activity algebra is a versioned Rune machine, not a growing
+hand-written coordinator procedure. Rune owns the canonical states, events,
+preconditions, declared effects and lawful transitions; its compiler emits a
+qualified runtime projection. Moira owns each durable machine instance,
+frontier, transition attempt and receipt. Pantheon selects, previews and
+observes that owner state but does not interpret Rune source or advance a state
+locally.
+
+Each executable transition binds one revisioned task Rosetta from Chronos. The
+Rosetta carries the bounded work unit's intent, values, outcomes, narrative,
+acceptance, scope, provenance, context budget and parent/child relationship.
+It is contextual evidence, not executable authority. A transition may be
+handed to one worker or an equitable stakeholder ensemble only when the full
+input packet—including exact machine/state/event identity, task Rosetta,
+owner observations, budget and admissible Pantheon capabilities—fits its
+declared bounded context. The worker returns a typed proposal/evidence receipt;
+the Moira supervisor, not the worker, decides whether that receipt satisfies
+the transition precondition and may advance the durable frontier.
+
+The supervisor composes work units as a lawful fold:
+
+```text
+(machine frontier, task Rosetta, exact owner evidence)
+  -> prepare bounded transition
+  -> resolve grounded stakeholders/SMEs
+  -> execute one bounded worker or ensemble contribution
+  -> retain typed result, provenance and uncertainty
+  -> advance, revise, clarify, join children, or refuse
+```
+
+Parent work may be decomposed into Chronos child tasks whose Rosettas preserve
+the parent compass and narrow its bounds. Each child is independently
+executable within one context window. Reassembly is an explicit join over
+typed child outcomes and acceptance evidence; it is never prose concatenation,
+majority vote, or an inference that all children being terminal means the
+parent outcome is satisfied. A supervising model may propose decomposition,
+challenge fit and synthesize results, but deterministic owner code allocates
+identities, checks graph and transition laws, enforces budgets, retains
+receipts and performs the final fold.
+
+Dendrite is the demand-driven Reader layer around the stable Rune machine. It
+uses the current transition Rosetta and task context to retrieve grounded SME
+and stakeholder candidates, with Tellus provenance and Moira's mandatory
+“do we have the right ensemble?” equity gate. The result is monadically folded
+into the bounded work-unit context: it may enrich the Rosetta, ensemble and
+required acceptance evidence, but it cannot add a Rune state, rewrite an edge
+or authorize a transition. In compact form:
+
+```text
+prepare(machine transition, task Rosetta, owner evidence)
+  >>= read Dendrite(context and risk)
+  >>= fold grounded roles + provenance into work-unit Rosetta
+  >>= execute and validate under the original transition law
+```
+
+Those roles are therefore not hard-coded into the FSM. A development-cycle
+transition remains a TDD transition while, for example, a network or security
+expert is added on demand when its changed boundary warrants that expertise.
+Every folded role has a rule/evidence explanation, content identity and
+freshness; unmatched context, disagreement and clarification remain visible
+outcomes. An empty fold is valid evidence that no additional role matched, not
+permission to invent one; a known routing gap remains explicit and may require
+human clarification or a disclosed manual inclusion.
+
+Hermes may trigger eligible transition work and supervision checks, but an
+event is a wake-up fact, not authority or proof that a transition is ready.
+Daimon executes the bounded model contribution; Aegis authorizes the exact
+effect; Vellum supplies disclosure-bounded workspace/context and receives
+proposals; Oculus observes events, logs, metrics and traces. None of those
+components may silently become the durable machine owner.
+
+Current Rune qualification is not yet sufficient for production supervision.
+Rune `c2b9a3d` now authors this bounded journey as a canonical six-state,
+seven-edge machine and records the demand-driven Dendrite fold in its Rosetta;
+`scry`, canonical formatting and `machine_path_check` all pass with zero path
+failures. That proves the authored graph, not runtime semantic preservation.
+The Rune IR carries Rosettas, guards, invoked sub-machines, typed effects and
+preconditions, but the inspected Rust and Erlang generators currently emit a
+bare state/event transition table and do not preserve all of those runtime
+semantics; Gleam preserves more of the composition contract. Pantheon must not
+claim a compiled supervisor until target-independent semantic parity, artifact
+identity, runtime refusal behavior and source-to-generated provenance are
+qualified. Canonical Chronos work
+`rune-compiler-supervisor-semantic-parity` owns that prerequisite;
+`rune-supervised-rosetta-work-unit-orchestration` owns the owner and fold
+contract; `rune-supervisor-production-composition` is blocked on both.
+
+The first live Dendrite fold review used current fold identity
+`sha256:14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8`.
+The canonical tags `architecture-flow-review`, `external-calls`,
+`access-control-decision`, `human-impact-decision` and `test-oracle-design`
+resolved architecture, network, identity, data, distributed-systems, security,
+humanism and tester groundings with exact content identities. Their combined
+review sharpens the contract: components communicate through owner messages
+rather than shared mutable orchestration state; every supervisor has an
+explicit restart/fence policy; retries are idempotent and owner-reconciled;
+every compiled state, transition, precondition and postcondition needs a
+falsifiable test; and consequential automation preserves comprehensible human
+override, recourse and reversibility. SRE was not retained in this design
+ensemble because its own grounding is bounded to services with defined
+SLIs/SLOs; it becomes applicable when this supervisor gains an operational
+service objective.
+
+The mandatory ensemble-fit question also found a real routing gap. Rune has a
+grounded `agent-systems` role whose Actor Model and supervision-tree expertise
+is directly applicable, but Dendrite's current fold table exposes no route for
+it; `agentic` is likewise unrouted. The review consulted `agent-systems`
+explicitly rather than pretending the automatic ensemble was complete.
+Chronos revision 78 retains P7
+`dendrite-agent-supervision-stakeholder-fold-routes`; until that is resolved,
+supervisor design must disclose the manual inclusion and may not claim fully
+automatic stakeholder selection.
+
 ## Why the existing command is insufficient
 
 Moira's current `agent_participation::MutationV1::Admit` is intentionally a raw
@@ -291,9 +406,17 @@ the durably prepared blueprint and the exact participation-owner observation,
 it returns authoritative absence or the current exact revision/phase and
 refuses any substituted binding, including a changed session under the same
 participation identity. Absence grants no retry authority and exact presence is
-not a journey transition. The stateful composer still must call this law,
-obtain fresh Aegis authority only when dispatch remains necessary, retain
-non-bearer decision attribution and bind the definitive owner result.
+not a journey transition. Moira `aa7e9ea` now composes that owner/effect adapter:
+each entry observes the participation owner first; exact presence binds without
+reauthorization or redispatch, while definitive absence obtains fresh Aegis
+authority, persists only non-bearer attribution, dispatches once and binds the
+definitive result. Checkpoint V5 reopens the attribution and binding while V1
+through V4 remain readable. Participation detail is an additive read-only
+protocol command/outcome, so the existing journey payload shape is unchanged.
+Core recovery, production SQLite reopen, canonical wire round-trip, focused
+component compilation and strict Clippy pass. The real Aegis authorization and
+SQLite owner paths are each qualified, but their full process composition is
+not yet an end-to-end Rune-supervised journey and must not be presented as one.
 
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
