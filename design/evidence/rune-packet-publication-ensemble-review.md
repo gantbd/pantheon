@@ -33,8 +33,13 @@ receipt lookup remains the recovery owner.
 
 The exact request at
 `design/requests/rune-packet-publication.rune-author.json` has SHA-256
-`6a8a2f39211a1a52d58705cf7a899a461e08974068f526a53dce78e7d4a25967`.
-The real Pantheon-to-Rune adapter returned eleven questions and no candidate.
+`b9e285227256489ba6ebacb0fddbaf2029e51662f073852318d7f58f947807b1`.
+The first real Pantheon-to-Rune run returned eleven questions and no candidate.
+After the owner answers and complete topology below were authored with
+`ensemble_fit=contested`, the same owner boundary reduced its result to exactly
+one question—`$.review.ensemble_fit: What must change before this ensemble is
+fit for this exact design?`—and still emitted no candidate, typed IR or
+projection bytes.
 
 - Packet identity: deterministic pretty JSON containing schema/version, exact
   author request digest, Rune-author/Scry/Smith/rustc identities, confinement

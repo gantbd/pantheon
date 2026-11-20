@@ -4,38 +4,36 @@
     "kind": "machine",
     "version": 1
   },
-  "holes": [
-    {
-      "path": "$.packet.identity",
-      "category": "identity",
-      "question": "Which exact deterministic bytes constitute the private qualified Rune packet, and which request, canonical source, typed IR, Smith, rustc and projection identities must it bind?"
-    },
-    {
-      "path": "$.vellum.target",
-      "category": "ownership",
-      "question": "How is one pre-admitted Vellum workspace document selected and re-observed without granting membership, locator, filesystem or sibling-document authority?"
-    },
-    {
-      "path": "$.approval.binding",
-      "category": "authority",
-      "question": "Which exact packet digest, target identity, current target revision and durable operation identity must the accountable human approval bind before any edit is sent?"
-    },
-    {
-      "path": "$.edit.uncertainty",
-      "category": "reliability",
-      "question": "How does an unknown Vellum workspace-edit outcome fence persistence and expose exact recovery without retrying or assuming that the target changed?"
-    },
-    {
-      "path": "$.persistence.outcomes",
-      "category": "reliability",
-      "question": "How are accepted, refused and unknown durable-save outcomes represented after an accepted in-memory edit without collapsing a dirty publication into full refusal or success?"
-    },
-    {
-      "path": "$.observability.content_boundary",
-      "category": "observability",
-      "question": "Which RED, USE and golden-signal fields expose preparation, human gating, edit and persistence outcomes without logging packet, confirmation, credential, locator or document content?"
-    }
-  ],
+  "review": {
+    "human": "Pending Brian, declared human sponsor in the governing Pantheon thread",
+    "ensemble_fit": "contested",
+    "evidence": [
+      "sha256:88e4aa16f24cc451010c2c1b8a99383bc19e3ff4f155e2a482a72871c5a239fb",
+      "sha256:7e065399a0df6d36e6f43bf6a660b40b06715bfc40ada5ba7e27586bd8907fbf",
+      "sha256:40a1e6da710d768b7dcc186b7f8e5d2b5656567baac65cf9cbf25abd428f8106",
+      "sha256:9da415b103c0f09415643ff2e1ef1fbe1d3e94788302cbf7cd497679b16e9ece",
+      "sha256:38318e39003f6ee8f459fdfa487f28274a3f3352604020855dbdd31101a16083",
+      "sha256:6dd2f34270a277c99ba68f5a02469f0148e1259a63f14aedd7f7837abdb7c4bc",
+      "sha256:75c6acd4f367ebc35aa187ea9ef4a04266796d2c49ae2b22e661a021370d2673",
+      "sha256:de3150670d07a429a07f42f340b8bc4c3750dcb9b8fb5068b2d5a0f5569d7b54",
+      "sha256:8624bacc5420954acaa35e36f23debcf55bdc0fb76dffd4476f91aa10bd872d2",
+      "sha256:b07b92a695c9d1f6039229e7a592d901b305dfbd22de8232376860f3c1ad397d",
+      "sha256:e1b9b0d98cd95e7c9c0f95aadd81a5721505a8bfb3a370e0dbfcdaa2c47745ed",
+      "sha256:31ad8078909f4f0abf4bda6935b4b3db9511faeab297f37b13f8f070a30cafde",
+      "sha256:474f745c3da80663e07a61da2e8b0101bceb941de107426856d04bfc3d1698e7",
+      "sha256:35e743059455c7c3c7538d5c59f81fb27c2bd0cc1155612cd1f5991d5ad904f2"
+    ],
+    "dissent": [
+      "Tellus admitted six pairwise-orthogonal advisory lenses; this does not establish stakeholder equity, approval, authority, or proof.",
+      "The proposed stakeholders are the accountable human sponsor, Rune owner, Vellum owner, Pantheon composition owner, human/operator advocate, and independent security and live-verification challengers.",
+      "Version one literal confirmation binds exact evidence but does not cryptographically authenticate a human principal; agent exposure remains prohibited.",
+      "One packet document is provenance-first and deliberately defers multi-file artifact materialization.",
+      "Vellum owner-atomic workspace editing does not imply atomic durable persistence across multiple documents.",
+      "An accepted dirty edit followed by refused or unknown persistence remains persistence-pending and cannot be restyled as refusal, rollback, or success.",
+      "Durable publication is not design acceptance, permission to execute, go-no-go, or rollout authority."
+    ]
+  },
+  "holes": [],
   "projection": "rust",
   "machine": {
     "name": "pantheon-rune-packet-publication",
@@ -70,6 +68,633 @@
         "the target advances after preview, so execution refuses stale evidence before sending an edit",
         "the edit is accepted but durable delivery becomes unknown, so the result remains persistence-pending with O and the existing exact Vellum lookup next action"
       ]
-    }
+    },
+    "initial": "publication-request-received",
+    "states": [
+      {
+        "name": "publication-request-received",
+        "context": [
+          "data-handling",
+          "access-control-decision"
+        ],
+        "rosetta": {
+          "intent": "admit one exact authoring request, deployment publication profile and caller-persisted durable operation without mutation",
+          "values": [
+            "exact-input",
+            "deployment-ownership",
+            "least-authority"
+          ],
+          "outcomes": [
+            "bounded request and profile bytes are read once and digested",
+            "the profile fixes Rune tools, Vellum endpoint, credential and one document ordinal while the caller selects none of those effects",
+            "invalid or mutable identity evidence refuses before author or Vellum mutation"
+          ],
+          "who": "the Pantheon publication adapter and deployment configuration owner",
+          "what": "one inert publication request",
+          "when": "at preview or execute admission",
+          "where": "bounded adapter-owned memory",
+          "why": "all later evidence must remain correlated to one exact request and deployment boundary",
+          "how": "validate closed documents, fixed limits, regular private approval material and one nonzero durable operation identity",
+          "extent": "admission only; no author verdict, Vellum edit, save or approval inference",
+          "examples": [
+            "a profile names exactly one pre-admitted document ordinal and pinned Rune toolchain"
+          ]
+        }
+      },
+      {
+        "name": "preview-returned",
+        "context": [
+          "data-handling",
+          "human-impact-decision"
+        ],
+        "rosetta": {
+          "intent": "return one exact qualified packet and revision-bound human confirmation challenge without mutation",
+          "values": [
+            "reviewability",
+            "content-minimization",
+            "human-agency"
+          ],
+          "outcomes": [
+            "the deterministic packet binds request and toolchain identities plus the complete closed projection-qualified owner outcome",
+            "one current Vellum workspace, document, revision, byte count and content digest are bound without disclosing target content",
+            "the exact confirmation binds packet, replacement, target and durable operation identities"
+          ],
+          "who": "Pantheon, Rune, Vellum and the accountable human reviewer",
+          "what": "one private preview packet and challenge",
+          "when": "after author qualification and target observation",
+          "where": "the private headless result boundary",
+          "why": "the reviewer needs exact evidence before any authority-bearing action",
+          "how": "serialize the deterministic packet without runtime observations, refresh the owner target, compute all digests and render one literal confirmation",
+          "extent": "review material only; no edit, save, membership change or inferred approval",
+          "examples": [
+            "preview returns packet digest P and target revision R while the file remains unchanged"
+          ]
+        }
+      },
+      {
+        "name": "publication-armed",
+        "context": [
+          "access-control-decision",
+          "human-impact-decision"
+        ],
+        "rosetta": {
+          "intent": "admit only a fresh exact accountable confirmation for one unchanged packet and target",
+          "values": [
+            "explicit-consent",
+            "freshness",
+            "substitution-resistance"
+          ],
+          "outcomes": [
+            "execution recomputes the packet and target evidence rather than trusting preview output",
+            "the private approval document exactly matches the generated challenge and bound operation identity",
+            "stale, missing, malformed or substituted approval refuses before mutation"
+          ],
+          "who": "the accountable human operator and Pantheon adapter",
+          "what": "one armed single-use publication attempt",
+          "when": "immediately before Vellum edit dispatch",
+          "where": "the local operator-to-Pantheon authority boundary",
+          "why": "preview evidence must not become ambient or replayable mutation authority",
+          "how": "read a closed private approval document, compare every bound identity in constant semantic form and advance only on exact equality",
+          "extent": "one attempt; literal confirmation is not cryptographic human authentication and grants no other authority",
+          "examples": [
+            "the reviewer approves P for W/D/R under O and execution reobserves the same facts"
+          ]
+        }
+      },
+      {
+        "name": "in-memory-published",
+        "context": [
+          "external-calls",
+          "data-handling"
+        ],
+        "rosetta": {
+          "intent": "preserve Vellum's accepted owner-atomic whole-document edit as a dirty publication before persistence",
+          "values": [
+            "owner-truth",
+            "single-dispatch",
+            "honest-dirty-state"
+          ],
+          "outcomes": [
+            "one workspace edit replaces bytes zero through the exact current length at the bound revision",
+            "the accepted receipt binds the same workspace and document and yields the exact packet bytes at a new revision",
+            "persistence is attempted only after this accepted receipt"
+          ],
+          "who": "Vellum workspace owner and Pantheon adapter",
+          "what": "one accepted in-memory packet publication",
+          "when": "after exact confirmation",
+          "where": "the sovereign Vellum workspace",
+          "why": "edit truth belongs to Vellum and must remain distinct from durable storage",
+          "how": "submit one single-document workspace edit and validate the complete receipt and resulting snapshot",
+          "extent": "dirty owner state only; no durable, design-acceptance or execution claim",
+          "examples": [
+            "Vellum accepts replacement P and advances D from revision R to R plus one"
+          ]
+        }
+      },
+      {
+        "name": "edit-outcome-unknown",
+        "context": [
+          "diagnosing-failure",
+          "external-calls"
+        ],
+        "rosetta": {
+          "intent": "fence all continuation when Vellum edit delivery is unknown",
+          "values": [
+            "uncertainty-preservation",
+            "no-blind-retry"
+          ],
+          "outcomes": [
+            "no durable save is sent",
+            "the exact packet, target and operation digests remain available for authoritative investigation without content disclosure",
+            "the result never claims that the edit happened or did not happen"
+          ],
+          "who": "Pantheon operator and Vellum owner",
+          "what": "one terminal unknown edit outcome",
+          "when": "when the owner transport cannot settle the edit",
+          "where": "the Vellum edit boundary",
+          "why": "retrying an uncertain mutation could duplicate or overwrite newer work",
+          "how": "abandon the uncertain client, emit bounded correlation evidence and require owner re-observation or a future receipt contract",
+          "extent": "terminal in version one; no retry or persistence",
+          "examples": [
+            "the socket drops after dispatch and the workflow stops before save"
+          ]
+        }
+      },
+      {
+        "name": "persistence-pending",
+        "context": [
+          "diagnosing-failure",
+          "external-calls"
+        ],
+        "rosetta": {
+          "intent": "retain an accepted dirty edit whose durable outcome is not proven",
+          "values": [
+            "honest-persistence",
+            "recoverability",
+            "owner-truth"
+          ],
+          "outcomes": [
+            "the accepted edit receipt and new revision remain explicit",
+            "the durable operation identity and exact existing lookup command are retained",
+            "refused, retired, conflict, unavailable, not-durable and unknown outcomes remain distinguishable"
+          ],
+          "who": "Pantheon operator and Vellum durable-effect owner",
+          "what": "one terminal dirty or uncertain persistence disposition",
+          "when": "after an accepted edit and a non-durable save result",
+          "where": "the Vellum durable-effect boundary",
+          "why": "failure to prove persistence cannot erase an accepted edit or become success",
+          "how": "classify the exact Vellum durable outcome and orient lookup or operator remediation without retry",
+          "extent": "terminal in version one; recovery is a separate owner operation",
+          "examples": [
+            "save O becomes outcome_unknown, so D remains dirty and lookup O is the next action"
+          ]
+        }
+      },
+      {
+        "name": "durable-published",
+        "context": [
+          "claiming-completion"
+        ],
+        "rosetta": {
+          "intent": "report durable packet publication only from Vellum's exact completed receipt",
+          "values": [
+            "evidence-bound-completion",
+            "owner-preservation"
+          ],
+          "outcomes": [
+            "the receipt matches the bound document and post-edit revision",
+            "application and synchronization succeeded, the adapter is quiescent, no future effects remain and baseline publication is true",
+            "completion remains publication only and implies no design acceptance, execution or rollout"
+          ],
+          "who": "Vellum owner, Pantheon observer and accountable human",
+          "what": "one durable packet publication receipt",
+          "when": "after an accepted edit and exact durable success",
+          "where": "the private publication result boundary",
+          "why": "only the persistence owner can establish durable completion",
+          "how": "validate every strong durable receipt field and emit content-free lineage and recovery evidence",
+          "extent": "packet persistence only",
+          "examples": [
+            "Vellum reports written, synchronized, quiescent, baseline-published and outcome-known for D at the new revision"
+          ]
+        }
+      },
+      {
+        "name": "refused",
+        "context": [
+          "diagnosing-failure"
+        ],
+        "rosetta": {
+          "intent": "refuse before mutation or preserve a definite owner refusal without weakening another boundary",
+          "values": [
+            "fail-closed",
+            "actionable-orientation",
+            "no-invention"
+          ],
+          "outcomes": [
+            "the responsible admission, author, target, approval or edit stage is named",
+            "no candidate or response bytes from an invalid boundary are admitted",
+            "a definite pre-edit or edit refusal sends no durable save"
+          ],
+          "who": "Pantheon operator and the owner of the refusing boundary",
+          "what": "one terminal typed refusal",
+          "when": "when a required fact or definite owner operation refuses",
+          "where": "the private result boundary",
+          "why": "refusal must remain attributable and must not be repaired by inference",
+          "how": "emit bounded stage, identities and next action without content, retry or obligation deletion",
+          "extent": "terminal refusal; accepted edits never enter this state after later persistence failure",
+          "examples": [
+            "a stale target revision refuses before edit dispatch"
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "publication-request-received",
+        "to": "preview-returned",
+        "signal": "preview-returned",
+        "rosetta": {
+          "intent": "prepare exact review evidence without mutation",
+          "values": [
+            "review-before-effect"
+          ],
+          "outcomes": [
+            "qualified packet and current target evidence become reviewable under one challenge"
+          ],
+          "who": "Pantheon adapter",
+          "what": "preview transition",
+          "when": "after all read-only qualifications pass",
+          "where": "private preparation boundary",
+          "why": "human review requires exact current facts",
+          "how": "qualify author output, packet serialization and Vellum observation",
+          "extent": "no mutation",
+          "examples": [
+            "preview succeeds"
+          ]
+        },
+        "precondition": "the exact bounded request and deployment profile qualify; Rune author returns projection_qualified; every packet digest recomputes; the configured Vellum document is a current pre-admitted member; and one deterministic confirmation challenge binds the packet, target and durable operation identities"
+      },
+      {
+        "from": "publication-request-received",
+        "to": "refused",
+        "signal": "publication-refused",
+        "rosetta": {
+          "intent": "refuse invalid preparation",
+          "values": [
+            "fail-closed"
+          ],
+          "outcomes": [
+            "no preview or mutation is admitted"
+          ],
+          "who": "Pantheon adapter",
+          "what": "preparation refusal",
+          "when": "when admission, author qualification or target observation fails",
+          "where": "pre-effect boundary",
+          "why": "invalid review evidence cannot authorize later mutation",
+          "how": "classify the exact refusing stage",
+          "extent": "no retry or effect",
+          "examples": [
+            "author questions remain a non-publishable refusal for this capability"
+          ]
+        },
+        "precondition": "profile, request, operation, author outcome, packet lineage, Vellum connection, inventory membership, target snapshot, size bound or confirmation construction fails"
+      },
+      {
+        "from": "preview-returned",
+        "to": "publication-armed",
+        "signal": "publication-armed",
+        "rosetta": {
+          "intent": "bind fresh exact human confirmation",
+          "values": [
+            "explicit-consent",
+            "freshness"
+          ],
+          "outcomes": [
+            "only the unchanged preview identities become armed"
+          ],
+          "who": "accountable human and Pantheon adapter",
+          "what": "arming transition",
+          "when": "after execute recomputes preview facts",
+          "where": "private approval boundary",
+          "why": "review must bind current evidence",
+          "how": "validate the closed private approval document against the recomputed challenge",
+          "extent": "one publication attempt only",
+          "examples": [
+            "exact approval matches"
+          ]
+        },
+        "precondition": "execution independently reproduces the exact packet and target evidence; the private approval document is closed, current and exact; its literal decision is approve; and every packet, workspace, document, revision, content, replacement and durable operation identity equals the generated challenge"
+      },
+      {
+        "from": "preview-returned",
+        "to": "refused",
+        "signal": "publication-refused",
+        "rosetta": {
+          "intent": "refuse stale or substituted approval",
+          "values": [
+            "human-agency",
+            "substitution-resistance"
+          ],
+          "outcomes": [
+            "no edit is sent"
+          ],
+          "who": "Pantheon adapter",
+          "what": "approval refusal",
+          "when": "when execute evidence or approval differs",
+          "where": "pre-edit boundary",
+          "why": "silence and stale consent are not approval",
+          "how": "compare all current facts and fail closed",
+          "extent": "no mutation",
+          "examples": [
+            "target revision changed"
+          ]
+        },
+        "precondition": "the packet or target no longer matches preview, the approval is absent, malformed, non-approve, permission-unsafe, stale, or any bound identity differs"
+      },
+      {
+        "from": "publication-armed",
+        "to": "in-memory-published",
+        "signal": "edit-accepted",
+        "rosetta": {
+          "intent": "submit and preserve one exact accepted owner edit",
+          "values": [
+            "single-dispatch",
+            "owner-truth"
+          ],
+          "outcomes": [
+            "the packet becomes the exact dirty document bytes"
+          ],
+          "who": "Pantheon adapter and Vellum owner",
+          "what": "accepted edit transition",
+          "when": "after arming",
+          "where": "Vellum workspace boundary",
+          "why": "only the owner receipt can establish edit success",
+          "how": "send one whole-document workspace edit and validate its receipt",
+          "extent": "one document and one dispatch",
+          "examples": [
+            "edit accepted"
+          ]
+        },
+        "precondition": "the exact armed replacement remains within Vellum limits; one workspace edit is dispatched once; and Vellum returns an accepted receipt for the same workspace and document with a snapshot whose bytes equal the packet and whose revision is exactly the expected successor"
+      },
+      {
+        "from": "publication-armed",
+        "to": "edit-outcome-unknown",
+        "signal": "edit-outcome-unknown",
+        "rosetta": {
+          "intent": "fence uncertain edit delivery",
+          "values": [
+            "maybe-preservation",
+            "no-blind-retry"
+          ],
+          "outcomes": [
+            "persistence is not attempted"
+          ],
+          "who": "Pantheon adapter",
+          "what": "unknown edit transition",
+          "when": "when delivery cannot settle",
+          "where": "Vellum transport boundary",
+          "why": "unknown mutation cannot be retried safely",
+          "how": "retain correlation and stop",
+          "extent": "terminal",
+          "examples": [
+            "connection drops after dispatch"
+          ]
+        },
+        "precondition": "the edit request may have been sent but no authoritative accepted or refused Vellum outcome is available"
+      },
+      {
+        "from": "publication-armed",
+        "to": "refused",
+        "signal": "publication-refused",
+        "rosetta": {
+          "intent": "preserve a definite Vellum edit refusal",
+          "values": [
+            "owner-preservation"
+          ],
+          "outcomes": [
+            "no durable save is sent"
+          ],
+          "who": "Vellum owner and Pantheon adapter",
+          "what": "edit refusal transition",
+          "when": "when Vellum definitely refuses",
+          "where": "workspace boundary",
+          "why": "a definite refusal is neither unknown nor success",
+          "how": "return the owner refusal with orientation",
+          "extent": "terminal",
+          "examples": [
+            "stale edit refused"
+          ]
+        },
+        "precondition": "Vellum returns a definite edit refusal before changing the configured document"
+      },
+      {
+        "from": "in-memory-published",
+        "to": "durable-published",
+        "signal": "durable-published",
+        "rosetta": {
+          "intent": "admit only exact durable completion",
+          "values": [
+            "evidence-bound-completion"
+          ],
+          "outcomes": [
+            "the dirty edit is proven durably published"
+          ],
+          "who": "Vellum durable owner",
+          "what": "durable success transition",
+          "when": "after accepted edit",
+          "where": "durable-effect boundary",
+          "why": "persistence truth belongs to Vellum",
+          "how": "execute the bound durable operation once and validate every receipt field",
+          "extent": "no rollout implication",
+          "examples": [
+            "save receipt is fully durable"
+          ]
+        },
+        "precondition": "the exact durable operation is executed once for the accepted post-edit revision and Vellum reports written and synchronized, no future effects, quiescent, no adapter or cleanup failure, baseline published and outcome known"
+      },
+      {
+        "from": "in-memory-published",
+        "to": "persistence-pending",
+        "signal": "persistence-pending",
+        "rosetta": {
+          "intent": "retain every non-durable save disposition",
+          "values": [
+            "honest-persistence",
+            "recoverability"
+          ],
+          "outcomes": [
+            "the dirty edit and lookup identity remain explicit"
+          ],
+          "who": "Pantheon adapter and Vellum durable owner",
+          "what": "pending persistence transition",
+          "when": "after non-durable save outcome",
+          "where": "durable-effect boundary",
+          "why": "non-success cannot erase the accepted edit",
+          "how": "classify the exact outcome and provide lookup orientation",
+          "extent": "terminal in version one",
+          "examples": [
+            "save outcome unknown"
+          ]
+        },
+        "precondition": "the durable operation is refused, retired, conflicting, unavailable, absent or foreign, completed without full durable invariants, outcome unknown, or access or disconnect prevents exact durable proof"
+      }
+    ],
+    "signals": [
+      {
+        "name": "preview-returned",
+        "rosetta": {
+          "intent": "announce exact review material",
+          "values": [
+            "reviewability"
+          ],
+          "outcomes": [
+            "packet and challenge availability is observable without content"
+          ],
+          "who": "Pantheon observers",
+          "what": "preview signal",
+          "when": "after read-only preparation",
+          "where": "publication adapter",
+          "why": "operators need orientation before effect",
+          "how": "emit bounded identities and limits",
+          "extent": "no approval",
+          "examples": [
+            "preview ready"
+          ]
+        }
+      },
+      {
+        "name": "publication-armed",
+        "rosetta": {
+          "intent": "announce exact approval admission",
+          "values": [
+            "human-agency"
+          ],
+          "outcomes": [
+            "arming is distinguishable from preview and mutation"
+          ],
+          "who": "Pantheon observers",
+          "what": "armed signal",
+          "when": "after exact confirmation",
+          "where": "publication adapter",
+          "why": "explicit consent must be visible",
+          "how": "emit content-free approval correlation",
+          "extent": "no edit result",
+          "examples": [
+            "publication armed"
+          ]
+        }
+      },
+      {
+        "name": "edit-accepted",
+        "rosetta": {
+          "intent": "announce accepted dirty publication",
+          "values": [
+            "owner-truth"
+          ],
+          "outcomes": [
+            "edit success remains distinct from persistence"
+          ],
+          "who": "Pantheon observers",
+          "what": "edit signal",
+          "when": "after owner receipt",
+          "where": "publication adapter",
+          "why": "dirty truth must remain visible",
+          "how": "emit workspace document revision and packet digests",
+          "extent": "no content or durable claim",
+          "examples": [
+            "edit accepted"
+          ]
+        }
+      },
+      {
+        "name": "edit-outcome-unknown",
+        "rosetta": {
+          "intent": "announce fenced edit uncertainty",
+          "values": [
+            "maybe-preservation"
+          ],
+          "outcomes": [
+            "unknown delivery stops continuation"
+          ],
+          "who": "Pantheon observers",
+          "what": "unknown edit signal",
+          "when": "when transport cannot settle",
+          "where": "publication adapter",
+          "why": "operators must not retry blindly",
+          "how": "emit stage and correlation without content",
+          "extent": "terminal",
+          "examples": [
+            "edit unknown"
+          ]
+        }
+      },
+      {
+        "name": "persistence-pending",
+        "rosetta": {
+          "intent": "announce non-durable accepted publication",
+          "values": [
+            "honest-persistence"
+          ],
+          "outcomes": [
+            "lookup identity and next action are visible"
+          ],
+          "who": "Pantheon observers",
+          "what": "persistence pending signal",
+          "when": "after non-durable save disposition",
+          "where": "publication adapter",
+          "why": "accepted dirty state needs recovery orientation",
+          "how": "emit durable status and operation identity",
+          "extent": "no retry",
+          "examples": [
+            "save pending"
+          ]
+        }
+      },
+      {
+        "name": "durable-published",
+        "rosetta": {
+          "intent": "announce exact durable packet publication",
+          "values": [
+            "evidence-bound-completion"
+          ],
+          "outcomes": [
+            "durability is observable without implying acceptance"
+          ],
+          "who": "Pantheon observers",
+          "what": "durable signal",
+          "when": "after exact owner receipt",
+          "where": "publication adapter",
+          "why": "completion should be attributable",
+          "how": "emit content-free receipt facts",
+          "extent": "publication only",
+          "examples": [
+            "packet durable"
+          ]
+        }
+      },
+      {
+        "name": "publication-refused",
+        "rosetta": {
+          "intent": "announce an attributable refusal",
+          "values": [
+            "fail-closed"
+          ],
+          "outcomes": [
+            "stage and next safe action are visible"
+          ],
+          "who": "Pantheon observers",
+          "what": "refusal signal",
+          "when": "when a definite boundary refuses",
+          "where": "publication adapter",
+          "why": "operators need orientation without leaked content",
+          "how": "emit bounded refusal classification",
+          "extent": "no inference or retry",
+          "examples": [
+            "stale target refused"
+          ]
+        }
+      }
+    ]
   }
 }
