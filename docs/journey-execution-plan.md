@@ -2399,6 +2399,18 @@ Operational means observable completed work, not a configured role name:
   revision 6 of the bounded dogfood board therefore retains
   `agora-room-cross-session-reconcile` at priority 9 rather than calling the
   journey operational.
+- Pantheon's machine-readable role planner now advances past that closed
+  same-client room gate. Product-manager, SRE, frontier and verification roles
+  all name owner-derived participation admission as their next shared
+  activation boundary; they no longer instruct an operator or agent to rebuild
+  the production room store. The audit also prevents a tempting identity leak:
+  Moira's participation binding requires an actual deliberation/member, method,
+  grounding, profile, session and task attempt, while the current task-agent
+  template does not yet select or create every one of those owner facts. No UI
+  state, opaque profile or convenient hash may fill the gap. Chronos revision 7
+  therefore admits priority-10
+  `j1-participation-blueprint-owner-contract` to select the owner-backed
+  blueprint and replay laws before any `ParticipationAdmitted` claim.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
