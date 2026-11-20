@@ -2216,17 +2216,25 @@ checkpoint them as current authority. It may retain only bounded decision
 attribution for the exact effect, and restart, epoch change or expiry requires
 fresh authorization.
 
-The first room relationship implementation now exercises the correct recovery
-shape without claiming production readiness. Moira's Agora adapter persists the
+The first room relationship implementation now exercises a bounded production
+recovery shape without claiming end-to-end readiness. Moira's Agora adapter persists the
 exact request before dispatch and the owner outcome before return; the journey
 accepts only its own owner/sequence plus a nonzero Agora revision and then
 publishes `RoomReady`. Unknown delivery repeats only the retained request
 identity. A successful room followed by a journey-store conflict retains the
 receipt, and bind-only recovery plus later replay perform no additional Agora
 mutation. Canonical checkpoints, SQLite, public wire and Pantheon's observer all
-carry the same non-authorizing relationship evidence. A production adapter
-checkpoint store and real authenticated Agora/Aegis process qualification are
-still required before this journey may be called operational.
+carry the same non-authorizing relationship evidence. The production SQLite
+adapter checkpoint owner now reopens the exact prepared request and definitive
+response, pins owner/profile/client identity and refuses drift. A real local
+Agora daemon qualification crosses that store and the command-scoped Aegis
+verifier: connect, create and disconnect each obtain a fresh `Submit` decision,
+and durable replay obtains none. The proof remains session-bounded. Agora V2
+request identity changes with the client session, so a restarted worker still
+needs a fresh authenticated complete-room observation and an explicit
+match/absence/conflict reconciliation law before it may rotate identity or
+dispatch. Standalone Aegis-process qualification and bounded decision
+attribution remain open; the journey is not yet operational.
 
 Chronos revision 66 also makes the priority-10 product-manager alignment task
 and its six prerequisites inspectable through the live dependency graph. The

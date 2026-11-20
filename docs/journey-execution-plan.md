@@ -2384,9 +2384,21 @@ Operational means observable completed work, not a configured role name:
   public wire plus Pantheon observation expose the same exact evidence. Focused
   tests cover prepare-before-dispatch, outcome-unknown restart, divergent-intent
   refusal, store-conflict recovery, replay, canonical upgrade and reopen. This
-  is not yet operational: the adapter still needs its production checkpoint
-  store and a real authenticated Agora/Aegis process qualification with bounded
-  non-bearer decision attribution.
+  Moira's production SQLite checkpoint owner now retains the exact prepared
+  request and definitive response across reopen, pins owner/profile/client
+  identity, and refuses drift. A real local Agora daemon qualification crosses
+  the production store and command-scoped Aegis verifier: connect, room create
+  and disconnect each require a fresh `Submit` decision, while durable replay
+  causes no further Agora command or Aegis decision. This closes same-client
+  durable replay, not cross-session recovery. Agora V2 request identity is
+  client-session scoped; after reconnect the worker must observe the complete
+  current room facts under fresh authentication, retain an exact matching
+  observation or safely prepare a new client-bound request only when absence is
+  proven. Differing facts must fence. Standalone Aegis-process qualification
+  and bounded non-bearer decision attribution also remain open. Chronos
+  revision 6 of the bounded dogfood board therefore retains
+  `agora-room-cross-session-reconcile` at priority 9 rather than calling the
+  journey operational.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
