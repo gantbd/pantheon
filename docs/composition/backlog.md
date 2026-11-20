@@ -38,6 +38,17 @@ read-only input until that repository settles.
   revisions `13bfc6d` and `b475294` retain that actor and the owner-observed room
   ID beside the full `PublishedV1`. Neither receipt claims task identity,
   delivery, acceptance or completion.
+- [x] Replace caller-supplied Aegis session identity with an owner observation
+  at the Agora and Moira attribution boundaries. Aegis revisions `76d1a9c`
+  and `15b27b6` expose only the principal retained for the exact current
+  session. Agora revision `020e873` derives `VerifiedSubjectV1` from that owner
+  fact and exposes a separate actor-plus-subject publication provenance
+  observation. Moira revision `2482dcc` derives participation-admission
+  principal from its exact authority session and consumes Agora's subject
+  provenance. Configured identities are equality fences, not evidence;
+  substitution refuses. These are the two owner facts required by the later
+  join, not proof that the Agora session and Moira participation name the same
+  agent.
 - [ ] Close the remaining J1 namespace bindings at their owners. The trusted
   worker observes the external binary task key and exact Chronos task name but
   the durable journey previously dropped the name. Moira revision `9a5836a`
@@ -48,11 +59,14 @@ read-only input until that repository settles.
   are qualified. Revision `e851edc` adds the bounded journey-scoped read-only
   protocol, service, canonical wire and client observation; exact SQLite reopen,
   redaction and authoritative absence are qualified. Qualify the separate
-  Chronos scope relationship. Participation also binds the Daimon
-  session and task attempt but not the authenticated Agora actor; add replayable
-  owner evidence for that relationship. Pantheon must not hash an unbound task
-  name, trust deployment configuration, infer scope, or equate an Agora actor
-  label with an admitted agent session.
+  Chronos scope relationship. The owner-derived Agora subject and Moira
+  participation-admission principal are now separately qualified, but no
+  durable relationship yet joins their equality to the exact participation,
+  Daimon session/profile/member/task attempt and exact publication receipt.
+  Add that replayable relationship and a public close/reopen observation.
+  Pantheon must not hash an unbound task name, trust deployment configuration,
+  infer scope, or equate either an Agora actor label or an equal principal byte
+  string with an admitted agent session.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,

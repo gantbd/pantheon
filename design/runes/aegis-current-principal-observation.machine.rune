@@ -1,0 +1,177 @@
+(machine aegis-current-principal-observation
+  (rosetta
+    (intent "let a component bind attribution to the principal owned by its exact authenticated Aegis session instead of trusting a parallel caller-supplied identity")
+    (values owner-facts least-disclosure replay-stability no-ambient-authority)
+    (outcomes "an existing authenticated session returns only its exact owner-retained principal identity" "an absent or invalid session refuses without identity disclosure" "observation grants no authority and performs no mutation")
+    (who "an authenticated Aegis session and a bounded component adapter")
+    (what "one read-only current-principal observation")
+    (when "before another component binds an actor subject or workflow attribution to the session")
+    (where "Aegis's public session-bound service contract")
+    (why "a valid authority decision beside a caller-supplied principal does not prove that the decision belongs to that principal")
+    (how "resolve the request session through Aegis's owner-retained session table and return the retained principal or the existing unknown-session refusal")
+    (extent "current session principal only; no credential session internals administrator flag grants scopes decisions enumeration mutation authorization or cross-component equivalence claim")
+    (examples "Agora derives its VerifiedSubject from the same Aegis session it will use for authorization"))
+  (initial observation-requested)
+
+  (state observation-requested
+    (context access-control-decision identity-boundary)
+
+    (rosetta
+      (intent "request the owner fact for the exact calling session")
+      (values exact-scope)
+      (outcomes "the request carries no claimed principal and is scoped by the transport's exact Aegis session handle")
+      (who "the session-bound client")
+      (what "one current-principal request")
+      (when "before attribution is consumed")
+      (where "Aegis service dispatch")
+      (why "a caller claim would recreate the boundary leak")
+      (how "submit a zero-payload command through the existing session envelope")
+      (extent "read-only request")
+      (examples CurrentPrincipal)))
+
+  (state principal-observed
+    (context access-control-decision identity-boundary)
+
+    (rosetta
+      (intent "read the principal retained by the Aegis session owner")
+      (values owner-evidence)
+      (outcomes "the principal bytes come from the exact resolved session entry")
+      (who "Aegis service")
+      (what "one owner-derived principal binding")
+      (when "the session exists")
+      (where "Aegis volatile session owner")
+      (why "only the session owner can establish this relationship")
+      (how "project the retained principal without accepting comparison input")
+      (extent "principal identity only")
+      (examples "the session retained for principal P returns P")))
+
+  (state binding-returned
+    (context identity-boundary)
+
+    (rosetta
+      (intent "return minimal non-bearer attribution evidence")
+      (values least-disclosure no-authority-inference)
+      (outcomes "the reply contains exactly the principal identity and no authority or authentication internals")
+      (who "the bounded adapter")
+      (what "one current-principal binding")
+      (when "owner observation succeeds")
+      (where "Aegis public protocol")
+      (why "downstream adapters need attribution without credential disclosure")
+      (how "encode a separately tagged read-only outcome")
+      (extent "not authorization identity equivalence acceptance or effect evidence")
+      (examples "Agora can derive a subject but must still authorize each action")))
+
+  (state observation-refused
+    (context access-control-decision)
+
+    (rosetta
+      (intent "refuse observation when the exact session is not owned")
+      (values fail-closed non-disclosure)
+      (outcomes "unknown session remains the existing typed refusal and no principal bytes are returned")
+      (who "Aegis service")
+      (what "one observation refusal")
+      (when "the session cannot be resolved")
+      (where "Aegis service dispatch")
+      (why "absence cannot be repaired with caller identity")
+      (how "return UnknownSession")
+      (extent "no fallback inference")
+      (examples "a closed session returns UnknownSession")))
+
+  (edge
+    (from observation-requested)
+    (to principal-observed)
+    (emit principal-observed)
+
+    (rosetta
+      (intent "resolve exact session")
+      (values owner-evidence)
+      (outcomes "one retained principal is selected")
+      (who "Aegis service")
+      (what "owner observation edge")
+      (when "session exists")
+      (where "session table")
+      (why "derive rather than trust")
+      (how "exact handle lookup")
+      (extent "no mutation")
+      (examples "session resolves"))
+    (precondition "the exact request session exists in Aegis's current session owner; no claimed principal is accepted"))
+
+  (edge
+    (from principal-observed)
+    (to binding-returned)
+    (emit principal-binding-returned)
+
+    (rosetta
+      (intent "project minimal binding")
+      (values least-disclosure)
+      (outcomes "only principal identity crosses the protocol")
+      (who "Aegis protocol")
+      (what "binding return edge")
+      (when "owner fact exists")
+      (where "canonical reply")
+      (why "support owner-bound composition")
+      (how "tagged fixed-width projection")
+      (extent "non-bearer evidence")
+      (examples "CurrentPrincipal(P)"))
+    (precondition "the reply principal is byte-identical to the owner-retained session principal and contains no additional session facts"))
+
+  (edge
+    (from observation-requested)
+    (to observation-refused)
+    (emit observation-refused)
+
+    (rosetta
+      (intent "refuse missing session")
+      (values fail-closed)
+      (outcomes "no binding is emitted")
+      (who "Aegis service")
+      (what "refusal edge")
+      (when "session is absent")
+      (where "session table")
+      (why "identity cannot be inferred")
+      (how "typed refusal")
+      (extent "no fallback")
+      (examples UnknownSession))
+    (precondition "the exact request session is absent; the result contains no principal bytes"))
+
+  (signal principal-observed
+    (rosetta
+      (intent "announce exact owner observation")
+      (values owner-evidence)
+      (outcomes "the retained principal is ready for minimal projection")
+      (who "Aegis service")
+      (what "principal observation signal")
+      (when "the exact session resolves")
+      (where "Aegis service dispatch")
+      (why "projection must follow owner observation")
+      (how "raised by principal-observed")
+      (extent "one current session")
+      (examples "the retained principal was selected")))
+
+  (signal principal-binding-returned
+    (rosetta
+      (intent "announce minimal attribution return")
+      (values least-disclosure)
+      (outcomes "the caller receives one non-bearer principal identity")
+      (who "Aegis protocol")
+      (what "principal binding signal")
+      (when "minimal projection succeeds")
+      (where "the service reply")
+      (why "downstream attribution needs owner evidence")
+      (how "raised by principal-binding-returned")
+      (extent "no authority claim")
+      (examples "CurrentPrincipal(P) returned")))
+
+  (signal observation-refused
+    (rosetta
+      (intent "announce fail-closed absence")
+      (values non-disclosure)
+      (outcomes "no principal binding is available")
+      (who "Aegis service")
+      (what "observation refusal signal")
+      (when "the exact session is absent")
+      (where "the service reply")
+      (why "missing identity cannot be inferred")
+      (how "raised by observation-refused")
+      (extent "one request")
+      (examples "UnknownSession returned"))))

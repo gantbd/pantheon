@@ -3794,3 +3794,52 @@ the real `rune-author` boundary remains `questions_pending`, emitted no
 candidate and retained four genuine semantic paths plus the known duplicate
 ensemble-fit diagnostic.
 
+### 2026-11-20 — owner identity descent retains the smaller J1 Maybe
+
+Inspection of the remaining actor-to-participation join found a boundary leak
+below Moira. Agora's Aegis verifier accepted a caller-supplied
+`VerifiedSubjectV1`, and Moira's participation authority accepted a
+caller-supplied principal. A valid authorization beside either value did not
+prove that the exact Aegis session belonged to it. Hashing the values together
+or trusting deployment equality would have collapsed an unresolved identity
+claim into Bool.
+
+The new canonical
+`aegis-current-principal-observation.machine.rune` describes the cheapest owner
+observation: a zero-payload session-bound request returns only the principal
+retained by Aegis or the existing `UnknownSession` refusal. Real Scry admitted
+the machine; Smith canonical formatting passes; Rust compatibility is complete
+with no unsupported obligations. The Rune source identity is
+`sha256:14ce3c5d1a1be4d69372cb640180df68fd93106789f23311b2ec89a24099493a`
+and its typed IR identity is
+`sha256:11ca3ed7cf33256611bee05f95048f408089f686e6015fe649d979d7fe2c4d89`.
+
+Aegis revisions `76d1a9c` and `15b27b6` implement that read-only owner fact
+through the service and both public client facades. Agora revision `020e873`
+derives its verified subject from the exact Aegis session, treats configured
+subject only as an equality fence and adds separate actor-plus-subject
+publication provenance. Moira revision `2482dcc` likewise derives its
+participation-admission principal from the exact authority session and consumes
+Agora's subject provenance. Focused substitution, wire, reopen and real private
+Unix tests plus each complete owner workspace check pass. The exact design and
+qualification evidence is retained in
+`design/evidence/aegis-current-principal-observation-verification.md`.
+
+The J1 Maybe is smaller but remains honest. Agora now proves the publishing
+session's subject; Moira proves the participation-admission session's
+principal. Equal bytes still do not prove that either session is the admitted
+agent participation. The next owner slice is a versioned replay-stable Moira
+relationship joining those facts to the exact participation, Daimon
+session/profile/member/task attempt and exact publication receipt, followed by
+a public close/reopen observation. Chronos scope/task-conversation
+qualification, stakeholder standing, the strict evaluator and human acceptance
+remain separate unresolved paths.
+
+The revised J1 authoring request identity is
+`6ea84efa593348561d90b7ea31f6105b0652a649f5ae8488a2858adaaa695376`.
+The real `rune-author` boundary remains `questions_pending` and emitted no
+candidate. It retained the four genuine semantic paths and the known duplicate
+ensemble-fit diagnostic; the owner-composition question now consumes the two
+qualified session-owner facts while refusing to equate equal identity bytes
+with agent participation.
+
