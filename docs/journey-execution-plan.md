@@ -2411,6 +2411,17 @@ Operational means observable completed work, not a configured role name:
   therefore admits priority-10
   `j1-participation-blueprint-owner-contract` to select the owner-backed
   blueprint and replay laws before any `ParticipationAdmitted` claim.
+- Moira `51153c1` now supplies the pure reconciliation portion of that contract.
+  It accepts no convenient owner-generated identities: an actual participation
+  binding must match the exact workflow relationship, Chronos attempt, profile,
+  deliberation, member, method, grounding and persona observations. The
+  deliberation evidence additionally retains an affirmative ensemble-admission
+  answer plus affected-population, stakeholder-map, coverage and equity
+  digests; contested or malformed admission refuses. Twelve task-agent behavior
+  tests and strict Clippy pass. This is not yet a completed Chronos task: the
+  trusted owner observers, durable blueprint checkpoint, Aegis-authorized
+  participation dispatch, replay/lost-reply recovery and journey transition
+  remain open.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

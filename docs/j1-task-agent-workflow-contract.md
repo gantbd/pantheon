@@ -262,6 +262,19 @@ process qualification and retained non-bearer decision attribution also remain
 open. This is an operational same-client room worker, not yet complete
 crash/reconnect recovery or participation admission.
 
+Moira `51153c1` adds the first executable participation-blueprint law without
+minting identities. From `RoomReady`, it reconciles an actual proposed
+participation binding against the exact journey workflow relationship, Chronos
+task/incarnation/attempt, selected profile, and owner-observed deliberation,
+member, method, grounding and persona. The deliberation receipt also carries
+the retained “do we have the right ensemble?” admission evidence; malformed,
+non-affirmative, substituted or missing coverage/equity facts refuse. Initial
+owner revision zero remains valid. This result is deliberately not persisted
+and is not `ParticipationAdmitted`: trusted workflow-relationship and
+deliberation observers, durable prepare-before-dispatch, fresh command-scoped
+Aegis authorization, participation-owner admission, lost-reply recovery and a
+retained journey transition remain required.
+
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
 `28fae97` publishes the independent transport-neutral DTO and canonical wire
