@@ -3843,3 +3843,48 @@ ensemble-fit diagnostic; the owner-composition question now consumes the two
 qualified session-owner facts while refusing to equate equal identity bytes
 with agent participation.
 
+### 2026-11-20 — Moira V7 closes the actor-to-participation owner edge
+
+The next descent was authored first as the canonical
+`moira-actor-participation-relationship.machine.rune`. Real Scry admitted its
+four-state, three-edge design; Smith formatting passes and Rust compatibility
+is complete with no unsupported obligation. The Rune identity is
+`sha256:0e9671006450d01393b7efa864ddb2cf7516a03fcb193c8955043c469b5e1fa9`
+and the typed IR identity is
+`sha256:26483a11feae4fd5f2216d0ac3a213723b97ca1edb02152a00e16e7e86583d92`.
+
+Moira revision `3fd35de` implements the preserving relationship. Checkpoint V7
+adds an independent record rather than changing the existing journey, room,
+namespace or participation bindings. The first bind requires the journey's
+exact `ParticipationAdmitted` state, full retained blueprint and attribution,
+task attempt, room source/sequence and equality of Agora's Host-derived subject
+with the exact admission principal. It then retains the full participation plus
+actor, subject, room, effect, message and owner revisions. Exact replay is
+stable; every changed publication conflicts; earlier checkpoints upgrade with
+the relationship absent.
+
+Mutation is not public. The qualified `moira-agora` consumer maps only the
+exact subject-provenance observation into the private store command. Public
+protocol, service, canonical wire, capability-shaped client and real Unix
+daemon surfaces expose only journey-scoped observation. Domain, persistence,
+all-target affected-package, real SQLite reopen and real Unix tests pass. Full
+workspace compilation passes. Strict Clippy exposed one unrelated existing
+`agent::ReplyV1` size warning; no suppression was added, and affected-package
+Clippy found no additional warning when that single baseline diagnostic was
+isolated. Exact evidence is retained in
+`design/evidence/moira-actor-participation-relationship-verification.md`.
+
+This closes the actor-to-participation owner edge, not J1. The remaining
+owner-composition question now consumes the public V7 observation directly and
+retains only the qualified Chronos scope/task-conversation join plus the final
+Pantheon evidence composition. Stakeholder standing, strict evaluator and
+human acceptance remain separate unresolved paths.
+
+The revised J1 authoring request identity is
+`ab28c215b2720948fcc37819be6121cd97497928e018f74bab4dc66d89afac5d`.
+The real `rune-author` boundary remains `questions_pending`, emitted no
+candidate and retained the four genuine paths plus the known duplicate
+ensemble-fit diagnostic. Its owner-composition question now consumes the V7
+relationship as an established owner fact and asks only for the remaining
+scope/task-conversation join and evidence controller composition.
+

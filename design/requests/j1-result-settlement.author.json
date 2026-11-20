@@ -55,7 +55,16 @@
       "sha256:e0a36f153a92239ad57099dd676e8ed895c27a5cba09f44511a60eb32ef471dd",
       "sha256:b660d6b52f63922b0fc38d3ded01119146d8e9332818b16990f7ec2116d35bab",
       "sha256:7de88c0ced142fb219a021e22472148a5b6f61493872fa9bd84ee164e250d573",
-      "sha256:b5e8edf9f0c4197a71f44eea980b79b8cddd72bd4be12e468b33c94bf395a36d"
+      "sha256:b5e8edf9f0c4197a71f44eea980b79b8cddd72bd4be12e468b33c94bf395a36d",
+      "sha256:d5ba56a7c5936d345cb2dcc97e0ff7a206d7661dcc3923bc17e521a3edbd0fb0",
+      "sha256:83f1de4cd659d5a854b42149fd5f2d6d1ed154d191bb5b0d5b530354f30b24f0",
+      "sha256:1e020e68ce93ced62366c3efe1b1f0e782435e4305dbffbaf6d9875ab268dbd8",
+      "sha256:b372a7e98a686c0b272ffb120f38fb1ea71b09693e4e965d037bc2d0000f740b",
+      "sha256:904076426c4c264bccf9ecf31a51ec8f1a8adc5b8e5e9e727df1b067c7bde371",
+      "sha256:28fbc08ee6269639c774a68ebde3ef60f481388cb6947ec8faeff09e72e980ca",
+      "sha256:c77461de9292f0a1f832f21d33da780bf03ead7442e74da56fecd89a7b36789a",
+      "sha256:a6a75e077b9e926b423a88044497d2a55a48a14dafa4f191229048a03b38dc34",
+      "sha256:7cddd0b95a421c659767c62bca85d12f24ae3ed6fa5cbaf22d3ce2d0f258e073"
     ],
     "dissent": [
       "Dendrite routed architecture, network, identity, data, security, distributed-systems, and humanism groundings, but formal-methods, agent-systems, operator, and ensemble roles have no fold routes for this context.",
@@ -78,7 +87,7 @@
     {
       "path": "$.machine.edges[publication-accepted->review-ready-with-result].precondition",
       "category": "owner-composition",
-      "question": "Which qualified Pantheon composite consumes Moira's exact effect/source/room/message/room-id/actor/owner-derived-subject publication provenance, Moira's journey-scoped owner observation of the retained external-task-key/Chronos-task-ID/incarnation/revision provenance, a qualified task-conversation relationship that binds that task identity to the exact Chronos scope, the current exact Chronos ReadyForReview observation, and a durable owner-issued relationship joining equality of the owner-derived Agora subject and Moira admission principal to the exact admitted participation/session/profile/member/task attempt and publication receipt, to produce J1 review-link evidence without parsing JSON, scanning a retention-bounded message page as if it were an exact receipt, trusting deployment configuration or caller-supplied aliases, equating equal identity bytes with agent participation, or inventing scope, delivery, acceptance, task mutation, or Done authority?"
+      "question": "Which qualified Pantheon composite consumes Moira's public journey-scoped V7 actor-participation relationship observation, Moira's journey-scoped owner observation of the retained external-task-key/Chronos-task-ID/incarnation/revision provenance, a qualified task-conversation relationship that binds that task identity to the exact Chronos scope, and the current exact Chronos ReadyForReview observation to produce J1 review-link evidence without parsing JSON, scanning a retention-bounded message page as if it were an exact receipt, trusting deployment configuration or caller-supplied aliases, or inventing scope, delivery, acceptance, task mutation, or Done authority?"
     },
     {
       "path": "$.projection.strict-evaluator",

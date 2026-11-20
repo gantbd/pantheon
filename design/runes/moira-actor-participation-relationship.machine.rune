@@ -1,0 +1,177 @@
+(machine moira-actor-participation-relationship
+  (rosetta
+    (intent "retain an owner-issued relationship from one exact Agora actor publication to one exact admitted Moira agent participation without inferring identity from equal labels or principals")
+    (values owner-facts replay-stability non-impersonation additive-evidence)
+    (outcomes "matching owner-derived subject and admission principal are joined to the retained participation blueprint and exact publication receipt" "every substituted participation session profile task attempt room publication actor subject or owner revision conflicts" "older checkpoints remain readable with the relationship absent rather than invented")
+    (who "Moira's task-agent journey owner consuming qualified Agora and participation-owner evidence")
+    (what "one versioned actor-participation relationship for one journey")
+    (when "after the journey is ParticipationAdmitted and Agora has accepted or exactly reconciled the result publication")
+    (where "the durable Moira task-agent journey checkpoint and its read-only public observation")
+    (why "equal principal bytes are necessary evidence but do not alone prove that an Agora publication belongs to the admitted agent participation")
+    (how "validate the exact current journey participation blueprint and room binding against the complete subject-provenance publication, then atomically retain the relationship and require byte-identical replay")
+    (extent "relationship evidence only; no authentication credential authority task scope task mutation acceptance completion delivery or rollout claim")
+    (examples "the admitted participation's Aegis principal equals the Agora Host-derived subject and the publication names the journey's exact room source and sequence"))
+  (initial relationship-requested)
+
+  (state relationship-requested
+    (context identity-boundary architecture-flow-review)
+
+    (rosetta
+      (intent "receive complete owner observations without accepting an identity alias")
+      (values exact-input)
+      (outcomes "the request identifies one journey and carries the exact Agora subject-provenance publication")
+      (who "the qualified Moira-Agora consuming adapter")
+      (what "one relationship request")
+      (when "after exact publication observation")
+      (where "Moira's private owner-mutation boundary")
+      (why "a UI actor label deployment mapping or model claim is not owner evidence")
+      (how "submit the journey identity plus actor subject room effect message and owner revision")
+      (extent "no public mutation command")
+      (examples "one observed actor publication is offered for one admitted journey")))
+
+  (state owner-facts-matched
+    (context identity-boundary access-control-decision)
+
+    (rosetta
+      (intent "prove that the offered publication matches every retained owner relationship")
+      (values complete-comparison no-identity-inference)
+      (outcomes "journey phase participation blueprint admission principal task attempt and room relationship all match the publication")
+      (who "Moira's task-agent journey owner")
+      (what "one deterministic relationship comparison")
+      (when "before durable retention")
+      (where "the journey domain boundary")
+      (why "subject equality without participation room and receipt equality leaves substitution paths")
+      (how "compare the exact admitted participation to the retained blueprint compare subject to the retained admission principal and compare publication source and room sequence to the retained room binding")
+      (extent "comparison only; Agora and Aegis facts are not reinterpreted")
+      (examples "the publication subject equals the admission principal and its source and room sequence equal the journey room")))
+
+  (state relationship-retained
+    (context identity-boundary data-retention)
+
+    (rosetta
+      (intent "retain the complete relationship as additive owner evidence")
+      (values durability canonical-replay)
+      (outcomes "the checkpoint contains one canonical relationship and exact replay returns it unchanged")
+      (who "Moira's durable task-agent store")
+      (what "one actor-participation relationship record")
+      (when "all owner facts match")
+      (where "checkpoint version seven and later")
+      (why "later J1 composition must observe the relationship after close and reopen")
+      (how "append a separately versioned collection encode every identity and owner cursor canonically and recover by replaying the same domain law")
+      (extent "existing V1 journey participation and publication types remain unchanged")
+      (examples "SQLite reopen returns the identical relationship")))
+
+  (state relationship-refused
+    (context identity-boundary)
+
+    (rosetta
+      (intent "preserve the unresolved identity claim when evidence is missing or conflicts")
+      (values fail-closed uncertainty-honesty)
+      (outcomes "no relationship is retained and the exact mismatch remains distinguishable")
+      (who "Moira's task-agent journey owner")
+      (what "one typed relationship refusal")
+      (when "the journey is not admitted evidence is invalid or any retained fact differs")
+      (where "the private mutation boundary")
+      (why "a near match is still not an owner binding")
+      (how "return invalid-evidence or relationship-conflict without fallback aliasing")
+      (extent "no mutation no retry authority and no identity inference")
+      (examples "the subject matches but the message identity differs from an existing relationship")))
+
+  (edge
+    (from relationship-requested)
+    (to owner-facts-matched)
+    (emit owner-facts-matched)
+
+    (rosetta
+      (intent "validate complete owner facts")
+      (values total-equality)
+      (outcomes "one exact relationship candidate is established")
+      (who "Moira journey owner")
+      (what "validation edge")
+      (when "all required evidence exists")
+      (where "journey domain")
+      (why "retention must follow proof")
+      (how "deterministic comparisons")
+      (extent "no effect")
+      (examples "all retained fields match"))
+    (precondition "the journey is ParticipationAdmitted; its participation equals the retained blueprint; its authority principal is nonzero and equals the Agora owner-derived subject; its task attempt and room binding exist; the publication source and room sequence equal that room; actor room effect message identities and owner revisions are valid and bounded"))
+
+  (edge
+    (from owner-facts-matched)
+    (to relationship-retained)
+    (emit relationship-retained)
+
+    (rosetta
+      (intent "commit canonical relationship evidence")
+      (values atomicity replay-stability)
+      (outcomes "one relationship is durable")
+      (who "Moira store")
+      (what "retention edge")
+      (when "validation succeeds")
+      (where "versioned checkpoint")
+      (why "observation must survive restart")
+      (how "atomic checkpoint replacement")
+      (extent "one journey relationship")
+      (examples "first bind returns replayed false"))
+    (precondition "no relationship exists for the journey, or the existing relationship is byte-identical and returns as replay without mutation"))
+
+  (edge
+    (from relationship-requested)
+    (to relationship-refused)
+    (emit relationship-refused)
+
+    (rosetta
+      (intent "refuse missing or conflicting evidence")
+      (values non-impersonation)
+      (outcomes "the Maybe remains explicit")
+      (who "Moira journey owner")
+      (what "refusal edge")
+      (when "any precondition fails")
+      (where "journey domain")
+      (why "uncertainty must not collapse")
+      (how "typed refusal")
+      (extent "no fallback")
+      (examples "an equal subject with a substituted session refuses"))
+    (precondition "the offered evidence is absent invalid stale mismatched or conflicts with the already retained relationship"))
+
+  (signal owner-facts-matched
+    (rosetta
+      (intent "announce complete deterministic comparison")
+      (values owner-preservation)
+      (outcomes "the candidate may be retained")
+      (who "Moira journey owner")
+      (what "validation signal")
+      (when "all facts match")
+      (where "journey domain")
+      (why "validation and retention are distinct")
+      (how "raised by owner-facts-matched")
+      (extent "one candidate")
+      (examples "candidate established")))
+
+  (signal relationship-retained
+    (rosetta
+      (intent "announce durable owner relationship")
+      (values durability)
+      (outcomes "read-only observation may expose the exact relationship")
+      (who "Moira store")
+      (what "retention signal")
+      (when "checkpoint commit succeeds")
+      (where "task-agent store")
+      (why "downstream composition needs a durable fact")
+      (how "raised by relationship-retained")
+      (extent "not acceptance or authority")
+      (examples "relationship retained")))
+
+  (signal relationship-refused
+    (rosetta
+      (intent "announce unresolved or conflicting relationship")
+      (values uncertainty-honesty)
+      (outcomes "operator and caller can orient without fabricated identity")
+      (who "Moira journey owner")
+      (what "refusal signal")
+      (when "validation fails")
+      (where "private mutation boundary")
+      (why "the exact Maybe must remain visible")
+      (how "raised by relationship-refused")
+      (extent "no authority")
+      (examples "relationship refused"))))

@@ -59,14 +59,16 @@ read-only input until that repository settles.
   are qualified. Revision `e851edc` adds the bounded journey-scoped read-only
   protocol, service, canonical wire and client observation; exact SQLite reopen,
   redaction and authoritative absence are qualified. Qualify the separate
-  Chronos scope relationship. The owner-derived Agora subject and Moira
-  participation-admission principal are now separately qualified, but no
-  durable relationship yet joins their equality to the exact participation,
-  Daimon session/profile/member/task attempt and exact publication receipt.
-  Add that replayable relationship and a public close/reopen observation.
-  Pantheon must not hash an unbound task name, trust deployment configuration,
-  infer scope, or equate either an Agora actor label or an equal principal byte
-  string with an admitted agent session.
+  Chronos scope relationship. Moira revision `3fd35de` closes the separate
+  actor-to-participation owner edge with checkpoint V7: a private qualified
+  `moira-agora` consumer joins the owner-derived Agora subject to the exact
+  participation-admission principal only after matching the retained full
+  participation blueprint, task attempt, room source/sequence and publication
+  receipt. Exact replay, substitution conflict, V1/V2 upgrade, V7 SQLite
+  reopen, public read-only service/wire/client and real Unix routing are
+  qualified. The remaining namespace work in this item is the Chronos scope
+  relationship and task-conversation qualification. Pantheon must not hash an
+  unbound task name, trust deployment configuration or infer scope.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,
@@ -164,6 +166,13 @@ read-only input until that repository settles.
   clock, authentication or authority policy.
 
 ## P2 — operational depth
+
+- [ ] Repair Moira's existing strict-Clippy baseline without suppressing it:
+  `moira-protocol::agent::ReplyV1` currently triggers
+  `clippy::large_enum_variant` because its accepted outcome is substantially
+  larger than refusal. Decide and qualify the compatible indirection strategy;
+  the V7 actor-participation slice introduced no source or lint suppression and
+  passes strict Clippy when this one pre-existing diagnostic is isolated.
 
 - [x] Moira: carry bounded selected-saga effect evidence and operator receipts
   through the same read-only component in standalone and Pantheon interactive
