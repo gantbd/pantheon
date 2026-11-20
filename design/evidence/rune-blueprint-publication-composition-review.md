@@ -129,6 +129,51 @@ publication-previewed → publication-armed → patch-accepted →
 durable-published`. Questions, refusal, unknown edit and pending persistence
 remain distinct. No implicit retry or rollback edge exists.
 
+## Encoding decision and compiler prerequisite
+
+The named sponsor approved Rosetta/Rune as the semantic encoding rather than
+the large JSON authoring document exposed during the first topology pass. The
+durable law is now:
+
+`reviewed Rosetta → canonical .machine.rune → Scry typed IR → Smith Rust`
+
+JSON may remain a closed generated transport envelope where the current author
+or adapter API requires it. It is not the durable topology, does not become a
+second semantic source, and should be discarded after the canonical Rune and
+lineage identities exist.
+
+This decision exposed a legitimate critical-path compiler gap. Rune's typed IR
+already represents `(invoke F)`, Smith's preservation law explicitly requires
+unresolved or refused child settlement to absorb the parent transition, and
+the compatibility baseline retains Gleam's existing invoke behavior. However,
+Scry's current `.rune` edge grammar does not admit an `invoke` clause, and the
+Rust target correctly reports invoked-machine settlement as unsupported. The
+desired holofractal source therefore cannot yet be projected into the selected
+Rust target without one of three weaker substitutions:
+
+- flatten the packet-publication states into the parent, duplicating their
+  semantics;
+- use `(ref depends-on …)`, which proves dependency/provenance but not runtime
+  child settlement; or
+- perform an opaque Rust adapter handoff outside the compiled obligation set.
+
+All three are rejected as completion claims. The recommended prerequisite is
+to close the narrow source-to-Rust invocation seam: admit and validate an exact
+edge child invocation in Scry, lower it losslessly into the existing typed IR,
+make Smith Rust require an explicit child success/refusal/unknown verdict before
+parent advancement, and prove that nesting or reassociation cannot launder a
+non-success child into parent success. Existing target behavior must not be
+reduced, and unsupported targets must continue to refuse rather than emit
+weaker executables.
+
+Once that prerequisite qualifies, the composition Rune should remain thin:
+its upstream states own blueprint questions, qualified projection and additive
+risk eligibility; its publication edge invokes the existing
+`pantheon-rune-packet-publication` machine. The child continues to own preview,
+human arming, edit uncertainty and persistence. The flattened state list above
+remains an end-to-end presentation of the composite trace, not a second source
+of the child's laws.
+
 ## Threat and leakage review
 
 - **Semantic substitution:** bind answers to the exact request digest and exact

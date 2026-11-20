@@ -4478,3 +4478,24 @@ evidence rather than equating commits with acceptance. Missing headless
 evidence-to-review workflow and transport-policy-specific diagnostics are
 legitimate interface gaps; neither warrants manufacturing task completion.
 
+### 2026-11-20 — Rune becomes the composition source, exposing invoke parity
+
+The first approved composition topology was intentionally encoded through the
+question-bound blueprint path with `ensemble_fit=contested`. Rune reduced the
+three initial questions to the one exact ensemble-fit question and emitted no
+candidate, IR or projection. That run also made the remaining JSON authoring
+weight visible. The sponsor selected Rosetta/Rune as the semantic encoding;
+JSON is now limited to generated closed transport where an existing adapter
+requires it.
+
+Repository evidence prevents an easy but false implementation claim. Rune's
+typed IR and semantic-preservation requirement already model invoked child
+machines, but Scry's current source edge grammar does not admit `invoke`, and
+Smith's Rust compatibility baseline marks child settlement unsupported. A
+`ref depends-on` records provenance but cannot prove runtime settlement;
+flattening or an opaque adapter call would move the obligation outside the
+compiled law. The critical path therefore includes the bounded Rune/Scry/Smith
+Rust invocation seam before Pantheon claims a holofractal composition. This is
+directionally correct substrate with a real missing projection, not permission
+to weaken the machine or return to JSON as authority.
+
