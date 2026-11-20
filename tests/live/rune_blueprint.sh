@@ -144,6 +144,29 @@ jq -e '
   .risk_policy.rune_baseline_weakened == false
 ' "$scratch/risk-question.json" >/dev/null
 
+jq '{
+  version: 1,
+  task: {
+    id: "ensemble-not-yet-fit",
+    prose: "Retain an explicit no until the accountable reviewers agree that the ensemble is fit.",
+    risk: "moderate"
+  },
+  request: (.review.ensemble_fit = "no")
+}' "$qualified" >"$scratch/no-ensemble-fit.json"
+"$pantheon" rune-blueprint "$scratch/profile.json" \
+  "$scratch/no-ensemble-fit.json" >"$scratch/ensemble-question.json"
+jq -e '
+  .status == "questions_pending" and
+  .complete == false and
+  [.questions[].path] == ["$.review.ensemble_fit"] and
+  .questions[0].category == "ensemble" and
+  .questions[0].question == "What must change before this ensemble is fit for this exact design?" and
+  .owner_outcome.status == "questions_pending" and
+  .owner_outcome.complete == false and
+  .risk_policy.publication == "not_eligible_until_projection_complete" and
+  .risk_policy.rune_baseline_weakened == false
+' "$scratch/ensemble-question.json" >/dev/null
+
 jq '.base_request_sha256 = "sha256:0000000000000000000000000000000000000000000000000000000000000000"' \
   "$scratch/answers.json" >"$scratch/stale.json"
 if "$pantheon" rune-blueprint "$scratch/profile.json" "$scratch/blueprint.json" \
@@ -157,4 +180,4 @@ jq -e '
   (.detail | contains("exact current Rune request"))
 ' "$scratch/refused.json" >/dev/null
 
-echo 'PASS: exact task prose -> typed Rune questions -> question-bound revision -> Scry -> Smith projection; stale answers refused'
+echo 'PASS: prose -> typed Rune questions -> question-bound revision -> Scry -> Smith; stale answers and unfit ensemble refused'

@@ -4451,3 +4451,30 @@ profile. Direct blueprint-to-publication composition and measured lead-time,
 rework, context/token and escaped-defect evidence also remain on the critical
 path.
 
+### 2026-11-20 — composition dogfood preserves Rune's ensemble gate
+
+An intentionally sparse blueprint for direct blueprint-to-publication
+composition made Rune ask for unresolved holes, accountable review and machine
+topology before any code changed. A focused adversarial revision then retained
+the otherwise complete qualification request but set `ensemble_fit` to `no`.
+Rune already returned the exact owner question, “What must change before this
+ensemble is fit for this exact design?”, withheld projection completion and
+therefore kept publication ineligible. A proposed Pantheon-side ensemble-fit
+question was removed because it duplicated and risked diverging from that
+stronger owner behavior. The live blueprint gate now preserves this refusal as
+regression evidence alongside stale-answer and additive dissent refusals.
+
+Chronos grooming exposed separate operational friction without changing task
+truth. Two stale Pantheon TUI hosts were consuming CPU and preventing useful
+headless work; both were terminated with their durable directories preserved.
+The standalone owner initially refused the board because its binary predated
+the embedded Chronos that wrote the envelope. Rebuilding the current owner
+recovered both directories cleanly. Sandboxed local-socket denial surfaced as
+generic `not_sent`, while the same read-only client outside that sandbox
+correctly distinguished the non-authoritative goal-work board from the
+revision-84 `pantheon-link-slice` board. The latter still reports delivered
+work as Open/Blocked because Chronos correctly requires claim/report/review
+evidence rather than equating commits with acceptance. Missing headless
+evidence-to-review workflow and transport-policy-specific diagnostics are
+legitimate interface gaps; neither warrants manufacturing task completion.
+
