@@ -54,6 +54,36 @@ approval. A local model may select from the governed test catalog, interpret
 failures and propose follow-up; the harness owns execution and evidence
 admission.
 
+## Chronos roadmap governance
+
+Chronos is the authoritative executable roadmap. Documents retain intent,
+acceptance rationale and richer evidence, but a checklist, local scratch board,
+agent memory or commit history cannot silently replace task owner state. A
+bounded local board may support one slice only when its relationship to the
+canonical owner is explicit; discoveries, status and evidence must reconcile
+back to the canonical roadmap before the slice is considered settled.
+
+- Every `Blocked` item has an inspectable resolution link. Dependency blockers
+  link the exact prerequisite task identities. Decision, policy, resource and
+  external blockers link the exact owner-native resolution task, pending human
+  gate or evidence record, and retain the authorized status to resume to.
+  “Blocked” without a resolution path is invalid roadmap state, not a label.
+- Every discovered item that is not remediated in the active slice is captured
+  once with a stable Chronos identity and a Vellum evidence/provenance packet:
+  where it was observed, affected surface and users, impact, reproduction or
+  source evidence, proposed acceptance check, and discovery correlation.
+- Capture does not make an item critical-path work. The record states
+  `critical-path`, `required follow-up`, or `backlog` with rationale. Only an
+  authorized owner or applicable human gate may materially change priority,
+  acceptance, scope or the governing critical path.
+- Duplicate discoveries link to the retained owner item instead of creating a
+  parallel ticket. Uncertain matches are preserved for grooming rather than
+  silently merged or discarded.
+- Per-turn reconciliation checks for uncaptured discoveries, orphan blockers,
+  stale scratch-board state and delivered commits lacking task evidence.
+  Periodic grooming may propose dependency, duplicate and priority changes but
+  cannot apply contested changes or declare implementation complete.
+
 ## Product and dogfood requirements
 
 - Use Vellum for working context and editable delivery artifacts, Chronos for

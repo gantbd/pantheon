@@ -2245,6 +2245,15 @@ and prerequisite count, are explicitly inspect-only, and route to the Chronos
 dependency surface; uncertain entries retain their distinct recovery semantics.
 This is operational alignment visibility, not an autonomous product manager,
 goal rewrite, task claim, prerequisite completion or acceptance receipt.
+Roadmap governance now forbids an orphan `Blocked` status. Dependency blockers
+link the exact prerequisite tasks; decision, policy, resource and external
+blockers link an exact resolution task, pending human gate or owner evidence
+record and retain the authorized resume status. Discoveries not remediated in
+the active slice are captured once with stable Chronos identity and a Vellum
+provenance packet, then classified as critical-path, required follow-up or
+backlog without silently changing sponsor-approved priority. Chronos revision
+74 owns the enforcement, capture and scratch-to-canonical reconciliation work;
+the reconciliation task is dependency-blocked on the first two contracts.
 An isolated live gate admits a real P10 dependency-blocked task, verifies the
 same inspect-only agenda entry through the TUI and a concurrently attached
 headless Pantheon client, and proves clean hosted-owner drain. The long-running

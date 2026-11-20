@@ -1243,6 +1243,18 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   omitted the required private mode (`0700`).
 - [ ] Retain each discovered item through Chronos's stable identity, revision,
   receipt and recovery contract rather than a Pantheon-only checklist.
+- [ ] Enforce that every actual `Blocked` status has an inspectable resolution
+  path: exact prerequisite task links for dependency blockers, or an exact
+  resolution task, pending human gate or owner evidence reference plus the
+  authorized resume status for decision, policy, resource and external
+  blockers. Refuse orphan blockers in engine, protocol and UI paths.
+- [ ] Bind each non-critical discovery to a versioned Vellum provenance packet
+  and classify it as `critical-path`, `required follow-up` or `backlog` with
+  rationale. Capture must not silently reprioritize the active slice; duplicate
+  and uncertain-match dispositions remain inspectable.
+- [ ] Reconcile bounded local execution boards into the canonical roadmap by
+  exact stable identity, owner revision and receipt; never infer settlement
+  from a commit, conversation or similarly named scratch task.
 - [ ] Offer a bounded agent-assisted backlog sift that proposes duplicate
   clusters, dependencies, urgency/value/risk ordering, missing acceptance
   evidence and rationale. Preserve the original items and mark uncertainty,
@@ -1252,6 +1264,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   impact or sequencing; agent ranking is advice, not commitment authority.
 - [ ] Qualify capture, sift, accept/refuse and restart recovery in TUI and
   headless modes, including partial batch outcomes and an unavailable agent.
+
+Chronos revision 74 now owns the governance work itself. It admits P8
+`chronos-blocked-resolution-link-contract`, P7
+`chronos-discovery-capture-provenance-critical-path`, and P9
+`chronos-canonical-roadmap-scratch-reconciliation`; the reconciliation task is
+actually blocked on the first two exact prerequisites. This makes the
+revision-73 roadmap, now revision 74, the canonical owner while the revision-8
+goal-work board remains a bounded scratch surface pending reconciliation.
 
 ### Chronos operator agenda
 
