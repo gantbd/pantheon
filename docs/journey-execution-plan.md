@@ -4106,8 +4106,14 @@ relationship, current Chronos review state and complete Agora identified
 message. It refuses stale revisions, retention gaps, continuation, ambiguity
 and every tested identity, actor, body or digest substitution. Its
 domain-separated receipt contains no result prose and binds the full relevant
-owner lineage, authority, grounding, revisions and exact output digest. Six
-focused tests and strict Clippy pass. The detailed qualification and explicit
+owner lineage, authority, grounding, revisions and exact output digest. A
+subsequent operational-owner audit found that session and turn also had to be
+derived from Moira's current terminal participation rather than accepted as a
+caller selection. The strengthened composer now requires the exact admitted
+participation binding, terminal `Completed`/`EndTurn` state, session, turn,
+cursor and digest to equal Daimon's result. Its former valid fixture exposed a
+real mismatch and was corrected only after the new fence failed RED. Seven
+focused tests pass. The detailed qualification and explicit
 nonclaims are in
 `design/evidence/j1-strict-review-evidence-verification.md`.
 

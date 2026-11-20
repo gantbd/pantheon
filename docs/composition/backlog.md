@@ -97,7 +97,9 @@ read-only input until that repository settles.
   the separately qualified Daimon result, Moira actor publication,
   task-conversation link, current Chronos review snapshot and complete Agora
   identified-message observation into one content-free strict evidence
-  identity. Six focused adversarial tests and strict Clippy pass. Remaining J1
+  identity. A follow-up owner audit added the current Moira terminal
+  participation so session and turn are owner-derived rather than caller
+  aliases; seven focused adversarial tests pass. Remaining J1
   work must acquire that evidence through bounded public owner clients,
   reobserve Chronos after the Agora read to close the freshness race, and
   qualify the real multi-owner sequence; then a typed UADD packet/response must
@@ -112,6 +114,12 @@ read-only input until that repository settles.
   presented as indefinitely self-proving once its command-scoped receipt is
   evicted. Pantheon must not hash an unbound task name, trust deployment
   configuration or infer scope.
+- [ ] Isolate pure proof-cell tests from Pantheon's broad CLI link topology.
+  The seven strict J1 composer tests execute in 0.00s, but small fixture-only
+  changes repeatedly relink the CLI test binary for several minutes. Preserve
+  the exact production types and owner contracts while moving deterministic
+  proof leaves behind a smaller reusable crate or equivalent cached boundary;
+  do not replace the real integration gate with mocks merely to improve time.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,

@@ -1,16 +1,16 @@
 (machine j1-strict-review-evidence
   (rosetta
-    (intent "issue one strict J1 review-evidence identity only when the Daimon-owned result, Moira-owned actor publication, Agora-owned identified message, task-conversation relationship, and current Chronos review task prove the same exact work")
+    (intent "issue one strict J1 review-evidence identity only when the Daimon-owned result, current Moira-owned terminal participation and actor publication, Agora-owned identified message, task-conversation relationship, and current Chronos review task prove the same exact work")
     (values owner-preservation exact-content exact-identity current-truth bounded-observation typed-refusal no-self-promotion)
-    (outcomes "one content-free receipt binds the exact owner-qualified agent result and digest to the exact actor-authored Agora message and already-qualified review-link task attempt" "missing evicted stale ambiguous conflicting mismatched or substituted result and publication evidence refuses without weakening the existing review-link proof" "the receipt is evidence for a separately governed human gate and grants no acceptance RevisionRequired Done task mutation publication rollout or go-no-go authority")
+    (outcomes "one content-free receipt binds the exact owner-qualified agent result, Moira terminal session turn cursor and digest, exact actor-authored Agora message, and already-qualified review-link task attempt" "missing evicted stale ambiguous conflicting mismatched or substituted terminal result or publication evidence refuses without weakening the existing review-link proof" "the receipt is evidence for a separately governed human gate and grants no acceptance RevisionRequired Done task mutation publication rollout or go-no-go authority")
     (who "the Pantheon J1 evidence composer, Daimon result owner, Moira task-agent journey owner, Agora conversation owner, task-conversation relationship owner, Chronos workflow owner, and named human acceptance owner")
-    (what "one bounded read-only exact-content join over owner-issued result, publication, message, relationship, and current review observations")
-    (when "after the J1 review-link receipt and Daimon owner-bound result both qualify, and while the exact published Agora message remains independently observable")
+    (what "one bounded read-only exact-content join over owner-issued terminal participation, result, publication, message, relationship, and current review observations")
+    (when "after the J1 review-link receipt, current Moira terminal participation and Daimon owner-bound result all qualify, and while the exact published Agora message remains independently observable")
     (where "Pantheon's strict J1 review-evidence boundary")
     (why "task-room correlation and agent completion separately do not prove that the human is reviewing the exact qualified result which the admitted actor published")
-    (how "retain complete typed owner evidence; prove one task key incarnation and attempt; read the publication's exact message identity from a bounded revision-consistent Agora page; require exact room sequence message sequence author and body bytes; independently verify the Daimon output digest; then issue a content-free composite identity or typed refusal")
+    (how "retain complete typed owner evidence; derive the session and terminal turn from Moira rather than caller aliases; prove one participation task key incarnation attempt session turn terminal cursor and output digest; read the publication's exact message identity from a bounded revision-consistent Agora page; require exact room sequence message sequence author and body bytes; independently verify the Daimon output digest; then issue a content-free composite identity or typed refusal")
     (extent "read-only composition only; no unbounded room scan, caller-authored alias, copied private event, thought or tool content, message mutation, human disposition, Chronos review command, retry, acceptance, Done, go-no-go, or rollout authority")
-    (examples "Daimon binds output O to task key K incarnation 4 attempt 2; the qualified review link binds the same attempt to actor A and message M in room R; Agora returns exactly M by identity and sequence with author A and body bytes O; Pantheon issues one strict evidence identity"))
+    (examples "Moira binds terminal session S turn T cursor C and digest D to admitted task key K incarnation 4 attempt 2; Daimon binds the same S T C D and output O; the qualified review link binds the same attempt to actor A and message M in room R; Agora returns exactly M by identity and sequence with author A and body bytes O; Pantheon issues one strict evidence identity"))
   (initial owner-evidence-retained)
 
   (state owner-evidence-retained
@@ -19,13 +19,13 @@
     (rosetta
       (intent "retain every independently qualified owner observation before claiming a cross-owner result-publication relationship")
       (values provenance completeness disclosure-bounds)
-      (outcomes "the J1 review-link receipt, Daimon result binding and exact bounded Agora identified-message observation retain separate owner lineage, revisions, identities and nonclaims")
+      (outcomes "the J1 review-link receipt, current Moira terminal participation, Daimon result binding and exact bounded Agora identified-message observation retain separate owner lineage, revisions, identities and nonclaims")
       (who "the Pantheon J1 evidence composer")
-      (what "three typed owner evidence families")
+      (what "four typed owner evidence families")
       (when "before task-attempt or content equality is interpreted")
       (where "one bounded in-memory composition attempt")
       (why "flattening result, publication and task evidence can hide which owner supplied a disputed fact")
-      (how "accept only already-qualified review-link and Daimon result values plus a protocol-valid bounded Agora identified-message page, preserving all source evidence unchanged")
+      (how "accept only an already-qualified review-link, a current terminal participation derived from its exact participation identity, a Daimon result derived from that terminal session and turn, and a protocol-valid bounded Agora identified-message page, preserving all source evidence unchanged")
       (extent "retention for this composition attempt only; no owner mutation or durable acceptance record")
       (examples "Daimon remains output owner while Agora remains published-message owner")))
 
@@ -33,17 +33,17 @@
     (context evidence-grounding architecture-flow-review)
 
     (rosetta
-      (intent "prove that the Daimon result and review-link receipt name the same exact J1 task attempt")
+      (intent "prove that the Moira terminal participation, Daimon result and review-link receipt name the same exact J1 task attempt and terminal turn")
       (values exact-identity owner-separation canonical-representation)
-      (outcomes "Daimon's binary task key incarnation and attempt exactly equal the Moira-owned namespace retained by the review-link receipt" "the Daimon execution session turn terminal revision and output digest remain separately attributable" "task ID scope room message and Chronos review revision remain review-link owner facts")
+      (outcomes "the current Moira participation exactly equals the admitted binding and is terminal Completed EndTurn without pending or active work" "Daimon's binary task key incarnation attempt session turn terminal cursor and output digest exactly equal the Moira-owned terminal and namespace facts" "the Daimon execution and terminal revision remain separately attributable" "task ID scope room message and Chronos review revision remain review-link owner facts")
       (who "the Pantheon J1 evidence composer")
-      (what "one exact task-attempt join")
+      (what "one exact participation terminal and task-attempt join")
       (when "after complete owner evidence is retained")
       (where "the strict J1 evidence boundary")
       (why "matching result prose or task labels cannot establish execution-to-attempt identity")
-      (how "compare typed binary task key numeric incarnation and nonzero attempt exactly without hashes of display strings or deployment aliases")
+      (how "derive Moira participation by the review-link participation identity, require its current terminal evidence, derive the Daimon result by that terminal session and turn, and compare typed binary task key numeric incarnation attempt session turn terminal cursor and output digest exactly without hashes of display strings or deployment aliases")
       (extent "task-attempt identity only; no claim that the result was published or accepted")
-      (examples "Daimon attempt 2 refuses against a review-link for attempt 1 even when task and room labels match")))
+      (examples "Daimon attempt 2 refuses against a review-link for attempt 1, and a caller-selected turn refuses against Moira's different retained terminal turn, even when task and room labels match")))
 
   (state result-publication-qualified
     (context evidence-grounding architecture-flow-review human-impact-decision)
@@ -67,7 +67,7 @@
     (rosetta
       (intent "issue one content-free identity for the exact J1 result currently presented for human review")
       (values inspectability owner-lineage human-agency no-self-promotion)
-      (outcomes "the receipt binds the review-link identity, Daimon session turn execution task attempt terminal revision and output digest, and Agora room revision message identity sequence author and exact-content proof" "each owner observation remains independently re-observable" "the named human receives the exact challenged evidence without an implied disposition")
+      (outcomes "the receipt binds the review-link identity, current Moira terminal participation revision session turn cursor output and provider-evidence digests, Daimon session turn execution task attempt terminal revision and output digest, and Agora room revision message identity sequence author and exact-content proof" "each owner observation remains independently re-observable" "the named human receives the exact challenged evidence without an implied disposition")
       (who "the Pantheon J1 evidence composer and named human acceptance owner")
       (what "one immutable typed strict J1 review-evidence receipt")
       (when "task-attempt and result-publication proofs remain exact and Chronos is still ReadyForReview")
@@ -86,7 +86,7 @@
       (outcomes "the refusal names the responsible owner edge, retained evidence identities, retention or freshness condition, and bounded next action" "the review-link and result observations remain independently valid where applicable, but no strict composite or human disposition is implied")
       (who "the Pantheon J1 evidence composer and observing operator")
       (what "one typed strict-composition refusal")
-      (when "task-attempt identity, exact message observation, attribution, content equality, digest, freshness, retention or current review state cannot qualify")
+      (when "participation terminal identity, task-attempt identity, exact message observation, attribution, content equality, digest, freshness, retention or current review state cannot qualify")
       (where "the strict J1 evidence boundary")
       (why "The Gray is the Maybe Machine: an unresolved join remains explicit instead of becoming a guessed Bool")
       (how "preserve qualified inputs, name the nearest owner-observable missing fact, and refuse automatic substitution retry mutation or human-gate preparation")
@@ -99,18 +99,18 @@
     (emit task-attempt-qualified)
 
     (rosetta
-      (intent "qualify one exact execution-to-task-attempt identity")
+      (intent "qualify one exact terminal-participation-to-execution-and-task-attempt identity")
       (values exact-identity owner-separation)
-      (outcomes "Daimon result and review-link receipt name one exact task key incarnation and attempt")
+      (outcomes "current Moira terminal participation, Daimon result and review-link receipt name one exact session turn cursor digest task key incarnation and attempt")
       (who "the Pantheon J1 evidence composer")
-      (what "one deterministic task-attempt join")
+      (what "one deterministic terminal participation and task-attempt join")
       (when "all required owner evidence is complete")
       (where "the strict J1 evidence boundary")
       (why "content equality cannot repair an identity mismatch")
-      (how "compare typed task key incarnation and attempt exactly")
+      (how "derive the current participation and Daimon result from owner identities, then compare typed participation binding phase session turn cursor digest task key incarnation and attempt exactly")
       (extent "identity qualification only")
-      (examples "task key K incarnation 4 attempt 2 matches in both owner receipts"))
-    (precondition "the review-link evidence is fully qualified and currently ReadyForReview; the Daimon result binding is complete and owner-qualified; the Daimon task key, incarnation and nonzero attempt exactly equal the Moira-owned task namespace retained in the review-link receipt"))
+      (examples "session S turn T cursor C digest D task key K incarnation 4 attempt 2 match across Moira and Daimon owner receipts"))
+    (precondition "the review-link evidence is fully qualified and currently ReadyForReview; the exact admitted Moira participation is current and terminal Completed EndTurn with no active or pending operation; its session turn terminal cursor digest task key incarnation and nonzero attempt exactly equal the complete owner-qualified Daimon result and Moira-owned task namespace retained in the review-link receipt"))
 
   (edge
     (from owner-evidence-retained)
@@ -118,18 +118,18 @@
     (emit composition-refused)
 
     (rosetta
-      (intent "refuse incomplete or conflicting task-attempt evidence")
+      (intent "refuse incomplete or conflicting terminal participation and task-attempt evidence")
       (values uncertainty-honesty no-substitution)
       (outcomes "no strict J1 composite exists and the exact Maybe remains visible")
       (who "the Pantheon J1 evidence composer")
-      (what "one typed task-attempt refusal")
+      (what "one typed participation terminal or task-attempt refusal")
       (when "required evidence is absent invalid or mismatched")
       (where "the strict J1 evidence boundary")
       (why "a similarly named task or completed turn is not the admitted work")
-      (how "retain both owner receipts and name the failed identity edge")
+      (how "retain the separately valid owner receipts and name the failed participation terminal or task identity edge")
       (extent "refusal only")
-      (examples "a different incarnation refuses"))
-    (precondition "the review-link or Daimon result evidence is missing refused incomplete stale or invalid, or task key incarnation or attempt differs"))
+      (examples "a different participation session terminal turn cursor digest or task incarnation refuses"))
+    (precondition "the review-link, current Moira participation or Daimon result evidence is missing refused incomplete stale or invalid; the participation is not terminal Completed EndTurn or retains active or pending work; or participation binding session turn terminal cursor digest task key incarnation or attempt differs"))
 
   (edge
     (from task-attempt-qualified)
@@ -190,7 +190,7 @@
 
   (signal task-attempt-qualified
     (rosetta
-      (intent "announce exact task-attempt qualification")
+      (intent "announce exact terminal participation and task-attempt qualification")
       (values exactness)
       (outcomes "result-publication content may be evaluated")
       (who "the Pantheon J1 evidence composer")
@@ -200,7 +200,7 @@
       (why "identity and content are separate proofs")
       (how "raised by task-attempt-qualified")
       (extent "no publication or acceptance claim")
-      (examples "one execution is bound to one admitted attempt")))
+      (examples "one terminal session and turn bind one execution to one admitted attempt")))
 
   (signal result-publication-qualified
     (rosetta

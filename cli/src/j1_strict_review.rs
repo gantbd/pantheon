@@ -10,7 +10,10 @@ use chronos_protocol::workflow_v9;
 use daimon_protocol::{
     AgentSessionIdV1, AgentTurnIdV1, ContentDigestV1, ExecutionIdV1, TaskAttemptRefV1,
 };
-use moira_protocol::task_agent_journey::JourneyIdV1;
+use moira_protocol::{
+    agent_participation::{self as participation, ParticipationViewV1},
+    task_agent_journey::JourneyIdV1,
+};
 use sha2::{Digest, Sha256};
 use std::fmt;
 
@@ -54,6 +57,12 @@ impl fmt::Debug for StrictJ1ReviewEvidenceV1 {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum StrictJ1ReviewRefusalV1 {
     ReviewLinkNotCurrent,
+    ParticipationMismatch,
+    ParticipationNotTerminal,
+    SessionMismatch,
+    TurnMismatch,
+    TerminalCursorMismatch,
+    TerminalDigestMismatch,
     TaskKeyMismatch,
     IncarnationMismatch,
     AttemptMismatch,
@@ -79,6 +88,7 @@ pub enum StrictJ1ReviewRefusalV1 {
 /// to a Boolean decision.
 pub fn qualify_strict_j1_review_evidence(
     review: &J1ReviewLinkEvidenceV1,
+    participation: &ParticipationViewV1,
     result: &OwnerBoundAgentResult,
     page: &IdentifiedMessagePageV1,
 ) -> Result<StrictJ1ReviewEvidenceV1, StrictJ1ReviewRefusalV1> {
@@ -113,6 +123,33 @@ pub fn qualify_strict_j1_review_evidence(
     }
     if review.task_conversation.task.attempt != Some(review.namespace.attempt_number) {
         return Err(StrictJ1ReviewRefusalV1::AttemptMismatch);
+    }
+
+    if participation.binding != review.actor_participation.participation {
+        return Err(StrictJ1ReviewRefusalV1::ParticipationMismatch);
+    }
+    let terminal = participation
+        .terminal
+        .ok_or(StrictJ1ReviewRefusalV1::ParticipationNotTerminal)?;
+    if participation.phase != participation::PhaseV1::Terminal
+        || participation.active_turn.is_some()
+        || participation.pending.is_some()
+        || terminal.disposition != participation::DispositionV1::Completed
+        || terminal.stop_reason != participation::StopReasonV1::EndTurn
+    {
+        return Err(StrictJ1ReviewRefusalV1::ParticipationNotTerminal);
+    }
+    if result.session.into_bytes() != participation.binding.session.0 {
+        return Err(StrictJ1ReviewRefusalV1::SessionMismatch);
+    }
+    if result.turn.into_bytes() != terminal.turn.0 {
+        return Err(StrictJ1ReviewRefusalV1::TurnMismatch);
+    }
+    if participation.last_event_cursor != Some(result.finished_cursor) {
+        return Err(StrictJ1ReviewRefusalV1::TerminalCursorMismatch);
+    }
+    if terminal.output_digest != result.output_digest.into_bytes() {
+        return Err(StrictJ1ReviewRefusalV1::TerminalDigestMismatch);
     }
 
     if result.task_attempt.task_key != review.namespace.task.external_task_key {
@@ -176,7 +213,7 @@ pub fn qualify_strict_j1_review_evidence(
         return Err(StrictJ1ReviewRefusalV1::OutputDigestMismatch);
     }
 
-    let receipt_digest = canonical_receipt_digest(review, result, page, message)?;
+    let receipt_digest = canonical_receipt_digest(review, participation, result, page, message)?;
     Ok(StrictJ1ReviewEvidenceV1 {
         receipt_digest,
         journey: review.namespace.journey,
@@ -194,6 +231,7 @@ pub fn qualify_strict_j1_review_evidence(
 
 fn canonical_receipt_digest(
     review: &J1ReviewLinkEvidenceV1,
+    participation: &ParticipationViewV1,
     result: &OwnerBoundAgentResult,
     page: &IdentifiedMessagePageV1,
     message: &agora_protocol::v2::IdentifiedMessageV1,
@@ -305,6 +343,17 @@ fn canonical_receipt_digest(
     put_i32(&mut value, review.chronos_snapshot.priority);
     put_u32(&mut value, review.chronos_snapshot.max_attempts);
 
+    put_u64(&mut value, participation.revision);
+    put_optional_u64(&mut value, participation.session_revision);
+    put_optional_u64(&mut value, participation.last_event_cursor);
+    put_optional_fixed_32(&mut value, participation.profile_document_digest);
+    let terminal = participation
+        .terminal
+        .expect("terminal participation was checked before receipt encoding");
+    put_fixed(&mut value, &terminal.turn.0);
+    put_fixed(&mut value, &terminal.output_digest);
+    put_fixed(&mut value, &terminal.provider_evidence_digest);
+
     put_fixed(&mut value, &result.session.into_bytes());
     put_fixed(&mut value, &result.turn.into_bytes());
     put_fixed(&mut value, &result.execution.into_bytes());
@@ -359,6 +408,26 @@ fn put_optional_u32(value: &mut Vec<u8>, field: Option<u32>) {
         Some(field) => {
             put_u8(value, 1);
             put_u32(value, field);
+        }
+        None => put_u8(value, 0),
+    }
+}
+
+fn put_optional_u64(value: &mut Vec<u8>, field: Option<u64>) {
+    match field {
+        Some(field) => {
+            put_u8(value, 1);
+            put_u64(value, field);
+        }
+        None => put_u8(value, 0),
+    }
+}
+
+fn put_optional_fixed_32(value: &mut Vec<u8>, field: Option<[u8; 32]>) {
+    match field {
+        Some(field) => {
+            put_u8(value, 1);
+            put_fixed(value, &field);
         }
         None => put_u8(value, 0),
     }
@@ -535,7 +604,7 @@ mod tests {
 
     fn result() -> OwnerBoundAgentResult {
         OwnerBoundAgentResult {
-            session: AgentSessionIdV1::new([21; 16]),
+            session: AgentSessionIdV1::new([8; 16]),
             turn: AgentTurnIdV1::new([22; 16]),
             execution: ExecutionIdV1::new([23; 16]),
             task_attempt: TaskAttemptRefV1 {
@@ -548,6 +617,28 @@ mod tests {
             finished_cursor: 2,
             output_digest: digest(BODY.as_bytes()),
             bytes: BODY.as_bytes().to_vec(),
+        }
+    }
+
+    fn participation() -> agent::ParticipationViewV1 {
+        agent::ParticipationViewV1 {
+            binding: review().actor_participation.participation,
+            revision: 10,
+            phase: agent::PhaseV1::Terminal,
+            session_revision: Some(11),
+            last_event_cursor: Some(2),
+            profile_document_digest: Some([24; 32]),
+            capabilities: agent::CapabilitiesV1::default(),
+            active_turn: None,
+            permission: None,
+            terminal: Some(agent::TerminalEvidenceV1 {
+                turn: agent::AgentTurnIdV1([22; 16]),
+                disposition: agent::DispositionV1::Completed,
+                stop_reason: agent::StopReasonV1::EndTurn,
+                output_digest: digest(BODY.as_bytes()).into_bytes(),
+                provider_evidence_digest: [25; 32],
+            }),
+            pending: None,
         }
     }
 
@@ -571,8 +662,12 @@ mod tests {
 
     #[test]
     fn issues_stable_content_free_receipt_for_exact_owner_evidence() {
-        let first = qualify_strict_j1_review_evidence(&review(), &result(), &page()).unwrap();
-        let second = qualify_strict_j1_review_evidence(&review(), &result(), &page()).unwrap();
+        let first =
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &page())
+                .unwrap();
+        let second =
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &page())
+                .unwrap();
 
         assert_eq!(first, second);
         assert_eq!(first.task_attempt.attempt_number, 2);
@@ -588,22 +683,65 @@ mod tests {
         let mut wrong_key = result();
         wrong_key.task_attempt.task_key = [99; 16];
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &wrong_key, &page()),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &wrong_key, &page()),
             Err(StrictJ1ReviewRefusalV1::TaskKeyMismatch)
         );
 
         let mut wrong_incarnation = result();
         wrong_incarnation.task_attempt.task_incarnation = 5;
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &wrong_incarnation, &page()),
+            qualify_strict_j1_review_evidence(
+                &review(),
+                &participation(),
+                &wrong_incarnation,
+                &page()
+            ),
             Err(StrictJ1ReviewRefusalV1::IncarnationMismatch)
         );
 
         let mut wrong_attempt = result();
         wrong_attempt.task_attempt.attempt_number = 3;
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &wrong_attempt, &page()),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &wrong_attempt, &page()),
             Err(StrictJ1ReviewRefusalV1::AttemptMismatch)
+        );
+    }
+
+    #[test]
+    fn refuses_participation_session_turn_cursor_and_digest_substitution() {
+        let mut wrong_binding = participation();
+        wrong_binding.binding.profile = agent::ProfileIdV1([99; 16]);
+        assert_eq!(
+            qualify_strict_j1_review_evidence(&review(), &wrong_binding, &result(), &page()),
+            Err(StrictJ1ReviewRefusalV1::ParticipationMismatch)
+        );
+
+        let mut wrong_session = result();
+        wrong_session.session = AgentSessionIdV1::new([99; 16]);
+        assert_eq!(
+            qualify_strict_j1_review_evidence(&review(), &participation(), &wrong_session, &page()),
+            Err(StrictJ1ReviewRefusalV1::SessionMismatch)
+        );
+
+        let mut wrong_turn = result();
+        wrong_turn.turn = AgentTurnIdV1::new([99; 16]);
+        assert_eq!(
+            qualify_strict_j1_review_evidence(&review(), &participation(), &wrong_turn, &page()),
+            Err(StrictJ1ReviewRefusalV1::TurnMismatch)
+        );
+
+        let mut wrong_cursor = participation();
+        wrong_cursor.last_event_cursor = Some(3);
+        assert_eq!(
+            qualify_strict_j1_review_evidence(&review(), &wrong_cursor, &result(), &page()),
+            Err(StrictJ1ReviewRefusalV1::TerminalCursorMismatch)
+        );
+
+        let mut wrong_digest = participation();
+        wrong_digest.terminal.as_mut().unwrap().output_digest = [99; 32];
+        assert_eq!(
+            qualify_strict_j1_review_evidence(&review(), &wrong_digest, &result(), &page()),
+            Err(StrictJ1ReviewRefusalV1::TerminalDigestMismatch)
         );
     }
 
@@ -612,21 +750,26 @@ mod tests {
         let mut wrong_id = page();
         wrong_id.messages[0].message_id = MessageIdV1::new([42; 16]);
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &wrong_id),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &wrong_id),
             Err(StrictJ1ReviewRefusalV1::MessageIdentityMismatch)
         );
 
         let mut wrong_author = page();
         wrong_author.messages[0].author = "substitute-agent".into();
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &wrong_author),
+            qualify_strict_j1_review_evidence(
+                &review(),
+                &participation(),
+                &result(),
+                &wrong_author
+            ),
             Err(StrictJ1ReviewRefusalV1::MessageAuthorMismatch)
         );
 
         let mut wrong_body = page();
         wrong_body.messages[0].body.push_str(" changed");
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &wrong_body),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &wrong_body),
             Err(StrictJ1ReviewRefusalV1::MessageBodyMismatch)
         );
     }
@@ -636,28 +779,28 @@ mod tests {
         let mut stale = page();
         stale.revision = 19;
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &stale),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &stale),
             Err(StrictJ1ReviewRefusalV1::AgoraRevisionStale)
         );
 
         let mut evicted = page();
         evicted.oldest_retained_sequence = 5;
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &evicted),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &evicted),
             Err(StrictJ1ReviewRefusalV1::RetentionGap)
         );
 
         let mut truncated = page();
         truncated.next = Some(PageCursorV2(7));
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &truncated),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &truncated),
             Err(StrictJ1ReviewRefusalV1::TruncatedObservation)
         );
 
         let mut ambiguous = page();
         ambiguous.messages.push(ambiguous.messages[0].clone());
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &result(), &ambiguous),
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &ambiguous),
             Err(StrictJ1ReviewRefusalV1::MessageAmbiguous)
         );
     }
@@ -666,18 +809,28 @@ mod tests {
     fn independently_defends_the_owner_result_digest() {
         let mut invalid = result();
         invalid.output_digest = ContentDigestV1::new([0; 32]);
+        let mut invalid_participation = participation();
+        invalid_participation
+            .terminal
+            .as_mut()
+            .unwrap()
+            .output_digest = [0; 32];
         assert_eq!(
-            qualify_strict_j1_review_evidence(&review(), &invalid, &page()),
+            qualify_strict_j1_review_evidence(&review(), &invalid_participation, &invalid, &page()),
             Err(StrictJ1ReviewRefusalV1::OutputDigestMismatch)
         );
     }
 
     #[test]
     fn owner_revision_changes_produce_a_distinct_receipt() {
-        let first = qualify_strict_j1_review_evidence(&review(), &result(), &page()).unwrap();
+        let first =
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &page())
+                .unwrap();
         let mut later_page = page();
         later_page.revision += 1;
-        let later = qualify_strict_j1_review_evidence(&review(), &result(), &later_page).unwrap();
+        let later =
+            qualify_strict_j1_review_evidence(&review(), &participation(), &result(), &later_page)
+                .unwrap();
 
         assert_ne!(first.receipt_digest, later.receipt_digest);
     }
