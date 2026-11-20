@@ -146,8 +146,12 @@ read-only, and presentation bytes remain bounded process output with no output
 path or Vellum publication authority. Catalogue presence grants none of these
 commands; Daimon and Aegis still admit and reauthorize each one independently.
 `rune.source.validate.v1` remains unavailable: current Scry success emits the
-complete typed IR, and merely raising an output bound would not provide a
-content-minimal validation verdict.
+complete typed IR. The required owner seam instead captures those exact bytes
+in a private bounded Rune buffer and returns only verdict, identities, source
+and IR digests, sizes, and nonclaims. A separately authorized Vellum operation
+may then propose the buffered IR as a revision-bound derived artifact. Merely
+raising an output bound would disclose the IR to the model and does not satisfy
+this boundary.
 
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
 It currently names Rune's content-minimal source-validation verdict, Oculus's
@@ -221,11 +225,14 @@ lineage, and Vellum's existing bounded workspace/change-set items own editor
 publication. Their dependency linkage must remain visible before the frontier
 worker can become operational.
 
-Rune `16615a0` now dogfoods this target as the canonical
-`bounded-agent-development` machine. Its 11 states and 18 transitions make
+Rune `16615a0`, refined by `2231332`, now dogfoods this target as the canonical
+`bounded-agent-development` machine. Its 12 states and 19 transitions make
 ensemble fitness, design admission, machine validation, fail-closed projection,
-Vellum proposal/publication reconciliation, independent verification and human
-acceptance explicit. Focused qualification proves every authored context is
+Vellum proposal/publication reconciliation, candidate freeze, independent
+verification and human acceptance explicit. Before IV&V, Vellum binds one exact
+candidate identity and the designing ensemble loses mutation authority over
+it; any revision is a new candidate that repeats validation. Focused
+qualification proves every authored context is
 fold-resolvable, mandatory stages dominate terminal acceptance, Markdown
 projection is losslessly recoverable, and the current Rust executable refuses
 before bytes because precondition and provenance semantics are still missing.

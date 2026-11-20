@@ -2588,16 +2588,24 @@ Operational means observable completed work, not a configured role name:
   `rune-compiler-supervisor-semantic-parity`, and the bounded Vellum
   workspace/change-set items must be dependency-linked rather than replaced by
   another umbrella task.
-- Rune `16615a0` converts that design into the canonical 11-state,
-  18-transition `bounded-agent-development` machine and runs the proposed
-  toolchain on itself. Scry and Dendrite corpus validation pass; graph proof
-  shows ensemble fit, machine validation, change proposal, verification and
-  human review cannot be bypassed; Smith's Markdown projection round-trips;
+- Rune `16615a0`, refined by `2231332`, converts that design into the canonical
+  12-state, 19-transition `bounded-agent-development` machine and runs the
+  proposed toolchain on itself. Scry and Dendrite corpus validation pass; graph proof
+  shows ensemble fit, machine validation, change proposal, candidate freeze,
+  verification and human review cannot be bypassed; Smith's Markdown projection round-trips;
   and its Rust projection writes no bytes while executable provenance and
   precondition enforcement remain unsupported. Pantheon-hosted Vellum loaded
   the exact machine and selected its first substantive question, “do we have
   the right ensemble?” The machine therefore supplies executable backlog and
   acceptance structure without pretending the no-shell runtime is operational.
+  The machine requires Scry's complete typed IR to be retained in a private
+  bounded buffer; the design agent receives only a minimal digest-bound receipt,
+  and only a separately authorized Vellum operation may propose those exact
+  bytes. Definitive publication freezes an exact IV&V candidate and removes the
+  designing ensemble's mutation authority over that identity. A requested
+  change creates a new candidate and repeats validation rather than altering
+  verified input. The Rune buffer and Vellum proposal owner surfaces remain
+  explicit gaps rather than simulated execution.
 - Pantheon now exposes the safe design-proof subset as three independently
   admissible component-native owner-tool catalogue entries:
   `rune.machine-path.validate.v1`, `smith.compatibility.inspect.v1`, and
@@ -2606,7 +2614,10 @@ Operational means observable completed work, not a configured role name:
   deployment-owned complete argv with no model-supplied arguments, and remains
   `operational=false`. Dogfooding rejected `rune.source.validate.v1` from the
   catalogue because current Scry success emits the complete typed IR; a larger
-  output ceiling would bound but not minimize that disclosure. `pantheon
+  output ceiling would bound but not minimize that disclosure. The missing
+  seam is a Rune-owned private buffer and content-minimal receipt composed with
+  a separately authorized Vellum derived-artifact proposal, not a model-visible
+  quiet flag. `pantheon
   agent-tools` separately reports content-minimal Rune validation, executable
   Smith projection and Vellum change-set proposal as unavailable with
   `aggregate_fallback=false`. `make qualify-bounded-agent-development` proves

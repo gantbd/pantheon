@@ -610,8 +610,8 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
     AgentToolGap {
         component: "rune",
         surface: "rune.source.validate.v1",
-        missing: "a content-minimal validation verdict bound to exact source identity; current Scry success emits the complete typed IR",
-        next_boundary: "add and qualify a Rune-owned quiet validation verdict without duplicating Scry semantics; do not treat a larger Daimon output bound as disclosure minimization",
+        missing: "a Rune-owned private bounded typed-IR buffer plus a content-minimal validation receipt bound to exact source and IR digests; current Scry success emits the complete typed IR",
+        next_boundary: "compose Scry behind a bounded Rune adapter that retains exact IR bytes outside model output, returns only verdict, identities, digests, sizes, and nonclaims, and permits a separately authorized Vellum derived-artifact proposal; never expose IR merely by increasing the Daimon output limit",
     },
     AgentToolGap {
         component: "smith",
@@ -622,8 +622,8 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
     AgentToolGap {
         component: "vellum",
         surface: "workspace.changeset.propose.v1",
-        missing: "a bounded revision-bound multi-document proposal port with diff, conflict, validation, atomic publication, uncertain-write lookup, and owner receipts",
-        next_boundary: "qualify the Vellum change-set owner contract; Smith supplies bounded bytes and lineage but never an arbitrary path or direct workspace write",
+        missing: "a bounded revision-bound multi-document and derived-artifact proposal port with diff, conflict, validation, atomic publication, uncertain-write lookup, candidate freeze, authority transition, and owner receipts",
+        next_boundary: "qualify the Vellum change-set owner contract; Rune and Smith supply exact buffered bytes plus lineage under separate authority but never an arbitrary path or direct workspace write, and the designing ensemble loses mutation authority over a frozen IV&V candidate",
     },
 ];
 

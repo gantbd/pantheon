@@ -60,6 +60,15 @@ for gap in [
     if gap not in gaps or gaps[gap]["aggregate_fallback"] is not False:
         raise SystemExit(f"missing fail-closed gap {gap}")
 
+rune_gap = gaps[("rune", "rune.source.validate.v1")]
+if "private bounded typed-IR buffer" not in rune_gap["missing"]:
+    raise SystemExit("Rune validation gap does not retain typed IR privately")
+if "Vellum derived-artifact proposal" not in rune_gap["next_boundary"]:
+    raise SystemExit("Rune validation gap does not separate Vellum publication authority")
+vellum_gap = gaps[("vellum", "workspace.changeset.propose.v1")]
+if "loses mutation authority" not in vellum_gap["next_boundary"]:
+    raise SystemExit("Vellum gap does not freeze designer mutation before IV&V")
+
 required = {entry["semantic_capability"]: entry for entry in role["required_tools"]}
 for capability in expected:
     if required[capability]["candidate_disposition"] != "included":
