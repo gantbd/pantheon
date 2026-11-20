@@ -2,9 +2,11 @@
 
 Date: 2026-11-20
 
-Status: proposed composition awaiting named-human ensemble-fit and topology
-decision; no admitted Rune topology, generated projection, Vellum mutation,
-task effect, go/no-go or rollout authority
+Status: named human sponsor approved the ensemble and option-one topology;
+source-level invoked-child preservation qualified at Rune commit `23bac56`;
+the thin composition Rune validates and has a complete Smith Rust projection;
+runtime adapter composition remains open, and no Vellum mutation, task effect,
+go/no-go or rollout authority follows
 
 ## Exact owner question boundary
 
@@ -157,7 +159,7 @@ Rust target without one of three weaker substitutions:
   child settlement; or
 - perform an opaque Rust adapter handoff outside the compiled obligation set.
 
-All three are rejected as completion claims. The recommended prerequisite is
+All three are rejected as completion claims. The recommended prerequisite was
 to close the narrow source-to-Rust invocation seam: admit and validate an exact
 edge child invocation in Scry, lower it losslessly into the existing typed IR,
 make Smith Rust require an explicit child success/refusal/unknown verdict before
@@ -166,6 +168,15 @@ non-success child into parent success. Existing target behavior must not be
 reduced, and unsupported targets must continue to refuse rather than emit
 weaker executables.
 
+That prerequisite qualified on 2026-11-20 at Rune commit `23bac56`. Scry now
+admits one singular `(invoke CHILD)` edge clause and lowers it into the existing
+typed IR. Smith Rust requires the runtime adapter to return `Succeeded`,
+`Refused`, or `Unknown`; refused and unknown children remain typed parent
+refusals and only exact success makes the edge eligible. The public
+Rune→Scry→Smith→rustc→execution gate proves the behavior and rejects two
+child identities on one edge. Recursive multi-level orchestration remains
+unqualified and is not needed by this version-one parent.
+
 Once that prerequisite qualifies, the composition Rune should remain thin:
 its upstream states own blueprint questions, qualified projection and additive
 risk eligibility; its publication edge invokes the existing
@@ -173,6 +184,17 @@ risk eligibility; its publication edge invokes the existing
 human arming, edit uncertainty and persistence. The flattened state list above
 remains an end-to-end presentation of the composite trace, not a second source
 of the child's laws.
+
+The admitted source is
+`design/runes/pantheon-rune-blueprint-publication.machine.rune`, with generated
+Rust at `design/generated/pantheon_rune_blueprint_publication.rs`. Scry accepts
+the exact source and Smith reports Rust compatibility `complete` with no
+unsupported semantics. The parent contains only blueprint clarification,
+projection qualification, additive risk admission, upstream refusal and one
+invoked-child success edge. It does not copy the child's preview, arming, edit,
+uncertainty or persistence states. Projection qualification is compiler
+evidence, not proof that Pantheon's runtime adapter has completed the in-memory
+composition; that implementation and its real-slice measurement remain open.
 
 ## Threat and leakage review
 
@@ -237,16 +259,16 @@ Equity means every owner may refuse misuse of its boundary, challengers retain
 attributed dissent, and model or owner consensus cannot outvote the named human
 gate.
 
-## Human gate
+## Human gate decision
 
-The named sponsor must answer both questions before the topology is encoded in
-a Rune author request:
+Brian, the named human sponsor, answered both questions on 2026-11-20:
 
 1. Do we have the right ensemble for this bounded composition slice?
 2. Do you approve option 1, the thin in-memory composition over the existing
    blueprint and packet-publication adapters, as the version-one topology to
    author and qualify?
 
-Approval answers only these design questions. It is not acceptance of any
+The ensemble is fit for this bounded slice, and option 1 is approved as the
+version-one topology. Approval answers only these design questions. It is not acceptance of any
 generated design, authorization to publish a particular packet, Chronos
 completion, go/no-go or rollout approval.

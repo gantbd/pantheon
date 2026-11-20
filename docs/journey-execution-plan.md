@@ -4499,6 +4499,26 @@ Rust invocation seam before Pantheon claims a holofractal composition. This is
 directionally correct substrate with a real missing projection, not permission
 to weaken the machine or return to JSON as authority.
 
+That seam is now qualified at Rune commit `23bac56`. Scry admits exactly one
+`(invoke CHILD)` clause on an edge and lowers the child identity into typed IR.
+Smith Rust emits a closed `Succeeded | Refused | Unknown` settlement verdict,
+defaults existing evaluators to `Unknown`, and allows only exact success to make
+the parent edge eligible. Its generated-code unit test and public
+Rune→Scry→Smith→rustc→execution gate prove refused and unknown children do
+not advance; a mutation that removes the settlement check fails the oracle.
+Duplicate child identities refuse at Scry. Existing Gleam behavior remains and
+unsupported targets still refuse.
+
+The sponsor-approved thin parent is now canonical Rune at
+`design/runes/pantheon-rune-blueprint-publication.machine.rune`, with its exact
+Smith Rust projection committed under `design/generated/`. Compatibility is
+complete with no unsupported semantics. The parent owns only clarification,
+projection qualification, additive risk admission and upstream refusal; its
+single publication edge invokes `pantheon-rune-packet-publication`. It does not
+copy the child's preview, human arming, edit uncertainty or persistence law.
+The remaining critical work is the in-memory Pantheon adapter and a measured
+manual-versus-composed real slice; projection alone is not operational proof.
+
 ### Non-critical discovery — bounded Rune-native executables
 
 The sponsor identified a strong later Smith target: compile Rune's deliberately
