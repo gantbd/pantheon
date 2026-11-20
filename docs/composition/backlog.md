@@ -45,7 +45,9 @@ read-only input until that repository settles.
   closes the actual J1 trusted-worker path with an additive V6 namespace record
   atomically retained beside the unchanged V1 attempt binding. Exact replay,
   changed-name conflict, V1/V2 upgrade, SQLite reopen and real Chronos recovery
-  are qualified. Add a bounded public observation port and qualify the separate
+  are qualified. Revision `e851edc` adds the bounded journey-scoped read-only
+  protocol, service, canonical wire and client observation; exact SQLite reopen,
+  redaction and authoritative absence are qualified. Qualify the separate
   Chronos scope relationship. Participation also binds the Daimon
   session and task attempt but not the authenticated Agora actor; add replayable
   owner evidence for that relationship. Pantheon must not hash an unbound task

@@ -3766,3 +3766,25 @@ The real `rune-author` boundary remains `questions_pending`, emitted no
 candidate and preserved the same four genuine semantic paths plus the known
 duplicate ensemble-fit diagnostic.
 
+Moira revision `e851edc` closes the next active-path boundary: the existing
+task-agent journey read-only family now exposes the V6 namespace binding by
+exact journey identity through public protocol, authorization-first service,
+canonical wire and client facade. The wire rejects truncation, tails, invalid
+UTF-8 and out-of-bound task IDs; diagnostics redact both task key and task ID.
+A real SQLite test closes and reopens the store before observing the exact task
+ID/incarnation/attempt/revision, and the read-only client is journey-scoped.
+Source evidence is
+`sha256:605dae4f19b28ac1ac0e8dc29d911dc89933e2de8ec6b33b942834f229886c91`,
+`sha256:1a4c6216781d20c6145b568c9165c2f779f9de051d73b96a944871c83e29bb9c`
+and
+`sha256:8e66d20bb30ae57d776b8af1ff10243c26e1da0c8e57f765818feeda33e670b8`.
+This closes bounded public observation, not ambient Chronos scope,
+task-conversation qualification or actor-to-participation identity. The J1
+authoring hole now consumes the owner observation directly and retains those
+separate joins.
+The revised authoring request identity is
+`30f1dfe552ecebd6a78b8e280ae0f555ac393d38757b3ea6c4f3f420c033f6ce`;
+the real `rune-author` boundary remains `questions_pending`, emitted no
+candidate and retained four genuine semantic paths plus the known duplicate
+ensemble-fit diagnostic.
+
