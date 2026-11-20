@@ -242,8 +242,8 @@ proves normal progression, restart, conflict recovery and zero additional
 worker requests during rebind. This remains claim evidence, not a lease bearer,
 Aegis delegation, participation, session, provider invocation or completion.
 
-The next deterministic and durable relationship edge is implemented but not
-yet production-composed. Moira now prepares the exact revision-bound Agora room
+The next deterministic and durable relationship edge is now production-
+composed for one retained Agora client identity. Moira prepares the exact revision-bound Agora room
 request before dispatch, retains the Agora outcome before returning, and
 advances the journey from `TaskAttemptReady` to `RoomReady` only from the exact
 owner/sequence/revision receipt. Outcome-unknown recovery repeats the identical
@@ -251,10 +251,16 @@ Agora request identity; a journey-store conflict after room creation returns
 the successful room receipt, and bind-only recovery performs zero additional
 Agora calls. Canonical checkpoint V3 upgrades admitted V1 and task-attempt V2,
 SQLite retains the relationship transactionally, and the read-only protocol
-projects it. The remaining production gate is a durable room-adapter checkpoint
-store plus a real authenticated Agora/Aegis process qualification. Until that
-gate passes, this is qualified core/adapter evidence, not an operational room
-worker or retained Aegis decision attribution.
+projects it. Moira `2965bb7` adds the production SQLite adapter checkpoint
+owner and qualifies it across a real local Agora daemon plus the command-scoped
+Aegis verifier. Connect, create and disconnect each require a fresh `Submit`
+decision; durable replay causes no further peer command or decision. The proof
+does not cross a new Agora client session: reconnect changes request identity,
+so exact authenticated room observation and match/absence/conflict
+reconciliation remain required before safe identity rotation. Standalone Aegis
+process qualification and retained non-bearer decision attribution also remain
+open. This is an operational same-client room worker, not yet complete
+crash/reconnect recovery or participation admission.
 
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
