@@ -3723,3 +3723,46 @@ The real `rune-author` binary returned `questions_pending` and
 `clarification-required`, emitted no candidate and retained the four genuine
 semantic paths plus the known duplicate ensemble-fit diagnostic.
 
+The first owner observation in revision `9a5836a` is valid reusable evidence,
+but reuse inspection found that its `ChronosReceiver` is not the active
+`moira-chronos-worker` task-agent journey used by J1. Treating it as the J1 port
+would have created a parallel truth surface while preserving the actual loss.
+Moira revision `0c34a72` therefore repairs the active path instead: checkpoint
+V6 atomically retains a separate `TaskAttemptNamespaceBindingV1` beside the
+unchanged V1 attempt binding, and the trusted worker supplies the exact
+Chronos-owned `TaskId` observed during claim. Exact replay is required;
+changed identity conflicts; a store unable to return the namespace fences the
+worker. Versions 1 through 5 remain readable and upgrade without invented
+namespace evidence.
+
+Qualification passed 17 task-agent domain tests, four persistence and V1/V2
+upgrade tests, the real SQLite journey integration, and four real Chronos
+trusted-worker recovery tests including bind-only recovery after storage
+conflict. The exact active-path evidence is
+`sha256:335013d7dd5cdef20a16f4ca896d85f288ef7b77e99ce85bebe2a8b2b6a9795a`,
+`sha256:7410eac05ef189f683ea2b7fdccaf0fd9840272285c68f10d3df49fa74915203`
+and
+`sha256:be776c7f1d84e8b25d0e831ca40177db13d274675f8e7ba4545e66c8e2f59dc1`.
+The remaining task-namespace work is a bounded public observation and the
+separate owner-qualified Chronos scope join, not retention of the task ID.
+
+The same fresh downstream check exposed that Daimon revision `d2ae32f` had
+added an exact terminal `AgentResultBindingV1` while Moira's agent projection
+still dropped the new outcome. Moira revision `c6c31ac` closes that boundary
+with an additive read-only session/turn command and complete independent DTO,
+wire, client, authorization and adapter projection. Canonical wire mutation
+tests, exact adapter projection, read-only client and downstream all-target
+checks pass. `Inspect` and `Events` explicitly reject a result-shaped reply as
+invalid provider evidence. The source evidence is
+`sha256:9a0c02edbd74ff79ac8c77075bfc124edfb10dd2c2ad463388a8bc9a991b0ac0`,
+`sha256:6998f477281d9714c2d763e4675aae3f85eee91021ff8085cb8f0bd8327ba539`
+and
+`sha256:f6ecfc18d52ab97ddf5522bd51fc4c0ef18c7ac301fcb3bb9cfed0a838f0f19a`.
+This closes Moira's result-observation representation boundary only; it does
+not settle, publish, link, mutate Chronos, accept or mark Done.
+The revised J1 authoring request identity is
+`6a28d3ec9ab7f343c5a14c5cf356f69a9fb237391625ba923b21dd7bcaa56a62`.
+The real `rune-author` boundary remains `questions_pending`, emitted no
+candidate and preserved the same four genuine semantic paths plus the known
+duplicate ensemble-fit diagnostic.
+

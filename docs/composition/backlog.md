@@ -40,15 +40,25 @@ read-only input until that repository settles.
   delivery, acceptance or completion.
 - [ ] Close the remaining J1 namespace bindings at their owners. The trusted
   worker observes the external binary task key and exact Chronos task name but
-  the durable journey drops the name. Moira revision `9a5836a` now exposes a
-  versioned, read-only owner observation of the exact retained key/task-ID/
-  incarnation/admission-revision binding and validates it against the recovered
-  Chronos engine. Add its bounded cross-process observation port and qualify the
-  separate Chronos scope relationship. Participation also binds the Daimon
+  the durable journey previously dropped the name. Moira revision `9a5836a`
+  exposes that binding from the separate execution receiver; revision `0c34a72`
+  closes the actual J1 trusted-worker path with an additive V6 namespace record
+  atomically retained beside the unchanged V1 attempt binding. Exact replay,
+  changed-name conflict, V1/V2 upgrade, SQLite reopen and real Chronos recovery
+  are qualified. Add a bounded public observation port and qualify the separate
+  Chronos scope relationship. Participation also binds the Daimon
   session and task attempt but not the authenticated Agora actor; add replayable
   owner evidence for that relationship. Pantheon must not hash an unbound task
   name, trust deployment configuration, infer scope, or equate an Agora actor
   label with an admitted agent session.
+- [x] Project Daimon's content-free terminal agent-result binding through
+  Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
+  exact session/turn command, complete result DTO, canonical wire, client,
+  authorization and Daimon adapter projection. It preserves execution, task
+  attempt, principal/profile, operation/authority, prompt/context digests,
+  terminal interval, disposition and output digest; canonical wire, adapter,
+  client and downstream all-target checks pass. It grants no publication, task
+  mutation, acceptance, retry or rollout authority.
 - [ ] Make `rune-author` question output path-stable and nonduplicating without
   semantic loss. The revised J1 request has four unique unresolved paths, but
   `$.review.ensemble_fit` is emitted once from the explicit evidence-rich hole
