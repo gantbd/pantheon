@@ -182,6 +182,14 @@ returned. Mu may originate, interrupt, reframe or dispose the inquiry without
 being compiled into a Boolean predicate. Held-quantum plurality may remain
 plural rather than being forced back into one maybe or averaged into consensus.
 
+A child inquiry's refusal is not the parent claim's Boolean `false`. Refusal is
+a typed operational return: the request may be invalid, evidence may be absent
+or stale, an effect may be prohibited, an owner may be unavailable, or a
+bounded inquiry may simply be unable to decide. The parent remains in the Maybe
+Machine unless the returned evidence separately qualifies a Bool admission.
+Only a typed, owner-attributable refutation can support `false`; transport
+failure, silence, conflict, policy denial and inability to compose cannot.
+
 Bounded experimentation and control challenge are one important transition
 family inside the Maybe Machine. Here surprising behavior is valuable evidence,
 and a control may itself be the hypothesis under test.
