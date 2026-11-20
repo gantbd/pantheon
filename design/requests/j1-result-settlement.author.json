@@ -1,0 +1,320 @@
+{
+  "version": 1,
+  "dialect": {"kind": "machine", "version": 1},
+  "review": {
+    "human": "Brian, declared human sponsor in the governing Pantheon thread",
+    "ensemble_fit": "contested",
+    "evidence": [
+      "sha256:14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8",
+      "sha256:acd8acc54a66307fc28e3a7ef4cf27c67e81362c0ba287d97eb5de48c932cfeb",
+      "sha256:60acba7fb15921c5d1e3e84526febbeef571b925fd2e8c6d9732e921771b2a6a",
+      "sha256:9da415b103c0f09415643ff2e1ef1fbe1d3e94788302cbf7cd497679b16e9ece",
+      "sha256:de3150670d07a429a07f42f340b8bc4c3750dcb9b8fb5068b2d5a0f5569d7b54",
+      "sha256:6dd2f34270a277c99ba68f5a02469f0148e1259a63f14aedd7f7837abdb7c4bc",
+      "sha256:449d690a491f30f91c5e12a1c27e0b7f91946726f0e087cb1959a61ba4fa7e56",
+      "sha256:31ad8078909f4f0abf4bda6935b4b3db9511faeab297f37b13f8f070a30cafde",
+      "sha256:32f6d9bf59945b4f6000ce202ff8ab7acaad6b1e8f9b1487edcb95f5465aea13",
+      "sha256:f9bad45fb5d06479bda9f0a91acfe2e591ee8ea2ac0ec16ed3281533862b41e5",
+      "sha256:b72422c8d0bcd8780efd72a07fd5fa834ee7d096d19c20c07aa2af0a68a38edf",
+      "sha256:ed55f2bdef177d77ef17b9bdf48e3cb019a8edd441ae92e4090a0ebfb73106ae",
+      "sha256:29db26c2772200a8940c4b7af013f6624c4cfe57600151ba48083b22e723edbb",
+      "sha256:7396fef782fe7e1dce326c39b489e9d1135f0a5c1146ee5d59c6aabf6eeb9ac2",
+      "sha256:0230b082daccb355090e8c8c0f513da6bbf9947e5642a4416c320747e4e2cf05",
+      "sha256:3f4c2d749131b1bf4f5e7d2adc8212b32d2d9a7bc87224d9f119c1bc5df6c87e",
+      "sha256:d913e8238718eb57b20cdd6bdb72bc8553650cc7b7889724d97bf1d2a39cc66c",
+      "sha256:35e743059455c7c3c7538d5c59f81fb27c2bd0cc1155612cd1f5991d5ad904f2",
+      "sha256:faccacafa490900c5bf013b2962e41a2cb145ceac269afee9eed97fac786439b",
+      "sha256:b07b92a695c9d1f6039229e7a592d901b305dfbd22de8232376860f3c1ad397d",
+      "sha256:1afdcebc265de5d5665b1ff02df86515a118070190c91239473f1632da96210d",
+      "sha256:009b40b5c88ee9a6bb4a71bc32b3ed8f2d70a2710c3e0c495697a4ecb0ba5f65",
+      "sha256:36d865c0085f98ac03f0d6523bfdd3298056f93a7a1909279a3f2e6ef27dd7ee",
+      "sha256:f0893379e16b226b253173a1d75928d2627dbac53e01e07ca9561c6019e0b432",
+      "sha256:d420b13318784a313a50adfcb2379b76b9ea851bff730ee6d4eb46d96df3d7c2",
+      "sha256:b7fa1cf575d22579701f02950f6b5d8b2634111272b9a8f33ad10399ac40ecec",
+      "sha256:513bb3f21d8ca2725cf166b489f07bf1ce6f6586985bf3bb05e434aa80a951ca",
+      "sha256:7cb8c52d51369dbf9e428fc289e08c03c88f3982cb526f59ab5dda91598261cd"
+    ],
+    "dissent": [
+      "Dendrite routed architecture, network, identity, data, security, distributed-systems, and humanism groundings, but formal-methods, agent-systems, operator, and ensemble roles have no fold routes for this context.",
+      "The expanded content-projection review also routed privacy-engineering, observability, tester, rigor, and auditor; result bytes remain untrusted content, must be minimized for the task-linked audience and retention purpose, and cannot become tool or action instructions.",
+      "Grounded SME bodies are advisory evidence, not independently attributed stakeholder reports or proof of standing, equity, independence, agreement, approval, or authority.",
+      "A qualified model result and successful execution justify Ready for Review only; neither completes human acceptance nor authorizes Done."
+    ]
+  },
+  "holes": [
+    {
+      "path": "$.review.ensemble_fit",
+      "category": "stakeholder-standing",
+      "question": "Which independently attributable representatives with standing cover the human sponsor and acceptance owner, affected operator, local-agent participant, and Agora, Moira, and Chronos owner boundaries, and what dissent or conflict remains after equitable review?"
+    },
+    {
+      "path": "$.journey.acceptance-composition",
+      "category": "owner-composition",
+      "question": "Which owner-bound adapter binds the existing user-acceptance-driven-development machine's exact accepted signal, named acceptance principal, challenged delivered version, criteria and finding dispositions to Chronos's revision-bound ReadyForReview-to-Done transition, with refusal and outcome-unknown reconciliation but no agent, test, ensemble or silence able to impersonate acceptance?"
+    },
+    {
+      "path": "$.machine.edges[publication-accepted->review-ready-with-result].precondition",
+      "category": "owner-composition",
+      "question": "Which qualified Pantheon composite consumes Moira's existing exact effect/source/room-bound PublishedV1 and the current exact Chronos ReadyForReview observation to produce J1 review-link evidence without parsing JSON or inventing delivery, acceptance, task mutation, or Done authority?"
+    },
+    {
+      "path": "$.projection.strict-evaluator",
+      "category": "semantic-preservation",
+      "question": "Which qualified Pantheon wrapper feeds only closed typed owner outcomes into the forged evidence controller, refuses when zero or multiple outgoing preconditions are eligible, and prevents the generated chooser from selecting among contradictory evidence or performing any owner effect?"
+    }
+  ],
+  "projection": "rust",
+  "machine": {
+    "name": "j1-result-settlement",
+    "rosetta": {
+      "intent": "control evidence-preserving settlement and publication of one qualified local-agent result through Ready for Review with an attributable linked result",
+      "values": ["semantic-preservation", "owner-preservation", "uncertainty-honesty", "human-gating"],
+      "outcomes": ["the exact attempt is settled by Moira and observed Ready for Review in Chronos before the exact result is published by the authenticated local-agent participant and linked by qualified receipt evidence"],
+      "who": "the Pantheon composition host observing Agora, Moira, and Chronos owner evidence under the accountable human sponsor",
+      "what": "a pure evidence controller for one settlement-first J1 result saga",
+      "when": "after one Daimon result has both bounded content qualification and an owner-issued binding to the exact execution and task attempt",
+      "where": "the owner-preserving composition boundary among Moira settlement, Chronos V9 observation, and Agora actor publication",
+      "why": "the board and linked conversation must agree without impersonation, blind retry, copied prose, or inferred acceptance",
+      "how": "advance only from exact typed owner receipts, preserve indeterminate outcomes, reconcile by exact replay or observation, refuse zero or multiple eligible branches, and derive output signals without performing owner effects",
+      "extent": "one qualified result through review-ready-with-result; evidence controller only with no owner effect, caller-selected author, Done transition, approval, rollout, or global transaction",
+      "examples": ["a completed local-agent result settles its exact attempt, Chronos reports Ready for Review, Agora attributes the result to the authenticated agent, and task inspection links the retained receipt"]
+    },
+    "initial": "result-qualified",
+    "states": [
+      {
+        "name": "result-qualified",
+        "context": ["identity-design-decision", "architecture-flow-review"],
+        "rosetta": {
+          "intent": "retain one exact qualified result before settlement or publication evidence exists",
+          "values": ["exactness", "non-impersonation"],
+          "outcomes": ["result bytes, digest, turn, session, execution, task incarnation, and attempt identities are bounded and attributable"],
+          "who": "the J1 composition host", "what": "the initial effect-free result evidence state", "when": "after exact Daimon content qualification and owner-issued execution/task-attempt binding", "where": "private composition state", "why": "content qualification and execution attribution must precede every owner interaction", "how": "retain immutable bounded result and owner-binding evidence without invoking an effect owner", "extent": "one owner-bound result with no settlement publication acceptance or retry authority", "examples": ["the assistant bytes match the retained completion digest for the exact turn and the owner receipt binds that turn to attempt three"]
+        }
+      },
+      {
+        "name": "result-admitted",
+        "context": ["identity-design-decision", "access-control-decision"],
+        "rosetta": {
+          "intent": "retain Moira admission evidence binding the qualified result to the exact execution attempt",
+          "values": ["source-binding", "attempt-binding"],
+          "outcomes": ["the admitted result names the owner, effect, execution, task incarnation, attempt, and completed disposition required for settlement"],
+          "who": "the owning Moira workflow and composition host", "what": "one receiver-sealed admitted Daimon result", "when": "after result qualification and before settlement preparation", "where": "the Moira result-admission boundary", "why": "qualified bytes alone do not prove settlement authority or attempt identity", "how": "match the retained owner result to the exact task and attempt identities", "extent": "evidence admission only with no Chronos mutation or lease transfer", "examples": ["Moira retains Completed for task incarnation seven attempt three"]
+        }
+      },
+      {
+        "name": "settlement-prepared",
+        "context": ["operator-transition-decision", "access-control-decision"],
+        "rosetta": {
+          "intent": "prepare exact receiver-sealed evidence for Moira settlement",
+          "values": ["precondition-validation", "private-lease"],
+          "outcomes": ["one SettlementAction Complete request is fully bound to the current exact attempt and owner revision"],
+          "who": "the Moira settlement owner holding the private live lease or recovered reconciliation path", "what": "an effect-ready but not yet claimed successful settlement offer", "when": "after exact result admission", "where": "the Moira Chronos-Daimon settlement adapter", "why": "only the execution owner can settle the attempt", "how": "validate source owner, effect, execution, task incarnation, attempt number, disposition, and expected revision", "extent": "evidence controller state only; the generated machine performs no settlement effect", "examples": ["Complete is prepared for the retained exact attempt and no other"]
+        }
+      },
+      {
+        "name": "settlement-uncertain",
+        "context": ["external-calls", "operator-transition-decision"],
+        "rosetta": {
+          "intent": "fence a settlement whose durable outcome is indeterminate",
+          "values": ["no-status-guessing", "exact-replay"],
+          "outcomes": ["no new attempt or changed settlement proceeds until the identical settlement replay resolves or conflicts"],
+          "who": "the Moira settlement owner and composition host", "what": "one unresolved exact-attempt settlement", "when": "after the owner may have committed but the result is indeterminate", "where": "the durable Moira settlement receiver", "why": "an indeterminate storage or reply outcome is neither failure nor absence", "how": "retain the identical submission, revision, evidence, action, and owner context for exact replay", "extent": "no invented settlement-absence lookup, blind retry, new attempt, or inferred Chronos status", "examples": ["the checkpoint may be committed while the caller receives an indeterminate store result"]
+        }
+      },
+      {
+        "name": "attempt-settled",
+        "context": ["operator-transition-decision", "identity-design-decision"],
+        "rosetta": {
+          "intent": "retain the exact completed settlement receipt before claiming task status",
+          "values": ["owner-evidence", "replay-safety"],
+          "outcomes": ["Moira reports the original finite settlement revision, Completed phase, and whether the result was replayed"],
+          "who": "Moira as settlement owner", "what": "one direct or replayed completed settlement receipt", "when": "after owner acceptance or exact replay", "where": "private saga evidence", "why": "settlement success must be owner-issued and distinct from a task observation", "how": "retain the exact settlement receipt without inferring downstream status", "extent": "no publication, human acceptance, or Done authority", "examples": ["matching replay returns the original settlement revision with replayed true"]
+        }
+      },
+      {
+        "name": "ready-for-review-observed",
+        "context": ["architecture-flow-review", "human-impact-decision"],
+        "rosetta": {
+          "intent": "retain an exact Chronos V9 observation that the settled task is Ready for Review",
+          "values": ["authoritative-status", "status-honesty"],
+          "outcomes": ["the observed exact task reference and revision report ReadyForReview after successful execution settlement"],
+          "who": "Chronos as task-status owner and the observing composition host", "what": "one read-only V9 task observation", "when": "after exact attempt settlement", "where": "the Chronos public observation boundary", "why": "a settlement receipt and a user-visible board status are distinct owner facts", "how": "read the exact task reference at a bounded owner revision and require ReadyForReview", "extent": "read-only status evidence with no comment store, acceptance, or Done transition", "examples": ["Chronos V9 reports the settled incarnation as ReadyForReview"]
+        }
+      },
+      {
+        "name": "publication-prepared",
+        "context": ["access-control-decision", "external-calls"],
+        "rosetta": {
+          "intent": "prepare one exact actor-bound Agora publication request after review readiness is observed",
+          "values": ["authenticated-authorship", "stable-operation-identity"],
+          "outcomes": ["the operation identity binds the trusted route's room revision, logical time, exact body, and canonical recipients while author remains host-derived"],
+          "who": "the authenticated local-agent Agora session under fresh Execute authority", "what": "one exact ActorPublicationRequestV1", "when": "after Chronos ReadyForReview observation", "where": "the Agora actor-publication port", "why": "the result must be attributable without operator or composition impersonation", "how": "resolve a deployment-owned task-conversation route whose bounded recipients are already strictly sorted deduplicated and current, bind the qualified result to a nonzero stable operation identity, and let the authenticated host derive author and admission time while preserving the route-owned logical time", "extent": "request preparation only; no model or CLI supplied route author source room revision logical time audience owner effect delivery claim acceptance or blind retry", "examples": ["the local-agent session prepares the exact result for the deployment-linked task room"]
+        }
+      },
+      {
+        "name": "publication-uncertain",
+        "context": ["external-calls", "access-control-decision"],
+        "rosetta": {
+          "intent": "fence an Agora actor publication whose transport outcome is unknown",
+          "values": ["uncertainty-honesty", "no-duplicate-effects"],
+          "outcomes": ["the identical request is observed before any exact reoffer and changed requests remain fenced"],
+          "who": "the authenticated local-agent Agora session under fresh Observe authority", "what": "one unresolved actor-publication operation", "when": "after dispatch may have reached Agora but no semantic reply is known", "where": "the actor-publication reconciliation boundary", "why": "transport failure does not prove absence", "how": "observe the identical request as Accepted, authoritative Absent, Conflict, or Unavailable", "extent": "one operation identity with no blind retry, inferred success, or changed offer", "examples": ["the socket closes after Agora may have committed the message"]
+        }
+      },
+      {
+        "name": "publication-accepted",
+        "context": ["architecture-flow-review", "identity-design-decision"],
+        "rosetta": {
+          "intent": "retain Agora's exact accepted actor-publication receipt and its qualified Moira publication-receipt adaptation",
+          "values": ["attribution", "durable-receipt"],
+          "outcomes": ["room revision, message identity, and message sequence prove accepted publication while the retained authenticated-session and authority evidence establish the local-agent attribution"],
+          "who": "Agora as conversation owner and Moira's qualified actor-publication adapter", "what": "one direct or reconciled ActorPublicationAcceptedV1 plus its effect/source/room-bound PublishedV1 and retained authenticated-session evidence", "when": "after publish or exact observation returns Accepted", "where": "private saga evidence and the linked Agora room", "why": "review material must be attributable before it is linked to the task", "how": "map only the accepted owner receipt through the retained exact PublicationIntentV1 and preserve effect, source, room sequence, Agora revision, message identity, message sequence, and the authenticated actor call provenance", "extent": "one qualified publication receipt and provenance binding with no claim that the three-field receipt alone proves author delivery task status human acceptance Done authority or copied prose", "examples": ["the real Agora process recovers a lost reply and Moira retains the original effect-bound publication receipt under the authenticated bot session"]
+        }
+      },
+      {
+        "name": "review-ready-with-result",
+        "context": ["human-impact-decision", "architecture-flow-review"],
+        "rosetta": {
+          "intent": "present one Ready for Review task with its attributable linked result evidence",
+          "values": ["user-orientation", "human-recourse", "owner-preservation"],
+          "outcomes": ["task inspection combines exact Chronos ReadyForReview evidence with a qualified link to the exact Agora actor receipt"],
+          "who": "the named human acceptance owner and observing operator", "what": "the successful terminal outcome of this evidence controller", "when": "after settlement, status observation, actor publication, and qualified receipt adaptation", "where": "the composed Chronos task and linked Agora conversation surface", "why": "a human needs review evidence without a false completion or copied conversation store", "how": "project owner receipts together while preserving correction, rejection, reopening, and separate acceptance", "extent": "review readiness only; no Done, approval, rollout, copied prose, or global transaction claim", "examples": ["the ticket is Ready for Review and links to the result authored by local-agent"]
+        }
+      },
+      {
+        "name": "attention-required",
+        "context": ["human-impact-decision", "access-control-decision"],
+        "rosetta": {
+          "intent": "surface one known refusal, conflict, or invalid evidence binding for accountable resolution",
+          "values": ["fail-closed", "actionable-feedback"],
+          "outcomes": ["the user sees the affected owner, exact operation or attempt, refusal class, retained evidence, and safe next action"],
+          "who": "the accountable operator and relevant owner", "what": "the non-success terminal state for this bounded controller run", "when": "after a known semantic refusal, evidence conflict, stale identity, revoked authority, or receipt-binding mismatch", "where": "the J1 operational feedback surface", "why": "conflict and invalid evidence must not become retry, success, acceptance, or silence", "how": "retain bounded diagnostics and orient reauthorization, correction, reconciliation, or implementation", "extent": "one bounded run with no automatic override, mutation, approval, or retry", "examples": ["an accepted actor receipt conflicts with the retained J1 publication intent"]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "from": "result-qualified", "to": "result-admitted", "signal": "result-admitted",
+        "precondition": "the exact qualified bytes and digest match a receiver-sealed Daimon result admitted by the owning Moira workflow for the same effect execution task incarnation and attempt",
+        "rosetta": {"intent": "admit exact result evidence", "values": ["source-binding"], "outcomes": ["the result is bound to one attempt"], "who": "Moira and the composition host", "what": "qualification-to-admission", "when": "after result qualification", "where": "the Moira boundary", "why": "bytes alone grant no settlement authority", "how": "match all retained identities", "extent": "evidence only", "examples": ["the admitted result matches attempt three"]}
+      },
+      {
+        "from": "result-admitted", "to": "settlement-prepared", "signal": "settlement-prepared",
+        "precondition": "the admitted Completed result source owner effect execution task incarnation and attempt match the current Moira receiver binding and exact Chronos owner revision",
+        "rosetta": {"intent": "prepare exact settlement evidence", "values": ["attempt-binding"], "outcomes": ["one Complete offer is ready"], "who": "Moira", "what": "settlement preparation", "when": "after admission", "where": "the settlement adapter", "why": "preconditions precede mutation", "how": "bind exact evidence and revision", "extent": "no owner effect", "examples": ["prepare Complete for one attempt"]}
+      },
+      {
+        "from": "settlement-prepared", "to": "attempt-settled", "signal": "settlement-accepted",
+        "precondition": "Moira returns the exact Completed settlement receipt for the identical submission evidence action and owner context",
+        "rosetta": {"intent": "record direct settlement acceptance", "values": ["owner-evidence"], "outcomes": ["the exact attempt is settled"], "who": "Moira", "what": "accepted settlement evidence", "when": "after one owner call", "where": "the settlement boundary", "why": "success must be owner-issued", "how": "retain revision phase and replay flag", "extent": "not a status observation", "examples": ["settle returns Completed"]}
+      },
+      {
+        "from": "settlement-prepared", "to": "settlement-uncertain", "signal": "settlement-outcome-unknown",
+        "precondition": "the Moira settlement storage or transport outcome is indeterminate after the exact offer may have committed",
+        "rosetta": {"intent": "fence uncertain settlement", "values": ["uncertainty-honesty"], "outcomes": ["changed settlement and new attempt are prevented"], "who": "the composition host", "what": "settlement uncertainty", "when": "after indeterminate outcome", "where": "the durable receiver", "why": "unknown is not failure", "how": "retain exact replay inputs", "extent": "no absence inference", "examples": ["store commit reply is indeterminate"]}
+      },
+      {
+        "from": "settlement-prepared", "to": "attention-required", "signal": "settlement-refused",
+        "precondition": "Moira returns a known settlement refusal conflict stale attempt invalid owner binding or unrecoverable owner error",
+        "rosetta": {"intent": "surface known settlement refusal", "values": ["fail-closed"], "outcomes": ["no status is fabricated"], "who": "the operator", "what": "settlement refusal", "when": "after known owner result", "where": "the feedback surface", "why": "refusal needs resolution", "how": "retain bounded diagnostics", "extent": "no retry", "examples": ["attempt binding is stale"]}
+      },
+      {
+        "from": "settlement-uncertain", "to": "attempt-settled", "signal": "settlement-reconciled",
+        "precondition": "exact replay of the identical Moira settlement returns the original Completed settlement receipt",
+        "rosetta": {"intent": "resolve settlement as accepted", "values": ["exact-replay"], "outcomes": ["the original receipt is recovered"], "who": "Moira", "what": "settlement reconciliation", "when": "after uncertainty", "where": "the durable receiver", "why": "replay resolves ambiguity", "how": "offer identical canonical evidence", "extent": "one settlement", "examples": ["replayed is true"]}
+      },
+      {
+        "from": "settlement-uncertain", "to": "settlement-uncertain", "signal": "settlement-still-unknown",
+        "precondition": "exact settlement replay remains indeterminate and yields no semantic settlement result",
+        "rosetta": {"intent": "preserve unresolved settlement", "values": ["honesty"], "outcomes": ["the fence remains"], "who": "the composition host", "what": "uncertainty self-loop", "when": "while recovery is indeterminate", "where": "the settlement boundary", "why": "time does not prove outcome", "how": "retain unchanged evidence", "extent": "no state claim", "examples": ["storage remains indeterminate"]}
+      },
+      {
+        "from": "settlement-uncertain", "to": "attention-required", "signal": "settlement-conflict",
+        "precondition": "exact settlement replay returns conflict reconciliation required known refusal or contradictory retained evidence",
+        "rosetta": {"intent": "surface reconciliation conflict", "values": ["fail-closed"], "outcomes": ["contradiction is visible"], "who": "the operator", "what": "settlement conflict", "when": "after replay", "where": "the feedback surface", "why": "conflict cannot become success", "how": "retain owner evidence", "extent": "no override", "examples": ["retained evidence differs"]}
+      },
+      {
+        "from": "attempt-settled", "to": "ready-for-review-observed", "signal": "ready-for-review-observed",
+        "precondition": "a bounded exact Chronos V9 observation for the settled task reference and owner revision reports authoritative status ReadyForReview",
+        "rosetta": {"intent": "confirm authoritative task status", "values": ["status-honesty"], "outcomes": ["ReadyForReview is owner-observed"], "who": "Chronos", "what": "settlement-to-status observation", "when": "after settlement", "where": "the V9 read boundary", "why": "receipt and status are distinct facts", "how": "match exact reference revision and status", "extent": "read-only", "examples": ["V9 reports ReadyForReview"]}
+      },
+      {
+        "from": "attempt-settled", "to": "attention-required", "signal": "ready-for-review-missing",
+        "precondition": "Chronos V9 refuses the exact observation or reports stale mismatched absent or non-ReadyForReview task evidence after settlement",
+        "rosetta": {"intent": "surface status mismatch", "values": ["owner-preservation"], "outcomes": ["settlement is not misreported as board status"], "who": "the operator", "what": "status observation refusal", "when": "after settlement", "where": "the feedback surface", "why": "cross-owner mismatch needs reconciliation", "how": "retain both owner facts", "extent": "no mutation", "examples": ["V9 revision is stale"]}
+      },
+      {
+        "from": "ready-for-review-observed", "to": "publication-prepared", "signal": "publication-prepared",
+        "precondition": "the exact qualified result and nonzero actor operation are bound to a deployment-owned task-conversation route whose source room revision logical time and bounded strictly sorted deduplicated current recipients were not supplied by the model or CLI, and a current authenticated local-agent session has fresh Execute authority for that exact intent",
+        "rosetta": {"intent": "prepare attributable publication", "values": ["non-impersonation"], "outcomes": ["one exact actor request is retained"], "who": "the authenticated Agora host", "what": "publication preparation", "when": "after status observation", "where": "the actor port", "why": "author must be host-derived", "how": "bind exact intent and operation", "extent": "no owner effect", "examples": ["prepare the local-agent result"]}
+      },
+      {
+        "from": "publication-prepared", "to": "publication-accepted", "signal": "publication-accepted",
+        "precondition": "Agora returns ActorPublicationAcceptedV1 for the identical retained request under the authenticated local-agent session",
+        "rosetta": {"intent": "record direct publication acceptance", "values": ["attribution"], "outcomes": ["the exact actor receipt is retained"], "who": "Agora", "what": "accepted publication", "when": "after one owner call", "where": "the actor port", "why": "publication must be owner-issued", "how": "retain revision message and sequence", "extent": "no delivery claim", "examples": ["publish returns Accepted"]}
+      },
+      {
+        "from": "publication-prepared", "to": "publication-uncertain", "signal": "publication-outcome-unknown",
+        "precondition": "the outer actor-publication transport fails after dispatch without an Agora semantic result",
+        "rosetta": {"intent": "fence uncertain publication", "values": ["uncertainty-honesty"], "outcomes": ["blind retry is prevented"], "who": "the composition host", "what": "publication uncertainty", "when": "after ambiguous transport failure", "where": "the Agora client boundary", "why": "transport failure is not absence", "how": "retain exact request for Observe", "extent": "one unresolved operation", "examples": ["reply is lost after commit"]}
+      },
+      {
+        "from": "publication-prepared", "to": "attention-required", "signal": "publication-refused",
+        "precondition": "Agora returns a known semantic actor-publication refusal including invalid input not authorized capacity conflict unavailable exhausted or admission deferred",
+        "rosetta": {"intent": "surface known publication refusal", "values": ["fail-closed"], "outcomes": ["no message receipt is fabricated"], "who": "the operator", "what": "publication refusal", "when": "after known owner result", "where": "the feedback surface", "why": "refusal needs action", "how": "retain bounded refusal", "extent": "no automatic retry", "examples": ["Execute authority is refused"]}
+      },
+      {
+        "from": "publication-uncertain", "to": "publication-accepted", "signal": "publication-reconciled",
+        "precondition": "freshly authorized Observe for the identical actor request returns Accepted with the original receipt",
+        "rosetta": {"intent": "resolve publication as accepted", "values": ["reconciliation"], "outcomes": ["the original receipt is recovered"], "who": "Agora", "what": "accepted observation", "when": "after uncertainty", "where": "the actor observation port", "why": "lookup precedes retry", "how": "retain observed receipt", "extent": "one operation", "examples": ["Observe returns Accepted"]}
+      },
+      {
+        "from": "publication-uncertain", "to": "publication-prepared", "signal": "publication-absent",
+        "precondition": "freshly authorized Observe for the identical request returns authoritative Absent and fresh Execute separately authorizes reoffering that identical request without changed bytes revision time recipients or operation identity",
+        "rosetta": {"intent": "permit identical reoffer after proven absence", "values": ["safe-retry"], "outcomes": ["only the unchanged request returns to prepared"], "who": "Agora and the authority owner", "what": "absence reconciliation", "when": "after uncertainty", "where": "the actor observation port", "why": "only owner-proven absence permits reoffer", "how": "require Absent and fresh Execute", "extent": "no changed request", "examples": ["Observe returns Absent"]}
+      },
+      {
+        "from": "publication-uncertain", "to": "publication-uncertain", "signal": "publication-still-unknown",
+        "precondition": "freshly authorized Observe returns Unavailable or its transport remains indeterminate without Accepted Absent or Conflict evidence",
+        "rosetta": {"intent": "preserve unresolved publication", "values": ["honesty"], "outcomes": ["the publication fence remains"], "who": "the composition host", "what": "uncertainty self-loop", "when": "while Observe is unavailable", "where": "the actor observation boundary", "why": "unavailability proves no outcome", "how": "retain identical request", "extent": "no retry", "examples": ["Observe returns Unavailable"]}
+      },
+      {
+        "from": "publication-uncertain", "to": "attention-required", "signal": "publication-conflict",
+        "precondition": "freshly authorized Observe returns Conflict invalid input not authorized or another known non-recoverable refusal for the retained request",
+        "rosetta": {"intent": "surface publication conflict", "values": ["fail-closed"], "outcomes": ["conflict is visible"], "who": "the operator", "what": "publication observation refusal", "when": "after Observe", "where": "the feedback surface", "why": "conflict cannot become absence", "how": "retain owner evidence", "extent": "no override", "examples": ["operation identity conflicts"]}
+      },
+      {
+        "from": "publication-accepted", "to": "review-ready-with-result", "signal": "result-linked",
+        "precondition": "Moira's qualified actor-publication adapter binds the exact direct or reconciled ActorPublicationAcceptedV1 through the identical retained PublicationIntentV1 into an effect/source/room-bound PublishedV1 and the prior exact Chronos ReadyForReview observation remains current",
+        "rosetta": {"intent": "link exact owner receipts for human review", "values": ["owner-preservation"], "outcomes": ["review readiness includes attributable result evidence"], "who": "the qualified composition adapter", "what": "receipt adaptation and projection", "when": "after actor acceptance", "where": "the task-conversation projection", "why": "the final journey needs both owner facts", "how": "consume only the exact typed PublishedV1 and current ReadyForReview observation", "extent": "typed contract only; the Pantheon composite remains a declared gap until qualified and grants no delivery task mutation acceptance or Done authority", "examples": ["task inspection links the accepted actor message"]}
+      },
+      {
+        "from": "publication-accepted", "to": "attention-required", "signal": "receipt-binding-conflict",
+        "precondition": "the accepted actor publication conflicts with the retained exact PublicationIntentV1 or the qualified adapter refuses its effect source room or receipt binding",
+        "rosetta": {"intent": "surface publication-receipt binding conflict", "values": ["capability-honesty"], "outcomes": ["publication evidence is retained without falsely claiming journey completion"], "who": "the operator and adapter owner", "what": "receipt-binding conflict transition", "when": "after actor acceptance", "where": "the feedback surface", "why": "a mismatched receipt must not be assumed to belong to this journey", "how": "retain both owner facts and identify the mismatched binding", "extent": "no fallback copied prose task mutation or acceptance", "examples": ["the accepted receipt does not match the retained J1 publication intent"]}
+      }
+    ],
+    "signals": [
+      {"name": "result-admitted", "rosetta": {"intent": "announce result admission", "values": ["observability"], "outcomes": ["admission is distinguishable"], "who": "observers", "what": "derived signal", "when": "after admission", "where": "the controller", "why": "orientation", "how": "derive from evidence", "extent": "no authority", "examples": ["result admitted"]}},
+      {"name": "settlement-prepared", "rosetta": {"intent": "announce settlement preparation", "values": ["observability"], "outcomes": ["preparation is distinguishable"], "who": "observers", "what": "derived signal", "when": "after preparation", "where": "the controller", "why": "orientation", "how": "derive from evidence", "extent": "no effect", "examples": ["settlement prepared"]}},
+      {"name": "settlement-accepted", "rosetta": {"intent": "announce settlement acceptance", "values": ["owner-evidence"], "outcomes": ["acceptance is distinguishable"], "who": "observers", "what": "derived signal", "when": "after owner acceptance", "where": "the controller", "why": "provenance", "how": "derive from receipt", "extent": "not status", "examples": ["settlement accepted"]}},
+      {"name": "settlement-outcome-unknown", "rosetta": {"intent": "announce settlement uncertainty", "values": ["honesty"], "outcomes": ["replay is required"], "who": "observers", "what": "derived signal", "when": "after indeterminate outcome", "where": "the controller", "why": "unknown differs from failure", "how": "derive from owner result", "extent": "no status claim", "examples": ["settlement unknown"]}},
+      {"name": "settlement-refused", "rosetta": {"intent": "announce settlement refusal", "values": ["fail-closed"], "outcomes": ["attention is requested"], "who": "observers", "what": "derived signal", "when": "after refusal", "where": "the controller", "why": "actionability", "how": "derive from owner refusal", "extent": "no retry", "examples": ["settlement refused"]}},
+      {"name": "settlement-reconciled", "rosetta": {"intent": "announce settlement recovery", "values": ["exact-replay"], "outcomes": ["recovery is distinguishable"], "who": "observers", "what": "derived signal", "when": "after replay", "where": "the controller", "why": "provenance", "how": "derive from replay receipt", "extent": "one settlement", "examples": ["settlement reconciled"]}},
+      {"name": "settlement-still-unknown", "rosetta": {"intent": "announce persistent settlement uncertainty", "values": ["honesty"], "outcomes": ["the fence remains"], "who": "observers", "what": "derived signal", "when": "replay is indeterminate", "where": "the controller", "why": "time proves nothing", "how": "derive from owner result", "extent": "no outcome", "examples": ["settlement still unknown"]}},
+      {"name": "settlement-conflict", "rosetta": {"intent": "announce settlement conflict", "values": ["fail-closed"], "outcomes": ["attention is requested"], "who": "observers", "what": "derived signal", "when": "after conflict", "where": "the controller", "why": "actionability", "how": "derive from owner conflict", "extent": "no override", "examples": ["settlement conflict"]}},
+      {"name": "ready-for-review-observed", "rosetta": {"intent": "announce authoritative ReadyForReview observation", "values": ["status-honesty"], "outcomes": ["status evidence is distinguishable"], "who": "observers", "what": "derived signal", "when": "after V9 observation", "where": "the controller", "why": "status is owner fact", "how": "derive from exact observation", "extent": "read-only", "examples": ["ReadyForReview observed"]}},
+      {"name": "ready-for-review-missing", "rosetta": {"intent": "announce missing or mismatched status evidence", "values": ["fail-closed"], "outcomes": ["attention is requested"], "who": "observers", "what": "derived signal", "when": "after V9 refusal", "where": "the controller", "why": "cross-owner mismatch matters", "how": "derive from observation", "extent": "no mutation", "examples": ["ReadyForReview missing"]}},
+      {"name": "publication-prepared", "rosetta": {"intent": "announce publication preparation", "values": ["non-impersonation"], "outcomes": ["preparation is distinguishable"], "who": "observers", "what": "derived signal", "when": "after request binding", "where": "the controller", "why": "orientation", "how": "derive from evidence", "extent": "no effect", "examples": ["publication prepared"]}},
+      {"name": "publication-accepted", "rosetta": {"intent": "announce publication acceptance", "values": ["attribution"], "outcomes": ["receipt is distinguishable"], "who": "observers", "what": "derived signal", "when": "after Agora acceptance", "where": "the controller", "why": "provenance", "how": "derive from receipt", "extent": "no delivery claim", "examples": ["publication accepted"]}},
+      {"name": "publication-outcome-unknown", "rosetta": {"intent": "announce publication uncertainty", "values": ["honesty"], "outcomes": ["Observe is required"], "who": "observers", "what": "derived signal", "when": "after transport ambiguity", "where": "the controller", "why": "unknown differs from absence", "how": "derive from transport result", "extent": "no outcome", "examples": ["publication unknown"]}},
+      {"name": "publication-refused", "rosetta": {"intent": "announce publication refusal", "values": ["fail-closed"], "outcomes": ["attention is requested"], "who": "observers", "what": "derived signal", "when": "after refusal", "where": "the controller", "why": "actionability", "how": "derive from owner refusal", "extent": "no retry", "examples": ["publication refused"]}},
+      {"name": "publication-reconciled", "rosetta": {"intent": "announce publication recovery", "values": ["reconciliation"], "outcomes": ["recovery is distinguishable"], "who": "observers", "what": "derived signal", "when": "Observe returns Accepted", "where": "the controller", "why": "provenance", "how": "derive from receipt", "extent": "one operation", "examples": ["publication reconciled"]}},
+      {"name": "publication-absent", "rosetta": {"intent": "announce authoritative publication absence", "values": ["safe-retry"], "outcomes": ["identical reoffer may be prepared"], "who": "observers", "what": "derived signal", "when": "Observe returns Absent", "where": "the controller", "why": "absence must be owner-issued", "how": "derive from observation", "extent": "no changed request", "examples": ["publication absent"]}},
+      {"name": "publication-still-unknown", "rosetta": {"intent": "announce persistent publication uncertainty", "values": ["honesty"], "outcomes": ["the fence remains"], "who": "observers", "what": "derived signal", "when": "Observe is unavailable", "where": "the controller", "why": "unavailability proves nothing", "how": "derive from owner result", "extent": "no retry", "examples": ["publication still unknown"]}},
+      {"name": "publication-conflict", "rosetta": {"intent": "announce publication conflict", "values": ["fail-closed"], "outcomes": ["attention is requested"], "who": "observers", "what": "derived signal", "when": "after conflict", "where": "the controller", "why": "actionability", "how": "derive from owner conflict", "extent": "no override", "examples": ["publication conflict"]}},
+      {"name": "result-linked", "rosetta": {"intent": "announce qualified receipt linkage", "values": ["owner-preservation"], "outcomes": ["review evidence is complete"], "who": "observers", "what": "derived signal", "when": "after qualified adaptation", "where": "the controller", "why": "human review needs both facts", "how": "derive from exact adapted receipts", "extent": "not Done", "examples": ["result linked"]}},
+      {"name": "receipt-binding-conflict", "rosetta": {"intent": "announce invalid publication-receipt binding", "values": ["capability-honesty"], "outcomes": ["attention is requested"], "who": "observers", "what": "derived signal", "when": "typed owner evidence conflicts", "where": "the controller", "why": "mismatched receipts must remain visible", "how": "derive from exact binding evidence", "extent": "no fallback", "examples": ["receipt binding conflict"]}}
+    ]
+  }
+}

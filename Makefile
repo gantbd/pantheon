@@ -1,4 +1,4 @@
-.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-j1 qualify-bounded-agent-development qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-diagnostic qualify-hestia-real-model-daimon qualify-hestia-model-bench
+.PHONY: check hygiene fmt lint test doc run attach tui-demo qualify-emacs qualify-j1 qualify-j1-result qualify-bounded-agent-development qualify-moira-participation qualify-moira-deliberation qualify-moira-local-ensemble qualify-task-conversation qualify-agora-shared-context qualify-hestia-artifact qualify-hestia-real-model qualify-hestia-real-model-diagnostic qualify-hestia-real-model-daimon qualify-hestia-model-bench
 
 PANTHEON_RUN_ROOT ?= /private/tmp/pantheon-run
 PANTHEON_RUN_DIRECTORY ?= $(PANTHEON_RUN_ROOT)/chronos
@@ -37,6 +37,9 @@ qualify-emacs:
 
 qualify-j1:
 	./tests/live/work_item_agent_journey.sh
+
+qualify-j1-result:
+	./tests/live/j1_agent_result_observe.sh
 
 qualify-bounded-agent-development:
 	./qualification/bounded-agent-development/qualify.sh

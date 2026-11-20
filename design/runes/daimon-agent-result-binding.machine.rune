@@ -1,0 +1,227 @@
+(machine daimon-agent-result-binding
+  (rosetta
+    (intent "issue one content-minimal Daimon-owned receipt binding an exact retained completed agent turn result to the exact Prompt execution and task attempt admitted before provider dispatch")
+    (values owner-preservation exact-correlation non-forgeability content-minimization replay-stability)
+    (outcomes "an immutable typed AgentTurnResultBindingV1 is derived only from durable owner facts" "the receipt binds one prompt operation, event interval, execution, task attempt, terminal disposition, output digest, and byte count" "missing, ambiguous, incomplete, uncertain, legacy-unbound, or contradictory evidence refuses without inference")
+    (who "the Daimon agent-session owner and an independently authorized read-only observer")
+    (what "a pure evidence machine for one historical agent Prompt result binding")
+    (when "after Daimon has durably retained one exact Prompt operation and the provider receipts admitted for that operation's turn")
+    (where "a dedicated read-only Daimon result-binding observation boundary")
+    (why "caller-held request documents and cumulative session events cannot prove which task attempt produced assistant bytes")
+    (how "select one owner-retained Prompt operation, derive its exact non-overlapping event interval from ordered durable owner state, and require the Completed operation view to name that interval's matching terminal cursor without accepting caller evidence")
+    (extent "one content-free receipt; no assistant or prompt bytes, context, recovery locator, credential, grant, lease, settlement, task status, publication, acceptance, retry, release, or rollout authority")
+    (examples "a completed turn after owner restart returns the same receipt binding attempt three to terminal cursor nine and its exact output digest"))
+  (initial owner-facts-retained)
+
+  (state owner-facts-retained
+    (context identity-design-decision access-control-decision)
+
+    (rosetta
+      (intent "retain the exact Prompt operation and definitive event history before correlation")
+      (values owner-source durable-before-dispatch)
+      (outcomes "the owner durably retained one exact Prompt operation with its full admitted execution envelope before provider dispatch and later retained a definitive Completed operation view and ordered event history" "legacy history with duplicate turn identities or contradictory operation and terminal facts refuses without repair")
+      (who Daimon)
+      (what "the initial retained owner facts")
+      (when "after Prompt admission and before any result-binding projection")
+      (where "the durable agent-session checkpoint")
+      (why "whole-session reconstruction and caller documents are not owner evidence")
+      (how "use only the exact stored Prompt input, operation state, completed view, and ordered event journal; do not require a checkpoint migration or provider replay")
+      (extent "one Prompt operation; no result claim")
+      (examples "operation seventeen starts at event cursor four for task incarnation two attempt three")))
+
+  (state turn-correlated
+    (context identity-design-decision test-oracle-design)
+
+    (rosetta
+      (intent "correlate only the exact Prompt operation with its bounded turn event interval")
+      (values uniqueness interval-integrity)
+      (outcomes "session, turn, retained operation selector, derived starting cursor, admitted interval, and matching terminal turn are unique and non-overlapping" "new Prompt admission rejects turn reuse while legacy ambiguity refuses observation")
+      (who Daimon)
+      (what "turn and interval correlation")
+      (when "after owner facts are retained")
+      (where "the agent-session owner")
+      (why "assistant messages contain no turn identity and cumulative pages can contain several turns")
+      (how "select the exact retained Prompt operation, derive the interval after the prior terminal through this turn's terminal under the single-active-turn invariant, and require its Completed view's last-event cursor to equal that terminal; never scan unrelated session history for a convenient match")
+      (extent "one operation interval")
+      (examples "only cursors four through nine belong to the selected Prompt operation")))
+
+  (state execution-correlated
+    (context identity-design-decision access-control-decision)
+
+    (rosetta
+      (intent "bind the result to the original Prompt execution and task attempt")
+      (values exact-attribution confused-deputy-resistance)
+      (outcomes "execution ID, task key, task incarnation, attempt, principal/profile correlation, prompt digest, and idempotency correlation come from the retained Prompt input" "permission, advance, reattach, open, or caller-supplied envelopes cannot replace the Prompt binding")
+      (who Daimon)
+      (what "execution and attempt correlation")
+      (when "after the turn interval is unique")
+      (where "the retained Prompt operation")
+      (why "one session can carry prompts for different attempts and continuations can have separate execution envelopes")
+      (how "copy only bounded correlation fields from the exact retained Prompt operation into the candidate receipt")
+      (extent "correlation evidence only; no current Chronos or authority claim")
+      (examples "the result binds the Prompt's attempt three rather than the session-open attempt or a later permission decision")))
+
+  (state completion-correlated
+    (context test-oracle-design privacy-impact-decision)
+
+    (rosetta
+      (intent "prove one bounded completed assistant result inside the exact operation interval")
+      (values terminal-completeness content-minimization)
+      (outcomes "the interval contains exactly one nonempty bounded UTF-8 AssistantMessage, optional content-free Usage events, and one final matching TurnFinished" "the terminal is Completed with EndTurn, a nonzero output digest matching the assistant bytes, and no thought, plan, tool, terminal, permission, file, gap, overlap, truncation, or later event can impersonate output")
+      (who Daimon)
+      (what "terminal result correlation")
+      (when "after execution correlation and definitive owner persistence")
+      (where "the exact retained event interval")
+      (why "Ready session state and terminal-looking cumulative events do not prove a historical operation result")
+      (how "validate the versioned single-message projection law, terminal placement, disposition, stop reason, digest, byte count, cursor bounds, operation completion, and definitive checkpoint state")
+      (extent "digest, byte count, disposition, stop reason, and cursors only; no content disclosure")
+      (examples "one 52-byte assistant message hashes to the terminal digest and the terminal is the interval's final event")))
+
+  (state binding-projected
+    (context privacy-impact-decision claiming-completion)
+
+    (rosetta
+      (intent "return the immutable content-free owner receipt without expanding its authority")
+      (values stable-replay honest-nonclaims)
+      (outcomes "AgentTurnResultBindingV1 exactly equals the correlated owner facts and replays byte-for-byte across observation and checkpoint reopen" "the receipt is sufficient only for a consumer to join separately authorized digest-matched content and revalidate other owners")
+      (who "Daimon and the authorized result-binding observer")
+      (what "the terminal binding projection")
+      (when "after every correlation obligation holds")
+      (where "the read-only result-binding protocol")
+      (why "downstream components need attributable evidence without importing Daimon storage or authority")
+      (how "return version, owner namespace and settled revision, session, turn, retained operation selector, execution and task-attempt correlation, event cursors, disposition, stop reason, output digest and byte count")
+      (extent "historical evidence only; downstream owners must re-observe current state and separately authorize effects")
+      (examples "the same receipt is returned after a lost reply and owner restart without invoking the provider")))
+
+  (edge
+    (from owner-facts-retained)
+    (to turn-correlated)
+    (emit turn-bound)
+
+    (rosetta
+      (intent "advance only a unique owner-retained Prompt interval")
+      (values uniqueness)
+      (outcomes "one exact turn interval is selected")
+      (who Daimon)
+      (what "turn-correlation edge")
+      (when "the operation selector and interval are definitive")
+      (where "agent-session owner")
+      (why "ambiguous history cannot be bound")
+      (how "match owner operation session turn and cursors")
+      (extent "one Prompt operation")
+      (examples "operation seventeen uniquely selects turn nine"))
+    (precondition "owner-facts-retained's outcomes hold; one exact retained Prompt operation selects one session and turn, the interval after the prior terminal through this turn's terminal is contiguous and non-overlapping, its definitive Completed view names that terminal cursor, new-turn uniqueness holds or legacy ambiguity is absent, and no caller document supplies evidence"))
+
+  (edge
+    (from turn-correlated)
+    (to execution-correlated)
+    (emit execution-bound)
+
+    (rosetta
+      (intent "advance the unique turn using only its retained Prompt execution")
+      (values exact-attribution)
+      (outcomes "execution and task attempt are owner-bound")
+      (who Daimon)
+      (what "execution-correlation edge")
+      (when "turn correlation is exact")
+      (where "retained Prompt input")
+      (why "continuations and session-open facts may name different executions")
+      (how "project exact Prompt correlation fields")
+      (extent "no current authority claim")
+      (examples "attempt three comes from the Prompt operation"))
+    (precondition "turn-correlated's outcomes hold; execution ID, task key, incarnation, attempt, principal/profile correlation, prompt digest and idempotency correlation are copied from the selected retained Prompt input, and no open, permission, advance, reattach, caller, or model field can replace them"))
+
+  (edge
+    (from execution-correlated)
+    (to completion-correlated)
+    (emit completion-bound)
+
+    (rosetta
+      (intent "advance only a definitive completed assistant result")
+      (values terminal-completeness)
+      (outcomes "the exact output digest and bounded interval are proven")
+      (who Daimon)
+      (what "completion-correlation edge")
+      (when "the operation is durably completed")
+      (where "retained event interval")
+      (why "partial or uncertain evidence cannot become a result")
+      (how "apply the versioned assistant projection law")
+      (extent "content-free result facts")
+      (examples "Completed EndTurn is final and digest-matched"))
+    (precondition "execution-correlated's outcomes hold; the selected operation is durably Completed rather than active, awaiting permission, or outcome unknown; its exact interval satisfies completion-correlated's single-message projection, cursor, terminal, digest, byte-count, bounds and forbidden-content outcomes; and checkpoint state is definitive"))
+
+  (edge
+    (from completion-correlated)
+    (to binding-projected)
+    (emit binding-issued)
+
+    (rosetta
+      (intent "issue the exact replay-stable owner receipt")
+      (values stable-replay)
+      (outcomes "one immutable binding is observable")
+      (who Daimon)
+      (what "binding-projection edge")
+      (when "all correlations hold")
+      (where "read-only protocol")
+      (why "consumers need an owner-issued join fact")
+      (how "encode only correlated fields and nonclaims")
+      (extent "one content-free receipt")
+      (examples "reopen returns the original receipt"))
+    (precondition "completion-correlated's outcomes hold; every AgentTurnResultBindingV1 field equals the correlated owner fact, the receipt encoding and identity are deterministic, exact replay and checkpoint reopen return the same receipt without provider invocation, and observation authority discloses no prompt, result, context, recovery, credential, grant, lease, or preparation material"))
+
+  (signal turn-bound
+    (rosetta
+      (intent "announce unique turn correlation")
+      (values observability)
+      (outcomes "the selected interval is distinguishable")
+      (who "authorized observers")
+      (what "derived evidence signal")
+      (when "turn correlation succeeds")
+      (where "Daimon observation")
+      (why "correlation stages should be inspectable")
+      (how "derive from owner facts")
+      (extent "no authority")
+      (examples "turn bound")))
+
+  (signal execution-bound
+    (rosetta
+      (intent "announce Prompt execution correlation")
+      (values observability)
+      (outcomes "attempt attribution is distinguishable")
+      (who "authorized observers")
+      (what "derived evidence signal")
+      (when "execution correlation succeeds")
+      (where "Daimon observation")
+      (why "session and attempt facts must not blur")
+      (how "derive from retained Prompt")
+      (extent "no current owner claim")
+      (examples "execution bound")))
+
+  (signal completion-bound
+    (rosetta
+      (intent "announce terminal result correlation")
+      (values observability)
+      (outcomes "completion evidence is distinguishable")
+      (who "authorized observers")
+      (what "derived evidence signal")
+      (when "terminal correlation succeeds")
+      (where "Daimon observation")
+      (why "partial and complete differ")
+      (how "derive from exact interval")
+      (extent "no content")
+      (examples "completion bound")))
+
+  (signal binding-issued
+    (rosetta
+      (intent "announce content-free binding availability")
+      (values observability)
+      (outcomes "the receipt may be joined by an authorized consumer")
+      (who "authorized observers")
+      (what "derived evidence signal")
+      (when "the binding is projected")
+      (where "Daimon observation")
+      (why "downstream joins need an exact owner fact")
+      (how "derive from immutable receipt")
+      (extent "no downstream effect authority")
+      (examples "binding issued")))
+  (epistemic-tier bool))

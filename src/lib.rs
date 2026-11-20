@@ -45,6 +45,7 @@ impl Focus {
 
 pub enum RoutedInput {
     Exit,
+    Suppress,
     SwitchFocus,
     Chronos(KeyEvent),
     Vellum(vellum_tui::Input),

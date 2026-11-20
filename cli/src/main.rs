@@ -833,6 +833,7 @@ fn usage() -> &'static str {
     concat!(
         "pantheon daimon-agent-open SOCKET REQUEST_JSON 'OPEN DAIMON SESSION …'\n",
         "pantheon daimon-agent-observe SOCKET AGENT_SESSION_HEX\n",
+        "pantheon j1-agent-result-observe SOCKET AGENT_SESSION_HEX TURN_HEX\n",
         "pantheon hestia-runtime-observe SOCKET RUNTIME_HEX\n",
         "pantheon hestia-artifact-observe SOCKET ARTIFACT_ID\n",
         "pantheon hestia-artifact-catalog SOCKET\n",
@@ -1327,6 +1328,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .is_some_and(|arg| arg == "daimon-agent-observe")
     {
         return pantheon_cli::daimon_observe::run(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
+        .is_some_and(|arg| arg == "j1-agent-result-observe")
+    {
+        return pantheon_cli::j1_agent_result::run(std::env::args_os().skip(2));
     }
     if std::env::args_os()
         .nth(1)
@@ -2231,7 +2238,7 @@ fn daimon_agent_advance(
             None,
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => daimon_advance_failure(
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => daimon_advance_failure(
             "invalid_reply",
             "unexpected Daimon advance reply",
             None,
@@ -2337,7 +2344,7 @@ fn daimon_agent_cancel(
             None,
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => daimon_cancel_failure(
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => daimon_cancel_failure(
             "invalid_reply",
             "unexpected Daimon cancellation reply",
             None,
@@ -2462,7 +2469,7 @@ fn daimon_agent_close(
             None,
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => {
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => {
             daimon_close_failure("invalid_reply", "unexpected Daimon close reply", None, None)
         }
         Err(CloseError::ConfirmationMismatch { required }) => daimon_close_failure(
@@ -2569,7 +2576,7 @@ fn daimon_agent_open(
             "Daimon retained an indeterminate session-open outcome; inspect the exact session before any further action",
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => daimon_open_failure(
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => daimon_open_failure(
             "invalid_reply",
             "unexpected Daimon session-open reply",
             None,
@@ -2668,7 +2675,7 @@ fn daimon_agent_reattach(
             None,
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => daimon_reattach_failure(
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => daimon_reattach_failure(
             "invalid_reply",
             "unexpected Daimon reattach reply",
             None,
@@ -2783,7 +2790,7 @@ fn daimon_agent_prompt(
             None,
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => daimon_prompt_failure(
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => daimon_prompt_failure(
             "invalid_reply",
             "unexpected Daimon prompt reply",
             None,
@@ -2912,7 +2919,7 @@ fn daimon_agent_permission(
             None,
             None,
         ),
-        Ok(AgentOutcomeV1::Events(_)) => daimon_permission_failure(
+        Ok(AgentOutcomeV1::Events(_)) | Ok(AgentOutcomeV1::Result(_)) => daimon_permission_failure(
             "invalid_reply",
             "unexpected Daimon permission reply",
             None,

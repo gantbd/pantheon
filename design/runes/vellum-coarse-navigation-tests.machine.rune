@@ -1,0 +1,357 @@
+(machine vellum-coarse-navigation-tests
+  (rosetta
+    (intent "derive the executable coarse-navigation regression suite from the admitted delivery machine without creating an independent hand-written contract")
+    (values holofractal-law semantic-preservation falsifiability oracle-independence least-authority)
+    (outcomes "Smith emits a provenance-bound Rust test controller whose obligations require translation, bounded movement, boundary, immutability, authority, composition, and non-disclosure evidence" "a Rust adapter may supply fixtures and observations but cannot omit a generated obligation or change its expected result" "the generated controller refuses completion when any behavior or threat oracle is false")
+    (who "the Vellum test adapter, Pantheon composition adapter, Scry, Smith, and an independent verifier")
+    (what "the executable child machine for the vellum-coarse-navigation oracle set")
+    (when "after oracle admission and before production behavior or instrumentation edits")
+    (where "Vellum's service and terminal boundaries plus Pantheon's behavior-facade composition boundary")
+    (why "test code is an executable claim and must retain the same source-to-projection lineage as the behavior it judges")
+    (how "validate this exact Rune with Scry; require complete Rust compatibility from Smith; bind every generated obligation digest to one adapter assertion; compile and run the exact projection; retain intended RED and later GREEN evidence under the same lineage")
+    (extent "PageUp and PageDown translation, owner movement, boundaries, protected effects, one-dispatch composition, and evidence field limits only")
+    (examples "the generated bounded-movement obligation invokes an adapter assertion that one PageDown in a two-line viewport advances exactly one logical line"))
+  (initial fixture-ready)
+
+  (state fixture-ready
+    (rosetta
+      (intent "establish one bounded owner snapshot and immutable baseline")
+      (values deterministic-fixtures bounded-work)
+      (outcomes "the adapter has a multiline Unicode-safe snapshot, a clean persistence witness, request count, document identity, selection membership, and source digest without granting file or shell authority")
+      (who "the Vellum test adapter")
+      (what "the shared test fixture")
+      (when "before any generated assertion")
+      (where "an in-memory scripted Vellum service port")
+      (why "all later protected-effect checks need one independently captured baseline")
+      (how "construct the smallest service projection that exercises long-short-long line movement")
+      (extent "one document and bounded in-memory replies")
+      (examples "abcdef, x, abcdef provides preferred-column clamping and recovery")))
+
+  (state translation-proven
+    (rosetta
+      (intent "prove physical and profile inputs become payload-free owner intents")
+      (values semantic-input owner-sovereignty)
+      (outcomes "PageUp and PageDown keys map to matching Vellum service actions; Emacs M-v and C-v map to those same actions; no distance or document data crosses the action boundary")
+      (who "the Vellum and Pantheon translation adapters")
+      (what "the semantic translation assertions")
+      (when "after fixture admission")
+      (where "Vellum terminal translation and Pantheon's behavior facade")
+      (why "host-generated movement distances or repeated fine actions would create a second editor")
+      (how "compare exact enum variants and reject payload-bearing alternatives")
+      (extent "four key translations and modal precedence")
+      (examples "C-v yields exactly ServiceAction::PageDown")))
+
+  (state movement-proven
+    (rosetta
+      (intent "prove owner-native page movement, overlap, clamping, and preferred-column recovery")
+      (values bounded-work owner-sovereignty)
+      (outcomes "one action advances at most observed-lines minus one; zero defaults to one; values above 512 clamp; a short line clamps the cursor but does not erase the preferred column used on the next long line")
+      (who "the Vellum service adapter")
+      (what "the movement assertions")
+      (when "after semantic translation succeeds")
+      (where "ServiceEditor UI-local cursor state")
+      (why "the owner alone has enough state to implement bounded page semantics without a host loop")
+      (how "observe bounded extents, invoke one action per assertion, and inspect the independent frame projection")
+      (extent "one upward and three downward displacements")
+      (examples "column four clamps to one on a short line and returns to four on the following long line")))
+
+  (state boundaries-proven
+    (rosetta
+      (intent "prove both document limits settle as honest content-free boundary outcomes")
+      (values honest-evidence non-disclosure)
+      (outcomes "PageUp at the first line and PageDown at the final line return boundary without claiming movement or exposing position")
+      (who "the Vellum service adapter")
+      (what "the upper and lower boundary assertions")
+      (when "after movement behavior is established")
+      (where "ServiceEditor observed action result")
+      (why "a successful no-op must remain distinguishable from displacement without revealing cursor state")
+      (how "move to each bound through owner actions and compare only the outcome class plus independent frame result")
+      (extent "two boundary invocations")
+      (examples "the lower-bound result is ServiceActionOutcome::Boundary")))
+
+  (state protected-effects-proven
+    (rosetta
+      (intent "prove coarse navigation cannot mutate protected owner state or amplify service work")
+      (values least-authority tamper-resistance bounded-work)
+      (outcomes "source digest, persistence, dirty state, revision witness, document identity, selection membership, and owner request count equal the fixture baseline; no edit, save, file, shell, provider, or rollout command exists")
+      (who "the Vellum service adapter")
+      (what "the negative authority assertions")
+      (when "after movement and boundary cases")
+      (where "the service projection and scripted command ledger")
+      (why "cursor movement must not smuggle adjacent authority")
+      (how "compare protected effects independently from telemetry and enumerate every issued owner command")
+      (extent "effects reachable during this test machine only")
+      (examples "issued request count remains the three fixture-opening requests")))
+
+  (state composition-proven
+    (rosetta
+      (intent "prove Pantheon preserves focus and modal precedence and dispatches one owner action")
+      (values behavior-facade single-dispatch)
+      (outcomes "active Vellum page input reaches one owner invocation; non-Vellum focus and every overlay suppress owner dispatch; the host never repeats Up or Down actions")
+      (who "the Pantheon composition adapter")
+      (what "the composed routing assertions")
+      (when "after owner behavior and protected effects pass")
+      (where "Pantheon's behavior facade and Vellum adapter")
+      (why "correct owner semantics do not protect against host-side spoofing or amplification")
+      (how "exercise active, unfocused, and modal inputs through the same facade used by the compiled terminal")
+      (extent "one accepted input and representative suppressed inputs")
+      (examples "PageDown beneath the command palette changes palette state and produces zero Vellum actions")))
+
+  (state evidence-proven
+    (rosetta
+      (intent "prove pathway observations are causal, single-settlement, bounded, and content-free")
+      (values privacy-by-design oracle-independence)
+      (outcomes "each dispatched action has exactly one moved, boundary, refused, or failed settlement; only schema, version, component, normalized action, outcome, duration, and correlation fields are present; telemetry does not control behavior")
+      (who "the Pantheon observability adapter")
+      (what "the evidence schema and causality assertions")
+      (when "after composed behavior succeeds")
+      (where "Pantheon's operational evidence boundary")
+      (why "operators need orientation without disclosure or false behavioral proof")
+      (how "validate a strict field allow-list, correlation identity, count, and ordering independently from end-state assertions")
+      (extent "coarse-navigation events only")
+      (examples "an event containing a path or cursor field fails the generated obligation")))
+
+  (state complete
+    (rosetta
+      (intent "bind a conclusive test verdict to the exact Rune and Rust projection")
+      (values provenance epistemic-honesty)
+      (outcomes "all generated obligations passed under exact source, IR, Smith, candidate, adapter, and evidence identities; any missing or false assertion refused completion")
+      (who "the generated test controller and verifier")
+      (what "the child-machine terminal state")
+      (when "only after every assertion family passes")
+      (where "the retained verification record")
+      (why "green without complete lineage or obligation coverage is inconclusive")
+      (how "advance the generated controller through every compelled transition and retain its content-free observations")
+      (extent "one exact candidate")
+      (examples "the controller reaches Complete with no denied obligation")))
+
+  (edge
+    (from fixture-ready)
+    (to translation-proven)
+    (emit fixture-admitted)
+
+    (rosetta
+      (intent "admit the bounded baseline to semantic translation checks")
+      (values deterministic-fixtures)
+      (outcomes "translation assertions receive an immutable fixture identity")
+      (who "the test controller")
+      (what "fixture gate")
+      (when "the baseline exists")
+      (where "the generated suite")
+      (why "later assertions require a stable baseline")
+      (how "evaluate the fixture obligation")
+      (extent "one fixture")
+      (examples "the source digest is retained"))
+    (precondition "the bounded fixture exists and its source, persistence, identity, selection, revision, dirty, request, and command baselines are captured"))
+
+  (edge
+    (from translation-proven)
+    (to movement-proven)
+    (emit translation-confirmed)
+
+    (rosetta
+      (intent "admit exact semantic actions to owner movement checks")
+      (values owner-sovereignty)
+      (outcomes "movement begins only from payload-free actions")
+      (who "the test controller")
+      (what "translation gate")
+      (when "all translation cases pass")
+      (where "the generated suite")
+      (why "movement tests must not normalize an invalid host contract")
+      (how "evaluate translation obligations")
+      (extent "four translations")
+      (examples "C-v equals PageDown"))
+    (precondition "physical and Emacs page inputs map to matching payload-free Vellum owner actions and modal precedence remains authoritative"))
+
+  (edge
+    (from movement-proven)
+    (to boundaries-proven)
+    (emit movement-confirmed)
+
+    (rosetta
+      (intent "admit bounded displacement to boundary checks")
+      (values bounded-work)
+      (outcomes "both limits are tested after movement law passes")
+      (who "the test controller")
+      (what "movement gate")
+      (when "overlap, clamp, and column cases pass")
+      (where "the generated suite")
+      (why "a boundary no-op is meaningful only when movement works")
+      (how "evaluate movement obligations")
+      (extent "bounded movement cases")
+      (examples "a two-line viewport advances one line"))
+    (precondition "one owner action obeys overlap, one-through-512 extent bounds, document clamping, and preferred-column recovery"))
+
+  (edge
+    (from boundaries-proven)
+    (to protected-effects-proven)
+    (emit boundaries-confirmed)
+
+    (rosetta
+      (intent "admit honest boundary outcomes to protected-effect comparison")
+      (values honest-evidence)
+      (outcomes "no-op outcomes are distinguished before mutation checks")
+      (who "the test controller")
+      (what "boundary gate")
+      (when "both limits pass")
+      (where "the generated suite")
+      (why "false movement claims would corrupt pathway evidence")
+      (how "evaluate boundary obligations")
+      (extent "two limits")
+      (examples "PageUp at line zero is boundary"))
+    (precondition "upper and lower bounds return Boundary and do not return Moved"))
+
+  (edge
+    (from protected-effects-proven)
+    (to composition-proven)
+    (emit effects-confirmed)
+
+    (rosetta
+      (intent "admit least-authority owner behavior to host composition checks")
+      (values tamper-resistance)
+      (outcomes "Pantheon routing is tested only after Vellum invariants hold")
+      (who "the test controller")
+      (what "protected-effect gate")
+      (when "all baselines match")
+      (where "the generated suite")
+      (why "composition must not mask owner mutation")
+      (how "evaluate protected-effect obligations")
+      (extent "named protected effects")
+      (examples "source and request count are unchanged"))
+    (precondition "source, persistence, dirty, revision, identity, selection, requests, and command authority equal the fixture baseline"))
+
+  (edge
+    (from composition-proven)
+    (to evidence-proven)
+    (emit composition-confirmed)
+
+    (rosetta
+      (intent "admit single-dispatch composition to evidence checks")
+      (values single-dispatch)
+      (outcomes "telemetry is judged against a known causal path")
+      (who "the test controller")
+      (what "composition gate")
+      (when "focus and modal cases pass")
+      (where "the generated suite")
+      (why "evidence cannot diagnose a path that was never constrained")
+      (how "evaluate composition obligations")
+      (extent "active and suppressed routes")
+      (examples "one accepted input yields one invocation"))
+    (precondition "active Vellum input dispatches exactly one owner action while unfocused and modal inputs dispatch zero"))
+
+  (edge
+    (from evidence-proven)
+    (to complete)
+    (emit evidence-confirmed)
+
+    (rosetta
+      (intent "admit content-free causal evidence to the terminal verdict")
+      (values privacy-by-design provenance)
+      (outcomes "completion is exact-lineage and non-disclosing")
+      (who "the test controller")
+      (what "evidence gate")
+      (when "schema and causality pass")
+      (where "the generated suite")
+      (why "green behavior with leaking or forged evidence is not complete")
+      (how "evaluate allow-list, cardinality, ordering, and non-control obligations")
+      (extent "coarse-navigation evidence")
+      (examples "a path field refuses completion"))
+    (precondition "each dispatch has one allowed settlement and every evidence record satisfies the strict content-free field allow-list without controlling behavior"))
+
+  (signal fixture-admitted
+    (rosetta
+      (intent "announce the immutable fixture baseline")
+      (values deterministic-fixtures)
+      (outcomes "translation checks may run")
+      (who "test observers")
+      (what "fixture signal")
+      (when "fixture-ready advances")
+      (where "test evidence")
+      (why "baseline identity must be visible")
+      (how "emit once")
+      (extent "one fixture")
+      (examples "fixture admitted")))
+
+  (signal translation-confirmed
+    (rosetta
+      (intent "announce exact input semantics")
+      (values owner-sovereignty)
+      (outcomes "movement checks may run")
+      (who "test observers")
+      (what "translation signal")
+      (when "translation-proven advances")
+      (where "test evidence")
+      (why "semantic input is a gate")
+      (how "emit once")
+      (extent "one translation set")
+      (examples "translation confirmed")))
+
+  (signal movement-confirmed
+    (rosetta
+      (intent "announce bounded owner displacement")
+      (values bounded-work)
+      (outcomes "boundary checks may run")
+      (who "test observers")
+      (what "movement signal")
+      (when "movement-proven advances")
+      (where "test evidence")
+      (why "movement must precede no-op claims")
+      (how "emit once")
+      (extent "one movement set")
+      (examples "movement confirmed")))
+
+  (signal boundaries-confirmed
+    (rosetta
+      (intent "announce honest document-limit results")
+      (values honest-evidence)
+      (outcomes "protected effects may be compared")
+      (who "test observers")
+      (what "boundary signal")
+      (when "boundaries-proven advances")
+      (where "test evidence")
+      (why "boundary semantics are independently observable")
+      (how "emit once")
+      (extent "two boundaries")
+      (examples "boundaries confirmed")))
+
+  (signal effects-confirmed
+    (rosetta
+      (intent "announce protected-state preservation")
+      (values least-authority)
+      (outcomes "composition checks may run")
+      (who "test observers")
+      (what "effects signal")
+      (when "protected-effects-proven advances")
+      (where "test evidence")
+      (why "host routing requires a safe owner action")
+      (how "emit once")
+      (extent "named baselines")
+      (examples "effects confirmed")))
+
+  (signal composition-confirmed
+    (rosetta
+      (intent "announce focus-safe single dispatch")
+      (values single-dispatch)
+      (outcomes "evidence checks may run")
+      (who "test observers")
+      (what "composition signal")
+      (when "composition-proven advances")
+      (where "test evidence")
+      (why "causal telemetry needs a constrained path")
+      (how "emit once")
+      (extent "one composed path")
+      (examples "composition confirmed")))
+
+  (signal evidence-confirmed
+    (rosetta
+      (intent "announce content-free causal evidence")
+      (values privacy-by-design)
+      (outcomes "the test child machine may complete")
+      (who "test observers")
+      (what "evidence signal")
+      (when "evidence-proven advances")
+      (where "test evidence")
+      (why "completion includes observability safety")
+      (how "emit once")
+      (extent "one evidence set")
+      (examples "evidence confirmed"))))

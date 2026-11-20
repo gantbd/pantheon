@@ -1,0 +1,374 @@
+(machine pantheon-center-out-delivery
+  (rosetta
+    (intent "deliver Pantheon from one stable governing intent through lossless machine refinement, forged code and test projections, owner-qualified evidence, and accountable human disposition")
+    (values semantic-preservation owner-preservation holofractal-recursion epistemic-honesty least-authority)
+    (outcomes "every executable artifact and Chronos work item is traceable to an admitted machine obligation and exact governing-intent identity" "each recursively refined leaf preserves parent meaning, refuses unsupported projection, and folds typed owner evidence back into its parent" "only owner-qualified evidence and required human gates can advance the delivered outcome")
+    (who "the accountable human sponsor, affected stakeholders, product manager, constrained delivery agents, sovereign component owners, and independent verifiers")
+    (what "the canonical center-out delivery and planning machine")
+    (when "for every material Pantheon journey, planning refinement, implementation, test, acceptance, and rollout decision")
+    (where "Vellum intent artifacts, Rune and Scry semantics, Smith projections, Chronos planning, owner execution boundaries, Agora deliberation, and observable evidence surfaces")
+    (why "prompt-to-code drift, speculative decomposition, shadow ownership, and unverifiable completion destroy the meaning the system exists to preserve")
+    (how "bind exact intent, review Rosetta and holes, admit one canonical Rune, select only the compelled frontier, recursively refine bounded leaf machines, forge code and tests, qualify real owner behavior, monadically fold receipts upward, and require named-human disposition wherever standing or consequence demands it")
+    (extent "delivery governance and evidence composition only; no component effect, task mutation, acceptance, prioritization, authority expansion, or rollout is implied by structural projection")
+    (examples "a journey Rune projects a Chronos dependency frontier; one selected obligation refines into a bounded owner Rune whose forged code and tests produce receipts that satisfy the parent edge without rewriting its intent"))
+  (initial intent-bound)
+
+  (state intent-bound
+    (context human-impact-decision architecture-flow-review)
+
+    (rosetta
+      (intent "bind the exact governing objective before planning or implementation")
+      (values identity clarity)
+      (outcomes "one versioned intent artifact names promised outcomes, non-goals, owner boundaries, accountable sponsor, affected stakeholders, and unresolved questions" "later refinements can cite its exact identity without substituting conversational memory")
+      (who "the accountable sponsor and admitted stakeholders")
+      (what "the stable semantic center")
+      (when "before work decomposition")
+      (where "a Vellum-owned governing artifact")
+      (why "an unversioned prompt cannot anchor lossless recursive delivery")
+      (how "retain exact bytes, digest, revision, provenance, standing, dissent, and human-gate requirements")
+      (extent "intent evidence only; no implementation or owner effect")
+      (examples "the current user-journey objective is bound to one reviewed artifact revision")))
+
+  (state rosetta-reviewed
+    (context reviewing-ensemble-convergence human-impact-decision)
+
+    (rosetta
+      (intent "make the governing meaning and its holes explicit before executable projection")
+      (values residual-context equitable-review refusal-over-invention)
+      (outcomes "the compass and narrative preserve intent, values, outcomes, context, constraints, examples, non-goals, owners and authority limits" "the review answers whether the right stakeholder ensemble is present and retains every material hole or dissent")
+      (who "independently attributable stakeholders and grounded advisers")
+      (what "a reviewed Rosetta and question set")
+      (when "after exact intent binding")
+      (where "the versioned design artifact and attributed Agora review")
+      (why "formal structure cannot recover meaning silently omitted before compilation")
+      (how "steelman, challenge, attribute, disposition, and refuse unresolved material semantics")
+      (extent "reviewed context, not executable behavior or consensus")
+      (examples "a missing acceptance owner remains a typed question rather than an invented UUID contract")))
+
+  (state rune-admitted
+    (context formal-proof architecture-flow-review)
+
+    (rosetta
+      (intent "admit one canonical machine without weakening reviewed meaning")
+      (values compiler-integrity total-traceability)
+      (outcomes "Scry accepts the exact canonical Rune and every reviewed semantic claim is represented or retained as an explicit unresolved gate" "machine path, obligations, state identities, source identity and typed-IR identity are reproducible")
+      (who "Rune and Scry under independent review")
+      (what "the canonical executable semantic blueprint")
+      (when "after Rosetta review is adequate for the bounded scope")
+      (where "the Rune source and typed semantic IR")
+      (why "unsupported meaning must refuse rather than disappear during compilation")
+      (how "canonicalize, validate, prove mandatory paths, and compare the projection against the reviewed Rosetta")
+      (extent "structural and semantic admission; no runtime truth or owner authority")
+      (examples "Scry admits the exact source while an unresolved human gate remains an explicit precondition")))
+
+  (state frontier-selected
+    (context operator-transition-decision test-oracle-design)
+
+    (rosetta
+      (intent "select the smallest currently compelled frontier and expose adjacent discoveries without executing them")
+      (values center-out-planning bounded-work anti-speculation)
+      (outcomes "Chronos binds the root machine identity, current state, eligible obligation, exact dependencies, resolution links, and evidence needed to advance" "only the compelled critical-path leaf is admitted for execution while adjacent gaps remain classified backlog or required follow-up")
+      (who "Chronos, the product manager, and the separately authorized planning authority")
+      (what "one owner-backed executable planning frontier")
+      (when "after machine admission and before recursive decomposition")
+      (where "the canonical Chronos roadmap")
+      (why "drilling into a convenient subsystem before proving its parent obligation creates costly semantic drift")
+      (how "project states and edges into dependency-aware work packets and select by machine eligibility, owner evidence, risk, and human disposition")
+      (extent "planning projection only; no silent priority, status, lease, or acceptance mutation")
+      (examples "the open edge selects an owner-result receipt; UI polish is captured but not executed on that frontier")))
+
+  (state leaf-forged
+    (context test-oracle-design instrumenting-test-pathways)
+
+    (rosetta
+      (intent "recursively refine the selected obligation into context-bounded forged code and test projections")
+      (values holofractal-law same-semantics-independent-oracles bounded-context)
+      (outcomes "each child machine names its parent obligation and proves that its outcomes satisfy rather than broaden or narrow that obligation" "Smith target-verifies implementation and independently useful test oracles with exact source, IR, compiler and target lineage")
+      (who "bounded implementation and verification workers using Rune, Scry, Smith, Dendrite and Vellum")
+      (what "one or more recursively forged executable leaves")
+      (when "after the exact frontier is owner-admitted")
+      (where "private projection buffers and revision-bound Vellum change sets")
+      (why "manual code churn and hand-authored tests can share the same unnoticed semantic drift")
+      (how "refine until each leaf fits one context, preserve parent invariants, forge projections, buffer output, review diffs, and publish only through bounded owner actions")
+      (extent "candidate implementation and tests only; no claim that runtime owners satisfy the machine")
+      (examples "a result-binding child Rune forges a pure projector and adversarial test controller from the same parent obligation")))
+
+  (state owner-qualified
+    (context live-verification external-calls)
+
+    (rosetta
+      (intent "qualify the forged leaf against real sovereign owner behavior and observable failure modes")
+      (values real-process-evidence uncertainty-honesty red-use-golden-signals)
+      (outcomes "focused deterministic, property, adversarial, restart, lost-reply and real-process checks produce exact owner receipts or typed refusals" "events, logs, metrics and traces orient diagnosis without impersonating durable effects, authority, acceptance or completion")
+      (who "the sovereign component owner and independent verifier")
+      (what "runtime qualification of one forged leaf")
+      (when "after target verification and bounded publication")
+      (where "owner processes, focused harnesses, Oculus and retained evidence artifacts")
+      (why "compiler correctness does not prove deployed owner facts or journey behavior")
+      (how "run risk-proportional focused gates, preserve unknown outcomes, reconcile exact operations, and retain provenance and diagnostic evidence")
+      (extent "qualified owner behavior for the selected leaf; no parent completion until evidence folds successfully")
+      (examples "a restarted daemon returns the same result receipt after reply loss and exposes bounded RED, USE and golden-signal evidence")))
+
+  (state evidence-folded
+    (context formal-proof claiming-completion)
+
+    (rosetta
+      (intent "monadically fold exact child evidence into the parent obligation without additive semantic mutation")
+      (values compositional-proof no-laundering replay-stability)
+      (outcomes "the parent transition consumes only typed child receipts whose identities, nonclaims and required owner observations match its precondition" "zero, multiple, stale, conflicting, uncertain or semantically broader evidence refuses and remains actionable")
+      (who "the parent machine evaluator and independent reviewer")
+      (what "one evidence-preserving recursive return")
+      (when "after every required leaf is owner-qualified")
+      (where "the parent controller, Chronos task evidence and Tellus provenance")
+      (why "a pile of successful subtasks is not proof that the parent meaning holds")
+      (how "join exact lineage and owner receipts, re-evaluate the parent obligation, advance one compelled edge, and retain all dissent and nonclaims")
+      (extent "one parent transition only; no inferred neighboring state or downstream authority")
+      (examples "the child receipt satisfies result binding but grants no Agora publication or Chronos completion")))
+
+  (state outcome-disposed
+    (context user-acceptance-review claiming-completion)
+
+    (rosetta
+      (intent "close the bounded outcome only after exact evidence and every required human disposition")
+      (values accountable-acceptance honest-completion reversibility)
+      (outcomes "the governing outcome is either demonstrably achieved, explicitly refused, or remains pending with an actionable owner-linked resolution" "any consequential acceptance, go-no-go or rollout decision carries the named human authority and challenged artifact identity")
+      (who "the accountable acceptance owner, sponsor, affected stakeholders and sovereign owners")
+      (what "the terminal disposition of the bounded delivery machine")
+      (when "after recursive evidence reaches the root and required gates are answered")
+      (where "Chronos, Aegis, Vellum review artifacts and the operator agenda")
+      (why "agents, tests, ensembles and green telemetry cannot impersonate accountable human judgment")
+      (how "present exact outcomes and dissent, obtain owner-native dispositions, re-observe resulting state, and retain rollback or follow-up paths")
+      (extent "the exact bounded objective only; no blanket approval for adjacent work")
+      (examples "the sponsor approves the exact release candidate while a separate backlog item remains open")))
+
+  (edge
+    (from intent-bound)
+    (to rosetta-reviewed)
+    (emit semantics-reviewed)
+
+    (rosetta
+      (intent "review the exact intent without substitution")
+      (values preservation)
+      (outcomes "reviewed semantics and holes are attributable")
+      (who stakeholders)
+      (what "intent-review edge")
+      (when "intent identity is exact")
+      (where "review boundary")
+      (why "missing meaning must be visible")
+      (how "review and retain holes")
+      (extent "no executable claim")
+      (examples "intent reviewed"))
+    (precondition "intent-bound's outcomes hold; the review is independently attributable, asks whether the right ensemble is present, preserves every promised outcome and non-goal, and leaves every material unresolved meaning as a typed hole"))
+
+  (edge
+    (from rosetta-reviewed)
+    (to rune-admitted)
+    (emit machine-admitted)
+
+    (rosetta
+      (intent "admit the reviewed meaning as one canonical Rune")
+      (values compiler-integrity)
+      (outcomes "the machine is reproducibly admitted")
+      (who "Rune and Scry")
+      (what "machine-admission edge")
+      (when "review is adequate")
+      (where "semantic compiler")
+      (why "projection must be lossless")
+      (how "canonicalize validate and prove")
+      (extent "no runtime claim")
+      (examples "machine admitted"))
+    (precondition "rosetta-reviewed's outcomes hold; exact canonical source and typed IR preserve all resolved semantics and explicit gates, Scry admits them without unsupported deletion or reinterpretation, and mandatory paths have zero failures"))
+
+  (edge
+    (from rune-admitted)
+    (to frontier-selected)
+    (emit frontier-admitted)
+
+    (rosetta
+      (intent "select the compelled planning frontier")
+      (values center-out)
+      (outcomes "one executable frontier is owner-bound")
+      (who "Chronos and planning authority")
+      (what "frontier-selection edge")
+      (when "the root machine is admitted")
+      (where roadmap)
+      (why "work must radiate from the stable center")
+      (how "project obligations and dependencies")
+      (extent "one frontier")
+      (examples "frontier admitted"))
+    (precondition "rune-admitted's outcomes hold; Chronos projects the exact root identity and current obligation, all prerequisites and blockers have owner-linked resolution, adjacent discoveries are classified without execution, and the selected leaf is the smallest compelled critical-path work"))
+
+  (edge
+    (from frontier-selected)
+    (to leaf-forged)
+    (emit leaf-forged)
+
+    (rosetta
+      (intent "forge a bounded recursive leaf")
+      (values holofractal-law)
+      (outcomes "code and tests preserve the parent obligation")
+      (who "bounded workers")
+      (what "leaf-forging edge")
+      (when "frontier is exact")
+      (where "Rune Scry Smith and Vellum")
+      (why "manual translation drifts")
+      (how "refine prove forge and review")
+      (extent "candidate artifacts")
+      (examples "leaf forged"))
+    (precondition "frontier-selected's outcomes hold; every child binds the exact parent obligation, fits its admitted context and authority budget, retains parent nonclaims, passes Scry and Smith target verification, and publishes code and test changes only through revision-bound Vellum owner actions"))
+
+  (edge
+    (from leaf-forged)
+    (to owner-qualified)
+    (emit owner-qualified)
+
+    (rosetta
+      (intent "qualify the leaf against real owners")
+      (values runtime-truth)
+      (outcomes "owner behavior and refusals are evidenced")
+      (who "owners and verifier")
+      (what "qualification edge")
+      (when "artifacts are forged")
+      (where "focused real processes")
+      (why "projection is not runtime proof")
+      (how "execute focused gates and retain receipts")
+      (extent "selected leaf")
+      (examples "owner qualified"))
+    (precondition "leaf-forged's outcomes hold; focused risk-proportional gates exercise success refusal uncertainty restart and adversarial cases against the real owner boundary, retain exact provenance, and instrumentation follows RED USE and golden-signal guidance without becoming authority"))
+
+  (edge
+    (from owner-qualified)
+    (to evidence-folded)
+    (emit evidence-folded)
+
+    (rosetta
+      (intent "fold child evidence into its parent")
+      (values monadic-composition)
+      (outcomes "one parent obligation is satisfied exactly or refuses")
+      (who "parent evaluator")
+      (what "evidence-fold edge")
+      (when "children are qualified")
+      (where "recursive controller")
+      (why "completion is compositional")
+      (how "join lineage receipts and nonclaims")
+      (extent "one parent edge")
+      (examples "evidence folded"))
+    (precondition "owner-qualified's outcomes hold; exact child lineage and owner receipts match the parent precondition, zero or multiple eligible interpretations refuse, no child nonclaim is laundered into authority, and the parent advances exactly one compelled edge"))
+
+  (edge
+    (from evidence-folded)
+    (to outcome-disposed)
+    (emit outcome-disposed)
+
+    (rosetta
+      (intent "obtain the accountable bounded outcome disposition")
+      (values human-gating)
+      (outcomes "the root outcome is honestly disposed")
+      (who "accountable authorities")
+      (what "outcome-disposition edge")
+      (when "root evidence is complete")
+      (where "human and owner gates")
+      (why "proof cannot impersonate judgment")
+      (how "present challenge decide and re-observe")
+      (extent "exact objective")
+      (examples "outcome disposed"))
+    (precondition "evidence-folded's outcomes hold at the governing root; every required owner observation is current, every admitted stakeholder finding is disposed or explicitly pending, and each consequential acceptance go-no-go or rollout decision has the exact named-human receipt rather than agent test ensemble or silence substitution"))
+
+  (signal semantics-reviewed
+    (rosetta
+      (intent "announce reviewed semantics")
+      (values traceability)
+      (outcomes "review identity is observable")
+      (who "authorized observers")
+      (what "review signal")
+      (when "review completes")
+      (where "delivery evidence")
+      (why "stages must be inspectable")
+      (how "emit derived identity")
+      (extent "no authority")
+      (examples "semantics reviewed")))
+
+  (signal machine-admitted
+    (rosetta
+      (intent "announce machine admission")
+      (values traceability)
+      (outcomes "source and IR identity are observable")
+      (who "authorized observers")
+      (what "admission signal")
+      (when "Scry admits")
+      (where "delivery evidence")
+      (why "compiler identity matters")
+      (how "emit exact lineage")
+      (extent "no runtime truth")
+      (examples "machine admitted")))
+
+  (signal frontier-admitted
+    (rosetta
+      (intent "announce selected frontier")
+      (values orientation)
+      (outcomes "critical work is observable")
+      (who operators)
+      (what "planning signal")
+      (when "Chronos admits frontier")
+      (where roadmap)
+      (why "drift must be visible")
+      (how "emit task and obligation identities")
+      (extent "no task mutation")
+      (examples "frontier admitted")))
+
+  (signal leaf-forged
+    (rosetta
+      (intent "announce forged leaf")
+      (values lineage)
+      (outcomes "projection identity is observable")
+      (who reviewers)
+      (what "forge signal")
+      (when "targets verify")
+      (where "delivery evidence")
+      (why "generated artifacts need provenance")
+      (how "emit source IR compiler and target identities")
+      (extent "no owner truth")
+      (examples "leaf forged")))
+
+  (signal owner-qualified
+    (rosetta
+      (intent "announce owner qualification")
+      (values runtime-evidence)
+      (outcomes "qualified boundary is observable")
+      (who reviewers)
+      (what "qualification signal")
+      (when "focused gates pass")
+      (where "evidence store")
+      (why "runtime truth differs from projection")
+      (how "emit bounded receipts")
+      (extent "selected leaf only")
+      (examples "owner qualified")))
+
+  (signal evidence-folded
+    (rosetta
+      (intent "announce recursive evidence return")
+      (values compositionality)
+      (outcomes "parent advancement is observable")
+      (who planners)
+      (what "fold signal")
+      (when "parent edge advances")
+      (where "recursive controller")
+      (why "subtask success is not enough")
+      (how "emit parent and child identities")
+      (extent "one edge")
+      (examples "evidence folded")))
+
+  (signal outcome-disposed
+    (rosetta
+      (intent "announce bounded disposition")
+      (values accountability)
+      (outcomes "decision and authority are observable")
+      (who stakeholders)
+      (what "disposition signal")
+      (when "root gate resolves")
+      (where "operator agenda")
+      (why "completion requires accountability")
+      (how "emit exact disposition receipt")
+      (extent "one objective")
+      (examples "outcome disposed")))
+  (epistemic-tier bool))

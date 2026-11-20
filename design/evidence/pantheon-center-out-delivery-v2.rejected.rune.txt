@@ -1,0 +1,369 @@
+(machine pantheon-center-out-delivery-v2
+  (rosetta
+    (intent "deliver one bounded Pantheon outcome from an exact governing intent through lossless recursive refinement, owner-qualified evidence, and separately accountable disposition")
+    (values semantic-preservation owner-preservation holofractal-recursion epistemic-honesty least-authority)
+    (outcomes "every executable work packet binds one admitted parent obligation and exact governing-intent identity" "one exact child computation returns one qualified receipt or typed refusal into one parent bind" "discovery candidates remain visible but non-executable until review admits their relationship" "pending accepted refused and revision-required human outcomes remain distinct")
+    (who "the accountable human sponsor, affected stakeholders, semantic-preservation reviewer, planning authority, constrained workers, sovereign owners, and independent verifiers")
+    (what "a candidate center-out delivery and recursive planning machine")
+    (when "for each material journey, executable work packet, implementation, test, acceptance, and rollout decision")
+    (where "Vellum intent, Rune and Scry, a qualified frontier projector, Chronos task state, Smith projections, owner boundaries, Agora deliberation, and evidence surfaces")
+    (why "prompt-to-code drift, additive subtask completion, speculative decomposition, shadow ownership, and collapsed human decisions destroy meaning")
+    (how "bind exact intent, review Rosetta, independently attest Rosetta-to-Rune preservation, admit the Rune, derive and authorize one frontier, invoke one recursive child or qualify one irreducible leaf, bind one receipt into one parent edge, and preserve distinct human dispositions")
+    (extent "candidate governance and evidence composition only; Bool tests exact predicates but never decides plural mu judgment; no compiler result, task, model, test, telemetry, or ensemble grants effect, priority, acceptance, authority expansion, or rollout")
+    (examples "one result-binding obligation invokes one bounded child machine whose qualified receipt advances only that parent edge"))
+  (initial intent-bound)
+
+  (state intent-bound
+    (context human-impact-decision architecture-flow-review)
+    (rosetta
+      (intent "bind one exact owner-issued governing intent")
+      (values identity supersession-lineage)
+      (outcomes "GoverningIntentV1 binds owner revision digest included artifacts outcomes non-goals sponsor stakeholder standing unresolved gates predecessor and supersession law")
+      (who "the governing-intent owner, sponsor, and admitted stakeholders")
+      (what "the stable semantic center")
+      (when "before decomposition")
+      (where "a Vellum-owned artifact and receipt")
+      (why "a mutable prompt or locator cannot anchor recursion")
+      (how "retain exact bytes identity provenance standing dissent gates and lineage")
+      (extent "intent evidence only")
+      (examples "intent twelve names eleven as predecessor")))
+
+  (state rosetta-reviewed
+    (context reviewing-ensemble-convergence human-impact-decision)
+    (rosetta
+      (intent "retain reviewed meaning and explicit holes")
+      (values residual-context equitable-review refusal-over-invention)
+      (outcomes "compass narrative constraints non-goals owners authority limits uncertainty holes and dissent are attributable" "the review answers whether the right ensemble is present")
+      (who "independently attributable stakeholders and grounded advisers")
+      (what "reviewed Rosetta and questions")
+      (when "after intent binding")
+      (where "versioned design and Agora review")
+      (why "formal structure cannot recover omitted meaning")
+      (how "steelman challenge attribute and refuse invention")
+      (extent "context not behavior or approval")
+      (examples "a missing acceptance owner remains a question")))
+
+  (state preservation-reviewed
+    (context formal-proof reviewing-ensemble-convergence)
+    (rosetta
+      (intent "independently compare the exact Rune candidate with the reviewed Rosetta")
+      (values semantic-completeness attributable-review)
+      (outcomes "a preservation manifest maps every resolved claim nonclaim and gate to exact Rune structure or refuses" "review identity method limitations and dissent remain separate from Scry")
+      (who "the semantic-preservation reviewer and affected stakeholders")
+      (what "Rosetta-to-Rune preservation evidence")
+      (when "before compiler admission")
+      (where "the design evidence boundary")
+      (why "Scry cannot prove external intent completeness")
+      (how "trace every claim and challenge omissions and authority drift")
+      (extent "comparison only")
+      (examples "generic disposition refuses because three human outcomes were required")))
+
+  (state rune-admitted
+    (context formal-proof architecture-flow-review)
+    (rosetta
+      (intent "admit the exact canonical Rune after separate preservation review")
+      (values compiler-integrity total-traceability)
+      (outcomes "Scry accepts exact source and publishes reproducible typed-IR identity" "structural admission claims no external completeness runtime truth or authority")
+      (who "Scry and its observer")
+      (what "compiler admission")
+      (when "after preservation review")
+      (where "Rune source and typed IR")
+      (why "unsupported machine semantics must refuse")
+      (how "canonicalize validate and prove mandatory structure")
+      (extent "compiler facts only")
+      (examples "invocation survives into typed IR")))
+
+  (state frontier-proposed
+    (context operator-transition-decision test-oracle-design)
+    (rosetta
+      (intent "derive the next semantic frontier without selecting work")
+      (values deterministic-eligibility center-out anti-speculation)
+      (outcomes "a qualified projector emits zero one or multiple eligible parent obligations with identities prerequisites blockers and evidence requirements" "discovery candidates bind observation evidence and a proposed parent but remain non-executable")
+      (who "the qualified projector, product manager, and observers")
+      (what "a typed frontier proposal")
+      (when "after admission or one evidence bind")
+      (where "planning composition before Chronos mutation")
+      (why "Chronos stores tasks but does not interpret Rune eligibility")
+      (how "evaluate exact state owner facts necessity bounds and no-smaller-preserving-child evidence")
+      (extent "proposal only")
+      (examples "two eligible obligations require an explicit choice")))
+
+  (state frontier-blocked
+    (context operator-transition-decision claiming-completion)
+    (rosetta
+      (intent "retain zero eligibility with an exact resolution path")
+      (values honest-blocking resumability)
+      (outcomes "the missing owner fact hole prerequisite gate or decision links to its resolver" "no executable packet is admitted")
+      (who "the planning authority, relevant owner, and operator")
+      (what "a resumable blocked frontier")
+      (when "eligible count is zero")
+      (where "Chronos and the operator agenda")
+      (why "zero is not permission for adjacent work")
+      (how "retain sampled state blocker resolver and re-observation condition")
+      (extent "no execution or completion")
+      (examples "missing stakeholder standing links to its gate")))
+
+  (state planning-choice-required
+    (context operator-transition-decision human-impact-decision)
+    (rosetta
+      (intent "obtain an attributable choice among multiple eligible obligations")
+      (values explicit-priority no-convenience-selection)
+      (outcomes "the named planning authority selects one still-eligible obligation with rationale and dissent")
+      (who "the authorized product manager, product owner, sponsor, or named human")
+      (what "a frontier-choice disposition")
+      (when "eligible count exceeds one")
+      (where "Agora deliberation, Vellum rationale, and authority boundary")
+      (why "multiplicity is judgment rather than deterministic selection")
+      (how "present alternatives consequences and evidence then bind one receipt")
+      (extent "selection only")
+      (examples "the product owner selects the owner receipt before presentation polish")))
+
+  (state frontier-retained
+    (context operator-transition-decision architecture-flow-review)
+    (rosetta
+      (intent "retain one authorized executable packet without granting execution authority")
+      (values durable-planning owner-separation)
+      (outcomes "Chronos stores one task bound to governing intent Rune IR parent obligation prerequisites resolution links refinement contract and evidence requirements" "the receipt proves task graph and status only")
+      (who "Chronos and the separate planning principal")
+      (what "one machine-bound work packet")
+      (when "after a single eligible obligation or authorized choice")
+      (where "the canonical Chronos roadmap")
+      (why "task durability must not make Chronos semantic or execution owner")
+      (how "submit the exact projection once and re-observe its status")
+      (extent "no lease dispatch effect completion or acceptance")
+      (examples "Chronos retains one exact parent obligation")))
+
+  (state leaf-projected
+    (context test-oracle-design instrumenting-test-pathways)
+    (rosetta
+      (intent "forge the selected irreducible leaf into bounded code and test candidates")
+      (values holofractal-base-case independent-oracles bounded-context)
+      (outcomes "a no-smaller-preserving-child proof identifies the base case" "Smith target-verifies candidate projections and lineage while an independent reviewer owns oracle-quality judgment")
+      (who "bounded workers, Smith, Vellum, and independent test reviewer")
+      (what "one irreducible candidate change and tests")
+      (when "after task retention and separate lease")
+      (where "private buffers and revision-bound Vellum changes")
+      (why "manual code and tests can share unnoticed drift")
+      (how "prove the base case forge review and publish through bounded owners")
+      (extent "candidate artifacts only")
+      (examples "one pure receipt projector fits one change set")))
+
+  (state child-returned
+    (context formal-proof architecture-flow-review)
+    (rosetta
+      (intent "return one recursively delivered child result to its exact parent")
+      (values kleisli-bind exact-parentage non-additivity)
+      (outcomes "one invoked child returns one QualifiedChildReceipt or TypedRefusal bound to governing intent parent obligation child lineage owner facts and nonclaims" "the return cannot satisfy a sibling ancestor or downstream obligation")
+      (who "the invoked child machine and parent evaluator")
+      (what "one recursive return")
+      (when "a smaller preserving child is required")
+      (where "the Rune invoked-machine boundary")
+      (why "plural joins are additive without singular parent-bound return")
+      (how "invoke the same bounded law and retain one exact result")
+      (extent "one child result")
+      (examples "a Daimon child returns to one J1 precondition")))
+
+  (state leaf-qualified
+    (context live-verification external-calls)
+    (rosetta
+      (intent "qualify the projected base leaf against sovereign owner behavior and independent oracles")
+      (values real-process-evidence uncertainty-honesty red-use-golden-signals)
+      (outcomes "owners issue exact receipts or refusals and focused qualification re-observes and evaluates them across success uncertainty restart and adversarial cases" "telemetry orients without impersonating owner facts or authority")
+      (who "sovereign owners and independent verifier")
+      (what "runtime qualification of one base leaf")
+      (when "after bounded publication")
+      (where "owner processes, focused harnesses, Oculus, and evidence artifacts")
+      (why "compiler correctness is not runtime truth")
+      (how "run proportional gates preserve unknowns and retain provenance")
+      (extent "one leaf only")
+      (examples "restart returns the same owner receipt after reply loss")))
+
+  (state evidence-folded
+    (context formal-proof claiming-completion)
+    (rosetta
+      (intent "bind one qualified child or leaf result into one parent obligation")
+      (values monadic-composition no-laundering replay-stability)
+      (outcomes "the parent consumes one typed result matching one precondition and advances one edge" "zero multiple stale conflicting uncertain or broader interpretations refuse")
+      (who "the parent evaluator and independent reviewer")
+      (what "one evidence-preserving bind")
+      (when "after one child or leaf qualifies")
+      (where "parent controller, Chronos evidence, and Tellus provenance")
+      (why "a collection of successful tasks is not parent proof")
+      (how "match identities and nonclaims then re-evaluate one obligation")
+      (extent "one parent edge only")
+      (examples "result binding grants no publication authority")))
+
+  (state human-disposition-required
+    (context user-acceptance-review human-impact-decision)
+    (rosetta
+      (intent "hold complete root evidence pending one exact human decision")
+      (values pending-is-not-terminal equitable-challenge)
+      (outcomes "the agenda presents artifact evidence dissent decision scope authority and safe choices" "silence timeout agent judgment ensemble agreement tests and telemetry remain pending")
+      (who "the named human acceptance owner, sponsor, or affected-person authority")
+      (what "a nonterminal human gate")
+      (when "root evidence is complete and policy requires disposition")
+      (where "Aegis, Vellum, Agora, and operator agenda")
+      (why "proof cannot impersonate accountable judgment")
+      (how "present challenge decide and re-observe the receipt")
+      (extent "decision pending only")
+      (examples "rollout remains pending until sponsor response")))
+
+  (state scope-qualified
+    (context claiming-completion formal-proof)
+    (rosetta
+      (intent "return one qualified nonconsequential child scope")
+      (values bounded-completion honest-nonclaims)
+      (outcomes "the exact scope returns a typed receipt with lineage and nonclaims" "no required human gate or unresolved scope obligation remains")
+      (who "the bounded evaluator")
+      (what "a successful child terminal")
+      (when "scope obligations are folded without consequential gate")
+      (where "the invoked-machine return")
+      (why "child completion differs from root acceptance")
+      (how "issue one qualified-scope receipt")
+      (extent "this scope only")
+      (examples "a codec child returns without product acceptance")))
+
+  (state outcome-accepted
+    (context user-acceptance-review claiming-completion)
+    (rosetta
+      (intent "retain the exact affirmative human disposition")
+      (values accountable-acceptance bounded-authority)
+      (outcomes "the named human accepted the exact challenged scope under exact criteria and evidence")
+      (who "the named human authority")
+      (what "the accepted terminal")
+      (when "the human gate accepts")
+      (where "the owner-native gate")
+      (why "acceptance is distinct from refusal revision and pending")
+      (how "retain and re-observe the receipt")
+      (extent "the exact scope only")
+      (examples "the sponsor approves this release candidate")))
+
+  (state outcome-refused
+    (context user-acceptance-review claiming-completion)
+    (rosetta
+      (intent "retain the exact negative human disposition")
+      (values accountable-refusal non-coercion)
+      (outcomes "the named human refused the exact scope with rationale and safe next action")
+      (who "the named human authority")
+      (what "the refused terminal")
+      (when "the human gate refuses")
+      (where "the owner-native gate")
+      (why "negative judgment is first-class")
+      (how "retain and re-observe the refusal")
+      (extent "the exact scope only")
+      (examples "the sponsor declines rollout")))
+
+  (state revision-required
+    (context human-impact-decision architecture-flow-review)
+    (rosetta
+      (intent "retain requested change without mutating the active intent in place")
+      (values supersession-not-rewrite reflexive-learning)
+      (outcomes "the requested delta evidence affected semantics and authority are retained" "a separate amendment machine must issue a new intent identity with predecessor lineage")
+      (who "the named human, stakeholders, and governing-intent owner")
+      (what "the revision-required terminal for this version")
+      (when "the gate requests change or a material lesson changes meaning")
+      (where "Vellum amendment, Agora challenge, Chronos follow-up, and agenda")
+      (why "goal evolution requires explicit supersession")
+      (how "close this version and start separately reviewed amendment")
+      (extent "no in-place rewrite or automatic restart")
+      (examples "intent thirteen names twelve as predecessor")))
+
+  (edge (from intent-bound) (to rosetta-reviewed) (emit semantics-reviewed)
+    (rosetta (intent "review exact intent") (values preservation) (outcomes "meaning and holes are attributable") (who stakeholders) (what "intent review") (when "identity is exact") (where review) (why "omissions must remain visible") (how "review and retain holes") (extent "no execution") (examples "semantics reviewed"))
+    (precondition "intent-bound's outcomes hold; review asks whether the right ensemble is present, preserves every outcome and non-goal, and leaves each material unresolved meaning as a typed hole"))
+
+  (edge (from rosetta-reviewed) (to preservation-reviewed) (emit preservation-attested)
+    (rosetta (intent "attest Rosetta-to-Rune preservation") (values completeness) (outcomes "one preservation manifest exists") (who reviewer) (what "preservation review") (when "candidate is canonical") (where evidence) (why "Scry does not own completeness") (how "map every claim") (extent "no compiler claim") (examples "preservation attested"))
+    (precondition "rosetta-reviewed's outcomes hold; an independent preservation manifest maps every resolved claim nonclaim and gate to exact Rune structure or refuses and retains limitations and dissent"))
+
+  (edge (from preservation-reviewed) (to rune-admitted) (emit machine-admitted)
+    (rosetta (intent "admit exact Rune") (values compiler-integrity) (outcomes "source and IR identities are reproducible") (who Scry) (what "compiler admission") (when "preservation is attested") (where compiler) (why "unsupported semantics refuse") (how "validate exact source") (extent "no runtime claim") (examples "machine admitted"))
+    (precondition "preservation-reviewed's outcomes hold for the exact source; Scry admits it and mandatory structural path checks have zero failures"))
+
+  (edge (from rune-admitted) (to frontier-proposed) (emit frontier-evaluated)
+    (rosetta (intent "derive typed frontier") (values center-out) (outcomes "eligibility cardinality is explicit") (who projector) (what "frontier evaluation") (when "machine is admitted") (where planning) (why "work radiates from center") (how "evaluate exact state and owner facts") (extent "proposal only") (examples "frontier evaluated"))
+    (precondition "rune-admitted's outcomes hold; the qualified projector consumes exact machine identity current state and owner facts applies typed eligibility and minimality and emits no task or execution effect"))
+
+  (edge (from frontier-proposed) (to frontier-blocked) (emit frontier-blocked)
+    (rosetta (intent "retain zero eligibility") (values honesty) (outcomes "resolver is visible") (who operator) (what "blocked frontier") (when "count is zero") (where agenda) (why "zero is not selection") (how "bind resolver") (extent "no execution") (examples "frontier blocked"))
+    (precondition "frontier-proposed's outcomes hold; eligible count is zero and each blocking fact has an owner-linked resolver or explicit external decision"))
+
+  (edge (from frontier-blocked) (to frontier-proposed) (emit frontier-reevaluated)
+    (rosetta (intent "re-evaluate a resolved block") (values freshness) (outcomes "fresh facts replace stale evidence") (who projector) (what "reevaluation") (when "resolver changes") (where planning) (why "blocked is resumable") (how "sample current facts") (extent "proposal only") (examples "frontier reevaluated"))
+    (precondition "frontier-blocked's outcomes hold; the exact resolver has a new owner observation and no cached result is reused"))
+
+  (edge (from frontier-proposed) (to planning-choice-required) (emit planning-choice-requested)
+    (rosetta (intent "request multiple choice") (values no-convenience-selection) (outcomes "alternatives await authority") (who planner) (what "choice request") (when "count exceeds one") (where decision) (why "multiple is judgment") (how "present alternatives") (extent "no selection") (examples "choice requested"))
+    (precondition "frontier-proposed's outcomes hold; more than one obligation is eligible and no compelled relation selects one"))
+
+  (edge (from frontier-proposed) (to frontier-retained) (emit frontier-retained)
+    (rosetta (intent "retain one compelled packet") (values exactness) (outcomes "Chronos stores one projection") (who "planner and Chronos") (what "single retention") (when "count is one") (where Chronos) (why "one needs no arbitrary chooser") (how "submit once") (extent "task state only") (examples "frontier retained"))
+    (precondition "frontier-proposed's outcomes hold; exactly one obligation is eligible and necessary for the next root outcome, planning authority admits the exact projection, and Chronos returns a definitive matching receipt"))
+
+  (edge (from planning-choice-required) (to frontier-retained) (emit frontier-retained)
+    (rosetta (intent "retain selected packet") (values accountable-priority) (outcomes "Chronos stores the authorized selection") (who "planner and Chronos") (what "selected retention") (when "choice exists") (where Chronos) (why "storage follows judgment") (how "revalidate and submit once") (extent "task state only") (examples "selected frontier retained"))
+    (precondition "planning-choice-required's outcomes hold; the choice receipt names one still-eligible obligation and rationale, fresh projection confirms it, and Chronos returns a definitive matching receipt"))
+
+  (edge (from frontier-retained) (to leaf-projected) (emit leaf-projected)
+    (rosetta (intent "forge one base leaf") (values base-case) (outcomes "candidate code and tests preserve one obligation") (who workers) (what "leaf projection") (when "no smaller child exists") (where "Rune Scry Smith Vellum") (why "base case must be explicit") (how "prove forge review publish") (extent "candidate only") (examples "leaf projected"))
+    (precondition "frontier-retained's outcomes hold; a reviewed no-smaller-preserving-child proof establishes the base case, lease and authority are valid, Smith target-verifies candidate projections and lineage, independent review challenges oracle quality, and Vellum publishes revision-bound changes"))
+
+  (edge (from frontier-retained) (to child-returned) (emit child-returned)
+    (invoke pantheon-center-out-delivery-v2)
+    (rosetta (intent "invoke one preserving child") (values recursion) (outcomes "one child result returns") (who child) (what "recursive refinement") (when "smaller child required") (where invocation) (why "recursion must be executable") (how "invoke same law with parent identity") (extent "one child") (examples "child returned"))
+    (precondition "frontier-retained's outcomes hold; one child intent and Rune bind the exact parent obligation prove refinement preserve nonclaims and authority limits fit one bounded context and return one QualifiedChildReceipt or TypedRefusal"))
+
+  (edge (from leaf-projected) (to leaf-qualified) (emit leaf-qualified)
+    (rosetta (intent "qualify base leaf") (values runtime-truth) (outcomes "owner facts and independent result are retained") (who "owners and verifier") (what "qualification") (when "candidate is published") (where processes) (why "projection is not runtime proof") (how "run focused gates") (extent "one leaf") (examples "leaf qualified"))
+    (precondition "leaf-projected's outcomes hold; sovereign owners issue exact receipts or refusals, focused independent gates exercise success refusal uncertainty restart and adversarial cases, and telemetry remains non-authoritative"))
+
+  (edge (from leaf-qualified) (to evidence-folded) (emit evidence-folded)
+    (rosetta (intent "bind one base result") (values monadic-composition) (outcomes "one parent edge advances") (who evaluator) (what "base bind") (when "leaf qualifies") (where parent) (why "parentage matters") (how "match and bind one") (extent "one edge") (examples "base folded"))
+    (precondition "leaf-qualified's outcomes hold; exactly one result matches the exact parent obligation and owner identities, zero or multiple interpretations refuse, and no nonclaim becomes authority"))
+
+  (edge (from child-returned) (to evidence-folded) (emit evidence-folded)
+    (rosetta (intent "bind one recursive result") (values kleisli-bind) (outcomes "one parent edge advances") (who evaluator) (what "child bind") (when "child returns") (where parent) (why "recursive parentage matters") (how "match and bind one") (extent "one edge") (examples "child folded"))
+    (precondition "child-returned's outcomes hold; exactly one QualifiedChildReceipt matches governing intent parent obligation and child lineage, TypedRefusal does not advance, zero or multiple interpretations refuse, and nonclaims remain nonclaims"))
+
+  (edge (from evidence-folded) (to frontier-proposed) (emit frontier-evaluated)
+    (rosetta (intent "evaluate next obligation") (values recursive-unwind) (outcomes "advanced scope is freshly evaluated") (who projector) (what "continuing frontier") (when "obligations remain") (where planning) (why "one bind does not complete siblings") (how "re-enter with advanced state") (extent "proposal only") (examples "next frontier"))
+    (precondition "evidence-folded's outcomes hold; the advanced scope or exact ancestor return has an unresolved admitted obligation and fresh owner facts are supplied"))
+
+  (edge (from evidence-folded) (to scope-qualified) (emit scope-qualified)
+    (rosetta (intent "return qualified child scope") (values bounded-completion) (outcomes "one child receipt is issued") (who evaluator) (what "scope return") (when "scope complete without human gate") (where invocation) (why "child differs from acceptance") (how "issue receipt and nonclaims") (extent "one scope") (examples "scope qualified"))
+    (precondition "evidence-folded's outcomes hold; all obligations in the bounded scope are satisfied, no consequential human disposition is required, and the receipt claims no parent sibling acceptance or rollout authority"))
+
+  (edge (from evidence-folded) (to human-disposition-required) (emit human-decision-requested)
+    (rosetta (intent "request human decision") (values human-gating) (outcomes "pending remains pending") (who human) (what "gate request") (when "root complete and gate required") (where agenda) (why "proof cannot decide mu") (how "present challenge") (extent "no disposition") (examples "decision requested"))
+    (precondition "evidence-folded's outcomes hold at the consequential root; technical obligations are satisfied, findings and dissent are presented, and policy names the human authority and artifact"))
+
+  (edge (from human-disposition-required) (to outcome-accepted) (emit outcome-accepted)
+    (rosetta (intent "retain acceptance") (values accountability) (outcomes "affirmative receipt is final") (who human) (what acceptance) (when "gate accepts") (where gate) (why "outcomes differ") (how "re-observe receipt") (extent "exact scope") (examples "accepted"))
+    (precondition "human-disposition-required's outcomes hold; the owner-native gate returns an affirmative receipt binding authority artifact criteria evidence and scope"))
+
+  (edge (from human-disposition-required) (to outcome-refused) (emit outcome-refused)
+    (rosetta (intent "retain refusal") (values accountability) (outcomes "negative receipt is final") (who human) (what refusal) (when "gate refuses") (where gate) (why "outcomes differ") (how "re-observe receipt") (extent "exact scope") (examples "refused"))
+    (precondition "human-disposition-required's outcomes hold; the owner-native gate returns a negative receipt binding authority artifact rationale and scope"))
+
+  (edge (from human-disposition-required) (to revision-required) (emit revision-required)
+    (rosetta (intent "retain requested revision") (values reflexive-learning) (outcomes "this version closes with exact delta") (who human) (what revision) (when "gate requests change") (where gate) (why "evolution uses supersession") (how "bind delta and predecessor") (extent "no rewrite") (examples "revision required"))
+    (precondition "human-disposition-required's outcomes hold; the owner-native gate returns a revision request binding artifact delta rationale and authority and no active intent is mutated in place"))
+
+  (signal semantics-reviewed (rosetta (intent "announce reviewed semantics") (values traceability) (outcomes "review identity is observable") (who observers) (what signal) (when reviewed) (where evidence) (why "stages differ") (how "emit identity") (extent "no authority") (examples "semantics reviewed")))
+  (signal preservation-attested (rosetta (intent "announce preservation") (values traceability) (outcomes "manifest identity is observable") (who observers) (what signal) (when attested) (where evidence) (why "owners differ") (how "emit identity") (extent "no compiler claim") (examples "preservation attested")))
+  (signal machine-admitted (rosetta (intent "announce admission") (values traceability) (outcomes "source and IR are observable") (who observers) (what signal) (when admitted) (where evidence) (why "identity matters") (how "emit lineage") (extent "no runtime truth") (examples "machine admitted")))
+  (signal frontier-evaluated (rosetta (intent "announce frontier") (values orientation) (outcomes "cardinality is observable") (who planners) (what signal) (when evaluated) (where planning) (why "drift is visible") (how "emit proposal") (extent "no selection") (examples "frontier evaluated")))
+  (signal frontier-blocked (rosetta (intent "announce block") (values honesty) (outcomes "resolver is observable") (who operators) (what signal) (when blocked) (where agenda) (why "zero is actionable") (how "emit resolver") (extent "no execution") (examples "blocked")))
+  (signal frontier-reevaluated (rosetta (intent "announce reevaluation") (values freshness) (outcomes "new sample is observable") (who planners) (what signal) (when changed) (where planning) (why "resume uses facts") (how "emit sample") (extent "proposal only") (examples "reevaluated")))
+  (signal planning-choice-requested (rosetta (intent "announce choice") (values accountability) (outcomes "alternatives are visible") (who planners) (what signal) (when multiple) (where decision) (why "choice needs authority") (how "emit alternatives") (extent "no selection") (examples "choice requested")))
+  (signal frontier-retained (rosetta (intent "announce retention") (values separation) (outcomes "Chronos receipt is observable") (who operators) (what signal) (when retained) (where Chronos) (why "storage differs") (how "emit receipt") (extent "no execution") (examples "retained")))
+  (signal leaf-projected (rosetta (intent "announce projection") (values lineage) (outcomes "candidate is observable") (who reviewers) (what signal) (when projected) (where evidence) (why "provenance matters") (how "emit lineage") (extent "no owner truth") (examples "projected")))
+  (signal child-returned (rosetta (intent "announce child return") (values recursion) (outcomes "one child result is observable") (who parent) (what signal) (when returned) (where invocation) (why "parentage matters") (how "emit identity") (extent "no parent advance") (examples "child returned")))
+  (signal leaf-qualified (rosetta (intent "announce qualification") (values runtime-evidence) (outcomes "receipts and verifier result are observable") (who reviewers) (what signal) (when qualified) (where evidence) (why "runtime differs") (how "emit references") (extent "one leaf") (examples "qualified")))
+  (signal evidence-folded (rosetta (intent "announce one bind") (values compositionality) (outcomes "one edge is observable") (who planners) (what signal) (when folded) (where parent) (why "task success is insufficient") (how "emit identities") (extent "one edge") (examples "folded")))
+  (signal scope-qualified (rosetta (intent "announce child scope") (values boundedness) (outcomes "return receipt is observable") (who parent) (what signal) (when complete) (where invocation) (why "child differs") (how "emit receipt") (extent "one scope") (examples "scope qualified")))
+  (signal human-decision-requested (rosetta (intent "announce pending gate") (values accountability) (outcomes "decision material is observable") (who human) (what signal) (when requested) (where agenda) (why "pending differs") (how "emit challenge") (extent "no disposition") (examples "decision requested")))
+  (signal outcome-accepted (rosetta (intent "announce acceptance") (values accountability) (outcomes "affirmative receipt is observable") (who stakeholders) (what signal) (when accepted) (where gate) (why "outcomes differ") (how "emit receipt") (extent "exact scope") (examples "accepted")))
+  (signal outcome-refused (rosetta (intent "announce refusal") (values accountability) (outcomes "negative receipt is observable") (who stakeholders) (what signal) (when refused) (where gate) (why "outcomes differ") (how "emit receipt") (extent "exact scope") (examples "refused")))
+  (signal revision-required (rosetta (intent "announce revision") (values reflexivity) (outcomes "delta is observable") (who stakeholders) (what signal) (when requested) (where gate) (why "evolution supersedes") (how "emit receipt") (extent "no rewrite") (examples "revision required")))
+  (epistemic-tier bool))

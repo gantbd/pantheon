@@ -1416,11 +1416,53 @@ fn vellum_action_id(action: &ServiceAction) -> &'static str {
         | ServiceAction::Down
         | ServiceAction::Home
         | ServiceAction::End => "vellum.cursor.move",
+        ServiceAction::PageUp => "vellum.cursor.page-up",
+        ServiceAction::PageDown => "vellum.cursor.page-down",
         ServiceAction::NextDocument => "vellum.document.next",
         ServiceAction::ToggleDocumentSelection => "vellum.document.toggle-selection",
         ServiceAction::Save => "vellum.save",
         ServiceAction::Refresh => "view.refresh",
     }
+}
+
+const fn vellum_viewport_lines(terminal_height: u16, surface: Surface) -> u16 {
+    let shell_body = terminal_height.saturating_sub(4);
+    let assigned = if matches!(surface, Surface::Workspace) {
+        shell_body.saturating_sub(2)
+    } else {
+        shell_body
+    };
+    vellum_tui::document_viewport_lines(assigned)
+}
+
+fn vellum_action_settlement(
+    result: &Result<vellum_tui::ServiceActionOutcome, vellum_tui::ServiceEditorError>,
+) -> (&'static str, ActivityLevel) {
+    match result {
+        Ok(vellum_tui::ServiceActionOutcome::Moved) => ("owner_moved", ActivityLevel::Success),
+        Ok(vellum_tui::ServiceActionOutcome::Boundary) => ("owner_boundary", ActivityLevel::Info),
+        Ok(vellum_tui::ServiceActionOutcome::Accepted) => {
+            ("owner_accepted", ActivityLevel::Success)
+        }
+        Err(vellum_tui::ServiceEditorError(
+            vellum_sdk_client::workspace::WorkspaceClientErrorV1::Refused(_),
+        )) => ("owner_refused", ActivityLevel::Warning),
+        Err(_) => ("owner_failed", ActivityLevel::Warning),
+    }
+}
+
+fn observe_vellum_action(
+    instrumentation: &mut Instrumentation,
+    action: &'static str,
+    started: Instant,
+    result: &Result<vellum_tui::ServiceActionOutcome, vellum_tui::ServiceEditorError>,
+) {
+    let Some(operation) = instrumentation.begin_peer_operation_at(action, "vellum", started) else {
+        return;
+    };
+    let (stage, level) = vellum_action_settlement(result);
+    instrumentation.mark_peer_stage(operation, stage, level);
+    instrumentation.settle_peer_operation(operation, level);
 }
 
 /// Runs the composite terminal for host-supplied sessions. A Vellum-owned
@@ -5024,15 +5066,17 @@ fn route_surface_local_key(
             Surface::Chronos => RoutedInput::Chronos(key),
             Surface::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
             Surface::Workspace => RoutedInput::SwitchFocus,
-            _ => match effective_focus {
-                Focus::Chronos => RoutedInput::Chronos(key),
-                Focus::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
-            },
+            _ => RoutedInput::Suppress,
         };
     }
-    match effective_focus {
-        Focus::Chronos => RoutedInput::Chronos(key),
-        Focus::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
+    match surface {
+        Surface::Chronos => RoutedInput::Chronos(key),
+        Surface::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
+        Surface::Workspace => match effective_focus {
+            Focus::Chronos => RoutedInput::Chronos(key),
+            Focus::Vellum => RoutedInput::Vellum(translate_vellum_key(key, profile)),
+        },
+        _ => RoutedInput::Suppress,
     }
 }
 
@@ -5040,7 +5084,13 @@ fn route_surface_local_key(
 /// Pantheon does not implement cursor or document semantics here; Vellum remains
 /// the sole interpreter of the normalized presentation input.
 fn translate_vellum_key(key: KeyEvent, profile: KeybindingProfile) -> vellum_tui::Input {
-    if profile != KeybindingProfile::Emacs || key.modifiers != KeyModifiers::CONTROL {
+    if profile != KeybindingProfile::Emacs {
+        return vellum_tui::translate_key(key);
+    }
+    if is_key(key, KeyCode::Char('v'), KeyModifiers::ALT) {
+        return vellum_tui::translate_key(KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE));
+    }
+    if key.modifiers != KeyModifiers::CONTROL {
         return vellum_tui::translate_key(key);
     }
     let normalized = match key.code {
@@ -5051,6 +5101,7 @@ fn translate_vellum_key(key: KeyEvent, profile: KeybindingProfile) -> vellum_tui
         KeyCode::Char('f') => Some(KeyCode::Right),
         KeyCode::Char('n') => Some(KeyCode::Down),
         KeyCode::Char('p') => Some(KeyCode::Up),
+        KeyCode::Char('v') => Some(KeyCode::PageDown),
         // Vellum currently owns a bounded literal-find prompt rather than an
         // incremental search engine. Keep the canonical search direction and
         // expose that limitation instead of retaining Pantheon's save chord.
@@ -10516,8 +10567,11 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                 _ => false,
             };
             let health_view = health.view(peer_busy, peer_uncertain);
-            let height = terminal.size()?.height.saturating_sub(4);
-            let vellum_frame = vellum.as_ref().and_then(|editor| editor.frame(height));
+            let height = vellum_viewport_lines(terminal.size()?.height, shell.active());
+            let vellum_frame = vellum.as_mut().and_then(|editor| {
+                editor.observe_viewport_lines(height);
+                editor.frame(height)
+            });
             let operations_view = operations.view();
             let agenda_view = operator_agenda_view(
                 chronos.as_ref(),
@@ -13321,6 +13375,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             }
                         }
                     }
+                    RoutedInput::Suppress => {}
                     RoutedInput::SwitchFocus => {
                         if shell.active() == Surface::Workspace {
                             if focus == Focus::Chronos
@@ -13436,7 +13491,7 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                             let action_id = vellum_action_id(&action);
                             let started = Instant::now();
                             let editor = vellum.as_mut().expect("checked above");
-                            let result = editor.apply(action);
+                            let result = editor.apply_observed(action);
                             if editor.take_identity_renewal() {
                                 instrumentation.record(
                                     "vellum.client.renew-identity",
@@ -13450,15 +13505,25 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
                                     "Vellum replay identity renewed before request capacity exhaustion",
                                 );
                             }
-                            let level = if result.is_ok() {
-                                ActivityLevel::Success
-                            } else {
-                                ActivityLevel::Warning
-                            };
-                            instrumentation.record(action_id, "vellum", level, started.elapsed());
+                            observe_vellum_action(
+                                &mut instrumentation,
+                                action_id,
+                                started,
+                                &result,
+                            );
                             notice = result.map_or_else(
                                 |error| error.to_string(),
-                                |()| "Vellum action accepted".into(),
+                                |outcome| match outcome {
+                                    vellum_tui::ServiceActionOutcome::Moved => {
+                                        "Vellum page moved".into()
+                                    }
+                                    vellum_tui::ServiceActionOutcome::Boundary => {
+                                        "Vellum document boundary".into()
+                                    }
+                                    vellum_tui::ServiceActionOutcome::Accepted => {
+                                        "Vellum action accepted".into()
+                                    }
+                                },
                             );
                             confirming_discard = false;
                         }
@@ -13512,6 +13577,9 @@ pub fn run_terminal_with_all_peers_managed_configuration<T: ServicePort>(
         })
         .map_err(Into::into)
 }
+
+#[cfg(test)]
+mod coarse_navigation_tests;
 
 #[cfg(test)]
 mod tests {
@@ -14965,7 +15033,7 @@ mod tests {
                 Focus::Chronos,
                 KeybindingProfile::Pantheon,
             ),
-            RoutedInput::Chronos(key) if key == control_q
+            RoutedInput::Suppress
         ));
     }
 

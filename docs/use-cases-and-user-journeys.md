@@ -112,6 +112,28 @@ composition delivery is tracked in
     ensemble's supported, non-frivolous human-advocate finding can require the
     exact decision to pause for human adjudication. The advocate finding triggers
     presentation; it is not itself approval, denial, authority or an agent veto.
+17. **Delivery itself is a center-out, lossless semantic journey.** The exact
+    versioned intent is the stable center. Reviewed Rosetta retains meaning and
+    holes; canonical Rune and Scry admit behavior; Chronos projects the current
+    machine frontier; Smith forges bounded code and test leaves; real owners
+    qualify behavior; typed evidence folds one parent edge at a time; and named
+    humans dispose consequential acceptance and rollout. This law recurs at
+    every scale. A child task must prove refinement of one parent obligation,
+    and unsupported meaning must refuse rather than disappear. Backlog breadth
+    remains visible, but execution begins with the smallest compelled root
+    obligation and radiates outward instead of speculatively drilling into a
+    convenient component.
+18. **The Gray is the Maybe Machine.** Maybe is not a confidence label or a
+    waiting room outside the product; it is an operational inquiry loop. One
+    exact uncertain claim retains its lineage, altitude, assumptions, blast
+    radius, evidence, dissent and nonclaims while Pantheon selects the cheapest
+    adequate child inquiry: deterministic proof, owner observation, bounded
+    experiment, stakeholder deliberation, human return, held plurality or safe
+    refusal. The child returns typed evidence into the same claim. The Maybe
+    Machine cannot self-promote to Bool, compile away mu, average held plurality,
+    infer owner facts, or authorize effects. Its state, rationale, budget,
+    evidence return and next grounding descent must be equally inspectable by
+    human and agent participants.
 
 ## The product model
 
@@ -2144,6 +2166,41 @@ incarnation and attempt. The workstream directory is only a transport locator,
 never task evidence or authority. This closes a stale static-profile leak; it
 does not supply the still-open Moira journey admission, trusted claim/lease or
 evidence-backed settlement.
+
+Pantheon now qualifies one bounded final assistant result only after Daimon
+returns its content-free `AgentResultBindingV1` for the exact session and turn.
+The owner receipt binds the retained prompt operation to execution ID, task key,
+incarnation, attempt, principal, harness profile, idempotency operation,
+authority decision/expiry, prompt digest, admitted context-manifest digest,
+exact terminal event interval/revision, disposition, stop reason and optional
+output digest. Pantheon then reads only that interval and requires one nonempty
+UTF-8 assistant message followed by one completed `EndTurn`, digest equality,
+strict order, no truncation and no private thought/tool/file content. The
+headless projection now names the owner-bound execution and task attempt rather
+than reusing caller-held prompt JSON as evidence.
+
+Daimon rejects reuse of a turn identity by a fresh prompt operation. Result
+observation refuses active work as `Busy`, refuses duplicate legacy prompt or
+terminal matches rather than repairing them, and returns the original
+`OutcomeUnknown` without scanning events to invent settlement. The receipt is
+derived from facts already committed together in V1/V2 owner state, so it adds
+no result map, provider replay or caller-authored correlation. Focused service,
+wire and qualification tests plus the live Unix journey prove guarded open,
+guarded prompt, exact owner binding, bounded event read and qualified Pantheon
+observation. This closes the earlier result-to-execution/task-attempt evidence
+hole; it grants no Moira settlement, Agora publication, Chronos mutation,
+acceptance, approval or rollout authority.
+
+Moira's existing actor-publication adapter already preserves a direct or
+reconciled Agora acceptance as a complete effect/source/room-bound publication
+receipt and has real-process lost-reply qualification. The remaining Pantheon
+composition must consume that typed receipt, the newly owner-bound Daimon
+result, the current exact Chronos `ReadyForReview` observation and the durable
+task-conversation link without round-tripping through presentation JSON. It
+must preserve authenticated-call provenance because Agora's compact acceptance
+receipt does not itself contain the author. `Done` remains outside this result
+settlement path: final acceptance requires an owner-issued UADD acceptance
+packet and a separately authorized, revision-bound atomic Chronos transition.
 Refusal or uncertainty stops the chain. Agora's private-local owner now also
 supports a versioned, bounded create-time cohort, and the hosted lifecycle gate
 bootstraps distinct human and agent participants without granting Pantheon
@@ -3447,6 +3504,47 @@ source mutation.
    baseline and costs, then explicitly continues, revises, stops or closes the
    project. Closing work does not erase residual effects, dissent or remediation.
 
+### J37. Operate an uncertain claim through the Maybe Machine
+
+1. A participant admits one exact `MaybeInquiryV1` carrying the claim or
+   question, upstream intent and artifact identities, current epistemic tier,
+   altitude, assumptions, blast radius, affected stakeholders, existing
+   supporting and contradicting evidence, dissent, expiry and nonclaims.
+   Admission grants no effect authority and does not imply that the claim is
+   important, true, decidable or safe to test.
+2. Pantheon presents what is known, unknown, assumed, contested and currently
+   unobservable; the nearest owner-observable fact; and the cheapest plausible
+   grounding descents. High-level synthesis remains available, but its distance
+   from evidence and failure radius are explicit.
+3. Dendrite routes state-local methods and expertise. Moira may retain a
+   stakeholder deliberation, Chronos may retain admitted work, Vellum may own
+   inquiry artifacts, and Oculus may correlate observations, but none of those
+   projections alone owns or settles the claim.
+4. A named planning/decision authority selects exactly one adequate next child
+   inquiry—or retains explicit non-selection—from deterministic proof, owner
+   observation, bounded experiment, stakeholder deliberation, named-human
+   return, held plurality or safe refusal. Model confidence, majority vote,
+   telemetry, convenience and elapsed time cannot select implicitly.
+5. The selected child receives the exact question, required semantics,
+   authority limits, shared finite fuel, cost/time/effect budgets, stop
+   conditions and return schema. It may use a deterministic tool or the
+   least-cost model fit for its bounded role, but cannot broaden its own scope
+   or call an unadmitted child.
+6. The child returns one typed evidence envelope containing verdict, diagnosis,
+   bounds, provenance, addressable evidence, dissent, uncertainty, owner
+   receipts or refusal and consumed budget. Missing, conflicting, truncated or
+   outcome-unknown evidence remains explicit and cannot become false, absent,
+   complete or retry permission.
+7. The parent retains the returned evidence and follows only an admitted edge:
+   remain maybe with a cheaper next descent; preserve held-quantum plurality;
+   return irreducible judgment to the named human/stakeholders; safely refuse;
+   or prepare a separately governed Bool proof/admission candidate. The Maybe
+   Machine never issues theorem status, acceptance, authority or rollout.
+8. Every recursive step remains bounded, attributable and replay-inspectable.
+   TUI and headless surfaces show the same inquiry identity, current state,
+   selected child, altitude, budgets, evidence/refusal and next safe action;
+   detach does not cancel the inquiry, and reopening does not erase prior paths.
+
 ## Necessary cross-cutting functionality
 
 ### Discovery and navigation
@@ -3596,6 +3694,11 @@ source mutation.
 6. Provide owner-native “next safe action” and action preview contracts.
 7. Define the lifetime taxonomy and machine contracts for attach, detach,
    disconnect, reattach, provider/kernel reattach, cancel, close and shutdown.
+8. Define and owner-bind `MaybeInquiryV1`, its typed child invocation/return
+   contract, shared finite budget and separate Bool/mu/held/refused exits. First
+   qualify one deterministic-observation child and the existing bounded-
+   experiment child without pretending a linear controller proves recursive
+   composition; expose identical inquiry truth in TUI and headless modes.
 
 ### P1 — close the cornerstone journey
 

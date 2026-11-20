@@ -1,0 +1,472 @@
+(machine pantheon-gray-experiment
+  (rosetta
+    (intent "permit affordable bounded experimentation and evidence-based control challenge without laundering uncertainty into authority or preserving controls as dogma")
+    (values epistemic-honesty useful-surprise affordable-learning continuous-grounding altitude-is-risk reversible-by-default control-accountability no-silent-bypass)
+    (outcomes "one question and its current epistemic tier remain explicit" "the challenged control's purpose evidence scope owner and protected invariant are reviewable" "only a bounded owner-authorized experiment may run" "supported refuted unsettled and safely-refused outcomes remain distinct and grant no automatic theorem acceptance or rollout authority" "a control finding remains orthogonal evidence for a separately authorized control-supersession machine")
+    (who "the proposer, affected stakeholders, control owner, experiment owner, independent verifier, and applicable named human authority")
+    (what "the bounded-experiment child controller of Pantheon's Maybe Machine, for one experiment and any control challenge it raises")
+    (when "the Maybe Machine retains a maybe-tier or held-quantum proposal whose cheapest adequate next inquiry is empirical learning, especially when an existing control prevents the experiment needed to test its premise")
+    (where "an explicitly isolated Pantheon experiment scope with owner-native capabilities, budgets, telemetry, receipts, refusals, and human gates")
+    (why "advancement requires useful experiments, while unbounded effects and self-sealing controls both corrupt epistemic honesty")
+    (how "retain the question; inspect and challenge applicable controls; admit a bounded experiment or safe refusal; consume exact owner evidence; and return the result to governance without tier promotion by implication")
+    (extent "one experiment child path only; no authority to select itself over proof observation deliberation human return held plurality or refusal, and no ambient shell or filesystem access, production mutation, compiler weakening, stakeholder impersonation, automatic control override, Bool admission, acceptance, go-no-go, or rollout authority")
+    (examples "an isolated replay tests whether a retry fence is overbroad while the production fence remains in force"))
+  (initial question-retained)
+
+  (state question-retained
+    (context architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "retain the exact experimental question without claiming its answer")
+      (values curiosity traceability)
+      (outcomes "the proposal identity, question, current tier, altitude, assumptions, blast radius, nearest owner-observable fact, rationale, expected learning, affected stakeholders, and nonclaims are attributable")
+      (who "the proposer and affected stakeholders")
+      (what "one experiment question")
+      (when "before control challenge or experiment design")
+      (where "the experiment evidence owner")
+      (why "an experiment cannot be evaluated if its question or uncertainty changes implicitly")
+      (how "issue an immutable question identity over the exact proposal")
+      (extent "question provenance only")
+      (examples "the retry fence may reject a safe idempotent replay")))
+
+  (state control-challenged
+    (context access-control-decision architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "assess applicable controls as accountable claims rather than sacred objects")
+      (values falsifiability protected-invariants recourse)
+      (outcomes "each applicable control names its owner purpose protected harm or invariant evidence scope authority and challenge or amendment path" "the review distinguishes a tunable policy from a safety or authority floor and retains dissent")
+      (who "the control owner, proposer, affected stakeholders, and independent reviewer")
+      (what "one attributable control-challenge packet")
+      (when "after the question is retained and before experiment admission")
+      (where "the control owner's review boundary")
+      (why "the existence of a rule is not evidence that it is correctly scoped")
+      (how "review grounds, counterevidence, blast radius, standing, safe alternatives, and conditions for amendment")
+      (extent "challenge only; no bypass or authority mutation")
+      (examples "the production retry fence remains active while an isolated replay policy is reviewed")))
+
+  (state experiment-bounded
+    (context instrumenting-test-pathways test-oracle-design access-control-decision)
+
+    (rosetta
+      (intent "descend toward the nearest owner-observable fact through the cheapest adequate experiment that preserves the challenged control's protected invariant or explicitly names what cannot be tested")
+      (values proportionality grounding-descent containment observability)
+      (outcomes "current and target altitude, grounding question, scope capabilities data stakeholders cost budget duration isolation reversibility stop conditions expected evidence oracle nonclaims and prohibited effects are exact" "owner and human gates are named without being inferred")
+      (who "the experiment designer, effect owners, verifier, affected stakeholders, and applicable named human")
+      (what "one bounded experiment plan")
+      (when "after control challenge and before authorization")
+      (where "the proposed isolated experiment scope")
+      (why "useful surprise needs room while lower altitude reduces the distance between failure and evidence")
+      (how "select the least-cost adequate descent and mechanism, then bind every effect to an owner-native capability and stop condition")
+      (extent "plan only; no effect has occurred")
+      (examples "a fixed corpus replay with no production write and a ten-minute budget")))
+
+  (state experiment-authorized
+    (context access-control-decision human-impact-decision)
+
+    (rosetta
+      (intent "retain exact authority for the bounded experiment and nothing broader")
+      (values least-authority accountable-choice)
+      (outcomes "owner grants and any named-human disposition bind the exact plan revision capabilities scope budget expiry and stop conditions" "denied or missing authority cannot be inferred from continued work")
+      (who "the effect owners and applicable named human authority")
+      (what "one bounded authorization packet")
+      (when "the experiment plan is reviewable and containment is adequate")
+      (where "owner-native authority and human-gate boundaries")
+      (why "challenge does not mint effect authority")
+      (how "issue and re-observe exact non-bearer decision attribution and owner grants")
+      (extent "the admitted experiment only")
+      (examples "the isolated replay is authorized until the fixed deadline")))
+
+  (state experiment-running
+    (context external-calls instrumenting-test-pathways)
+
+    (rosetta
+      (intent "observe one owner-executed experiment without expanding or retrying uncertain effects")
+      (values containment honest-uncertainty)
+      (outcomes "every physical attempt binds the logical experiment operation, owner receipt, budget, telemetry correlation, stop condition, and uncertain outcome" "no missing reply becomes failure success absence or retry permission")
+      (who "the experiment effect owners and observers")
+      (what "one running or settled experiment operation")
+      (when "after exact authorization")
+      (where "the isolated owner scopes")
+      (why "execution evidence must remain distinct from the proposal and its interpretation")
+      (how "invoke only owner-native bounded effects once and reconcile uncertainty from owner evidence")
+      (extent "experiment execution only")
+      (examples "the replay owner returns its original receipt after a lost reply")))
+
+  (state evidence-returned
+    (context test-oracle-design claiming-completion)
+
+    (rosetta
+      (intent "return attributable evidence and residual uncertainty without promoting the hypothesis")
+      (values evidence-over-narrative nonclaims)
+      (outcomes "source lineage owner receipts observations oracle limits dissent cost and residual uncertainty are retained" "zero or multiple eligible interpretations refuse automatic disposition" "any control finding binds its predecessor protected invariant evidence and scope without changing the current control")
+      (who "the verifier, stakeholders, control owner, and proposer")
+      (what "one experiment evidence packet")
+      (when "the operation settles or reaches a bounded inconclusive stop")
+      (where "the experiment evidence owner and governance review")
+      (why "an experiment is valuable only when its evidence and limits return to the question")
+      (how "join exact evidence identities while keeping telemetry owner facts and interpretation distinct")
+      (extent "evidence return only")
+      (examples "the replay succeeds under the isolated oracle but production safety remains unclaimed")))
+
+  (state proposal-supported
+    (context claiming-completion human-impact-decision)
+
+    (rosetta
+      (intent "retain bounded support for the proposal")
+      (values calibrated-confidence)
+      (outcomes "the support binds the exact question experiment evidence acceptance predicate scope and remaining nonclaims")
+      (who "the qualified reviewer and accountable governance participants")
+      (what "the supported terminal outcome")
+      (when "the evidence satisfies the preregistered support predicate")
+      (where "governance evidence")
+      (why "support is narrower than theorem acceptance or rollout")
+      (how "issue a typed supported disposition without tier promotion")
+      (extent "support under the tested scope only")
+      (examples "the replay supports narrowing the fence for one idempotent owner operation")))
+
+  (state proposal-refuted
+    (context claiming-completion human-impact-decision)
+
+    (rosetta
+      (intent "retain evidence that refutes the proposal under the tested scope")
+      (values falsifiability learning)
+      (outcomes "the refutation binds the exact question experiment evidence predicate scope and safe next action")
+      (who "the qualified reviewer and accountable governance participants")
+      (what "the refuted terminal outcome")
+      (when "the evidence satisfies the preregistered refutation predicate")
+      (where "governance evidence")
+      (why "negative evidence advances understanding without becoming punishment")
+      (how "issue a typed refuted disposition")
+      (extent "refutation under the tested scope only")
+      (examples "the replay produces a duplicate effect and refutes the proposed exception")))
+
+  (state proposal-unsettled
+    (context claiming-completion human-impact-decision)
+
+    (rosetta
+      (intent "retain an honestly unresolved experiment outcome")
+      (values held-uncertainty no-forced-conclusion)
+      (outcomes "missing power ambiguous evidence oracle limits dissent and conditions for another experiment remain explicit")
+      (who "the qualified reviewer and accountable governance participants")
+      (what "the unsettled terminal outcome")
+      (when "the bounded evidence supports neither support nor refutation")
+      (where "governance evidence")
+      (why "an inconclusive experiment must not be laundered into consensus")
+      (how "issue a typed unsettled disposition and retain the question")
+      (extent "no conclusion or authority expansion")
+      (examples "the corpus lacks the failure mode needed to discriminate the hypotheses")))
+
+  (state experiment-refused
+    (context access-control-decision human-impact-decision)
+
+    (rosetta
+      (intent "retain safe refusal when no responsible experiment can preserve the protected invariant")
+      (values safety honest-limits recourse)
+      (outcomes "the refusal binds the exact plan control protected harm missing containment authority rationale unanswered question and reconsideration conditions")
+      (who "the effect or control owner and applicable named human")
+      (what "the safely-refused terminal outcome")
+      (when "the experiment cannot be responsibly contained or authorized")
+      (where "the owner-native refusal boundary")
+      (why "useful experimentation does not require pretending every effect can be made safe")
+      (how "issue an actionable refusal without declaring the hypothesis false")
+      (extent "this experiment plan only")
+      (examples "a production-only destructive hypothesis is refused until a faithful simulator exists")))
+
+  (edge
+    (from question-retained)
+    (to control-challenged)
+    (emit challenge-retained)
+
+    (rosetta
+      (intent "retain control challenge")
+      (values falsifiability)
+      (outcomes "challenge is attributable")
+      (who participants)
+      (what "challenge edge")
+      (when "question is exact")
+      (where governance)
+      (why "controls are claims")
+      (how "review grounds")
+      (extent "no bypass")
+      (examples "challenge retained"))
+    (precondition "question-retained's outcomes hold; all applicable controls and affected stakeholders are identified, and challenge grants no effect or override authority"))
+
+  (edge
+    (from control-challenged)
+    (to experiment-bounded)
+    (emit experiment-designed)
+
+    (rosetta
+      (intent "bound experiment")
+      (values containment)
+      (outcomes "plan is exact")
+      (who designers)
+      (what "design edge")
+      (when "challenge is reviewed")
+      (where experiment-scope)
+      (why "learning needs bounds")
+      (how "bind controls and budget")
+      (extent "no effect")
+      (examples "experiment bounded"))
+    (precondition "control-challenged's outcomes hold; the plan names current and target altitude nearest owner-observable fact cheapest adequate descent scope capabilities data cost budget duration containment reversibility observability oracle stop conditions prohibited effects owner gates and nonclaims"))
+
+  (edge
+    (from experiment-bounded)
+    (to experiment-authorized)
+    (emit experiment-authorized)
+
+    (rosetta
+      (intent "retain bounded authority")
+      (values least-authority)
+      (outcomes "authority is exact")
+      (who owners)
+      (what "authorization edge")
+      (when "plan is adequate")
+      (where owner-gates)
+      (why "challenge grants nothing")
+      (how "issue grants")
+      (extent "experiment only")
+      (examples authorized))
+    (precondition "experiment-bounded's outcomes hold; every required owner and named-human gate returns exact affirmative disposition for the same plan revision scope budget expiry and stop conditions"))
+
+  (edge
+    (from experiment-bounded)
+    (to experiment-refused)
+    (emit experiment-refused)
+
+    (rosetta
+      (intent "retain safe refusal")
+      (values safety)
+      (outcomes "refusal is actionable")
+      (who owners)
+      (what "refusal edge")
+      (when "containment is inadequate")
+      (where owner-gates)
+      (why "not every experiment is safe")
+      (how "issue refusal")
+      (extent "plan only")
+      (examples refused))
+    (precondition "experiment-bounded's outcomes hold; an owner or named-human gate returns exact refusal binding the protected invariant missing containment rationale unanswered question and reconsideration conditions"))
+
+  (edge
+    (from experiment-authorized)
+    (to experiment-running)
+    (emit experiment-started)
+
+    (rosetta
+      (intent "start bounded experiment")
+      (values accountability)
+      (outcomes "operation is attributable")
+      (who owners)
+      (what "start edge")
+      (when "authority is current")
+      (where isolated-scope)
+      (why "evidence requires execution")
+      (how "invoke once")
+      (extent "bounded effects")
+      (examples started))
+    (precondition "experiment-authorized's outcomes hold; grants remain current, the isolated scope and stop mechanism are observable, and the owner accepts one exact logical operation without retry inference"))
+
+  (edge
+    (from experiment-running)
+    (to evidence-returned)
+    (emit evidence-returned)
+
+    (rosetta
+      (intent "return experiment evidence")
+      (values traceability)
+      (outcomes "evidence is attributable")
+      (who verifier)
+      (what "evidence edge")
+      (when "operation settles or stops")
+      (where evidence-owner)
+      (why "learning must return")
+      (how "bind owner facts and limits")
+      (extent "no conclusion")
+      (examples "evidence returned"))
+    (precondition "experiment-running's outcomes hold; exact owner receipts telemetry correlation budget and stop disposition are retained, uncertainty is reconciled without unauthorized retry, and the verifier records oracle limits and dissent"))
+
+  (edge
+    (from evidence-returned)
+    (to proposal-supported)
+    (emit proposal-supported)
+
+    (rosetta
+      (intent "retain bounded support")
+      (values calibration)
+      (outcomes "support is scoped")
+      (who reviewer)
+      (what "support edge")
+      (when "predicate holds")
+      (where governance)
+      (why "evidence may support")
+      (how "issue disposition")
+      (extent "no promotion")
+      (examples supported))
+    (precondition "evidence-returned's outcomes hold; exactly one eligible interpretation satisfies the preregistered support predicate, and remaining nonclaims and authority limits are retained"))
+
+  (edge
+    (from evidence-returned)
+    (to proposal-refuted)
+    (emit proposal-refuted)
+
+    (rosetta
+      (intent "retain bounded refutation")
+      (values falsifiability)
+      (outcomes "refutation is scoped")
+      (who reviewer)
+      (what "refutation edge")
+      (when "predicate holds")
+      (where governance)
+      (why "evidence may refute")
+      (how "issue disposition")
+      (extent "tested scope")
+      (examples refuted))
+    (precondition "evidence-returned's outcomes hold; exactly one eligible interpretation satisfies the preregistered refutation predicate, and the safe next action is retained"))
+
+  (edge
+    (from evidence-returned)
+    (to proposal-unsettled)
+    (emit proposal-unsettled)
+
+    (rosetta
+      (intent "retain unresolved result")
+      (values honesty)
+      (outcomes "uncertainty is explicit")
+      (who reviewer)
+      (what "unsettled edge")
+      (when "no conclusion holds")
+      (where governance)
+      (why "inconclusive is valid")
+      (how "retain question")
+      (extent "no conclusion")
+      (examples unsettled))
+    (precondition "evidence-returned's outcomes hold; support and refutation predicates are not uniquely satisfied, and missing power ambiguity oracle limits dissent and another valid experiment condition are retained"))
+
+  (signal challenge-retained
+    (rosetta
+      (intent "announce challenge")
+      (values traceability)
+      (outcomes "challenge identity is visible")
+      (who observers)
+      (what "challenge signal")
+      (when retained)
+      (where evidence)
+      (why "challenge differs from bypass")
+      (how "emit identity")
+      (extent "no authority")
+      (examples challenge)))
+
+  (signal experiment-designed
+    (rosetta
+      (intent "announce bounded design")
+      (values traceability)
+      (outcomes "plan identity is visible")
+      (who observers)
+      (what "design signal")
+      (when bounded)
+      (where evidence)
+      (why "plan differs from execution")
+      (how "emit identity")
+      (extent "no effect")
+      (examples designed)))
+
+  (signal experiment-authorized
+    (rosetta
+      (intent "announce bounded authority")
+      (values accountability)
+      (outcomes "authority identity is visible")
+      (who observers)
+      (what "authority signal")
+      (when authorized)
+      (where owner)
+      (why "authority is exact")
+      (how "emit attribution")
+      (extent "no bearer grant")
+      (examples authorized)))
+
+  (signal experiment-refused
+    (rosetta
+      (intent "announce safe refusal")
+      (values safety)
+      (outcomes "refusal is visible")
+      (who observers)
+      (what "refusal signal")
+      (when refused)
+      (where owner)
+      (why "refusal differs from refutation")
+      (how "emit receipt identity")
+      (extent "plan only")
+      (examples refused)))
+
+  (signal experiment-started
+    (rosetta
+      (intent "announce experiment operation")
+      (values accountability)
+      (outcomes "operation identity is visible")
+      (who observers)
+      (what "start signal")
+      (when started)
+      (where owner)
+      (why "execution is distinct")
+      (how "emit operation identity")
+      (extent "no result")
+      (examples started)))
+
+  (signal evidence-returned
+    (rosetta
+      (intent "announce evidence return")
+      (values traceability)
+      (outcomes "packet identity is visible")
+      (who observers)
+      (what "evidence signal")
+      (when returned)
+      (where evidence)
+      (why "evidence differs from conclusion")
+      (how "emit packet identity")
+      (extent "no conclusion")
+      (examples returned)))
+
+  (signal proposal-supported
+    (rosetta
+      (intent "announce support")
+      (values calibration)
+      (outcomes "support identity is visible")
+      (who observers)
+      (what "support signal")
+      (when supported)
+      (where governance)
+      (why "support is scoped")
+      (how "emit disposition")
+      (extent "no promotion")
+      (examples supported)))
+
+  (signal proposal-refuted
+    (rosetta
+      (intent "announce refutation")
+      (values falsifiability)
+      (outcomes "refutation identity is visible")
+      (who observers)
+      (what "refutation signal")
+      (when refuted)
+      (where governance)
+      (why "refutation is scoped")
+      (how "emit disposition")
+      (extent "tested scope")
+      (examples refuted)))
+
+  (signal proposal-unsettled
+    (rosetta
+      (intent "announce unresolved outcome")
+      (values honesty)
+      (outcomes "uncertainty is visible")
+      (who observers)
+      (what "unsettled signal")
+      (when unsettled)
+      (where governance)
+      (why "no forced conclusion")
+      (how "emit disposition")
+      (extent "no conclusion")
+      (examples unsettled)))
+  (epistemic-tier maybe))

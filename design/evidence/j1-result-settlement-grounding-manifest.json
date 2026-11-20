@@ -1,0 +1,183 @@
+{
+  "version": 1,
+  "subject": "j1-result-settlement",
+  "status": "review-evidence-only",
+  "boundary": "Exact corpus and repository identities consulted for the proposed evidence controller; this manifest proves neither stakeholder standing, ensemble fitness, design correctness, authority, approval, nor rollout readiness.",
+  "entries": [
+    {
+      "kind": "dendrite-fold",
+      "id": "rune/sme/triggers",
+      "sha256": "14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8",
+      "freshness": "current-at-consultation",
+      "purpose": "canonical context-to-grounding routing"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:architecture",
+      "depth": "activated",
+      "sha256": "acd8acc54a66307fc28e3a7ef4cf27c67e81362c0ba287d97eb5de48c932cfeb",
+      "freshness": "current-at-consultation",
+      "purpose": "owner boundaries and quality-attribute failure probes"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:network",
+      "depth": "activated",
+      "sha256": "60acba7fb15921c5d1e3e84526febbeef571b925fd2e8c6d9732e921771b2a6a",
+      "freshness": "current-at-consultation",
+      "purpose": "accepted, delivered, processed, acknowledged, cancelled and unknown distinctions"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:identity",
+      "depth": "activated",
+      "sha256": "9da415b103c0f09415643ff2e1ef1fbe1d3e94788302cbf7cd497679b16e9ece",
+      "freshness": "current-at-consultation",
+      "purpose": "principal, credential, session, delegation and revocation binding"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:data",
+      "depth": "activated",
+      "sha256": "de3150670d07a429a07f42f340b8bc4c3750dcb9b8fb5068b2d5a0f5569d7b54",
+      "freshness": "current-at-consultation",
+      "purpose": "meaning, correction authority and cross-owner transformation"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:security",
+      "depth": "activated",
+      "sha256": "6dd2f34270a277c99ba68f5a02469f0148e1259a63f14aedd7f7837abdb7c4bc",
+      "freshness": "current-at-consultation",
+      "purpose": "confused-deputy, stale authority, failure-closed and trace-integrity probes"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:distributed-systems",
+      "depth": "activated",
+      "sha256": "449d690a491f30f91c5e12a1c27e0b7f91946726f0e087cb1959a61ba4fa7e56",
+      "freshness": "current-at-consultation",
+      "purpose": "lost-reply, duplication, ordering and convergence semantics"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:humanism",
+      "depth": "activated",
+      "sha256": "31ad8078909f4f0abf4bda6935b4b3db9511faeab297f37b13f8f070a30cafde",
+      "freshness": "current-at-consultation",
+      "purpose": "affected-person recourse, override, contest, recovery and exit"
+    },
+    {
+      "kind": "repository-source",
+      "id": "agora/ports/agora-actor-publication-port/src/lib.rs",
+      "sha256": "32f6d9bf59945b4f6000ce202ff8ab7acaad6b1e8f9b1487edcb95f5465aea13",
+      "freshness": "current-at-consultation",
+      "purpose": "exact actor-publication and observation algebra"
+    },
+    {
+      "kind": "repository-source",
+      "id": "agora/host/agora-host/src/v2.rs",
+      "sha256": "f9bad45fb5d06479bda9f0a91acfe2e591ee8ea2ac0ec16ed3281533862b41e5",
+      "freshness": "current-at-consultation",
+      "purpose": "authenticated actor derivation and separate Execute/Observe authority"
+    },
+    {
+      "kind": "repository-source",
+      "id": "agora/service/agora-service/src/v2.rs",
+      "sha256": "b72422c8d0bcd8780efd72a07fd5fa834ee7d096d19c20c07aa2af0a68a38edf",
+      "freshness": "current-at-consultation",
+      "purpose": "durable exact replay, accepted, absent, conflict and unavailable semantics"
+    },
+    {
+      "kind": "repository-source",
+      "id": "moira/adapters/moira-execution-sqlite/src/chronos/settlement.rs",
+      "sha256": "ed55f2bdef177d77ef17b9bdf48e3cb019a8edd441ae92e4090a0ebfb73106ae",
+      "freshness": "current-at-consultation",
+      "purpose": "receiver-sealed exact-attempt settlement, replay and conflict semantics"
+    },
+    {
+      "kind": "repository-source",
+      "id": "moira/adapters/moira-agora/src/actor.rs",
+      "sha256": "29db26c2772200a8940c4b7af013f6624c4cfe57600151ba48083b22e723edbb",
+      "freshness": "current-and-focused-test-passing",
+      "purpose": "authenticated actor acceptance and exact Moira effect/source/room publication-receipt adaptation"
+    },
+    {
+      "kind": "real-process-qualification",
+      "id": "moira/qualification/agora-local-port/src/lib.rs::tests::lost_response_reply_is_observed_by_a_new_client_in_an_independent_agora_process",
+      "sha256": "7396fef782fe7e1dce326c39b489e9d1135f0a5c1146ee5d59c6aabf6eeb9ac2",
+      "freshness": "passed-2026-11-20",
+      "purpose": "committed-reply loss, independent reconnect and durable exact actor-publication receipt recovery"
+    },
+    {
+      "kind": "repository-source",
+      "id": "chronos/engine/chronos-engine/src/engine.rs",
+      "sha256": "0230b082daccb355090e8c8c0f513da6bbf9947e5642a4416c320747e4e2cf05",
+      "freshness": "current-at-consultation",
+      "purpose": "authoritative ReadyForReview derivation and separate exact Done transition"
+    },
+    {
+      "kind": "dendrite-machine",
+      "id": "rune/fsm/user-acceptance-driven-development",
+      "sha256": "3f4c2d749131b1bf4f5e7d2adc8212b32d2d9a7bc87224d9f119c1bc5df6c87e",
+      "freshness": "current-at-consultation",
+      "purpose": "existing named-human acceptance, challenge, feedback and completion method"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:user-experience",
+      "depth": "activated",
+      "sha256": "d913e8238718eb57b20cdd6bdb72bc8553650cc7b7889724d97bf1d2a39cc66c",
+      "freshness": "current-at-consultation",
+      "purpose": "human verification, undo, recovery, accessibility and representative journey"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:live-verification",
+      "depth": "activated",
+      "sha256": "35e743059455c7c3c7538d5c59f81fb27c2bd0cc1155612cd1f5991d5ad904f2",
+      "freshness": "current-at-consultation",
+      "purpose": "cold-start real-boundary and authoritative-state verification"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:privacy-engineering",
+      "depth": "activated",
+      "sha256": "faccacafa490900c5bf013b2962e41a2cb145ceac269afee9eed97fac786439b",
+      "freshness": "current-at-consultation",
+      "purpose": "purpose limitation, minimization, audience, retention, correction and deletion"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:observability",
+      "depth": "activated",
+      "sha256": "b07b92a695c9d1f6039229e7a592d901b305dfbd22de8232376860f3c1ad397d",
+      "freshness": "current-at-consultation",
+      "purpose": "logical-operation and physical-attempt visibility without event-order coupling"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:tester",
+      "depth": "activated",
+      "sha256": "1afdcebc265de5d5665b1ff02df86515a118070190c91239473f1632da96210d",
+      "freshness": "current-at-consultation",
+      "purpose": "mutation-sensitive transition and generated-sequence verification"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:rigor",
+      "depth": "activated",
+      "sha256": "009b40b5c88ee9a6bb4a71bc32b3ed8f2d70a2710c3e0c495697a4ecb0ba5f65",
+      "freshness": "current-at-consultation",
+      "purpose": "weak-premise detection and discriminating tests"
+    },
+    {
+      "kind": "dendrite-surface",
+      "id": "rune:auditor",
+      "depth": "activated",
+      "sha256": "36d865c0085f98ac03f0d6523bfdd3298056f93a7a1909279a3f2e6ef27dd7ee",
+      "freshness": "current-at-consultation",
+      "purpose": "upstream-claim trace and resolved/unresolved audit deltas"
+    }
+  ]
+}

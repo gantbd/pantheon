@@ -1,0 +1,325 @@
+(machine pantheon-governing-intent-admission
+  (rosetta
+    (intent "admit one exact Pantheon governing intent only after owner-backed candidate identity, equitable stakeholder review, exact human disposition, and immutable issuance")
+    (values human-sovereignty semantic-preservation attributable-standing supersession-not-rewrite honest-pending)
+    (outcomes "one candidate has exact bytes revision digest predecessor and scope before review" "pending accepted refused and revision-required dispositions remain distinct" "GoverningIntentV1 is issued only for the exact accepted candidate and retains review dissent authority and supersession lineage")
+    (who "the governing-intent owner, accountable human sponsor, independently attributable affected stakeholders, agent collaborator, and qualified preservation reviewer")
+    (what "a pure evidence controller for governing-intent admission")
+    (when "before a delivery Rune or Chronos projection may claim alignment to a governing intent")
+    (where "Vellum candidate ownership, Agora and Moira review, the human gate, and the governing-intent issuance boundary")
+    (why "a mutable document, conversational agreement, model summary, sponsor narration, or repository digest cannot become the semantic root by implication")
+    (how "bind candidate identity, review whether the right ensemble is present, retain attributed reports and dissent, present the exact artifact to the named human, distinguish every disposition, and issue a new immutable intent identity without rewriting its predecessor")
+    (extent "one intent version; no task priority, work lease, implementation, component effect, acceptance of delivered work, production go-no-go, or rollout authority")
+    (examples "the candidate mu-maybe-Bool principal receives stakeholder challenge and exact sponsor acceptance before Vellum issues governing intent version one"))
+  (initial candidate-owned)
+
+  (state candidate-owned
+    (context identity-design-decision architecture-flow-review)
+
+    (rosetta
+      (intent "retain one exact reviewable governing-intent candidate")
+      (values stable-identity provenance)
+      (outcomes "the owner receipt binds exact candidate bytes digest revision scope predecessor and supersession proposal" "candidate status is explicit and grants no governing authority")
+      (who "the selected governing-intent artifact owner")
+      (what "one immutable candidate identity")
+      (when "before stakeholder or human review")
+      (where "the Vellum owner boundary or another explicitly selected sovereign owner")
+      (why "repository presence and mutable paths are not durable semantic identity")
+      (how "issue a content identity and revision receipt over exact bytes")
+      (extent "candidate provenance only")
+      (examples "the exact candidate digest is retained at its owner revision")))
+
+  (state ensemble-reviewed
+    (context reviewing-ensemble-convergence human-impact-decision)
+
+    (rosetta
+      (intent "challenge the exact candidate with the right stakeholder ensemble")
+      (values equity independence standing dissent)
+      (outcomes "required present missing and excluded stakeholder lenses, mandates, conflicts, independence limits, reports, dissent and dispositions are attributable" "the review explicitly answers whether the right ensemble is present")
+      (who "affected human stakeholders, accountable sponsor, agent collaborator, relevant owner boundaries, and grounded advisers without standing")
+      (what "one exact candidate review packet")
+      (when "after candidate ownership and before human disposition")
+      (where "Moira deliberation, Agora challenge, and retained evidence")
+      (why "the sponsor and agent cannot impersonate every affected perspective")
+      (how "admit standing, collect independent first reports, challenge, retain dissent, and refuse missing required representation")
+      (extent "review evidence only; no vote, consensus, approval, or intent issuance")
+      (examples "the review distinguishes the current sponsor, agent collaborator, affected operator, and component owners")))
+
+  (state human-disposition-required
+    (context user-acceptance-review human-impact-decision)
+
+    (rosetta
+      (intent "hold the exact candidate and review packet pending named-human disposition")
+      (values pending-is-not-acceptance informed-judgment)
+      (outcomes "the human sees exact candidate identity, material changes, outcomes, non-goals, standing, dissent, limitations, consequences, and safe choices" "silence timeout model agreement ensemble convergence tests and repository edits remain pending")
+      (who "the named human sponsor or other authority selected by the governing policy")
+      (what "one nonterminal governing-intent gate")
+      (when "the ensemble review is adequate or explicitly escalates missing standing")
+      (where "the operator agenda, Vellum review, Agora challenge, and owner-native human gate")
+      (why "only the accountable human may dispose the proposed shared principal within that authority scope")
+      (how "present the exact artifact and evidence, accept challenge, and await an owner-issued response")
+      (extent "decision pending; no governing identity or downstream alignment")
+      (examples "Namaste or conversational agreement does not substitute for accepting the exact candidate bytes")))
+
+  (state candidate-accepted
+    (context user-acceptance-review identity-design-decision)
+
+    (rosetta
+      (intent "retain exact affirmative human acceptance of the candidate")
+      (values accountable-acceptance exact-scope)
+      (outcomes "the receipt binds named authority, candidate identity, review packet, criteria, finding dispositions, rationale, decision time, and accepted scope")
+      (who "the named human authority and human-gate owner")
+      (what "one exact affirmative disposition")
+      (when "the human explicitly accepts the challenged candidate")
+      (where "the owner-native human gate")
+      (why "acceptance cannot be inferred from tone, continued work, silence, or adjacent decisions")
+      (how "issue and re-observe one immutable acceptance receipt")
+      (extent "acceptance of this candidate as governing intent only; no implementation or rollout approval")
+      (examples "the sponsor accepts the exact candidate identity under the reviewed scope")))
+
+  (state intent-issued
+    (context identity-design-decision claiming-completion)
+
+    (rosetta
+      (intent "issue the immutable governing-intent identity after exact acceptance")
+      (values stable-center replayability supersession-lineage)
+      (outcomes "GoverningIntentV1 binds owner namespace version revision digest exact candidate acceptance review dissent unresolved gates predecessor and supersession law" "exact observation and reopen return the same identity while any changed input conflicts")
+      (who "the governing-intent owner and authorized observers")
+      (what "the successful terminal intent identity")
+      (when "after the exact accepted receipt and candidate are revalidated")
+      (where "the governing-intent owner protocol")
+      (why "all downstream machines and plans need one owner-issued semantic root")
+      (how "atomically issue or exactly replay the bounded identity and retain nonclaims")
+      (extent "semantic root identity only; no task, execution, delivery acceptance, production go-no-go, or rollout authority")
+      (examples "version one reopens with the same digest and accepted receipt")))
+
+  (state candidate-refused
+    (context user-acceptance-review human-impact-decision)
+
+    (rosetta
+      (intent "retain the exact negative human disposition")
+      (values accountable-refusal non-coercion)
+      (outcomes "the refusal binds authority, candidate identity, review evidence, rationale, decision time, and safe next action" "the candidate never becomes governing intent")
+      (who "the named human authority and human-gate owner")
+      (what "the refused terminal outcome")
+      (when "the human explicitly refuses the candidate")
+      (where "the owner-native human gate")
+      (why "negative judgment must not become failure, silence, or revision by inference")
+      (how "issue and re-observe one immutable refusal receipt")
+      (extent "this candidate only")
+      (examples "the sponsor refuses a principal that flattens agent uncertainty")))
+
+  (state revision-required
+    (context human-impact-decision architecture-flow-review)
+
+    (rosetta
+      (intent "retain requested revision without mutating the candidate or predecessor in place")
+      (values reflexive-learning supersession-not-rewrite)
+      (outcomes "the response binds candidate identity, exact requested delta, evidence, affected semantics, rationale, authority, and predecessor" "a new candidate must obtain a new owner identity and repeat review")
+      (who "the named human authority, affected stakeholders, and governing-intent owner")
+      (what "the revision-required terminal outcome for this candidate")
+      (when "the human or an admitted unresolved finding requires change")
+      (where "the human gate, Vellum amendment proposal, Agora challenge, and operator agenda")
+      (why "learning strengthens the goal through versioned supersession rather than historical rewrite")
+      (how "close this candidate with a revision receipt and author a separately identified successor")
+      (extent "revision request only; no automatic acceptance or re-entry")
+      (examples "the human requests clearer agent-experience nonclaims before a successor review")))
+
+  (edge
+    (from candidate-owned)
+    (to ensemble-reviewed)
+    (emit ensemble-review-retained)
+
+    (rosetta
+      (intent "retain exact ensemble review")
+      (values standing)
+      (outcomes "review packet is attributable")
+      (who stakeholders)
+      (what "review edge")
+      (when "candidate is exact")
+      (where deliberation)
+      (why "shared intent needs challenge")
+      (how "review and retain dissent")
+      (extent "no approval")
+      (examples "ensemble reviewed"))
+    (precondition "candidate-owned's outcomes hold; review binds the exact candidate, asks whether the right ensemble is present, distinguishes standing from SME advice, retains independent reports dissent and missing representation, and grants no approval"))
+
+  (edge
+    (from ensemble-reviewed)
+    (to human-disposition-required)
+    (emit human-decision-requested)
+
+    (rosetta
+      (intent "request exact human disposition")
+      (values human-sovereignty)
+      (outcomes "the candidate remains pending")
+      (who human)
+      (what "gate request")
+      (when "review is present")
+      (where agenda)
+      (why "review cannot approve")
+      (how "present exact evidence")
+      (extent "no disposition")
+      (examples "decision requested"))
+    (precondition "ensemble-reviewed's outcomes hold; the exact candidate review dissent missing representation limitations and decision scope are presented to the named human, and any unsupported standing remains an explicit gate"))
+
+  (edge
+    (from human-disposition-required)
+    (to candidate-accepted)
+    (emit candidate-accepted)
+
+    (rosetta
+      (intent "retain exact acceptance")
+      (values accountability)
+      (outcomes "affirmative receipt is attributable")
+      (who human)
+      (what "acceptance edge")
+      (when "gate accepts")
+      (where gate)
+      (why "acceptance must be explicit")
+      (how "issue exact receipt")
+      (extent "candidate only")
+      (examples "candidate accepted"))
+    (precondition "human-disposition-required's outcomes hold; the owner-native gate returns an affirmative receipt binding the named authority exact candidate review criteria finding dispositions rationale and scope"))
+
+  (edge
+    (from candidate-accepted)
+    (to intent-issued)
+    (emit intent-issued)
+
+    (rosetta
+      (intent "issue accepted governing identity")
+      (values stable-center)
+      (outcomes "one GoverningIntentV1 exists")
+      (who "intent owner")
+      (what "issuance edge")
+      (when "acceptance is exact")
+      (where "owner protocol")
+      (why "downstream work needs identity")
+      (how "revalidate and issue atomically")
+      (extent "identity only")
+      (examples "intent issued"))
+    (precondition "candidate-accepted's outcomes hold; candidate review and acceptance identities still match exactly, predecessor and supersession law are valid, and the owner returns one immutable matching GoverningIntentV1 or exact replay"))
+
+  (edge
+    (from human-disposition-required)
+    (to candidate-refused)
+    (emit candidate-refused)
+
+    (rosetta
+      (intent "retain exact refusal")
+      (values accountability)
+      (outcomes "negative receipt is attributable")
+      (who human)
+      (what "refusal edge")
+      (when "gate refuses")
+      (where gate)
+      (why "refusal must be explicit")
+      (how "issue exact receipt")
+      (extent "candidate only")
+      (examples "candidate refused"))
+    (precondition "human-disposition-required's outcomes hold; the owner-native gate returns a negative receipt binding named authority exact candidate review rationale scope and next safe action"))
+
+  (edge
+    (from human-disposition-required)
+    (to revision-required)
+    (emit revision-required)
+
+    (rosetta
+      (intent "retain exact revision request")
+      (values reflexivity)
+      (outcomes "delta and predecessor are attributable")
+      (who human)
+      (what "revision edge")
+      (when "gate requests change")
+      (where gate)
+      (why "evolution uses supersession")
+      (how "issue exact revision receipt")
+      (extent "no rewrite")
+      (examples "revision required"))
+    (precondition "human-disposition-required's outcomes hold; the owner-native gate returns a revision receipt binding candidate delta affected semantics evidence rationale authority and predecessor, and no candidate or active intent is mutated in place"))
+
+  (signal ensemble-review-retained
+    (rosetta
+      (intent "announce review evidence")
+      (values traceability)
+      (outcomes "review identity is observable")
+      (who observers)
+      (what "review signal")
+      (when "review retained")
+      (where evidence)
+      (why "review differs from approval")
+      (how "emit review identity")
+      (extent "no authority")
+      (examples "review retained")))
+
+  (signal human-decision-requested
+    (rosetta
+      (intent "announce pending human gate")
+      (values accountability)
+      (outcomes "decision material is observable")
+      (who human)
+      (what "gate signal")
+      (when "decision requested")
+      (where agenda)
+      (why "pending differs from disposition")
+      (how "emit challenge identity")
+      (extent "no disposition")
+      (examples "decision requested")))
+
+  (signal candidate-accepted
+    (rosetta
+      (intent "announce candidate acceptance")
+      (values accountability)
+      (outcomes "affirmative receipt is observable")
+      (who stakeholders)
+      (what "acceptance signal")
+      (when accepted)
+      (where gate)
+      (why "outcomes differ")
+      (how "emit receipt")
+      (extent "candidate only")
+      (examples "candidate accepted")))
+
+  (signal intent-issued
+    (rosetta
+      (intent "announce governing identity")
+      (values stable-center)
+      (outcomes "GoverningIntentV1 is observable")
+      (who observers)
+      (what "issuance signal")
+      (when issued)
+      (where owner)
+      (why "downstream lineage needs identity")
+      (how "emit identity")
+      (extent "no effect authority")
+      (examples "intent issued")))
+
+  (signal candidate-refused
+    (rosetta
+      (intent "announce candidate refusal")
+      (values accountability)
+      (outcomes "negative receipt is observable")
+      (who stakeholders)
+      (what "refusal signal")
+      (when refused)
+      (where gate)
+      (why "outcomes differ")
+      (how "emit receipt")
+      (extent "candidate only")
+      (examples "candidate refused")))
+
+  (signal revision-required
+    (rosetta
+      (intent "announce revision request")
+      (values reflexivity)
+      (outcomes "delta and predecessor are observable")
+      (who stakeholders)
+      (what "revision signal")
+      (when requested)
+      (where gate)
+      (why "evolution supersedes")
+      (how "emit receipt")
+      (extent "no rewrite")
+      (examples "revision required")))
+  (epistemic-tier bool))

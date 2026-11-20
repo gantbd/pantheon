@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "fold_load_id": "rune/sme/triggers",
+  "lattice_load_id": "axon/sme/axon-concerns",
+  "tags": [
+    "access-control-decision",
+    "architecture-flow-review",
+    "human-impact-decision"
+  ],
+  "depth": "activated",
+  "max_roles": 8,
+  "max_surface_bytes": 131072
+}

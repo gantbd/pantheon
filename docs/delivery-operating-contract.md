@@ -18,6 +18,112 @@ evidence, and the execution method. They must not narrow promised journeys,
 weaken human governance, conceal an ownership boundary, or redefine success
 around an easier implementation.
 
+## Center-out semantic-preservation law
+
+Pantheon's delivery center is the exact, versioned governing intent—not the
+current code, a convenient subsystem, a model's interpretation, or the visible
+shape of the backlog. Delivery radiates outward through one lossless chain:
+
+`intent identity → reviewed Rosetta → admitted Rune → compelled frontier → recursively forged leaves → owner qualification → monadic evidence fold → accountable disposition`
+
+This law is holofractal: every material journey, project, Chronos work packet,
+implementation slice, test plan, acceptance exercise and rollout decision uses
+the same shape at its own bounded scale. A child is a refinement of one exact
+parent obligation. It must preserve the parent's intent, values, outcomes,
+non-goals, owner boundaries, authority limits, dissent and uncertainty; it may
+not broaden, narrow, translate away or conveniently reinterpret them. The child
+returns typed evidence into the parent transition. It does not add an unrelated
+claim to a pile and call the pile completion.
+
+The first delivery-machine draft is retained at
+[`../design/runes/pantheon-center-out-delivery.machine.rune`](../design/runes/pantheon-center-out-delivery.machine.rune)
+as design evidence, not as the governing executable. Independent audit found
+that its linear path described recursion in prose while encoding additive leaf
+aggregation, collapsed pending/refused/accepted outcomes and assigned semantic
+eligibility to Chronos. Its structural path was:
+
+`intent-bound → rosetta-reviewed → rune-admitted → frontier-selected → leaf-forged → owner-qualified → evidence-folded → outcome-disposed`
+
+Scry admission and Smith compatibility proved only that this weaker submitted
+structure was internally supported; that green result is precisely why it is
+withdrawn. The replacement machine must encode a singular child invocation and
+typed return. If Rust Smith currently refuses invoked-machine evaluation, that
+refusal is an honest capability boundary and must not be removed to keep the
+projection green. No replacement machine becomes canonical until the candidate
+[`governing-intent.md`](governing-intent.md) has an exact reviewed identity and
+a separate preservation manifest maps that intent into the machine.
+
+The corrected v2 candidate exposed an earlier boundary: Scry's closed
+machine-edge grammar currently refuses `(invoke …)` even though Smith's typed IR
+and compatibility layer represent invoked-machine evaluation. The exact
+rejected source and tool identities are retained in
+[`../design/evidence/pantheon-center-out-delivery-v2-rejection.md`](../design/evidence/pantheon-center-out-delivery-v2-rejection.md).
+Invocation may not be deleted or replaced by additive receipt aggregation to
+obtain a green target. This remains a non-executable discovery candidate until
+the governing-intent and qualified-frontier machinery admit its exact roadmap
+relationship.
+
+The practical laws are strict:
+
+- Start at the smallest load-bearing truth and move outward. Do not begin by
+  drilling into whichever component makes progress easiest to demonstrate.
+- Resolve decidable uncertainty toward scoped Boolean evidence. Preserve
+  genuinely plural or value-laden judgment as explicit mu and route it to the
+  stakeholder or named human with standing. Never relabel owner uncertainty as
+  either Boolean success or human judgment.
+- A reviewed Rosetta is residual meaning, not behavior. Rune is the canonical
+  behavioral blueprint; Scry may refuse it, but no caller may weaken the
+  compiler, delete an obligation, or prompt around an unsupported projection.
+- Smith/Forge produces candidate code and test projections in private bounded
+  buffers. Vellum publishes reviewed, revision-bound changes. A successful
+  projection is not runtime evidence.
+- Tests and instrumentation are recursively designed from admitted machines.
+  They retain independent oracles and cover success, refusal, uncertainty,
+  restart and adversarial paths. RED, USE and golden signals orient operation;
+  telemetry never becomes effect, authority, acceptance or completion proof.
+- Only exact, typed, current owner facts may satisfy an obligation. Zero,
+  multiple, stale, contradictory, semantically broader or outcome-unknown
+  interpretations refuse with an actionable resolution.
+- Evidence folds upward one parent edge at a time. No successful child grants
+  authority or satisfies a sibling, ancestor or downstream edge absent an
+  explicit parent contract.
+- Consequential acceptance, go/no-go and rollout remain exact named-human
+  dispositions over the challenged artifact and evidence. Agents, tests,
+  ensembles, green telemetry and silence cannot impersonate that gate.
+
+### Chronos as a machine projection
+
+Chronos durably retains the authorized planning projection; it is not a second
+author of intent, a semantic evaluator or an execution-admission owner. A
+qualified projector computes a typed proposed frontier from exact intent,
+Rune/IR and owner facts. Zero eligible obligations becomes owner-linked Blocked;
+multiple eligible obligations require an attributable planning choice; exactly
+one may be compelled. A separately authorized planning principal admits the
+projection. Only then may the root Chronos record bind the governing-intent
+identity, Rune source and typed-IR identities, current machine state and next
+obligation. The appropriate Moira/Aegis/Daimon chain separately owns work lease,
+dispatch and effect authority.
+
+A task may recursively decompose only through a child Rune that names its exact
+parent obligation and supplies a refinement proof: every child outcome maps to
+the parent outcome, parent nonclaims and authority limits remain intact, and
+all new holes are explicit. Decomposition stops when the leaf fits one admitted
+worker context, authority envelope, change set and independent verification
+packet. The leaf's settlement returns typed lineage and owner receipts to the
+parent evaluator; task status alone is not the fold.
+
+At each planning cycle the qualified projector exposes the whole semantic
+frontier, while Chronos retains only separately admitted planning status.
+Executable packets bind one admitted obligation. Adjacent findings are captured
+once as non-executable discovery candidates with governing-intent identity,
+observation evidence and a proposed parent; they become `required follow-up` or
+`backlog` work only after review admits that relationship. They remain
+unexecuted until their edge becomes eligible or an authorized goal/priority
+decision changes the machine.
+Every `Blocked` state names the exact resolving task, owner observation, gate or
+decision. This preserves breadth without speculative drilling and depth without
+losing the center.
+
 ## Per-turn reconciliation
 
 After every meaningful delivery turn:
@@ -355,10 +461,14 @@ standards anchors, initial transfer map and placement refusals are maintained in
   corpus claims they actually prove; disclose semantic, runtime and human-gate
   gaps rather than promoting a structurally valid machine to delivery evidence.
 - Find and state the smallest load-bearing truth at the center of each material
-  review. Drive `maybe` toward scoped Boolean proof/refutation when the claim is
-  decidable, or toward explicit mu/named-human judgment when meaning, values or
-  legitimate plurality cannot be reduced honestly. Consensus, confidence and
-  telemetry never substitute for either.
+  review. Operate `maybe` through the Maybe Machine: retain the exact claim and
+  select the cheapest adequate proof, owner observation, experiment,
+  deliberation, human return, held plurality or refusal child under a shared
+  finite budget. A child returns typed evidence; it cannot self-promote. Follow
+  a separate scoped Boolean proof/admission when the claim is decidable, or
+  explicit mu/named-human judgment when meaning, values or legitimate plurality
+  cannot be reduced honestly. Consensus, confidence and telemetry never
+  substitute for either.
 
 ## Overnight execution boundary
 

@@ -1,0 +1,122 @@
+(machine j1-agent-result-observation-tests
+  (rosetta
+    (intent "prove one exact J1 agent turn produces an attributable bounded assistant result before any room or task projection")
+    (values owner-truth bounded-disclosure no-false-completion single-path)
+    (outcomes "the qualified fixture emits one assistant result and one terminal turn receipt for the exact session and turn" "the assistant bytes are bounded UTF-8 and their digest equals the owner-published terminal output digest" "thought, plan, tool, terminal, file, permission, and unrelated-turn events cannot impersonate the result" "no Agora publication, Chronos mutation, provider variant, second turn, or rollout is included")
+    (who "Daimon owns the session, turn, events, and terminal receipt; Pantheon observes without inventing result truth")
+    (what "one fixture-backed result-observation characterization for the J1 golden thread")
+    (when "after one exact prompt is accepted and before conversation or task projection")
+    (where "Daimon's bounded event window for the exact owner-created session")
+    (why "the existing live gate proves prompt transport but calls the turn accepted even though its fixture publishes no agent result")
+    (how "freeze one session and turn; observe a bounded complete event page; require exactly one assistant message followed by a matching successful terminal receipt; reject ambiguity, truncation, invalid UTF-8, excess bytes, digest mismatch, or other output-shaped events")
+    (extent "one session, one turn, one assistant message of at most 4096 bytes, one terminal receipt, and no downstream mutation")
+    (examples "the fixture returns a short product-owner response and a matching output digest"))
+  (initial fixture-baseline)
+
+  (state fixture-baseline
+    (rosetta
+      (intent "prove the current fixture honestly lacks result evidence")
+      (values falsifiability)
+      (outcomes "one prompt is accepted for the exact task/session/turn while the event page contains no assistant result or terminal receipt")
+      (who "the focused test runner")
+      (what "the intended RED baseline")
+      (when "before changing the fixture")
+      (where "the real Daimon public client boundary")
+      (why "a test added only after result events exist cannot prove it detects their absence")
+      (how "open, prompt, inspect, and request the bounded event page")
+      (extent "test and fixture evidence only")
+      (examples "prompted is retained but result qualification refuses")))
+
+  (state result-evidence
+    (rosetta
+      (intent "qualify the smallest owner event pair that proves an attributable result")
+      (values owner-truth bounded-disclosure)
+      (outcomes "the complete event window contains exactly one assistant message followed by one successful TurnFinished for the same active turn; SHA-256 of the assistant bytes equals output_digest; bytes are non-empty UTF-8 and no more than 4096; no other content-bearing event exists")
+      (who "Daimon and the focused verifier")
+      (what "qualified result evidence")
+      (when "after the prompted turn settles")
+      (where "the exact session event window")
+      (why "prompt acceptance, readiness, usage, or prose notices are not agent output")
+      (how "validate cursor order, event kinds, turn identity, disposition, stop reason, digest, encoding, size, and complete pagination")
+      (extent "observation only; no Agora or Chronos effect")
+      (examples "assistant bytes precede a matching completed EndTurn receipt")))
+
+  (state complete
+    (rosetta
+      (intent "retain a narrow green characterization without widening J1 scope")
+      (values honest-evidence)
+      (outcomes "the generated obligations pass against the actual owner fixture and public observation path")
+      (who "the focused test runner")
+      (what "one qualified golden-thread edge")
+      (when "after result evidence is conclusive")
+      (where "the exact candidate and evidence packet")
+      (why "downstream publication should consume proven result evidence rather than a transport notice")
+      (how "bind exact Rune, typed IR, generated controller, fixture, adapter, and test identities")
+      (extent "result observation only")
+      (examples "the next slice may separately propose Agora publication")))
+
+  (edge
+    (from fixture-baseline)
+    (to result-evidence)
+    (emit result-observed)
+
+    (rosetta
+      (intent "replace the empty-event fixture with the minimum truthful result event pair")
+      (values test-first owner-truth)
+      (outcomes "result evidence satisfies every identity, ordering, disclosure, and digest oracle")
+      (who "the fixture owner and verifier")
+      (what "RED-to-result transition")
+      (when "the absent-result failure is retained")
+      (where "the Daimon fixture and public protocol")
+      (why "the gate must stop claiming a result from prompt transport alone")
+      (how "emit one assistant event and one matching terminal receipt after the accepted turn settles")
+      (extent "two events only")
+      (examples "cursor one is assistant; cursor two is the matching terminal receipt"))
+    (precondition "one exact prompt is accepted but result qualification refuses because assistant and terminal events are absent"))
+
+  (edge
+    (from result-evidence)
+    (to complete)
+    (emit evidence-bound)
+
+    (rosetta
+      (intent "bind the result characterization to exact lineage")
+      (values provenance)
+      (outcomes "all generated obligations pass under exact source, IR, Smith, fixture, adapter, and evidence identities")
+      (who "the generated controller and verifier")
+      (what "qualification transition")
+      (when "result evidence is conclusive")
+      (where "the focused test")
+      (why "a plausible fixture event is not enough without executable lineage")
+      (how "evaluate every generated precondition and postcondition and refuse any missing assertion")
+      (extent "one exact candidate")
+      (examples "a digest mismatch blocks Complete"))
+    (precondition "result-evidence's outcomes hold"))
+
+  (signal result-observed
+    (rosetta
+      (intent "announce qualified result evidence")
+      (values owner-truth)
+      (outcomes "downstream proposal preparation may begin separately")
+      (who "journey observers")
+      (what "content-qualified result signal")
+      (when "the result event pair passes")
+      (where "test evidence")
+      (why "result truth is distinct from prompt acceptance")
+      (how "retain the event and digest identities")
+      (extent "one signal")
+      (examples "one result is ready for a later publication proposal")))
+
+  (signal evidence-bound
+    (rosetta
+      (intent "announce exact qualification lineage")
+      (values provenance)
+      (outcomes "review can reproduce the focused result")
+      (who "journey observers")
+      (what "qualification signal")
+      (when "Complete is reached")
+      (where "evidence packet")
+      (why "the characterized candidate must be identifiable")
+      (how "retain exact identities")
+      (extent "one signal")
+      (examples "the fixture and generated controller hashes are recorded"))))

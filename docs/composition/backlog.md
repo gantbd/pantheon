@@ -6,6 +6,36 @@ read-only input until that repository settles.
 
 ## P0 — evidence and current parity
 
+- [ ] Author and qualify the parent Maybe Machine: retain one exact uncertain
+  claim, select among deterministic proof, owner observation, bounded
+  experiment, stakeholder deliberation, human return, held plurality and safe
+  refusal, and monadically fold typed evidence back without self-promoting to
+  Bool. The existing `pantheon-gray-experiment` Rune is one child path, not the
+  parent. Do not fake composition while Rune invocation/typed-return support is
+  still an admitted toolchain gap.
+- [ ] Restore state-local Tellus SME-plan admission without weakening the
+  orthogonality check: the fold currently routes `rune:security`, but that
+  grounding has no authored `(concern …)` clause, so
+  `axon/sme/axon-concerns` correctly returns `role_missing_concern`. The Rune
+  corpus owner must register the concern or explicitly declare the role
+  ineligible; Pantheon must not invent a default facet or independence.
+- [ ] Make Tellus load discovery continuable and semantically unambiguous. The
+  current observation can return 64 fresh entries with `truncated: true` and no
+  cursor while also reporting `complete`; expose continuation and distinguish
+  selected-page freshness from complete inventory coverage.
+- [ ] Project the new Daimon result-binding observation through the selected
+  Oculus telemetry path: count request/accepted/refused/outcome-unknown,
+  interval size and qualification latency; trace the opaque operation,
+  execution and task-attempt correlation without assistant bytes, prompts,
+  credentials or raw authority material. Telemetry failure must remain visible
+  and must not change the owner result or qualification outcome.
+- [ ] Make `rune-author` question output path-stable and nonduplicating without
+  semantic loss. The revised J1 request has four unique unresolved paths, but
+  `$.review.ensemble_fit` is emitted once from the explicit evidence-rich hole
+  and again by generic review validation. Prefer/merge the specific authored
+  question by path; never ask users to delete the richer hole or mark ensemble
+  fit `yes` merely to silence duplicate diagnostics.
+
 - [x] Define the standalone/Pantheon pattern and on-disk taxonomy.
 - [x] Classify Axon and Engram as prior art and route their useful patterns to
   current owners.

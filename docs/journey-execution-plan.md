@@ -4,6 +4,35 @@ Status: active
 
 Governing blueprint: [`use-cases-and-user-journeys.md`](use-cases-and-user-journeys.md)
 
+Candidate governing principal:
+[`governing-intent.md`](governing-intent.md). It grounds Pantheon as the
+composition of mu-rooted human judgment and maybe-tier agency through bounded
+Bool rails, but remains pending exact human and stakeholder review plus an
+owner-issued revision identity. Pies and Engram archaeology is retained in
+[`governing-intent-pies-engram-archaeology.md`](../design/evidence/governing-intent-pies-engram-archaeology.md).
+The revised repository candidate SHA-256 is
+`0d8872543501cca6b776c30fc3b8b18892590c3cf79e161118c4889f2382fb26`;
+repository presence is not acceptance.
+
+Active goal, refactored 2026-11-20: deliver the governing journeys from their
+smallest stable semantic center by preserving required semantics and declaring
+bounded, traceable projection loss through reviewed
+Rosetta, canonical Rune/Scry admission, Chronos machine projection, recursively
+bounded Smith-forged code and test leaves, real-owner qualification, monadic
+evidence return and accountable human disposition. Begin with the smallest
+currently compelled root obligation and radiate outward; capture adjacent
+discoveries without speculatively executing them. Every artifact and status
+claim must retain exact lineage to the governing intent and refuse any
+unsupported, ambiguous or authority-expanding projection. This strengthens the
+prior P0/J1 objective and does not remove any promised journey or gate.
+
+The governing execution law and Chronos projection contract are maintained in
+[`delivery-operating-contract.md`](delivery-operating-contract.md). The first
+[`center-out machine draft`](../design/runes/pantheon-center-out-delivery.machine.rune)
+is withdrawn pending the exact governing-intent review and a replacement that
+encodes recursive invocation, typed return, distinct human outcomes and correct
+owner boundaries. It is evidence, not the governing executable.
+
 Accountable Executive Sponsor: **the current human user directing this delivery
 goal**, explicitly declared by that human on 2026-11-19. Agents must not infer a
 legal name or impersonate this sponsor. A formal `BusinessReviewV1`,
@@ -38,11 +67,151 @@ does not close an item; input profiles share one behavior facade.
    attached. Agent-assisted sifting may recommend deduplication, ordering and
    rationale, but only an admitted owner/human transition may discard, commit or
    materially reprioritize work.
+10. Treat preservation-or-declared-loss from prompt to code as a
+    non-negotiable invariant. Every material refinement binds its parent intent,
+    machine obligation, acceptance predicates and declared losses; required
+    semantics, authority, provenance, dissent and acceptance conditions cannot
+    disappear during planning, compilation, forging, implementation, testing or
+    evidence composition.
+11. Plan center-out. A qualified projector exposes the complete semantic
+    frontier; a named planning authority resolves multiple eligible choices;
+    Chronos retains the admitted task graph and status but proves neither
+    semantic eligibility nor execution authority. Record adjacent gaps as
+    non-executable discovery candidates without drilling into them until review
+    admits their parent edge and it becomes eligible.
+12. Drive toward a monadic evidence fold as governing architectural doctrine. A
+    qualified child can satisfy only its named parent obligation, one edge at a
+    time; successful subtasks, commits, tests and telemetry are never
+    additively accumulated into an inferred outcome. Treat concrete carriers,
+    morphisms, laws and preservation witnesses as missing until admitted by the
+    deterministic toolchain.
 
 ## Dogfood evidence and user-advocacy ledger
 
 This ledger records experience gathered while using the component ensemble to
 deliver Pantheon. It is product input, not a substitute for journey acceptance.
+
+### 2026-11-20 — center-out preservation-or-declared-loss delivery law
+
+- The active goal is now organized around a stable semantic center rather than
+  a sequence of locally promising implementation slices. The governing chain
+  is exact intent identity, reviewed Rosetta, declared projection loss,
+  canonical Rune/Scry admission, Chronos machine projection, recursively
+  bounded Smith-forged code and test leaves, real-owner qualification, a
+  candidate monadic evidence fold and accountable disposition. This strengthens
+  rather than replaces the P0/J1 journeys and their human gates. The fold remains
+  architectural doctrine until concrete carriers, laws and witnesses are
+  admitted.
+- The first `pantheon-center-out-delivery` Rune draft has eight states and seven
+  compelled edges. Scry admits the submitted structure, the mandatory path checker
+  reports eight states, seven edges and zero failures, and Smith reports
+  complete Rust compatibility with an empty unsupported set. Exact lineage is:
+  source SHA-256
+  `82e55316a843f0a26a9b62786d5d41c770f3cf88a2b9b4f1f8734b133833a502`,
+  typed-IR SHA-256
+  `aa39ef76be4d3a386af3a8e4f855f12ae2002650b20528ffbb573b0f617be200`,
+  qualified Smith SHA-256
+  `3288271a2dcae7bd833ddfea15a16562c5fb4335b16e0373e34c45bfa998504c`,
+  and private target-verified Rust projection SHA-256
+  `8f7c3df55867dfa902e69bf4a8353a39c1e9ad933cd270c87f4f0328d0277c3b`.
+  The projection remains private evidence: it is not an owner implementation,
+  runtime qualification, accepted plan or rollout authority. Independent audit
+  then found the more fundamental failure: the linear Rune described recursion
+  while encoding additive leaf aggregation, collapsed pending, accepted,
+  refused and revision-required human outcomes, overclaimed Scry/Smith, and
+  assigned semantic frontier authority to Chronos. The draft and its green
+  compatibility evidence are therefore withdrawn rather than weakened around
+  the unsupported invoked-machine requirement.
+- Chronos revision 83 now retains the manually bootstrapped P10
+  `chronos-rune-machine-planning-projection` item. It was reviewed with three
+  attempts, fenced retry safety and no guessed prerequisites or capabilities,
+  submitted exactly once through Pantheon's TUI behavior facade, and received
+  a definitive `Applied` receipt. Existing Rosetta, blocker-link, grooming and
+  roadmap-reconciliation items remain adjacent candidates; the new projection
+  contract must determine their true machine relationships before dependencies
+  are mutated. The TUI again mislabeled the successful task receipt as `Cancel
+  receipts`, strengthening the already-captured feedback-label friction without
+  creating a duplicate.
+- The same shared profile reached Vellum through `M-x navigate.vellum` and the
+  central behavior facade after the terminal did not register the advertised
+  `Ctrl-2` chord. Vellum then disclosed `empty workspace` and `service not
+  configured`, so it could neither inspect nor publish the governing Rune and
+  this turn used the bounded repository patch path with the bypass stated
+  explicitly. This is more evidence for the existing profile/attachment and
+  keybinding parity work, not permission to create a second editor or duplicate
+  backlog items.
+- The immediate semantic frontier is no longer “implement whichever open J1
+  gap is nearest.” First review and owner-bind the candidate governing intent,
+  then produce a separate Rosetta-to-Rune preservation manifest and a corrected
+  recursive machine. Only after a qualified projector proposes a typed frontier,
+  planning authority disposes any multiplicity and Chronos retains the admitted
+  projection should Daimon, UADD, J1 composition or presentation leaves be
+  selected for implementation. Revision 83 is bootstrap evidence, not circular
+  proof that the missing projector selected itself.
+- The corrected v2 machine candidate made singular recursion explicit with an
+  invoked child and separated semantic preservation, frontier projection,
+  Chronos retention, base-leaf qualification, evidence bind and distinct human
+  outcomes. Scry correctly refused `(invoke …)` because the current closed
+  machine-edge grammar does not admit that clause, despite Smith's IR and
+  compatibility layer knowing invoked-machine evaluation. The exact rejected
+  source and tool digests are retained in
+  `design/evidence/pantheon-center-out-delivery-v2-rejection.md`. Invocation was
+  not deleted to preserve a green Rust projection. The gap is a non-executable
+  discovery candidate pending the first qualified machine-backed planning
+  cycle; creating another free-standing Chronos task now would repeat the
+  speculative planning error this method is meant to remove.
+- The smaller root admission problem is now represented by the structurally
+  valid `pantheon-governing-intent-admission` Rune. It separates owner-backed
+  candidate identity, equitable ensemble review, a nonterminal human gate,
+  exact acceptance, refusal, revision-required and final intent issuance. Scry
+  admits it and Smith reports complete Rust compatibility, but runtime remains
+  before `candidate-owned` because the shared profile has no configured Vellum
+  owner and a repository digest is not an owner receipt. The existing
+  `machine_path_check` cannot qualify its three legitimate terminal variants;
+  it assumes one sole sink. The machine was not collapsed into a generic
+  terminal to make that helper green. Exact lineage, refusals and next owner
+  steps are retained in
+  `design/evidence/pantheon-governing-intent-admission-verification.md`.
+- Pies and Engram archaeology revised the candidate center without ratifying it:
+  the three bodies are authority-bearing roles in a composed loop rather than
+  castes; required semantics use preservation-or-declared-loss; agent challenge
+  remains mandatory under human prerogative; held plurality is legitimate; and
+  the proposed monadic recursion is an admission obligation until concrete
+  carriers and laws exist. The subsequent Gray correction protects bounded,
+  affordable experimentation and makes controls challengeable without turning
+  experiment into authority laundering or rules into dogma. Exact candidate
+  digest and predecessor lineage are
+  retained in the verification packet. The admission Rune's stale example
+  digest was replaced with a generic identity example so the reusable machine
+  no longer churns with candidate content; Scry, Smith compatibility, exact Rust
+  projection and Rust 2021 library compilation were then rerun rather than
+  treating an example as non-semantic commentary.
+- Live capability dogfood then confirmed that a Vellum owner receipt cannot yet
+  be obtained honestly. `pantheon agent-tools` exposes bounded Vellum snapshot
+  reads while explicitly marking `workspace.changeset.propose.v1` unavailable
+  with no aggregate fallback; the missing surface includes proposal, validation,
+  atomic publication, uncertain-write lookup, candidate freeze and authority
+  transition. Hosted editing or durable save would prove weaker owner facts and
+  cannot be renamed as governing-candidate identity. Existing Vellum
+  change-set/diff, exact-observation, durable-identity and frontier-sandbox work
+  must be reconciled instead of creating a duplicate task or bypassing Vellum
+  with repository presence. Four bounded `chronos-task-observe` calls against
+  the known hosted directory and those exact candidate task IDs returned
+  `not_sent`; no Chronos owner process was attachable at that boundary. This is
+  observation uncertainty, not authoritative task absence, and no duplicate or
+  speculative status mutation followed.
+- The Gray correction adds the missing advancement affordance: maybe-tier and
+  held-quantum claims may become affordable, bounded experiments, and controls
+  must expose their purpose, evidence, scope, owner and challenge path. Altitude
+  is treated as risk: every unresolved claim names the nearest owner-observable
+  fact and cheapest safe descent, preferring a local reversible unknown over a
+  sweeping conclusion distant from evidence. The first Gray Rune passed Scry
+  and complete Smith Rust compatibility, and its exact Rust projection compiles.
+  Semantic review rejected an initial false choice between experimental result
+  and control revision; control findings are now orthogonal evidence for a
+  separate supersession machine. Multi-terminal path qualification remains a
+  known tool gap, and no runtime experiment or control override has been
+  authorized by the structurally valid machine.
 
 ### 2026-11-19 — exact Chronos attempt required before agent invocation
 
@@ -2791,4 +2960,669 @@ remain and must not be papered over with ambient filesystem access:
   profile or an explicit multi-root workset, expose the violated boundary and
   safe remedy, and qualify both acceptance and refusal through TUI and headless
   clients.
+
+Rune-forged coarse-navigation dogfooding on 2026-11-20 exposed a separate
+Vellum publication gap. Interactive publication of a 915-line generated Rust
+controller either exhausted editor history or changed LF bytes to CR bytes;
+bounded headless publication preserved the exact digest and refused a denied
+write without partial effects. Chronos should retain a Vellum-owned,
+revision-bound change-set item with these acceptance facts:
+
+- [ ] Preview one bounded unified diff against an exact document identity,
+  revision, and base digest; disclose the changed regions without granting the
+  caller raw filesystem authority.
+- [ ] Apply every admitted hunk atomically or apply none, and return a
+  content-minimal, correlation-bound receipt. Refuse stale bases, malformed or
+  oversized patches, out-of-root targets, partial application, and authority
+  expansion.
+- [ ] Keep destination creation as a separately admitted owner operation;
+  patch application must not silently create arbitrary paths.
+- [ ] Expose the same semantic owner action through Vellum TUI, headless
+  operation, Pantheon's behavior facade, and bounded agent capability
+  catalogues. No shell or generic Pantheon gateway fallback is permitted.
+
+The coarse-navigation verification packet is retained in
+`design/evidence/vellum-coarse-navigation-verification.md`. Its first live run
+caught and corrected composed-viewport geometry, and its final owner
+implementation scans only the current line plus at most 511 directional line
+transitions rather than indexing the whole document. Independent adversarial
+challenge remains required before human review readiness.
+
+Rune authoring dogfood exposed a separate agent-quality-of-life gap. Translating
+bounded task prose into a Rosetta and then manually discovering the closed Rune
+grammar still causes avoidable structural churn: the J1 result-observation
+slice initially expressed a plausible `postcondition` edge clause that Scry
+correctly refused because destination outcomes are the legal postcondition
+surface. Chronos should retain a grammar-aware Rune authoring service/tool with
+this bounded pipeline:
+
+`task prose → reviewed Rosetta → legal concrete/abstract syntax trees → Scry → Smith/Forge`
+
+- [ ] Accept bounded inert prose and an explicit Rune dialect/version; return a
+  proposed Rosetta plus typed questions for missing intent, outcomes, owner,
+  scope, examples or authority boundaries.
+- [ ] Construct only nodes and clauses admitted by the selected grammar. Expose
+  the legal-syntax tree and typed AST/IR mapping so an agent can inspect where
+  each Rosetta fact landed before source publication.
+- [ ] Run Scry in a private bounded buffer, return precise structured refusals,
+  and iterate the proposal without weakening or deleting unsupported meaning.
+- [ ] Invoke Smith/Forge only after exact source review and retain source, IR,
+  compiler and target lineage. Executable incompatibility remains a refusal;
+  the service cannot prompt around the compiler or emit a weaker machine.
+- [ ] Publish canonical Rune bytes only through a separately authorized
+  revision-bound Vellum change set. The authoring service has no ambient file,
+  shell, task mutation, approval or rollout authority.
+- [ ] Expose the capability through a direct Pantheon component boundary and an
+  outward MCP/tool adapter for Codex, Claude, Gemini, Muse and local agents;
+  MCP is a transport option, not the semantic owner.
+
+This is deterministic authoring assistance, not permission for a model to
+invent workflow law. Human and stakeholder review remains attached to the
+Rosetta and exact canonical machine.
+
+The first recursive dry fit now exists in
+`rune/fsm/rune-authoring.machine.rune`. Dendrite resolved the current
+`rune/sme/triggers` fold at digest
+`14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8` for
+architecture, engineering, identity, security, user experience,
+observability, STRIDE, testing, additive change, rigor, audit and live
+verification. The mandatory “do we have the right ensemble?” answer was
+initially **no**: that route omitted formal methods, agent systems and the
+operator boundary. Their exact full groundings were then read through
+Dendrite, but all three returned `legacy_whole_role` when asked for an
+activated structured surface. Retain two separate follow-ups:
+
+- [ ] Add context routes for grammar/formal-proof, bounded-agent-tooling and
+  operator-transition decisions, then challenge whether the resulting roles
+  represent actual stakeholders with standing rather than treating SME names
+  as ensemble members.
+- [ ] Author versioned Dendrite surfaces for `formal-methods`, `agent-systems`
+  and `operator`, with stable entry IDs and useful ambient/activated depths;
+  full-body fallback is evidence of a corpus surface gap, not parity.
+
+After those additions the selected expertise is conditionally adequate for
+this narrow design review, not evidence of independent stakeholder reports or
+consensus. The canonical seven-state, nine-transition authoring machine passed
+Scry and qualified Smith reported complete Rust compatibility with no
+unsupported obligations. Smith privately generated and target-verified a Rust
+controller; an independent `rustc` compile passed after the harness supplied a
+legal crate name. Exact lineage for the retained run is:
+
+- canonical Rune source SHA-256
+  `55133d7d2a57bbabcad145174bed4582a43ca391e7cc68f48df9dcf37a5fd15a`;
+- typed IR SHA-256
+  `5f4ad38ecb79460dba517ad15babeb53d7e9f419585d7fe2e51c8333c02d738b`;
+- qualified Smith SHA-256
+  `72a45a8348f82106e9d401090b44b98e38173284da3231b7ff497f3cf125dc77`;
+- generated Rust SHA-256
+  `0a0ca2315addccc58a1e9196359ec5280065b19d2debe2ec2240083189ed2d4f`.
+
+The pre-format authored file and Smith's canonical embedded source initially
+had different digests. Running the qualified `smith fmt` made the workspace
+bytes equal the generated lineage source digest. This proves canonicalization
+must occur before review/admission and the service must never present a
+pre-format digest as the authoritative source identity. The next executable
+slice is the closed request parser plus typed-question/refusal output driven by
+the forged controller; raw-prose interpretation remains a separate,
+non-deterministic proposal boundary.
+
+That first executable slice is now implemented as Rune's `rune-author` Rust
+crate. It reads one bounded JSON request from standard input, rejects unknown
+schema fields and unsupported dialect/target versions, returns typed questions
+for unresolved review, Rosetta and topology semantics, and constructs one
+in-memory machine candidate only after an explicit human reviewer,
+`ensemble_fit: yes`, exact grounding evidence, empty explicit holes and a
+complete topology are present. The candidate response states that it has not
+yet obtained Scry admission or Smith projection and grants no filesystem,
+task, approval, publication or rollout authority. The generated transition
+controller is the exact Smith projection of the authoring Rune, not a parallel
+handwritten state machine.
+
+Three focused unit cases and the live `src/rust/author/test/run_e2e.sh` gate
+pass. The live gate proves forged-controller lineage, incomplete-request typed
+questions with no candidate, complete-request candidate construction, exact
+response-to-byte digest preservation and real Scry acceptance. It also found
+two harness-level provenance hazards worth retaining:
+
+- `cargo fmt` followed Rust modules and rewrote the generated controller,
+  changing its byte digest. The controller is now a Smith-forged opaque
+  `include!` artifact; a format pass leaves its SHA-256 exactly
+  `0a0ca2315addccc58a1e9196359ec5280065b19d2debe2ec2240083189ed2d4f`.
+- `jq -r` appended a newline while extracting the candidate and broke the
+  reported digest. The qualifier uses byte-preserving `jq -j` and compares the
+  extracted SHA-256 before Scry. Structured transports must preserve exact
+  candidate bytes or carry an encoding whose decode is checked against the
+  retained digest.
+
+The canonical-formatting and exact-byte Scry stage is now implemented. The
+author component reuses Smith's existing pure canonical formatter through a
+library surface rather than cloning Rune layout/escaping law. It resolves a
+deployment-owned Scry executable that the request cannot select, binds its
+exact digest, streams canonical bytes over stdin with a five-second deadline
+and bounded stdout/stderr channels, and returns either exact source/typed-IR/
+validator identities or a forged `scry-refusal-recorded` result with diagnostic,
+exit and timeout facts. It still emits no workspace file and performs no
+projection.
+
+This live pass found and closed a headless boundary leak in Scry itself.
+`/dev/stdin` happened to work under shell file redirection but failed with
+`Illegal seek` when the author component supplied a real pipe because Scry used
+`in_channel_length`. Scry now reads incrementally and accepts explicit `-` as
+stdin; its focused gate proves regular-file and non-seekable-pipe validation
+produce byte-identical IR and malformed streamed input still refuses. The
+author end-to-end gate now proves both real Scry acceptance and an injected
+deployment-tool refusal: refusal exits nonzero, enters the forged `refused`
+state, retains bounded actionable diagnostics and exposes neither canonical
+candidate bytes nor typed IR.
+
+Focused evidence is green: three author unit tests, the author end-to-end gate,
+the Scry stdin gate, all 29 Smith package tests and `git diff --check`. The
+source and generated controller identities remain unchanged; rebuilt Scry is
+`cac27f87a01181d0b0075d752cc95cbecb8597b5091dfc0323a6345151df46b4`.
+The next slice is Smith compatibility and private target-verified projection.
+MCP and Pantheon adapters remain transports over that direct component rather
+than alternate authoring implementations.
+
+That Smith slice is now complete for the bounded Rust path. Smith itself now
+accepts exact source on `-` for compatibility and compile; its full Rust
+semantic-parity gate proves file and streamed compatibility agree, file and
+streamed compilation are byte-identical, causality/preconditions/
+postconditions/rungs remain executable, lineage is exact and raw executable IR
+still refuses. The gate can qualify an explicitly selected deployment Smith
+binary rather than silently building a different executable; the exact
+workspace binary used by the author component passed.
+
+`rune-author` now requires deployment-owned Scry, Smith and real `rustc`
+executables whose paths cannot come from the request. It exposes only the
+admitted `rustc` directory as Smith's closed `PATH`, runs compatibility before
+compile, requires `status: complete` with an empty unsupported set, buffers the
+target-verified Rust projection, and checks the generated source and Smith
+lineage back against the exact input and executable identities. Success reaches
+the forged `projection-qualified` state and returns a private review packet;
+incomplete compatibility or compile failure reaches forged `refused`, exits
+nonzero, retains stage/diagnostic/timeout/identity evidence and emits no
+projection. The live fixture now contains a real preconditioned transition so
+the gate exercises obligation evaluation rather than a degenerate terminal
+machine.
+
+The focused live path passes with independent candidate/IR/projection digest
+checks, generated-lineage checks and a second `rustc` compile. Its current
+successful packet reports complete compatibility and no unsupported semantics;
+publication remains explicitly unavailable. The next slice is a direct
+component protocol plus outward adapter, followed by a revision-bound Vellum
+proposal—not direct workspace writing.
+
+The shared Pantheon dogfood session at Chronos revision 79 accepted the
+Emacs-style `M-v` behavior-facade action and opened the Vellum tab, but that tab
+reported `empty workspace` and `Vellum service not configured`; no bounded read
+or edit capability was available for the active work. `M-c` returned to
+Chronos. This is direct user-friction evidence for the existing attach/profile
+work: an operational supervisory session that cannot admit a configured Vellum
+workspace forces the agent back to ambient repository tools. Do not create a
+parallel editor; make the selected workspace profile disclose and safely admit
+the Vellum owner needed by the task, with the already-backlogged bounded-root,
+revision and multi-client rules.
+
+The first previously missing J1 result boundary is now live-qualified. The
+Rune-forged `j1-agent-result-observation-tests` controller drives the pure
+qualifier, while `make qualify-j1-result` starts the real stateful Daimon
+journey fixture and proves this exact sequence through Pantheon's public
+headless commands:
+
+`guarded session open → guarded exact-turn prompt → owner session/event read → bounded result qualification`
+
+The retained result is one non-empty UTF-8 assistant message followed by the
+same turn's `Completed`/`EndTurn`, with strictly ordered cursors and an exact
+SHA-256 matching Daimon's owner event. Truncation, duplicate/missing content,
+unexpected tool/thought/file/permission content, wrong turn, incomplete
+disposition, invalid ordering, oversize and digest mismatch all refuse in the
+focused forged test. The live response now independently states **no Agora
+publication, no Chronos mutation, no provider invocation, no tool authority,
+no file authority, no approval and no rollout authority**; this avoids the
+ambiguous shared “no” wording caught by the first live assertion.
+
+Both the focused forged unit test and real process gate pass. This proves only
+the observation/qualification boundary. The next J1 critical-path machine must
+turn that exact immutable result evidence into a separately authorized Agora
+message proposal and then an independently authorized Chronos comment/status
+proposal, with definitive owner receipts, unknown-outcome reconciliation and
+no inference that a model response completed the task.
+
+### 2026-11-20 — Dendrite-grounded J1 result-settlement design
+
+The follow-on design used the live Dendrite service rather than treating role
+names as grounding. Dendrite's `rune/fsm/ensemble-generator` machine supplied
+the selection/assembly frame, but it has no authored context tags. Reverse
+queries against `rune/sme/triggers` proved that `formal-methods`,
+`agent-systems`, `operator`, and `ensemble` currently have no fold routes. The
+canonical J1 settlement tags `architecture-flow-review`,
+`identity-design-decision`, `access-control-decision`, `external-calls`, and
+`human-impact-decision` routed architecture, network, identity, data,
+security, distributed-systems, and humanism. All seven exact activated
+surfaces were read and their surface digests are retained in
+`design/requests/j1-result-settlement.author.json`.
+
+The mandatory question “do we have the right ensemble?” remains **contested**.
+The routed bodies provide relevant SME challenges, but they are not
+independently attributed stakeholder reports and do not prove standing,
+equity, independence, agreement, approval, or authority. The request now asks
+for independently attributable representation of the sponsor/acceptance
+owner, affected operator, local-agent participant, and the Agora, Moira, and
+Chronos owner boundaries. It also retains the missing context routes as a
+corpus gap rather than silently selecting a convenient default ensemble.
+
+The grounded review resolved the prior owner questions against existing peer
+contracts:
+
+- Agora's actor-publication profile derives author identity from the
+  authenticated participant session, requires fresh Execute authority for
+  publication and distinct Observe authority for retained lookup, and binds a
+  stable operation ID to exact revision, logical time, body, and canonical
+  recipients. Its observation distinguishes `Accepted`, authoritative
+  `Absent`, `Conflict`, and `Unavailable`; matching recovery returns the
+  original revision/message/sequence receipt. Pantheon must reuse this profile
+  rather than publish the agent result through the operator's ordinary message
+  client or invent another idempotency contract.
+- Chronos remains the authority for one shared task status. Moira's
+  receiver-sealed Daimon settlement is the legitimate execution-completion
+  path: `SettlementAction::Complete` validates source owner, effect,
+  execution, task incarnation, attempt and disposition, then uses Chronos's
+  native live-lease or recovered-reconciliation completion. Chronos itself
+  atomically derives `ReadyForReview`. No separate composition-owned status
+  mutation is required for this edge.
+- `Done` is intentionally outside the execution-settlement machine. Chronos
+  permits it only as an explicit exact transition from a succeeded
+  `ReadyForReview` task. Rune's existing
+  `user-acceptance-driven-development.machine.rune` already owns the stronger
+  human method: named acceptance authority, real-entry verification,
+  user-owned adversarial challenge, finding disposition, feedback loops and an
+  explicit `accepted` edge; silence remains pending. Reuse that machine rather
+  than authoring a weaker J1-specific substitute. The remaining gap is an
+  owner-bound adapter that binds its exact accepted receipt, principal,
+  challenged delivered version, criteria and finding dispositions to the
+  revision-bound Chronos transition, including refusal and outcome-unknown
+  reconciliation.
+- Chronos must not become a second prose authority. Task inspection should
+  project the already-linked Agora room/result as its comment/conversation
+  surface; it must not copy the message body into a new Chronos comment store.
+
+The grounded design initially proposed publication before settlement so every
+review-ready task already had attributable room content. The owner-contract
+audit corrected that ordering claim: Moira's currently qualified integration
+admits the exact Daimon result, settles the exact Chronos attempt, prepares the
+Agora response, and only reaches workflow completion after accepting the exact
+publication receipt. Publication-first would be a new policy requiring its own
+Rune and qualification; it must not be described as current behavior. The
+first projection therefore preserves the qualified settlement-first order:
+
+`qualified result → Moira result admission → receiver-sealed settlement prepared → settled or settlement uncertain → exact Chronos Ready for Review observation → actor publication prepared → published or publication uncertain → exact Agora observation/reconciliation → review ready with attributable result`
+
+Conflict or non-recoverable refusal enters an actionable attention-required
+outcome; unknown never becomes failure, absence, retry, success, acceptance or
+Done. A settled task whose later publication is refused or remains uncertain
+is an explicit partial-effect state: Chronos remains authoritatively Ready for
+Review while the missing room result and actionable resolution stay visible;
+nothing rolls settlement back or fabricates workflow completion. The two owner
+effects remain a recoverable saga, not a distributed transaction. The current
+author request deliberately remains at `questions_pending` until stakeholder
+admission and the UADD-to-Chronos acceptance composition are resolved; this is review
+discipline, not a compiler limitation. Dendrite binds the reused UADD machine
+at exact digest
+`3f4c2d749131b1bf4f5e7d2adc8212b32d2d9a7bc87224d9f119c1bc5df6c87e`.
+Its `user-review` state routes `user-acceptance-review` and
+`claiming-completion` to user-experience and live-verification; their activated
+surface digests are
+`d913e8238718eb57b20cdd6bdb72bc8553650cc7b7889724d97bf1d2a39cc66c`
+and `35e743059455c7c3c7538d5c59f81fb27c2bd0cc1155612cd1f5991d5ad904f2`.
+
+Dendrite reconciliation then closed the consultation loop against exact
+machine digest
+`ce8db2b1a498e7ef025d73da839efad2abb4ed2d956ea68efa683af05e2f45d0`
+and the same fold digest. It classified the consumed owner-boundary grounding
+as `covered`; classified formal-methods, agent-systems, operator and ensemble
+as four deterministic `routing-gap` results with current but inactive corpus
+identities; classified missing ensemble-FSM context tags as an `FSM-candidate`;
+and classified stakeholder-standing admission as an `interaction-candidate`.
+The confirmation is `deterministic-identity-and-routing`; semantic adequacy
+remains explicitly caller-attested. The existing Chronos item
+`dendrite-agent-supervision-stakeholder-fold-routes` owns the four routing
+gaps, so this pass must enrich rather than duplicate that backlog item. The FSM
+context-tag and stakeholder-admission classifications are distinct follow-up
+evidence, not reasons to weaken or bypass the contested review gate.
+
+The expanded review added `privacy-impact-decision`,
+`instrumenting-test-pathways`, `test-oracle-design`, and
+`reviewing-ensemble-convergence`, then read the activated privacy-engineering,
+observability, tester, rigor, and auditor surfaces. Result bytes crossing from
+Daimon evidence into Agora are untrusted content: they require purpose and
+audience minimization, bounded retention/correction/deletion behavior, and
+must never become tool or action instructions. Every logical operation and
+physical attempt needs content-safe Oculus evidence for owner, revision,
+disposition, uncertainty/conflict and recovery age; telemetry remains
+non-authoritative. The previously unlabeled evidence list is now interpretable
+through `design/evidence/j1-result-settlement-grounding-manifest.json`, exact
+SHA-256
+`f0893379e16b226b253173a1d75928d2627dbac53e01e07ca9561c6019e0b432`.
+The manifest binds kind, owner/load or source identity, surface depth,
+freshness and consultation purpose while explicitly proving no standing,
+fitness, correctness, authority, approval or rollout readiness.
+
+The adversarial schema audit found a more serious authoring-boundary gap.
+`rune-author` currently accepts a free-form human string, an
+`ensemble_fit` enum, digest strings and dissent; a caller could change
+`contested` to `yes` without supplying Moira's owner-issued deliberation and
+admission evidence. The governing J33 contract additionally requires affected
+population, required/present/missing/excluded lenses, standing and mandates,
+conflicts, equity/coverage assessment, independence limitations, attributed
+reports, dissent and disposition. Retain a critical-path Chronos item for a
+versioned structured ensemble-admission input bound to an exact Moira
+deliberation/admission identity and digest. Until that owner evidence is
+consumed and verified, `rune-author` must remain `questions_pending`; prose,
+extra prompting or a manually flipped enum is not a remedy. This strengthens
+the authoring admission boundary without moving ensemble truth into Rune,
+Pantheon or the model.
+
+Chronos revision 80 now retains the distinct task
+`rune-author-structured-ensemble-admission` for that boundary. It was proposed
+and submitted once through Pantheon's command palette and central behavior
+facade; the owner returned a definitive `Applied` receipt, so no retry
+occurred. This dogfood step also exposed three presentation frictions to retain
+without diverting the critical path: `C-a C-k` appended rather than clearing
+the task-search field, search disclosed another page but contextual help
+offered no pagination action, and the successful task submission rendered a
+misleading `Cancel receipts` summary. The last issue is especially important:
+observable feedback exists, but its operation label is wrong and can disorient
+the operator even when the owner result is definitive.
+
+The authored J1 candidate now contains the full settlement-first evidence
+topology, but it is deliberately an evidence controller rather than an effect
+executor. The generated controller may consume only closed, typed owner
+outcomes; the Pantheon wrapper must refuse both zero eligible branches and
+multiple eligible branches instead of allowing Smith's caller-selectable
+`choose` projection to decide among contradictory evidence. It performs no
+Agora, Moira or Chronos effect. Agora publication preparation must instead
+consume a deployment-owned task-conversation route whose source, room,
+revision, logical time and canonical audience did not come from the model or
+CLI. Pantheon must not silently sort, deduplicate or otherwise repair an
+untrusted audience; the Agora owner independently enforces strict ordering,
+deduplication and current membership. Moira exposes exact replay,
+conflict and indeterminate settlement outcomes but no authoritative settlement
+absence, so the machine contains no `settlement absent -> retry` edge.
+
+The actual `rune-author` gate remains `questions_pending` with request digest
+`7f555eebfed7a21f5b86914e27534b4e18e89a5218340e01a6c780c1822b7d61`.
+It now asks only for the six genuine contracts: the owner-issued Daimon
+agent-result-to-execution/task-attempt binding; independently attributable
+stakeholder standing/equity; the UADD-to-Chronos acceptance adapter; the exact
+typed J1 composite over Moira `PublishedV1` plus the current Chronos
+ReadyForReview observation; the strict typed evidence evaluator; and
+remediation of the contested ensemble. The earlier
+topology question is closed. This refusal is the desired semantic-preservation
+result: the current design is inspectable and grounded, but it is not yet
+forgeable, executable, accepted or rollout-ready.
+
+The receipt-adapter audit corrected a second stale capability claim. Moira's
+existing actor-owned `ActorResponsePublisher` already maps direct or reconciled
+`ActorPublicationAcceptedV1` through the retained exact `PublicationIntentV1`
+into a full effect/source/room-bound `PublishedV1`; it accepts no caller author.
+The focused real-process qualification
+`lost_response_reply_is_observed_by_a_new_client_in_an_independent_agora_process`
+passed with one selected test, proving committed-reply loss, independent
+authenticated reconnect and exact durable receipt recovery. The remaining gap
+is narrower: Pantheon has no typed J1 composite that binds that complete
+`PublishedV1`, the qualified Daimon result and task/attempt relationship, and a
+current exact Chronos ReadyForReview observation. The generic peer router is
+not a substitute because its projection drops source, room sequence and message
+sequence and collapses distinctions J1 must retain. The three-field Agora
+acceptance receipt also does not by itself prove the authenticated principal;
+the composition must retain the authenticated call/authority provenance.
+
+The UADD acceptance audit likewise found an implementation boundary rather
+than a promptable omission. Rune supplies the semantic accepted edge, while
+Moira supplies an authority-injected human-gate response, but no owner-issued
+runtime UADD receipt yet binds the named acceptance principal, exact challenged
+artifact/version, criteria, threats and finding dispositions. Chronos's direct
+ReadyForReview-to-Done engine method has neither an expected global revision nor
+an authority/evidence identity and is absent from its durable atomic mutation
+family. The preserving design therefore requires a typed UADD acceptance
+packet/material resolver and a closed acceptance-specific Chronos atomic
+invocation with exact lost-reply lookup. A generic human-gate `Approved`, green
+tests, ensemble agreement, silence or direct engine call cannot stand in for
+that chain.
+
+Pantheon dogfood retained the four resulting executable gaps in one reviewed
+Chronos batch: `j1-typed-review-link-evidence`,
+`j1-strict-evidence-controller-wrapper`,
+`uadd-owner-acceptance-receipt`, and
+`chronos-atomic-acceptance-transition`. The TUI reviewed all four exact IDs
+with priority zero, three attempts, fenced retry safety and no invented
+dependencies/capabilities, submitted once, and received a definitive atomic
+`Applied` receipt as Chronos advanced from revision 80 to 81. No retry occurred.
+The board's current page visibly included the Chronos atomic-acceptance and J1
+strict-wrapper items; the atomic owner receipt, rather than that paginated
+projection, is the evidence for the full four-row mutation.
+
+This pass also reproduced a composition-boundary friction without converting
+it into false task absence. The shared TUI retained a stale “new-task form is
+open” notice while focus was actually in the workstream switcher, so attempted
+input became search text; recovery required closing overlays one at a time and
+re-entering through the central command palette. After the definitive TUI
+mutation, four bounded `chronos-task-observe` calls against the hosted directory
+all returned `not_sent`: the in-process hosted owner is not concurrently
+attachable through that path. The existing
+`chronos-live-owner-headless-attach-*` item owns that parity gap, so no duplicate
+was created and no task mutation was retried. The successful submission still
+rendered the unrelated `Cancel receipts` label, confirming the previously
+captured operation-feedback bug.
+
+Tracing the proposed typed J1 composite exposed an earlier owner-evidence gap
+that the content qualifier must not conceal. `AgentSessionViewV1` publishes the
+stable session, phase, profile-document digest, active turn, event cursor,
+optional context receipt and capabilities, but not the retained
+`ExecuteRequestV1` execution/task-attempt binding. Pantheon's current
+`QualifiedAgentResult` consequently proves one bounded UTF-8 assistant body,
+its digest, session, turn and event order; it does **not** prove the execution
+ID, task key, incarnation or attempt. The original open/prompt request document
+is caller-held intent and cannot be promoted into owner evidence. The J1 author
+request now has a separate hard hole for an owner-issued Daimon agent-result
+binding before `result-qualified` is reachable. This increases the author gate
+from five to six genuine contracts and prevents the later Moira/Chronos
+composition from laundering an unbound model response into task progress.
+
+Chronos revision 82 now retains
+`daimon-agent-result-execution-binding`. It was reviewed with the same bounded
+owner fields and submitted exactly once through the live TUI, which returned a
+definitive `Applied` receipt; no mutation retry or task-absence inference
+occurred.
+
+The first adversarial pass sharpened that task further. `(session, turn)` is
+not presently an owner-enforced unique key: prompt operations are indexed by
+caller-supplied idempotency identity, a completed session can accept another
+prompt using the same turn identity, and assistant-message events contain no
+turn field. Reconstructing a binding later from the whole event page would
+therefore be ambiguous even though each stored Prompt already retains the full
+execution/task-attempt envelope. The minimal owner repair must reject turn-ID
+reuse for new prompts, while old duplicate-turn history must refuse observation
+rather than be repaired. Two independent audits leave one material design
+dispute unresolved. The owner-contract audit argues that the existing V1/V2
+exact Prompt input, operation state, completed view and ordered events can
+derive a unique interval after the prior terminal when the Completed view names
+its terminal cursor, requiring no checkpoint schema bump or provider replay.
+The adversarial audit argues that non-forgeability requires the interval and
+result binding to be committed atomically with receipt admission and that older
+checkpoints without it must return unavailable. Both agree that
+`OutcomeUnknown` cannot be upgraded by scanning events, the public receipt is
+content-free, separately authorized bytes must digest-match, settled revision
+cannot be replaced by a later session revision, and provider-absent digests
+cannot be misrepresented as provider attestation. The parent hole stays open
+until a proof and abuse tests resolve the disagreement; implementation cost or
+schema convenience cannot decide it.
+
+The separate five-state `daimon-agent-result-binding` Rune is therefore a
+candidate derived-projection design, not the accepted owner contract:
+
+`owner facts retained → turn correlated → execution correlated → completion correlated → binding projected`
+
+All four transitions are compelled. Scry admitted its structure, its mandatory
+path proof reports five states, four edges and zero failures, and Smith reports
+complete Rust compatibility with no unsupported semantics. Smith's private
+Rust projection is target-verified evidence only; it does not implement the
+Daimon owner protocol, prove runtime facts, authorize downstream effects or
+close the parent J1 authoring question or dispose the atomicity dispute.
+
+### 2026-11-20 — grounding descent and Gray ensemble probe
+
+The Gray design was exercised at its first real decision point rather than as a
+whole-machine mega-context. An initial invented lattice identity was refused and
+corrected by corpus discovery to `axon/sme/axon-concerns`. The union of every
+machine context routed ten SME roles and exceeded Tellus's eight-role ceiling;
+the ceiling was preserved and the request descended to the
+`control-challenged` state. Its three authored tags route six roles under the
+ceiling.
+
+Pantheon's authenticated `tellus-sme-plan` command still returned
+`Refused(503)`. Exact MCP diagnostics localized the refusal: the fold and all
+six activated SME surfaces are current and resolvable, but `rune:security` has
+no `(concern …)` clause, so the orthogonality lattice refuses to classify it.
+No default facet, optimistic independence or plan completion was invented.
+This is the desired grounding behavior: the unresolved claim moved from a
+service-wide hypothesis to one owner-observable corpus omission and one cheap,
+replayable request.
+
+The probe also showed that Tellus's 64-entry observation page can be fresh and
+`complete` while the inventory is `truncated: true` with no continuation
+cursor. This is a discoverability gap, not evidence that loads beyond the page
+are absent. Both gaps are retained in the composition backlog. Even after the
+corpus issue closes, Dendrite's roles remain advisory SMEs. Moira must still
+establish equitable, independently attributable standing for the experiment
+owner, control owner, operator and affected subjects before the Gray machine
+can pass “do we have the right ensemble?”.
+
+The operating invariant is now explicit in prose, archaeology, Rune and
+verification: inferential altitude is risk. Each unresolved claim must expose
+its assumptions and blast radius, name its nearest owner-observable fact and
+take the cheapest safe descent. Prefer a reversible unknown an inch from
+evidence over a confident abstraction a mile away.
+
+### 2026-11-20 — The Gray recognized as the Maybe Machine
+
+The Gray is not a neighboring experimental zone attached to maybe. It is maybe
+made operational: a typed inquiry machine that retains the exact uncertain
+question, selects the cheapest adequate descent, and folds evidence back without
+minting truth or authority. Deterministic proof, owner observation, bounded
+experiment, stakeholder deliberation, human return, held plurality and safe
+refusal are distinct child paths. Bool is a separately governed admission; mu
+may steer, interrupt or dispose an inquiry without being compiled away.
+
+This corrects the scope of `pantheon-gray-experiment.machine.rune`. Its current
+ten-state design remains useful, but only as the bounded-experiment child of the
+Maybe Machine. It has no authority to select experiment as the right inquiry or
+to promote its returned result. The missing parent machine and typed child
+invocation/return support are retained as P0 work; the existing compiler gap is
+not papered over with prose composition or a weakened linear executable.
+
+The governing journey blueprint now carries this as J37 rather than leaving it
+as architectural prose. `MaybeInquiryV1` must retain one exact claim, altitude,
+assumptions, blast radius, stakeholders, evidence, dissent, expiry and
+nonclaims; one named planning authority selects one typed child under shared
+finite fuel; and the child returns one evidence envelope into a separately
+admitted maybe, held, mu, refused or Bool-candidate edge. P0 now requires an
+owner-bound inquiry contract plus TUI/headless truth parity. Ownership remains
+unselected: Moira is the strongest current workflow/deliberation candidate, but
+its existing projection is not silently promoted into parent epistemic
+authority. The smallest executable qualification target is one deterministic
+owner-observation child followed by the already-admitted bounded-experiment
+child, after typed invocation/return exists.
+
+The grounded owner audit is retained in
+`design/evidence/pantheon-maybe-machine-owner-audit.md`. Moira's current
+`ResolutionV1` already preserves `ProvenBool`, `AuthorizedChoice`, four-valued
+`Maybe` and reasoned `Mu`, plus finite fuel and attributed reports. That is
+strong runtime-host prior art, but its `Maybe` is the terminal result of one
+deliberation rather than a recursive inquiry instance. The recommended split is
+therefore Rune-authored law, a separately reviewed Moira durable-host contract,
+explicit planning authority, sovereign child evidence, and Pantheon
+presentation. This is a recommendation, not owner selection.
+
+The first substrate handoff is now concrete in
+`design/requests/rune-typed-child-invocation.rosetta.md`. It binds the inspected
+dirty Rune checkout and exact parser/IR/compatibility/Gleam bytes, then requires
+a typed child evidence carrier, singular binding, shared fuel, cycle policy,
+replay law, tagged refusal/uncertainty, target enforcement and negative tests.
+It explicitly rejects merely adding today's lower-IR `(invoke NAME)` and
+caller-supplied Boolean accepting-halt callback to Scry, because that path loses
+the exact child result the parent must monadically consume. No Rune peer files
+were mutated.
+
+The existing J1 Daimon result observer was then requalified as the nearest
+concrete deterministic-observation-child pattern. Its focused forged unit gate
+passed (`1 passed`, `130 filtered`), and
+`tests/live/j1_agent_result_observe.sh` passed the real Unix-owner sequence:
+guarded session open, guarded prompt, exact completed-turn digest evidence and
+bounded read-only Pantheon qualification. The broader name-filtered Cargo run
+was deliberately stopped after the target unit passed because it was serially
+launching unrelated integration binaries with zero selected tests; the precise
+`--lib` selector supplied the authoritative unit result. This evidence proves
+one fresh-session content window only. It does not provide the missing
+Daimon-issued execution/task-attempt binding, a `MaybeInquiryV1` child envelope,
+parent selection, recursive return, Chronos progress, Agora publication,
+acceptance or Bool admission.
+
+### 2026-11-20 — Daimon owner result binding closes the J1 attribution hole
+
+The preceding nonclaim has now been reduced rather than papered over. Daimon
+publishes a read-only, content-free `AgentResultBindingV1` from one uniquely
+retained prompt operation. It binds session/turn to execution, exact task
+attempt, principal/profile, idempotency operation, authority decision and
+expiry, prompt and context-manifest digests, exact event interval, terminal
+revision, disposition, stop reason and optional output digest. New prompts
+reject reuse of an existing turn identity. Old duplicate prompt or terminal
+history refuses ambiguity; an active turn returns `Busy`; an indeterminate
+prompt returns its existing `OutcomeUnknown` without event scanning.
+
+No new checkpoint map or provider replay was added. The projection uses the
+Prompt input, authority preparation, completed view, context receipt and
+ordered terminal facts already retained in the same durable owner snapshot.
+The recovery test proves that an indeterminate result commit remains unknown
+until the original exact command is reconciled, and that querying the binding
+does not redispatch the provider. Focused Daimon evidence passed:
+
+- all five agent-wire behavior tests, including canonical `Result` command and
+  outcome round trips;
+- exact completed-turn binding, active-turn `Busy`, indeterminate
+  `OutcomeUnknown`, and fresh-operation turn-reuse refusal service tests;
+- the original replay/provider-call count assertions, showing result reads are
+  observation-only.
+
+Pantheon now requests this owner receipt before reading content, fetches only
+the named event interval, verifies the terminal receipt against the binding,
+and projects the execution plus task key/incarnation/attempt. The focused unit
+proof rejects interval and disposition disagreement. The real Unix gate passed:
+
+`guarded open → guarded prompt → Daimon-owned execution/task-attempt binding → exact event interval → qualified read-only Pantheon observation`
+
+The journey fixture initially panicked because it still modeled events without
+the owner query. It was upgraded to retain the submitted prompt execution and
+return the same typed binding; Pantheon was not given a fallback. This closes
+the J1 result-attribution hole. It does **not** settle the attempt, publish to
+Agora, advance Chronos, accept the work, answer a human gate, admit Bool, or
+grant rollout authority. Those remain separate owner transitions.
+
+The closed hole was then folded back into the actual Rune-author request. The
+revised request identity is
+`80b6a38a9502d162cfd197cceba18510af265674c2264aaa6f9549c18fcf41ac`.
+The owner-binding question is gone, its result-qualified state now names the
+implemented owner receipt, and the verification plus exact protocol/service/
+Pantheon source identities are retained as evidence. Running the real
+`rune-author` binary correctly returned `questions_pending`, emitted no
+candidate, and retained the four genuinely unresolved paths: stakeholder
+standing/equity, UADD acceptance composition, the typed review-link composite,
+and the strict evaluator.
+
+The tool emitted five question records because `$.review.ensemble_fit` appeared
+once as the request's specific evidence-rich hole and once as the generic
+review validator's question. This is deterministic authoring friction, not a
+fifth semantic gap. A backlog item requires path-stable deduplication that
+prefers or merges the richer explicit question; deleting the hole or falsely
+marking ensemble fit `yes` is not an acceptable workaround.
 

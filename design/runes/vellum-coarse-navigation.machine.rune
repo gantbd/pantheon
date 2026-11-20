@@ -1,0 +1,627 @@
+(machine vellum-coarse-navigation
+  (rosetta
+    (intent "deliver owner-native coarse document navigation in Vellum from one threat-reviewed, instrumented, and falsifiable design")
+    (values owner-sovereignty fail-closed-projection privacy-by-design bounded-work observable-outcomes)
+    (outcomes "PageUp and PageDown become Vellum-owned navigation intents with one bounded owner action per input" "the design has explicit STRIDE dispositions before tests, instrumentation, generated artifacts, or hand-written production code are authorized" "Smith either emits a provenance-bound Rust projection that preserves every obligation or refuses without writing weaker code" "focused and live evidence distinguish movement, document boundary, refusal, and failure without disclosing document or cursor data")
+    (who "Vellum owns navigation semantics; Pantheon composes the owner surface and Oculus receives bounded operational evidence")
+    (what "one coarse-navigation vertical slice covering design, threat review, projection, implementation, instrumentation, verification, and independent challenge")
+    (when "before adding PageUp or PageDown tests, telemetry, owner actions, host routing, or generated Rust")
+    (where "the keyboard-to-Vellum behavior-facade boundary and Vellum's document viewport, with content-free evidence exported through Pantheon's observability boundary")
+    (why "host-side key loops would leak owner behavior, unbounded movement could consume work, and detailed telemetry could disclose workspace activity; one governed artifact keeps the behavior, tests, telemetry, and generated projection aligned")
+    (how "freeze the behavior and authority contract; dispose every STRIDE category; validate with Scry; require Smith compatibility and fail-closed projection; derive threat and behavior oracles; implement only at the owner boundary; emit bounded content-free outcomes; verify through the compiled TUI; challenge bypass, disclosure, amplification, and authority escalation")
+    (extent "PageUp and PageDown only: one visible page minus one overlap line, clamped to document bounds, preserving the preferred column where possible; no editing, selection, save, file access, search, arbitrary shell, or rollout authority")
+    (examples "PageDown in a ten-line viewport requests one Vellum owner action and advances at most nine logical lines" "PageUp at the first line reports a boundary outcome without mutating source bytes or logging the cursor position"))
+  (initial design-framing)
+
+  (state design-framing
+    (rosetta
+      (intent "freeze the behavioral owner, movement law, trust boundaries, and non-goals before any delivery artifact is created")
+      (values owner-sovereignty bounded-scope)
+      (outcomes "Vellum is the sole movement owner; PageUp and PageDown are semantic inputs rather than text; a page is the latest owner-observed visible line count minus one overlap line, bounded to one through 512 lines with a safe one-line default; movement clamps at document bounds and preserves the preferred column when possible; Pantheon may route and observe but may not simulate movement with repeated fine-grained actions")
+      (who "the accountable designer and Vellum owner")
+      (what "the immutable behavior frame")
+      (when "before threat review and before tests, instrumentation, generation, or production edits")
+      (where "Vellum's input translator, service action boundary, editor state, and Pantheon's owner adapter")
+      (why "a precise owner and movement law prevents presentation composition from becoming a second editor implementation")
+      (how "inspect the existing public owner boundary and state the smallest semantic extension without selecting an implementation shortcut")
+      (extent "design facts only; no repository mutation outside this Rune")
+      (examples "a 24-line viewport advances at most 23 logical lines through one owner action")))
+
+  (state threat-model
+    (context security-stride observability-privacy)
+
+    (rosetta
+      (intent "dispose all STRIDE categories and bind each applicable threat to a control and falsifiable oracle before downstream work")
+      (values threat-before-code least-authority non-disclosure bounded-work honest-evidence)
+      (outcomes "Spoofing: unfocused, modal, or globally claimed inputs cannot reach the Vellum owner action; Tampering: navigation cannot alter source bytes, selection, history, dirty state, save state, or file identity; Repudiation: content-free evidence distinguishes moved, boundary, refused, and failed outcomes without falsely claiming movement; Information Disclosure: events, logs, metrics, traces, notices, and errors exclude document bytes, paths, search terms, key text, cursor offsets, cursor lines, and viewport contents; Denial of Service: one input produces at most one owner action and movement work is bounded to 512 logical lines without host repetition or unbounded scanning; Elevation of Privilege: navigation grants no edit, save, file, shell, provider, or rollout authority and cannot bypass modal or global behavior precedence")
+      (who "the accountable designer with security and observability stakeholder review")
+      (what "the mandatory pre-code threat gate")
+      (when "after design framing and before tests, instrumentation, Smith executable projection, or production code")
+      (where "keyboard origin, focus and modal routing, behavior facade, Vellum owner state, Pantheon adapter, and Oculus evidence boundary")
+      (why "terminal input is forgeable, telemetry can leak sensitive work, and apparently harmless navigation can amplify work or smuggle edit authority")
+      (how "for every category record actor, entry, authority, trust crossing, protected effect, countermeasure, and negative oracle; refuse advancement if any disposition is absent, merely aspirational, or requires disclosing protected data")
+      (extent "threats introduced or exposed by coarse navigation; adjacent pre-existing findings are retained in Chronos without weakening this gate")
+      (examples "a PageDown received while a modal owns focus is consumed by that modal; a boundary event contains action identity, outcome, duration, and correlation only")))
+
+  (state projection-contract
+    (rosetta
+      (intent "bind the validated machine to presentation and executable projections without permitting semantic loss")
+      (values semantic-preservation provenance fail-closed-projection)
+      (outcomes "Scry accepts the exact source; Smith compatibility names preserved and unsupported semantics; Markdown is round-trip recoverable; Rust is emitted only if preconditions, destination obligations, rung enforcement, and executable source-to-IR provenance are preserved; any unsupported semantic yields zero executable bytes and a durable refusal")
+      (who "Scry, Smith, and the accountable compiler user")
+      (what "the source-to-projection contract")
+      (when "only after the threat model is complete")
+      (where "the canonical Rune bytes, typed IR, presentation artifact, compatibility report, and optional Rust artifact")
+      (why "a structurally plausible but weaker generated program would misrepresent the design as executable truth")
+      (how "validate, inspect compatibility, forge the review projection, round-trip it, then request Rust through the same typed IR and retain either provenance or exact refusal")
+      (extent "projection only; successful generation does not authorize publication, integration, or rollout")
+      (examples "Smith refuses Rust and writes no file when rung enforcement is unsupported")))
+
+  (state oracle-design
+    (context test-oracle-design instrumentation-contract)
+
+    (rosetta
+      (intent "derive behavior, threat, and evidence oracles from the admitted design before editing production code")
+      (values falsifiability oracle-independence minimal-observation)
+      (outcomes "oracles cover semantic key translation, one-action dispatch, bounded page movement, overlap, preferred-column preservation, upper and lower boundaries, modal precedence, source immutability, authority non-escalation, and telemetry non-disclosure; pathway evidence is not allowed to substitute for an end-state assertion")
+      (who "the implementing worker and independent verifier")
+      (what "the test and instrumentation design gate")
+      (when "after validated projection evidence and before test or instrumentation code")
+      (where "Vellum unit boundaries, Pantheon composition tests, a compiled terminal scenario, and captured content-free Oculus evidence")
+      (why "tests and telemetry must be projections of the same admitted contract rather than independently invented interpretations")
+      (how "name the expected red reason for missing behavior and each negative threat oracle; define allowed signal fields as action identity, outcome class, duration, correlation, component, and version only")
+      (extent "oracle descriptions only; no test support, emitter, or production edit")
+      (examples "the non-disclosure oracle rejects an event containing a document path even if navigation succeeds")))
+
+  (state red-evidence
+    (rosetta
+      (intent "prove the derived focused and threat oracles detect the absent behavior or defense")
+      (values test-first falsifiability)
+      (outcomes "focused tests fail for the intended missing PageUp and PageDown owner variants; applicable negative tests detect host repetition, mutation, modal bypass, excess movement, or disclosed fields; existing protections may pass but are recorded rather than presumed")
+      (who "the implementing worker and focused test runner")
+      (what "the authorized red-test phase")
+      (when "only after oracle design")
+      (where "the cheapest faithful Vellum and Pantheon boundaries")
+      (why "a green test written after implementation cannot prove it detects the missing contract")
+      (how "add the smallest derived tests, run them, and retain the precise expected failures independently of telemetry")
+      (extent "test and test-support edits only; no production behavior or emitter")
+      (examples "translation fails because the semantic owner input variants do not yet exist")))
+
+  (state owner-implementation
+    (rosetta
+      (intent "implement the minimum Vellum-owned behavior and Pantheon routing needed to satisfy the admitted contract")
+      (values minimal-change information-hiding owner-sovereignty)
+      (outcomes "the Vellum owner accepts semantic PageUp and PageDown actions, applies bounded owner-native movement, reports a content-free outcome, and preserves every non-mutation and authority invariant; Pantheon routes the owner action once without recreating movement semantics")
+      (who "the Vellum implementation owner and Pantheon composition owner")
+      (what "the behavior implementation phase")
+      (when "only after intended red evidence")
+      (where "Vellum's public input and service boundary plus Pantheon's existing behavior facade")
+      (why "the behavior belongs with the editor state that can enforce viewport, column, and document invariants")
+      (how "make the smallest cohesive owner API change and reject any design that requires host loops, raw state mutation, or new ambient authority")
+      (extent "coarse navigation behavior only; no unrelated editor refactor")
+      (examples "a stored bounded viewport extent drives one editor movement operation")))
+
+  (state pathway-instrumentation
+    (context instrumenting-test-pathways instrumentation-fortification)
+
+    (rosetta
+      (intent "make dispatch and outcome pathways observable without becoming control flow or disclosing workspace state")
+      (values causal-evidence privacy-by-design minimal-intrusion)
+      (outcomes "correlated content-free evidence records normalized owner intent, single dispatch, moved or boundary outcome, refusal or failure, and latency; schemas exclude protected and high-cardinality fields; missing, duplicated, forged, or reordered evidence is detectable or makes the path verdict inconclusive; application behavior never consults telemetry")
+      (who "Pantheon's observability adapter and Oculus evidence consumer")
+      (what "the pathway measurement phase")
+      (when "after owner behavior exists and before verification")
+      (where "the existing behavior facade and operational evidence boundary")
+      (why "operators need to distinguish ignored input, boundary no-op, owner refusal, and failure without learning what document a user is viewing")
+      (how "emit the minimum versioned schema, enforce an allow-list of fields, bind one correlation identity, and test evidence loss and forgery separately from the behavioral oracle")
+      (extent "coarse-navigation pathway evidence only; no content, paths, cursor coordinates, or blanket key logging")
+      (examples "vellum.cursor.page-down records outcome=boundary and duration without line number")))
+
+  (state verification
+    (context claiming-completion)
+
+    (rosetta
+      (intent "jointly require independent behavior, threat, pathway, and real-entry evidence for the exact candidate")
+      (values earned-evidence reality-contact oracle-independence)
+      (outcomes "focused and proportional suites pass; a compiled terminal scenario demonstrates both directions and both boundaries; source immutability and authority limits hold; observed pathways contain one dispatch and permitted fields only; exact source, IR, projection, candidate, and evidence identities are retained")
+      (who "the test runner and a verifier with read-only candidate authority")
+      (what "deterministic and live verification")
+      (when "after behavior and instrumentation are complete")
+      (where "the exact immutable candidate through standalone Vellum and Pantheon-composed terminal paths")
+      (why "unit success alone does not prove terminal reachability, composition parity, evidence integrity, or non-disclosure")
+      (how "run focused checks first, then proportional broader checks and a reusable tmux scenario; compare protected effects independently from telemetry and treat missing evidence as inconclusive rather than success")
+      (extent "one exact candidate and its introduced behavior")
+      (examples "PageDown moves once in the compiled TUI while the captured event passes the field allow-list")))
+
+  (state adversarial-challenge
+    (context adversarial-security-validation)
+
+    (rosetta
+      (intent "independently attempt each applicable STRIDE misuse against the immutable candidate")
+      (values independence bounded-risk epistemic-honesty)
+      (outcomes "bounded attempts cover focus spoofing, modal bypass, state tampering, false movement claims, telemetry disclosure, repeated-action amplification, oversized viewport input, and edit-authority escalation; protected effects and evidence are inspected independently; bypasses or inconclusive results block review readiness")
+      (who "an authorized verifier independent of the implementer where available")
+      (what "the adversarial verification phase")
+      (when "after ordinary verification passes")
+      (where "the real owner and composed TUI boundaries")
+      (why "the author's happy path and own regressions may share the same mistaken assumptions")
+      (how "attempt each named misuse non-destructively, inspect source and authority state directly, test telemetry allow-lists, and preserve minimal reproductions")
+      (extent "the introduced threat set, not unrestricted terminal or workspace attack")
+      (examples "an injected viewport extent above 512 cannot amplify movement or event volume")))
+
+  (state review-ready
+    (rosetta
+      (intent "present the exact candidate and evidence for accountable human review without implying rollout approval")
+      (values accountability traceability human-gating)
+      (outcomes "the source Rune, threat dispositions, Smith compatibility and projection evidence, red-to-green record, live scenario, instrumentation sample and non-disclosure result, adversarial findings, known limits, and adjacent Chronos items are linked; no current-slice threat remains unresolved; rollout remains a separate named-human go or no-go")
+      (who "the accountable delivery owner and human sponsor")
+      (what "the terminal design-and-delivery evidence state")
+      (when "only after conclusive adversarial challenge")
+      (where "the durable review packet and Chronos work item")
+      (why "technical evidence can support but cannot impersonate accountable human acceptance or final rollout authority")
+      (how "bind every artifact to the exact candidate identity, disclose refusals and limits, and request an explicit human decision only when rollout is actually proposed")
+      (extent "review readiness for this slice; no automatic production rollout")
+      (examples "the sponsor can inspect why Rust projection refused while still reviewing the hand-integrated candidate separately")))
+
+  (edge
+    (from design-framing)
+    (to threat-model)
+    (emit design-frozen)
+
+    (rosetta
+      (intent "submit the frozen behavior boundary to threat review")
+      (values threat-before-code)
+      (outcomes "STRIDE review receives one stable design")
+      (who "the accountable designer")
+      (what "design-to-threat transition")
+      (when "the owner and behavior law are complete")
+      (where "the governed workflow")
+      (why "threat analysis cannot target a moving boundary")
+      (how "emit design-frozen without authorizing downstream artifacts")
+      (extent "one design version")
+      (examples "Vellum ownership and bounded movement are fixed"))
+    (precondition "design-framing's outcomes hold and no test, instrumentation, generated executable, or production edit exists for this slice"))
+
+  (edge
+    (from threat-model)
+    (to design-framing)
+    (emit threat-reframe)
+
+    (rosetta
+      (intent "return an incomplete or unsafe threat contract to design")
+      (values epistemic-honesty)
+      (outcomes "the behavior frame is revised with retained counterevidence")
+      (who "the threat reviewer")
+      (what "threat-to-design correction")
+      (when "any STRIDE disposition is inadequate")
+      (where "the governed workflow")
+      (why "code cannot repair a missing trust boundary")
+      (how "emit threat-reframe with the exact gap")
+      (extent "one threat finding")
+      (examples "modal ownership was omitted"))
+    (precondition "a STRIDE disposition, trust boundary, countermeasure, or negative oracle is absent, contradicted, or requires prohibited disclosure"))
+
+  (edge
+    (from threat-model)
+    (to projection-contract)
+    (emit threats-disposed)
+
+    (rosetta
+      (intent "authorize projection assessment after complete threat disposition")
+      (values threat-before-code)
+      (outcomes "the accepted source may enter fail-closed tool validation")
+      (who "the threat reviewer and accountable designer")
+      (what "threat-to-projection transition")
+      (when "all STRIDE rows are conclusive")
+      (where "the governed workflow")
+      (why "projection must preserve security obligations as source semantics")
+      (how "emit threats-disposed and retain the control-to-oracle map")
+      (extent "one design version")
+      (examples "bounded work and non-disclosure are source obligations"))
+    (precondition "threat-model's outcomes hold for all six STRIDE categories and every applicable threat has an owner, control, and falsifiable oracle"))
+
+  (edge
+    (from projection-contract)
+    (to oracle-design)
+    (emit projection-evidence-recorded)
+
+    (rosetta
+      (intent "admit definitive Scry and Smith evidence into oracle design")
+      (values semantic-preservation)
+      (outcomes "tests and evidence schemas derive from the accepted exact source")
+      (who "the compiler user")
+      (what "projection-to-oracle transition")
+      (when "validation, presentation roundtrip, and executable success or refusal are definitive")
+      (where "the governed workflow")
+      (why "downstream artifacts must share source identity")
+      (how "emit projection-evidence-recorded with hashes and compatibility result")
+      (extent "one source and toolchain identity")
+      (examples "zero-byte Rust refusal remains admissible evidence"))
+    (precondition "Scry accepts the exact Rune, the presentation projection round-trips, and Smith either emits fully compatible provenance-bound Rust or records a named refusal with zero executable bytes"))
+
+  (edge
+    (from oracle-design)
+    (to red-evidence)
+    (emit oracles-admitted)
+
+    (rosetta
+      (intent "authorize only the tests derived from the admitted contract")
+      (values falsifiability)
+      (outcomes "red work has explicit behavior and threat failure reasons")
+      (who "the oracle designer")
+      (what "oracle-to-red transition")
+      (when "behavior, threat, and telemetry oracles are complete")
+      (where "the governed workflow")
+      (why "tests must not invent a competing contract")
+      (how "emit oracles-admitted with trace links")
+      (extent "one oracle set")
+      (examples "a path field allow-list is fixed before an emitter exists"))
+    (precondition "oracle-design's outcomes hold and test plus telemetry schemas can be traced to the admitted behavior and threat contracts"))
+
+  (edge
+    (from red-evidence)
+    (to owner-implementation)
+    (emit red-confirmed)
+
+    (rosetta
+      (intent "authorize production implementation after intended red evidence")
+      (values test-first)
+      (outcomes "editing begins from proved absence or missing defense")
+      (who "the implementing worker")
+      (what "red-to-implementation transition")
+      (when "focused failures match their expected reasons")
+      (where "the governed workflow")
+      (why "an unrelated failure is not implementation authority")
+      (how "emit red-confirmed with the captured failures")
+      (extent "one implementation attempt")
+      (examples "semantic input variants are absent"))
+    (precondition "the behavior test fails for the intended absent owner behavior and applicable missing defenses have intended negative evidence"))
+
+  (edge
+    (from owner-implementation)
+    (to pathway-instrumentation)
+    (emit behavior-ready)
+
+    (rosetta
+      (intent "submit independently correct owner behavior for pathway measurement")
+      (values oracle-independence)
+      (outcomes "instrumentation attaches to behavior that already satisfies its end state")
+      (who "the implementation owner")
+      (what "behavior-to-instrumentation transition")
+      (when "end-state and non-mutation tests pass")
+      (where "the governed workflow")
+      (why "telemetry cannot become a substitute oracle or control input")
+      (how "emit behavior-ready and preserve behavior evidence")
+      (extent "one candidate attempt")
+      (examples "page movement passes without an event collector"))
+    (precondition "owner-implementation's outcomes hold and the behavior passes end-state tests without consulting telemetry"))
+
+  (edge
+    (from pathway-instrumentation)
+    (to verification)
+    (emit evidence-ready)
+
+    (rosetta
+      (intent "submit fortified content-free measurement for verification")
+      (values causal-evidence privacy-by-design)
+      (outcomes "the exact candidate can be checked for outcome and path independently")
+      (who "the observability owner")
+      (what "instrumentation-to-verification transition")
+      (when "schema, integrity, and loss behavior are testable")
+      (where "the governed workflow")
+      (why "untrustworthy evidence cannot support a path verdict")
+      (how "emit evidence-ready with schema identity")
+      (extent "one instrumentation version")
+      (examples "moved and boundary are distinguishable without cursor data"))
+    (precondition "pathway-instrumentation's outcomes hold and schema allow-list plus loss and forgery behavior are testable"))
+
+  (edge
+    (from verification)
+    (to design-framing)
+    (emit verification-reframe)
+
+    (rosetta
+      (intent "return reality-disproved assumptions to design ownership")
+      (values reality-contact)
+      (outcomes "the source contract is revised rather than patched around")
+      (who "the verifier")
+      (what "verification-to-design correction")
+      (when "the admitted model is false")
+      (where "the governed workflow")
+      (why "implementation changes cannot make a false model true")
+      (how "emit verification-reframe with exact counterevidence")
+      (extent "one model failure")
+      (examples "the real viewport boundary differs"))
+    (precondition "verification disproves the owner boundary, movement law, threat model, or oracle design"))
+
+  (edge
+    (from verification)
+    (to owner-implementation)
+    (emit implementation-revise)
+
+    (rosetta
+      (intent "return a candidate defect to its implementation owner")
+      (values bounded-revision)
+      (outcomes "the admitted design remains stable while code or measurement is repaired")
+      (who "the verifier")
+      (what "verification-to-implementation correction")
+      (when "the model survives but the candidate fails")
+      (where "the governed workflow")
+      (why "failure classification prevents unnecessary redesign")
+      (how "emit implementation-revise with the failed oracle")
+      (extent "one candidate defect")
+      (examples "Pantheon dispatched the owner action twice"))
+    (precondition "verification finds a behavior, composition, or instrumentation defect without disproving the admitted design"))
+
+  (edge
+    (from verification)
+    (to adversarial-challenge)
+    (emit candidate-verified)
+
+    (rosetta
+      (intent "advance an exactly identified passing candidate to independent challenge")
+      (values earned-evidence)
+      (outcomes "adversarial work targets immutable verified input")
+      (who "the verifier")
+      (what "verification-to-challenge transition")
+      (when "all ordinary evidence passes")
+      (where "the governed workflow")
+      (why "mutating challenged input would invalidate the verdict")
+      (how "emit candidate-verified with exact candidate identity")
+      (extent "one immutable candidate")
+      (examples "the standalone and composed binaries share the admitted behavior"))
+    (precondition "verification's outcomes hold for the exact immutable candidate"))
+
+  (edge
+    (from adversarial-challenge)
+    (to design-framing)
+    (emit challenge-reframe)
+
+    (rosetta
+      (intent "return an adversary-discovered model gap to design")
+      (values epistemic-honesty)
+      (outcomes "the source learns the missing boundary or threat")
+      (who "the adversarial verifier")
+      (what "challenge-to-design correction")
+      (when "an attempt disproves the model")
+      (where "the governed workflow")
+      (why "a new threat cannot be classified as an implementation detail")
+      (how "emit challenge-reframe with reproducible counterevidence")
+      (extent "one model finding")
+      (examples "an alternate input origin bypasses focus ownership"))
+    (precondition "an adversarial attempt reveals a missing or wrong boundary, threat, or oracle"))
+
+  (edge
+    (from adversarial-challenge)
+    (to owner-implementation)
+    (emit defense-revise)
+
+    (rosetta
+      (intent "return a control bypass to implementation without weakening its obligation")
+      (values no-silent-debt)
+      (outcomes "the admitted defense is repaired and rechallenged")
+      (who "the adversarial verifier")
+      (what "challenge-to-implementation correction")
+      (when "a valid control is bypassed")
+      (where "the governed workflow")
+      (why "introduced bypasses cannot become ordinary backlog")
+      (how "emit defense-revise with the protected-effect observation")
+      (extent "one defense defect")
+      (examples "an oversized extent exceeds the movement bound"))
+    (precondition "an adversarial attempt bypasses an admitted control without disproving the design"))
+
+  (edge
+    (from adversarial-challenge)
+    (to review-ready)
+    (emit challenged)
+
+    (rosetta
+      (intent "present a conclusively challenged candidate for accountable review")
+      (values accountability human-gating)
+      (outcomes "the evidence packet is complete without asserting rollout")
+      (who "the adversarial verifier and delivery owner")
+      (what "challenge-to-review transition")
+      (when "all introduced threats have conclusive passing evidence")
+      (where "the governed workflow")
+      (why "technical completion and rollout authority are distinct")
+      (how "emit challenged and bind all evidence to the exact candidate")
+      (extent "one immutable candidate")
+      (examples "the sponsor receives the complete packet and retained limitations"))
+    (precondition "adversarial-challenge's outcomes hold, no introduced threat is unresolved or inconclusive, and adjacent findings have durable Chronos ownership"))
+
+  (signal design-frozen
+    (rosetta
+      (intent "announce the frozen owner and behavior frame")
+      (values clarity)
+      (outcomes "threat review has one stable target")
+      (who "workflow observers")
+      (what "design signal")
+      (when "leaving design framing")
+      (where "the evidence journal")
+      (why "threats require a fixed boundary")
+      (how "raised by design-frozen")
+      (extent "one design version")
+      (examples "Vellum owns one bounded page action")))
+
+  (signal threat-reframe
+    (rosetta
+      (intent "announce an incomplete threat contract")
+      (values epistemic-honesty)
+      (outcomes "design framing resumes")
+      (who "workflow observers")
+      (what "threat revision signal")
+      (when "threat review fails")
+      (where "the evidence journal")
+      (why "missing threats cannot be coded around")
+      (how "raised by threat-reframe")
+      (extent "one finding")
+      (examples "a focus boundary was omitted")))
+
+  (signal threats-disposed
+    (rosetta
+      (intent "announce complete STRIDE dispositions")
+      (values threat-before-code)
+      (outcomes "projection assessment is authorized")
+      (who "workflow observers")
+      (what "threat gate signal")
+      (when "all six categories are disposed")
+      (where "the evidence journal")
+      (why "downstream work requires admitted controls")
+      (how "raised by threats-disposed")
+      (extent "one design version")
+      (examples "non-disclosure and bounded-work controls are fixed")))
+
+  (signal projection-evidence-recorded
+    (rosetta
+      (intent "announce Smith and Scry evidence")
+      (values semantic-preservation)
+      (outcomes "oracle design is authorized")
+      (who "workflow observers")
+      (what "projection signal")
+      (when "validation and projection outcomes are definitive")
+      (where "the evidence journal")
+      (why "tests must trace to accepted source")
+      (how "raised by projection-evidence-recorded")
+      (extent "one source and toolchain identity")
+      (examples "Rust refusal names unsupported semantics")))
+
+  (signal oracles-admitted
+    (rosetta
+      (intent "announce derived behavior and threat oracles")
+      (values falsifiability)
+      (outcomes "red testing is authorized")
+      (who "workflow observers")
+      (what "oracle signal")
+      (when "oracle design is complete")
+      (where "the evidence journal")
+      (why "tests need explicit expected failures")
+      (how "raised by oracles-admitted")
+      (extent "one oracle set")
+      (examples "host repetition is forbidden")))
+
+  (signal red-confirmed
+    (rosetta
+      (intent "announce intended failing evidence")
+      (values test-first)
+      (outcomes "owner implementation is authorized")
+      (who "workflow observers")
+      (what "red signal")
+      (when "derived tests fail as expected")
+      (where "the evidence journal")
+      (why "absence detection must be proved")
+      (how "raised by red-confirmed")
+      (extent "one candidate attempt")
+      (examples "owner variants are missing")))
+
+  (signal behavior-ready
+    (rosetta
+      (intent "announce an owner-aligned behavior attempt")
+      (values owner-sovereignty)
+      (outcomes "pathway instrumentation is authorized")
+      (who "workflow observers")
+      (what "behavior signal")
+      (when "end-state tests pass")
+      (where "the evidence journal")
+      (why "measurement follows real behavior")
+      (how "raised by behavior-ready")
+      (extent "one candidate attempt")
+      (examples "one action moves one bounded page")))
+
+  (signal evidence-ready
+    (rosetta
+      (intent "announce fortified content-free pathway evidence")
+      (values causal-evidence)
+      (outcomes "verification is authorized")
+      (who "workflow observers")
+      (what "instrumentation signal")
+      (when "measurement controls hold")
+      (where "the evidence journal")
+      (why "real checks require trustworthy evidence")
+      (how "raised by evidence-ready")
+      (extent "one schema version")
+      (examples "boundary outcome contains no cursor data")))
+
+  (signal verification-reframe
+    (rosetta
+      (intent "announce verification-disproved design")
+      (values learning)
+      (outcomes "design framing resumes")
+      (who "workflow observers")
+      (what "model failure signal")
+      (when "reality contradicts the admitted model")
+      (where "the evidence journal")
+      (why "model defects are not implementation defects")
+      (how "raised by verification-reframe")
+      (extent "one counterexample")
+      (examples "viewport ownership differs in the real adapter")))
+
+  (signal implementation-revise
+    (rosetta
+      (intent "announce a candidate implementation defect")
+      (values bounded-revision)
+      (outcomes "owner implementation resumes")
+      (who "workflow observers")
+      (what "implementation failure signal")
+      (when "verification finds a code or evidence defect")
+      (where "the evidence journal")
+      (why "failure ownership must remain precise")
+      (how "raised by implementation-revise")
+      (extent "one defect")
+      (examples "a duplicate dispatch is observed")))
+
+  (signal candidate-verified
+    (rosetta
+      (intent "announce jointly passing ordinary evidence")
+      (values earned-evidence)
+      (outcomes "adversarial challenge is authorized")
+      (who "workflow observers")
+      (what "verification signal")
+      (when "the exact candidate passes")
+      (where "the evidence journal")
+      (why "ordinary success precedes adversarial review")
+      (how "raised by candidate-verified")
+      (extent "one immutable candidate")
+      (examples "standalone and composed paths agree")))
+
+  (signal challenge-reframe
+    (rosetta
+      (intent "announce an adversary-discovered model gap")
+      (values epistemic-honesty)
+      (outcomes "design framing resumes")
+      (who "workflow observers")
+      (what "challenge model signal")
+      (when "a threat or boundary was missing")
+      (where "the evidence journal")
+      (why "a missing threat invalidates the frame")
+      (how "raised by challenge-reframe")
+      (extent "one counterexample")
+      (examples "a second input origin is found")))
+
+  (signal defense-revise
+    (rosetta
+      (intent "announce an adversary-discovered control bypass")
+      (values no-silent-debt)
+      (outcomes "owner implementation resumes")
+      (who "workflow observers")
+      (what "defense failure signal")
+      (when "an admitted control is bypassed")
+      (where "the evidence journal")
+      (why "introduced bypasses block review readiness")
+      (how "raised by defense-revise")
+      (extent "one bypass")
+      (examples "oversized input escapes its bound")))
+
+  (signal challenged
+    (rosetta
+      (intent "announce conclusive adversarial evidence")
+      (values accountability)
+      (outcomes "the exact candidate is review-ready")
+      (who "workflow observers")
+      (what "challenge completion signal")
+      (when "all introduced threats pass bounded challenge")
+      (where "the evidence journal")
+      (why "human review needs disclosed challenge evidence")
+      (how "raised by challenged")
+      (extent "one immutable candidate")
+      (examples "modal bypass and telemetry leakage attempts fail")))
+  (epistemic-tier bool))
