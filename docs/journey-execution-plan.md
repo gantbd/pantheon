@@ -11,7 +11,7 @@ Bool rails, but remains pending exact human and stakeholder review plus an
 owner-issued revision identity. Pies and Engram archaeology is retained in
 [`governing-intent-pies-engram-archaeology.md`](../design/evidence/governing-intent-pies-engram-archaeology.md).
 The revised repository candidate SHA-256 is
-`0d8872543501cca6b776c30fc3b8b18892590c3cf79e161118c4889f2382fb26`;
+`65582e3c16e2da06431e99395d3103d7cb01457b77ab1c84c0704a552072920a`;
 repository presence is not acceptance.
 
 Active goal, refactored 2026-11-20: deliver the governing journeys from their
@@ -3521,6 +3521,12 @@ Maybe Machine. It has no authority to select experiment as the right inquiry or
 to promote its returned result. The missing parent machine and typed child
 invocation/return support are retained as P0 work; the existing compiler gap is
 not papered over with prose composition or a weakened linear executable.
+
+The filename is retained as provenance for the already hash-bound candidate;
+it is not the preferred ontology. “The Gray” names the Maybe Machine as a
+whole, while `bounded experiment` names this child inquiry. Any successor
+candidate must use a child-specific machine identity rather than perpetuate
+`gray` as an adjective for experimentation.
 
 The governing journey blueprint now carries this as J37 rather than leaving it
 as architectural prose. `MaybeInquiryV1` must retain one exact claim, altitude,

@@ -7,7 +7,8 @@ experiment authority or runtime qualification
 
 ## Bound artifacts
 
-- governing-intent candidate SHA-256:
+- governing-intent candidate SHA-256 bound when this artifact was admitted
+  (now a predecessor):
   `0d8872543501cca6b776c30fc3b8b18892590c3cf79e161118c4889f2382fb26`
 - canonical Gray Rune:
   `design/runes/pantheon-gray-experiment.machine.rune`
@@ -19,6 +20,12 @@ experiment authority or runtime qualification
   `3288271a2dcae7bd833ddfea15a16562c5fb4335b16e0373e34c45bfa998504c`
 - exact private Rust projection SHA-256:
   `d2fce8230a045d2c4e5e6ca8af3c104ad01350345f5dcdbb809ed85a3f713962`
+
+The `gray-experiment` filename above is a provenance-bound historical identity,
+not the governing ontology. The Gray is the whole Maybe Machine; this artifact
+is only its bounded-experiment child. A successor revision should use a
+child-specific identity such as `pantheon-maybe-bounded-experiment` while
+retaining this predecessor and its hashes rather than rewriting them.
 
 ## Preserved design
 

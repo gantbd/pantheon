@@ -9,8 +9,11 @@ Status: structurally admitted candidate; runtime admission has not started
 - governing-intent candidate:
   `docs/governing-intent.md`
 - candidate SHA-256:
+  `65582e3c16e2da06431e99395d3103d7cb01457b77ab1c84c0704a552072920a`
+- immediate predecessor candidate SHA-256 (superseded when the Gray/Maybe
+  naming law was made explicit):
   `0d8872543501cca6b776c30fc3b8b18892590c3cf79e161118c4889f2382fb26`
-- immediate predecessor candidate SHA-256 (superseded when The Gray was
+- earlier predecessor candidate SHA-256 (superseded when The Gray was
   recognized as the Maybe Machine):
   `a26b1a33b0e91f99b82c8b72c450f5e8c39f212644a445de1ff739431f4aff1a`
 - original predecessor candidate SHA-256 (superseded after archaeology):
@@ -33,9 +36,10 @@ Status: structurally admitted candidate; runtime admission has not started
 Scry admits the seven-state, six-edge machine. The candidate bytes were revised
 after Pies and Engram archaeology; this packet now binds the revised digest and
 retains the predecessor rather than treating an in-place edit as acceptance.
-The later Maybe Machine correction produced a second candidate identity and is
-retained as another explicit predecessor transition rather than an in-place
-acceptance claim. The Rune's examples refer to the exact candidate identity generically;
+The later Maybe Machine correction and the subsequent proper-name/child-name
+correction each produced a new candidate identity. Both are retained as
+explicit predecessor transitions rather than in-place acceptance claims. The
+Rune's examples refer to the exact candidate identity generically;
 candidate bytes and digest remain evidence inputs rather than mutable literals
 inside the reusable admission machine. The canonical formatter check and Scry
 admission were rerun. Smith reports complete Rust compatibility with an empty

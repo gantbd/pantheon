@@ -166,6 +166,14 @@ same exact question. The Maybe Machine may prepare a claim for a separately
 governed Bool admission, but it cannot mint truth, authority, acceptance or
 rollout for itself.
 
+“The Gray” is therefore a proper name for this whole machine, not an adjective
+for uncertain work or a synonym for its experimental branch. Specifications,
+interfaces and successor artifacts should say `Maybe Machine` when naming the
+operational contract and should name each selected child by its actual inquiry
+kind. A provenance-bound historical artifact may retain an older `gray-*`
+identity, but that identity must not be allowed to redefine the machine or make
+one child path appear to be the parent.
+
 The Maybe Machine is the agent's principal operating environment and the
 human-visible surface for uncertainty. It must show what is known, unknown,
 assumed, contested and at risk; the current altitude; which inquiry is running;
