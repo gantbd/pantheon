@@ -76,19 +76,35 @@ path-check failures are the legitimate alternative revision, held and refusal
 terminal sinks and the revision-lineage states that cannot reach Accepted;
 they were not removed to satisfy a single-terminal checker.
 
-## Required owner implementation
+## Owner implementation result and remaining boundary
 
-Chronos still needs a closed review command and durable receipt in its atomic
-invocation owner, exact command lookup after a lost reply, current execution
-and attempt-budget guards, persistence/version migration, authorization and
-retained-result disclosure, and RED/USE plus golden-signal observation. The
-engine must hold dependency satisfaction until status is `Done`; current
-execution success alone must not release dependents. Acceptance must commit the
-review receipt, `Done`, revision and dependent reevaluation together.
+Chronos revision `e0bb38c` implements the closed atomic owner operation and
+public review V10 profile. Accepted and RevisionRequired bind the exact task
+incarnation, expected revision, attempt, disposition, invocation identity and
+content-free evidence digests. Generic status transition cannot move
+`ReadyForReview` to `Done`. The owner alone verifies succeeded execution and
+current attempt; RevisionRequired refuses at exhausted budget, preserves the
+attempt count and returns to `Ready/Open`; Accepted commits `Done` and only then
+reevaluates dependent readiness. Exact command lookup reconciles a lost reply,
+including after real Unix-service restart, without re-execution.
 
-The headless path should be qualified first with Accepted,
-RevisionRequired, Deferred, exhausted budget, stale revision, restart,
-unauthorized disclosure, commit failure and lost-reply reconciliation. TUI
-parity follows through the same behavior facade. Hermes publication and Oculus
-presentation observe committed owner facts; neither becomes the decision or
-mutation owner.
+Checkpoint V5 marks the stronger dependency law. Recovery of V1-V4 state does
+not promote historical `Succeeded/ReadyForReview` to accepted: unstarted work
+that the old law released is re-blocked, while historical attempts and effects
+remain evidence. The full engine suite, atomic codec and 18 invocation tests,
+V10 wire/adapter tests, real-socket lost-reply/restart qualification, strict
+workspace Clippy and diff hygiene pass. Content-free signals distinguish newly
+executed review, accepted, revision-required, refused and budget-exhausted
+outcomes while retaining generic call/error/duration/commit/saturation signals;
+replay and lookup do not inflate decision counts.
+
+This does not yet qualify Deferred storage/presentation, unauthorized result
+disclosure or commit-indeterminate review as J1 journeys. Command-scoped review
+evidence is durable only inside Chronos's bounded retained-invocation window;
+after eviction, `Done` persists but no task-centric public history currently
+resolves its disposition receipt. That is an explicit owner audit/history gap,
+not permission to infer acceptance. Pantheon's next bounded slice is a headless
+behavior-facade command that consumes review V10, then the real
+RevisionRequired/re-execution/review-link/Accepted sequence. TUI parity follows
+through the same behavior. Hermes and Oculus may publish or present committed
+owner facts; neither becomes the decision or mutation owner.

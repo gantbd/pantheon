@@ -4045,3 +4045,40 @@ returns to `Ready/Open` only when existing attempt budget remains; Deferred
 does not mutate Chronos. The full design and qualification record is retained
 in `design/evidence/chronos-review-disposition-design-verification.md`.
 
+### 2026-11-20 — Chronos review V10 closes the owner mutation boundary
+
+Chronos revision `e0bb38c` implements the reviewed machine at the owner rather
+than exposing a generic status setter. A closed atomic command binds exact task
+incarnation, expected revision, successful attempt, disposition, invocation
+identity and content-free decision/reviewer/authority/challenged-artifact/
+criteria/findings/feedback digests. Accepted commits `Done` and only then
+reevaluates dependents. RevisionRequired preserves attempt history and reopens
+`Ready/Open` only when the existing maximum still permits another attempt.
+Generic status transition cannot bypass review.
+
+The dependency leak required a persistence law, not only an engine predicate.
+Checkpoint V5 now identifies the stronger semantics. V1-V4 recovery preserves
+an upstream `Succeeded/ReadyForReview` as unaccepted and re-blocks only
+unstarted downstream work which the old law had released; it does not rewrite
+historical attempts/effects or invent a human receipt. Full engine tests,
+including exhaustive models and legacy fixtures, pass.
+
+The public V10 wire/client/local-daemon path rejects noncanonical digests,
+missing revision feedback and response substitution. Atomic service tests
+cover RevisionRequired, second execution, Accepted, typed refusal, stale
+revision, restart lookup and bounded retention. A real Unix-owner test drops
+the acceptance reply, observes only the typed transient while admission races,
+retrieves the exact retained result, verifies the dependent opens only after
+`Done`, restarts the service and retrieves the same receipt without
+re-execution. Strict workspace Clippy passes with warnings denied. Review
+outcome counters remain content-free and do not count replay/lookup as new
+decisions.
+
+This closes the Chronos mutation owner, not J1 or the Maybe Machine. Deferred
+remains a held Maybe outside Chronos mutation. Pantheon still needs the
+headless behavior-facade command and real stale/reopened review-link sequence,
+followed by human presentation parity. A second honest gap remains: retained
+invocation commands are bounded and evictable, while `Done` persists. A
+task-centric audit/history owner must preserve or resolve long-lived review
+evidence; until then an evicted receipt is unavailable, never inferred.
+

@@ -2208,6 +2208,14 @@ authorized attempt budget remains; Deferred preserves a held Maybe without
 mutation. Dependency satisfaction is gated by committed `Done`, not agent
 execution success or `ReadyForReview`, so review and dependent release must
 commit atomically at the Chronos owner.
+Chronos revision `e0bb38c` now provides that owner boundary through public
+review V10 with exact lost-reply lookup, attempt-budget guards, checkpoint V5
+migration and content-free outcome signals. It does not make the Pantheon J1
+composition or human presentation complete: the behavior facade must still
+bind the qualified review-link evidence into the command, exercise the real
+RevisionRequired/re-execution/Accepted sequence and present the result without
+implying rollout. Long-lived task-centric review audit beyond bounded command
+retention also remains an explicit owner gap.
 Refusal or uncertainty stops the chain. Agora's private-local owner now also
 supports a versioned, bounded create-time cohort, and the hosted lifecycle gate
 bootstraps distinct human and agent participants without granting Pantheon
@@ -2215,9 +2223,10 @@ runtime registration authority. This slice does **not** yet claim dynamic exact
 task-attempt creation, a Moira workflow, dynamic Vellum document selection and
 proposal publication, per-effect Aegis decisions, Dendrite context assembly,
 runtime Agora participant administration, an independently executed stakeholder-
-ensemble method, verification of standing/mandate claims, human-gated finding disposition, or
-evidence-backed Chronos status and comment transitions. Those remain Required
-below and need owner-published contracts rather than presentation-side inference.
+ensemble method, verification of standing/mandate claims, human-gated finding
+disposition, or Pantheon-composed Chronos review and comment transitions. Those
+remain Required below and need owner-published contracts rather than
+presentation-side inference.
 
 Moira's selected participation surface now adds one bounded next step for an
 already-admitted agent member: Pantheon reviews the exact retained binding,

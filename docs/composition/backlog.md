@@ -81,24 +81,24 @@ read-only input until that repository settles.
   repaired two owner defects: Chronos now projects its already-retained
   terminal attempt number, and Moira participation/tool gates accept Chronos's
   canonical first incarnation zero while retaining nonzero task-key and
-  attempt fences. The remaining work is a real stale/reopened status sequence
-  and human presentation parity—not a new relationship schema or adapter
-  design. The status sequence is explicitly dependent on the already-retained
-  `chronos-task-lifecycle-transition-controls`, not a duplicate task: Chronos
-  currently has no public status-transition owner protocol, and the engine's
-  nominal `ReadyForReview -> InProgress` edge conflicts with its own execution
-  guard for a completed `Succeeded` task. Rejection/reopen semantics need a
-  human-authorized, revision-bound, receipted owner operation. Link that
-  dependency through `chronos-blocked-resolution-link-contract` once the
-  lifecycle surface can represent it. The canonical
+  attempt fences. Chronos revision `e0bb38c` now closes the owner-side status
+  sequence with public review V10 rather than exposing a generic status setter.
+  The canonical
   `chronos-review-disposition.machine.rune` now defines Accepted,
   RevisionRequired, Deferred, exact lost-reply reconciliation and exhausted
-  budget refusal. It also exposes a deeper owner leak: dependency satisfaction
-  currently follows execution `Succeeded`, but must remain held until the
-  human disposition commits `Done`. Implement and live-qualify that atomic
-  owner contract before returning to the stale/reopened J1 proof. Pantheon must
-  not hash an unbound task
-  name, trust deployment configuration or infer scope.
+  budget refusal. The owner implementation gates dependency satisfaction on
+  committed `Done`; Accepted atomically commits `Done` and releases eligible
+  dependents, while RevisionRequired preserves attempt history and reopens only
+  within the existing budget. Checkpoint V5 re-blocks unstarted dependents from
+  V1-V4 state without inventing historical acceptance. Exact review commands
+  and evidence digests survive lost replies and real Unix-service restart, and
+  content-free review outcome signals are exposed. Remaining J1 work is the
+  Pantheon headless behavior-facade command, real stale/reopened composition and
+  human presentation parity. Also owner-bind durable task-centric review audit
+  after bounded invocation retention expires; persistent `Done` must not be
+  presented as indefinitely self-proving once its command-scoped receipt is
+  evicted. Pantheon must not hash an unbound task name, trust deployment
+  configuration or infer scope.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,
