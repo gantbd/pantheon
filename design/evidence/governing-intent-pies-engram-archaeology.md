@@ -106,7 +106,7 @@ The archaeology supports these transfers into Pantheon:
     retains a cheapest safe descent toward the nearest owner-observable fact;
     local bounded uncertainty is preferable to distant sweeping confidence.
 
-## The Maybe Machine correction
+## The Maybe Machine recognition
 
 The archaeology's first revision still over-indexed on refusal and preservation.
 That posture can become epistemically self-sealing: if a control prevents the

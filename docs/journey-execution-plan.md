@@ -177,10 +177,10 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   castes; required semantics use preservation-or-declared-loss; agent challenge
   remains mandatory under human prerogative; held plurality is legitimate; and
   the proposed monadic recursion is an admission obligation until concrete
-  carriers and laws exist. The subsequent Gray correction protects bounded,
-  affordable experimentation and makes controls challengeable without turning
-  experiment into authority laundering or rules into dogma. Exact candidate
-  digest and predecessor lineage are
+  carriers and laws exist. The subsequent Maybe Machine recognition protects
+  bounded, affordable experimentation and makes controls challengeable without
+  turning experiment into authority laundering or rules into dogma. Exact
+  candidate digest and predecessor lineage are
   retained in the verification packet. The admission Rune's stale example
   digest was replaced with a generic identity example so the reusable machine
   no longer churns with candidate content; Scry, Smith compatibility, exact Rust
@@ -200,13 +200,14 @@ deliver Pantheon. It is product input, not a substitute for journey acceptance.
   `not_sent`; no Chronos owner process was attachable at that boundary. This is
   observation uncertainty, not authoritative task absence, and no duplicate or
   speculative status mutation followed.
-- The Gray correction adds the missing advancement affordance: maybe-tier and
+- The Maybe Machine recognition adds the missing advancement affordance: maybe-tier and
   held-quantum claims may become affordable, bounded experiments, and controls
   must expose their purpose, evidence, scope, owner and challenge path. Altitude
   is treated as risk: every unresolved claim names the nearest owner-observable
   fact and cheapest safe descent, preferring a local reversible unknown over a
-  sweeping conclusion distant from evidence. The first Gray Rune passed Scry
-  and complete Smith Rust compatibility, and its exact Rust projection compiles.
+  sweeping conclusion distant from evidence. The bounded-experiment child Rune
+  passed Scry and complete Smith Rust compatibility, and its exact Rust
+  projection compiles.
   Semantic review rejected an initial false choice between experimental result
   and control revision; control findings are now orthogonal evidence for a
   separate supersession machine. Multi-terminal path qualification remains a
@@ -3470,15 +3471,15 @@ Rust projection is target-verified evidence only; it does not implement the
 Daimon owner protocol, prove runtime facts, authorize downstream effects or
 close the parent J1 authoring question or dispose the atomicity dispute.
 
-### 2026-11-20 — grounding descent and Gray ensemble probe
+### 2026-11-20 — grounding descent and Maybe Machine ensemble probe
 
-The Gray design was exercised at its first real decision point rather than as a
-whole-machine mega-context. An initial invented lattice identity was refused and
-corrected by corpus discovery to `axon/sme/axon-concerns`. The union of every
-machine context routed ten SME roles and exceeded Tellus's eight-role ceiling;
-the ceiling was preserved and the request descended to the
-`control-challenged` state. Its three authored tags route six roles under the
-ceiling.
+The bounded-experiment child was exercised at its first real decision point
+rather than as a whole-machine mega-context. An initial invented lattice
+identity was refused and corrected by corpus discovery to
+`axon/sme/axon-concerns`. The union of every machine context routed ten SME
+roles and exceeded Tellus's eight-role ceiling; the ceiling was preserved and
+the request descended to the `control-challenged` state. Its three authored
+tags route six roles under the ceiling.
 
 Pantheon's authenticated `tellus-sme-plan` command still returned
 `Refused(503)`. Exact MCP diagnostics localized the refusal: the fold and all
@@ -3495,8 +3496,8 @@ cursor. This is a discoverability gap, not evidence that loads beyond the page
 are absent. Both gaps are retained in the composition backlog. Even after the
 corpus issue closes, Dendrite's roles remain advisory SMEs. Moira must still
 establish equitable, independently attributable standing for the experiment
-owner, control owner, operator and affected subjects before the Gray machine
-can pass “do we have the right ensemble?”.
+owner, control owner, operator and affected subjects before the
+bounded-experiment child can pass “do we have the right ensemble?”.
 
 The operating invariant is now explicit in prose, archaeology, Rune and
 verification: inferential altitude is risk. Each unresolved claim must expose
@@ -3626,7 +3627,7 @@ fifth semantic gap. A backlog item requires path-stable deduplication that
 prefers or merges the richer explicit question; deleting the hole or falsely
 marking ensemble fit `yes` is not an acceptable workaround.
 
-### 2026-11-20 — Gray/Maybe descent preserves the Agora actor unknown
+### 2026-11-20 — Maybe Machine descent preserves the Agora actor unknown
 
 Treating The Gray as the Maybe Machine supplied a concrete guard on the next J1
 composition attempt. Agora authenticates the actor, injects that participant

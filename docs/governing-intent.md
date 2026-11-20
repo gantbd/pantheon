@@ -155,15 +155,16 @@ Moving the locus must not leak authority or context between positions.
 
 ## The Gray is the Maybe Machine
 
-Pantheon must preserve an epistemically honest and affordable place to learn
-before a claim can earn Bool. **The Gray is maybe made operational: the Maybe
-Machine.** It is not a fourth truth value, a euphemism for production, or a
-route around refusal. It retains a question and its uncertainty while selecting
-the cheapest adequate next inquiry: deterministic proof, owner observation,
-bounded experiment, stakeholder deliberation, human return, held plurality or
-safe refusal. Each child inquiry returns typed evidence into the same exact
-question. The Maybe Machine may prepare a claim for a separately governed Bool
-admission, but it cannot mint truth, authority, acceptance or rollout for itself.
+Pantheon must preserve an epistemically honest and affordable machine for
+learning before a claim can earn Bool. **The Gray is the Maybe Machine: maybe
+made operational.** It is not a place, phase, fourth truth value, euphemism for
+production, or route around refusal. It retains a question and its uncertainty
+while selecting the cheapest adequate next inquiry: deterministic proof, owner
+observation, bounded experiment, stakeholder deliberation, human return, held
+plurality or safe refusal. Each child inquiry returns typed evidence into the
+same exact question. The Maybe Machine may prepare a claim for a separately
+governed Bool admission, but it cannot mint truth, authority, acceptance or
+rollout for itself.
 
 The Maybe Machine is the agent's principal operating environment and the
 human-visible surface for uncertainty. It must show what is known, unknown,
@@ -177,7 +178,7 @@ Bounded experimentation and control challenge are one important transition
 family inside the Maybe Machine. Here surprising behavior is valuable evidence,
 and a control may itself be the hypothesis under test.
 
-An experiment in The Gray names its question, current epistemic tier, affected
+A Maybe Machine experiment names its question, current epistemic tier, affected
 stakeholders, scope, capabilities, budget, duration, reversibility or
 containment, observability, stop conditions, expected evidence and prohibited
 effects. It uses the cheapest adequate deterministic mechanism or model and
