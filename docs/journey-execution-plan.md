@@ -4208,12 +4208,58 @@ prepare Accepted and ChangesRequested may prepare RevisionRequired; Deferred
 remains in the Maybe Machine, while Rejected remains a distinct non-mutating
 outcome until an owner contract says otherwise. No mapping grants rollout.
 
-Live Tellus SME review remains deliberately unclaimed. The running Dendrite
-profile requires an authenticated route whose credential was not safely
-available in this execution context; the probe stopped at that boundary rather
-than reading shared session secrets or treating source archaeology as an
-ensemble run. The designing ensemble must still answer “do we have the right
-ensemble?” with the human acceptance principal, security/threat, UX, Moira,
-Chronos, Aegis, Vellum, observability and audit stakeholders before a candidate
-Rune is admitted.
+Tellus SME review remains deliberately unclaimed. An authenticated isolated
+owner now accepts the transport but refuses the plan because the selected
+`rune:adversarial-tester` has no concern registration in the Axon lattice; no
+shared credential was read and no advisory output was invented. The designing
+ensemble must still answer “do we have the right ensemble?” with the human
+acceptance principal, security/threat, UX, Moira, Chronos, Aegis, Vellum,
+observability and audit stakeholders before a candidate Rune is admitted.
+
+### 2026-11-20 — Rune authoring preserves the unresolved UADD boundary
+
+The J1 owner request is now also a closed Rune-authoring input at
+`design/requests/j1-uadd-composition.rune-author.json`. It retains the exact
+composition intent and ten owner-contract holes but deliberately contains no
+invented review or topology. Its SHA-256 is
+`c3036260331925cb89cc5104bbd33c42230b397f9cc67223751210cbe5db2e29`.
+
+Rune's existing deterministic `rune-author` processed those exact bytes and
+returned `questions_pending` with signal `clarification-required`: the ten
+owner holes, accountable exact-request/ensemble-fit review, and initial state,
+states, edges and signals. It emitted zero candidate, typed IR or Rust
+projection bytes. The result is bound in
+`design/evidence/j1-uadd-authoring-questions.md`.
+
+This is the desired semantic guard, not a reason to hand-write around the
+toolchain. The next admissible transition is an authenticated Tellus ambient
+review plus an equitable Moira owner/stakeholder ensemble and named-human
+review of the exact request. Their answers must produce a new digest before
+topology can be constructed. Scry, Smith and Vellum publication remain later
+gates; no current artifact claims acceptance, task mutation or rollout.
+
+### 2026-11-20 — authenticated UADD SME review exposes an owner taxonomy gap
+
+The prepared eight-role request was exercised through Pantheon's shipped
+`tellus-sme-plan` command against an isolated authenticated Dendrite owner that
+loaded the real Rune fold and Axon lattice. Dendrite Auth issued a short-lived
+token into a mode-`0600` temporary file. The shared service and credentials
+were untouched, and the disposable owner and credential were removed after the
+probe.
+
+Tellus refused the exact request with no roles. Canonical `fold_check` proves
+the five tags select exactly architecture, network, identity, data,
+adversarial-tester, user-experience, humanism and live-verification within the
+eight-role ceiling. Canonical `lattice_check` then identifies the exact cause:
+`rune:adversarial-tester` has no `(concern …)` clause and is not registered in
+the orthogonality system. The bound evidence is in
+`design/evidence/j1-uadd-sme-review-refusal.md`.
+
+This is a legitimate owner-resolution dependency. The adversarial role cannot
+be removed or substituted merely to make the review pass, and Pantheon cannot
+invent a concern pair or declare independence. The Rune grounding owner and
+Axon lattice owner must jointly register the actual concern or explicitly
+declare the role ineligible with preserved dissent. Only then should the exact
+plan be rerun against the revised digests; a successful advisory plan would
+still not replace Moira stakeholder equity or named-human review.
 

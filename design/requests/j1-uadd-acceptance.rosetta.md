@@ -42,16 +42,19 @@ is the UADD acceptance decision eligible for one exact Chronos disposition.
 - Chronos review V10 is the sole task-status effect boundary. A direct engine
   method, generic status setter or caller assertion is not a substitute.
 
-Live Tellus/Dendrite grounding was not claimed in this authoring pass. The
-existing loopback service requires a selected credential route that is not
-safely available in this execution context. The request therefore preserves a
-mandatory Tellus/ensemble review before admission rather than inventing SME
-output or bypassing authentication. The exact future ambient-expertise request
-is retained in `design/requests/j1-uadd-acceptance.sme-plan.json`; it routes
+The exact ambient-expertise request is retained in
+`design/requests/j1-uadd-acceptance.sme-plan.json`; it routes
 architecture, network, identity, data, adversarial testing, user experience,
 humanism and live-verification concerns. Those Dendrite roles are advisory
 expertise, not substitutes for the equitable, attributable owner/stakeholder
-ensemble that Moira must admit separately.
+ensemble that Moira must admit separately. An authenticated live request
+against an isolated Dendrite owner over the real corpus correctly refused with
+no SME output: the fold selects all eight roles, but `rune:adversarial-tester`
+has no `(concern …)` registration in the selected Axon lattice. The exact
+evidence is retained in
+`design/evidence/j1-uadd-sme-review-refusal.md`. This request preserves the
+mandatory review rather than dropping the adversarial role, inventing its
+concern, bypassing authentication or calling a refused plan evidence.
 
 ## Rosetta
 
@@ -192,8 +195,17 @@ Qualification must refuse at least:
 This request does not claim that current Moira `Approved` is UADD acceptance,
 that the human sponsor has already challenged or accepted this slice, or that
 J1 is `Done`. It does not choose a schema owner on that owner's behalf. The
-designing ensemble must first answer “do we have the right ensemble?”, include
-the actual human advocate/acceptance principal, security/threat, UX, Moira,
-Chronos, Aegis, Vellum, observability and audit stakeholders, and obtain a live
-Tellus-grounded review through an authorized route. Only an admitted Rune and
-qualified owner implementation may advance this request.
+closed authoring input in
+`design/requests/j1-uadd-composition.rune-author.json` has been run through
+Rune's deterministic authoring boundary and correctly remains
+`questions_pending`: ten owner-contract holes, exact accountable review and the
+four topology parts are unresolved, so zero candidate bytes were emitted. The
+bound result is recorded in
+`design/evidence/j1-uadd-authoring-questions.md`.
+
+The designing ensemble must first answer “do we have the right ensemble?”,
+include the actual human advocate/acceptance principal, security/threat, UX,
+Moira, Chronos, Aegis, Vellum, observability and audit stakeholders, and obtain
+a live Tellus-grounded review after the Rune/Axon concern-registration refusal
+is resolved by its owners. Only an admitted Rune and qualified owner
+implementation may advance this request.

@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "dialect": {
+    "kind": "machine",
+    "version": 1
+  },
+  "holes": [
+    {
+      "path": "$.owners.uadd_request",
+      "category": "ownership",
+      "question": "Which existing owner issues the UADD request and challenge receipt without importing Rune's whole activity model or making Pantheon a truth owner?"
+    },
+    {
+      "path": "$.bindings.challenged_material",
+      "category": "identity",
+      "question": "How does the request bind the exact strict J1 receipt and human-readable challenged bytes while retaining opaque owner references and content minimization?"
+    },
+    {
+      "path": "$.challenge.outcomes",
+      "category": "semantics",
+      "question": "Which owner-issued fields distinguish a user-adversary attempt, a conclusive challenge, challenge unavailable and challenge inconclusive?"
+    },
+    {
+      "path": "$.challenge.security_evidence",
+      "category": "security",
+      "question": "How are all applicable STRIDE dispositions, attempted routes, protected effects, countermeasure evidence and independent corroboration bounded without retaining secrets or unsafe payloads?"
+    },
+    {
+      "path": "$.findings.disposition",
+      "category": "accountability",
+      "question": "How does finding triage bind resolved current-slice findings to a new strict receipt while retaining adjacent work with an owner, evidence and priority?"
+    },
+    {
+      "path": "$.authority.delegate_policy",
+      "category": "authority",
+      "question": "Must the adversary and acceptor be the same named principal, or may an authorized delegate act under a separately explicit owner policy?"
+    },
+    {
+      "path": "$.response.uadd_type",
+      "category": "type-safety",
+      "question": "How is a generic Moira human-gate response owner-typed as a UADD response so an unrelated Approved response can never enter this composition?"
+    },
+    {
+      "path": "$.response.chronos_mapping",
+      "category": "effects",
+      "question": "Which exact response-to-Chronos mapping is owner-authorized, and what is the durable non-mutating disposition of Rejected?"
+    },
+    {
+      "path": "$.chronos.reconciliation",
+      "category": "reliability",
+      "question": "Which stable invocation identity and lookup contract survive a lost Chronos reply without reusing a human response after strict evidence changes?"
+    },
+    {
+      "path": "$.observability.content_boundary",
+      "category": "observability",
+      "question": "Which RED, USE and golden-signal event, log, metric and trace fields expose request, challenge, finding, response and task-effect outcomes without sensitive content?"
+    }
+  ],
+  "projection": "rust",
+  "machine": {
+    "name": "j1-uadd-acceptance-composition",
+    "rosetta": {
+      "intent": "bind one exact qualified J1 delivery to a named-user adversarial challenge, complete finding disposition and a later explicit acceptance decision, then prepare and reconcile at most one owner-specific Chronos review operation",
+      "values": [
+        "user-agency",
+        "same-version-identity",
+        "separation-of-duties",
+        "adversarial-independence",
+        "finding-accountability",
+        "owner-preservation",
+        "lost-reply-safety",
+        "maybe-preservation",
+        "honest-closure"
+      ],
+      "outcomes": [
+        "one owner-issued UADD request binds the named acceptance principal, strict J1 receipt, exact challenged material, task attempt, criteria, threat inventory, policy and decision packet",
+        "one separately attributable challenge receipt records the actual user's bounded adversarial attempts against the exact delivered version without implying acceptance",
+        "finding triage proves every current-slice blocker resolved against a new strict receipt and retains every adjacent finding with an owner, evidence and priority",
+        "a later Aegis-authorized UADD response from the named acceptance principal binds the same request, strict receipt, challenged version and current rationale",
+        "only a closed typed composition may prepare Approved as Accepted or ChangesRequested as RevisionRequired while Deferred remains in the Maybe Machine and Rejected remains a distinct non-mutating outcome",
+        "Chronos execution or lookup evidence remains distinct from human acceptance and grants no rollout authority"
+      ],
+      "who": "the named human sponsor or authorized delegate, Moira, Aegis, Pantheon, Chronos, Vellum and independently attributable security, user-advocacy and audit participants",
+      "what": "one bounded UADD-to-J1 evidence composition and closed Chronos-review adapter, not a new generic approval system",
+      "when": "after strict J1 evidence qualifies and before J1 acceptance, Done, dependency release or closure",
+      "where": "Moira UADD and human-gate evidence, Pantheon's effect-free composition boundary, selected Vellum material routes and Chronos review V10",
+      "why": "a generic Approved response, green tests, agent recommendation or successful challenge cannot prove that the actual user accepted the exact result after trying to break its introduced controls",
+      "how": "reuse canonical UADD ordering, bind exact owner receipts, reobserve strict J1 evidence before challenge, response preparation and Chronos mutation, preserve every non-success outcome, and execute or look up one stable Chronos invocation without blind retry",
+      "extent": "one J1 attempt and one acceptance cycle; no arbitrary task mutation, generic approval inference, agent-authored human response, timeout-as-consent, finding suppression, shell fallback, go-no-go or rollout authority",
+      "examples": [
+        "the accountable human challenges exact strict receipt E, all current findings are resolved, an adjacent usability finding is durably owned, and the human later approves E; Pantheon prepares one V10 Accepted command and Chronos alone commits Done",
+        "the human defers after a conclusive challenge, so the exact composition remains held in the Maybe Machine and no Chronos operation is prepared",
+        "the implementation changes after challenge, so the old receipt and response refuse rather than retargeting the new result"
+      ]
+    }
+  }
+}

@@ -19,6 +19,14 @@ read-only input until that repository settles.
   `axon/sme/axon-concerns` correctly returns `role_missing_concern`. The Rune
   corpus owner must register the concern or explicitly declare the role
   ineligible; Pantheon must not invent a default facet or independence.
+- [ ] Restore the J1 UADD adversarial SME review without weakening its selected
+  ensemble. The exact eight-role plan is authenticated and reaches Tellus, but
+  `rune:adversarial-tester` has no `(concern …)` clause, so the Axon concern
+  lattice correctly refuses orthogonality and Tellus emits no plan. The Rune
+  grounding owner and Axon lattice owner must register the role's real concern
+  or explicitly declare it ineligible and preserve the resulting review-design
+  dissent. Do not drop or substitute the adversarial role merely to get a green
+  plan. Evidence: `design/evidence/j1-uadd-sme-review-refusal.md`.
 - [ ] Make Tellus load discovery continuable and semantically unambiguous. The
   current observation can return 64 fresh entries with `truncated: true` and no
   cursor while also reporting `complete`; expose continuation and distinguish
@@ -126,7 +134,13 @@ read-only input until that repository settles.
   `design/requests/j1-uadd-acceptance.rosetta.md`: reuse Rune's canonical UADD
   ordering, require an actual named-user adversarial challenge over the same
   strict receipt, dispose findings, and only then admit a separate acceptance
-  response. The canonical UADD suite passes 17/17. Before machine admission,
+  response. The canonical UADD suite passes 17/17. The closed
+  `j1-uadd-composition.rune-author.json` request now retains the ten unresolved
+  owner questions and exact Rosetta; deterministic `rune-author` returns 15
+  typed questions and zero candidate/IR/projection bytes because accountable
+  review and topology are not yet admitted. Resolve those holes through the
+  actual owners and review ensemble rather than hand-authoring around the
+  refusal. Before machine admission,
   complete an authenticated Tellus-grounded ensemble review; the current live
   service credential route was not safely available and must not be bypassed.
   Pantheon must not hash an unbound task name, trust deployment
