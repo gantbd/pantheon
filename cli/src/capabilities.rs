@@ -566,23 +566,67 @@ pub const AGENT_TOOL_ROUTES: &[AgentToolRoute] = &[
 
 /// Component-native tool routes already enforced by their sovereign owner.
 /// These are not Pantheon CLI commands and must never be restyled as such.
-pub const AGENT_OWNER_TOOL_ROUTES: &[AgentOwnerToolRoute] = &[AgentOwnerToolRoute {
-    component: "daimon",
-    capability: "verification.test.run.v1",
-    owner_surface: "acp_terminal.commands[]",
-    model_arguments: "select_one_catalog_entry_with_no_appended_arguments",
-    enforcement: "Daimon canonicalizes the workspace, boundary and executable; Aegis reauthorizes the command-specific capability; the retained argument prefix is the complete argv; the environment and UTF-8 output are bounded",
-}];
+pub const AGENT_OWNER_TOOL_ROUTES: &[AgentOwnerToolRoute] = &[
+    AgentOwnerToolRoute {
+        component: "daimon",
+        capability: "verification.test.run.v1",
+        owner_surface: "acp_terminal.commands[]",
+        model_arguments: "select_one_catalog_entry_with_no_appended_arguments",
+        enforcement: "Daimon canonicalizes the workspace, boundary and executable; Aegis reauthorizes the command-specific capability; the retained argument prefix is the complete argv; the environment and UTF-8 output are bounded",
+    },
+    AgentOwnerToolRoute {
+        component: "rune",
+        capability: "rune.source.validate.v1",
+        owner_surface: "acp_terminal.commands[]",
+        model_arguments: "none_when_exact_source_and_scry_executable_are_pinned",
+        enforcement: "Daimon canonicalizes the Rune workspace and Scry executable; Aegis reauthorizes the command-specific capability; the exact admitted source is fixed in the complete argv; the environment and bounded validation output contain no arbitrary path, shell, write, or network authority",
+    },
+    AgentOwnerToolRoute {
+        component: "rune",
+        capability: "rune.machine-path.validate.v1",
+        owner_surface: "acp_terminal.commands[]",
+        model_arguments: "none_when_exact_machine_terminal_and_mandatory_stages_are_pinned",
+        enforcement: "Daimon canonicalizes the Rune workspace and machine_path_check executable; Aegis reauthorizes the command-specific capability; exact machine, terminal, and mandatory stages form the complete argv; the command validates graph shape without shell, write, or semantic-completion authority",
+    },
+    AgentOwnerToolRoute {
+        component: "smith",
+        capability: "smith.compatibility.inspect.v1",
+        owner_surface: "acp_terminal.commands[]",
+        model_arguments: "none_when_exact_source_target_scry_and_smith_executables_are_pinned",
+        enforcement: "Daimon canonicalizes the Rune workspace plus Smith and Scry executables; Aegis reauthorizes the command-specific capability; exact source and target form the complete argv; Smith returns bounded read-only compatibility JSON and emits no projection or workspace write",
+    },
+    AgentOwnerToolRoute {
+        component: "smith",
+        capability: "smith.presentation.prepare.v1",
+        owner_surface: "acp_terminal.commands[]",
+        model_arguments: "none_when_exact_source_presentation_target_scry_and_smith_executables_are_pinned",
+        enforcement: "Daimon canonicalizes the Rune workspace plus Smith and Scry executables; Aegis reauthorizes the command-specific capability; exact source and presentation target form the complete argv; bounded projection bytes remain process output and grant Smith no output path, Vellum publication, executable, or rollout authority",
+    },
+];
 
 /// Named component surfaces that must not be inferred from aggregate Pantheon
 /// observation. Keeping these machine-visible makes absence an explicit
 /// non-admission rather than a discoverability failure.
-pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
-    component: "oculus",
-    surface: "owner-query-runtime",
-    missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
-    next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
-}];
+pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[
+    AgentToolGap {
+        component: "oculus",
+        surface: "owner-query-runtime",
+        missing: "owner service, public client, source catalogue runtime, and bounded query settlement transport",
+        next_boundary: "finish the sovereign Oculus catalogue/query owner before admitting source, window, frontier, sampling, gap, disclosure, and partial-result observations",
+    },
+    AgentToolGap {
+        component: "smith",
+        surface: "smith.executable-projection.prepare.v1",
+        missing: "qualified executable provenance plus target enforcement of every admitted Rune obligation",
+        next_boundary: "close rune-compiler-supervisor-semantic-parity target by target; retain Smith's current pre-emission refusal and never substitute presentation output or a weaker machine",
+    },
+    AgentToolGap {
+        component: "vellum",
+        surface: "workspace.changeset.propose.v1",
+        missing: "a bounded revision-bound multi-document proposal port with diff, conflict, validation, atomic publication, uncertain-write lookup, and owner receipts",
+        next_boundary: "qualify the Vellum change-set owner contract; Smith supplies bounded bytes and lineage but never an arbitrary path or direct workspace write",
+    },
+];
 
 const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
     component: "moira-aegis-progression",
@@ -749,6 +793,10 @@ pub const AGENT_ROLE_PROFILES: &[AgentRoleProfile] = &[
             "artifacts.observe.v1",
             "artifacts.catalog.v1",
             "agent.web.fetch.v1",
+            "rune.source.validate.v1",
+            "rune.machine-path.validate.v1",
+            "smith.compatibility.inspect.v1",
+            "smith.presentation.prepare.v1",
         ],
         gaps: FRONTIER_GAPS,
         human_gates: &[
@@ -1026,6 +1074,42 @@ mod tests {
             .into_iter()
             .collect()
         );
+    }
+
+    #[test]
+    fn bounded_development_tools_are_fixed_owner_commands_without_shell_or_publish_authority() {
+        for capability in [
+            "rune.source.validate.v1",
+            "rune.machine-path.validate.v1",
+            "smith.compatibility.inspect.v1",
+            "smith.presentation.prepare.v1",
+        ] {
+            let route = AGENT_OWNER_TOOL_ROUTES
+                .iter()
+                .find(|route| route.capability == capability)
+                .expect("bounded development capability is catalogued");
+            assert_eq!(route.owner_surface, "acp_terminal.commands[]");
+            assert!(route.model_arguments.starts_with("none_when_exact_"));
+            assert!(route.enforcement.contains("complete argv"));
+            assert!(!route.enforcement.contains("ambient"));
+        }
+        let presentation = AGENT_OWNER_TOOL_ROUTES
+            .iter()
+            .find(|route| route.capability == "smith.presentation.prepare.v1")
+            .expect("Smith presentation route");
+        assert!(presentation.enforcement.contains("no output path"));
+        assert!(presentation.enforcement.contains("Vellum publication"));
+        assert!(presentation.enforcement.contains("rollout authority"));
+        for unavailable in [
+            ("smith", "smith.executable-projection.prepare.v1"),
+            ("vellum", "workspace.changeset.propose.v1"),
+        ] {
+            assert!(
+                AGENT_TOOL_GAPS
+                    .iter()
+                    .any(|gap| { gap.component == unavailable.0 && gap.surface == unavailable.1 })
+            );
+        }
     }
 
     #[test]

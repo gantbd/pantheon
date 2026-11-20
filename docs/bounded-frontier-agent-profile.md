@@ -126,8 +126,8 @@ bundle. A deployment may admit any strict subset, and must deny every omitted
 command even when another command belongs to the same component.
 
 Not every admitted tool is a Pantheon CLI gateway. `owner_tools` records
-component-native routes separately. The first is Daimon's
-`verification.test.run.v1`: one operator-named ACP terminal catalogue entry
+component-native routes separately. Daimon's `verification.test.run.v1` is one
+operator-named ACP terminal catalogue entry
 whose command-specific Aegis capability and stable semantic capability are
 revalidated at callback time. Its program and argument prefix are
 deployment-owned, `allow_additional_arguments=false` makes that prefix the
@@ -136,10 +136,21 @@ explicitly allowlisted, and output is bounded. The model may select the entry;
 it receives no shell, arbitrary flags, path expansion or Pantheon gateway by
 implication. Pantheon does not restyle this as its own command.
 
+The same owner-tool shape now catalogues four deny-default design-proof
+capabilities: `rune.source.validate.v1`, `rune.machine-path.validate.v1`,
+`smith.compatibility.inspect.v1`, and `smith.presentation.prepare.v1`. Each
+entry fixes the exact workspace, executable, source, target and mandatory-stage
+arguments in the deployment-owned complete argv; the model appends nothing.
+Rune validates but does not declare semantic completion. Smith compatibility is
+read-only, and presentation bytes remain bounded process output with no output
+path or Vellum publication authority. Catalogue presence grants none of these
+commands; Daimon and Aegis still admit and reauthorize each one independently.
+
 `pantheon agent-tools` also returns a machine-readable `unavailable` collection.
-Oculus is currently named there with its unavailable owner/query runtime and
-next admissible seam. Agora's read, durable-publication observation, and
-durable-publication execution tools remain independent grants.
+It currently names Oculus's owner/query runtime, Smith executable projection,
+and Vellum revision-bound change-set proposal with their next admissible seams.
+Agora's read, durable-publication observation, and durable-publication execution
+tools remain independent grants.
 `aggregate_fallback=false` is
 normative: neither an agent nor a launcher may replace a missing component tool
 with Pantheon's aggregate headless observation. Aegis authority and human-gate
@@ -172,12 +183,15 @@ independently admissible semantic tools wherever the work is expressible:
    metrics and traces with the same lineage without treating telemetry as the
    outcome oracle.
 
-The minimum independently admitted capability classes are therefore
-`tellus.sme-plan`, `moira.deliberation`, `rune.machine.validate`,
-`smith.projection.prepare`, `vellum.workspace.snapshot`,
-`vellum.changeset.propose`, governed verification and lineage observation.
-Names and schemas are design targets until their sovereign owners publish and
-qualify them; Pantheon must not invent a generic gateway in the interim.
+The minimum independently admitted capability classes are therefore Tellus SME
+planning, Moira deliberation, the two catalogued Rune validators, Smith
+compatibility/presentation preparation, Vellum workspace snapshot and future
+change-set proposal, governed verification and lineage observation. The four
+Rune/Smith V1 identities are now stable catalogue entries and pass the focused
+catalogue qualification. That does not mean a Daimon provider continuation has
+admitted or executed them. Executable Smith projection, Vellum change-set
+publication and Oculus lineage observation remain explicit unavailable
+surfaces; Pantheon must not invent a generic gateway in the interim.
 
 This profile can eliminate shell access for the covered development algebra,
 not by assertion for every possible engineering operation. Dependency
@@ -242,8 +256,9 @@ a typed Chronos incident-admission proposal and the shared role/worker owners;
 Hermes disclosure, shell output or Pantheon aggregate observation cannot stand
 in for Oculus. The product manager now has independently admissible alignment
 and stakeholder-ensemble reads, including exact pending human-gate references;
-changed Vellum-backed proposal authoring remains unavailable. Frontier
-workers retain their provider continuation and Aegis gaps. The verification
+changed Vellum-backed proposal authoring remains unavailable. Frontier workers
+now require all four fixed Rune/Smith design-proof tools, but retain their
+provider continuation and Aegis gaps. The verification
 worker now reuses Daimon's allowlisted exact-argv runner and has a closed
 pre-publication result envelope, but still lacks the Moira publication adapter
 and the replay-safe task-to-session composition that drives Pantheon's already

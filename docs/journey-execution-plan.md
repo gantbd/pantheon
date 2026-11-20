@@ -2598,6 +2598,19 @@ Operational means observable completed work, not a configured role name:
   the exact machine and selected its first substantive question, “do we have
   the right ensemble?” The machine therefore supplies executable backlog and
   acceptance structure without pretending the no-shell runtime is operational.
+- Pantheon now exposes the safe design-proof subset as four independently
+  admissible component-native owner-tool catalogue entries:
+  `rune.source.validate.v1`, `rune.machine-path.validate.v1`,
+  `smith.compatibility.inspect.v1`, and `smith.presentation.prepare.v1`.
+  Frontier-role planning requires them, fixes every command to a
+  deployment-owned complete argv with no model-supplied arguments, and remains
+  `operational=false`. `pantheon agent-tools` separately reports executable
+  Smith projection and Vellum change-set proposal as unavailable with
+  `aggregate_fallback=false`. `make qualify-bounded-agent-development` proves
+  the catalogue/role boundary and reruns the Rune graph, grounding, round-trip,
+  and pre-emission refusal evidence. Provider callback execution and Aegis
+  receipts remain the next operational slice; catalogue presence is not
+  restyled as a running agent capability.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
