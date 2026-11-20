@@ -132,6 +132,19 @@ defect evidence and a regression floor, not semantic qualification: real target
 compilation/runtime refusal, nested-refusal absorption, identity binding and
 obligation mutation testing remain open before the blocked supervisor may move.
 
+Rune `5c1f9ec` advances that baseline through the public compiler and installed
+target toolchains. It rebuilds Smith from the current locked checkout, invokes
+real Scry through `smith compile`, then compiles and executes the structural J1
+transition plus invalid-pair refusal in Rust, Erlang, Elixir, TypeScript and
+Gleam. NIF-shaped Rust is accepted and executed by `rustc` with a local no-op
+derive stub, explicitly not as rustler/BEAM integration qualification. The first
+run found an ambient `bin/smith` pointing at a stale experimental build whose
+transition-plan API no longer existed in source; the gate now refuses that
+ambient assumption by building and invoking the exact checkout artifact. This
+closes structural target acceptance only and strengthens the outstanding
+source/IR/compiler/target identity requirement; obligation evaluation remains
+open.
+
 The first live Dendrite fold review used current fold identity
 `sha256:14fad3a0af935394c7484e88304d7e2d9636ff76ff7517301808c638b4d31be8`.
 The canonical tags `architecture-flow-review`, `external-calls`,

@@ -2544,6 +2544,16 @@ Operational means observable completed work, not a configured role name:
   pass. The baseline does not qualify runtime behavior and leaves
   `rune-compiler-supervisor-semantic-parity` open; it prevents the blocked J1
   supervisor from advancing on a least-common-denominator implementation.
+- Rune `5c1f9ec` now crosses the public `smith compile` entry and the installed
+  Rust, Erlang, Elixir, TypeScript and Gleam toolchains, executing one authored
+  J1 transition and one invalid-pair refusal per target. NIF-shaped Rust crosses
+  real `rustc` with a local derive stub and remains explicitly short of
+  rustler/BEAM qualification. The first run exposed a stale `bin/smith` artifact
+  from the reverted experiment, proving that a familiar executable path is not
+  compiler provenance. The gate now rebuilds from the locked checkout and uses
+  that exact artifact. Structural target acceptance is earned; semantic
+  obligation refusal and executable identity binding remain open under the same
+  P9 task rather than being split into a duplicate backlog item.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,
