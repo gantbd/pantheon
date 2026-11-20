@@ -1337,6 +1337,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if std::env::args_os()
         .nth(1)
+        .is_some_and(|arg| arg == "j1-review-link-observe")
+    {
+        return pantheon_cli::j1_review_link::run(std::env::args_os().skip(2));
+    }
+    if std::env::args_os()
+        .nth(1)
         .is_some_and(|arg| arg == "vellum-document-read")
     {
         return pantheon_cli::vellum_document::read(std::env::args_os().skip(2));

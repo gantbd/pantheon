@@ -66,9 +66,25 @@ read-only input until that repository settles.
   participation blueprint, task attempt, room source/sequence and publication
   receipt. Exact replay, substitution conflict, V1/V2 upgrade, V7 SQLite
   reopen, public read-only service/wire/client and real Unix routing are
-  qualified. The remaining namespace work in this item is the Chronos scope
-  relationship and task-conversation qualification. Pantheon must not hash an
-  unbound task name, trust deployment configuration or infer scope.
+  qualified. Pantheon's admitted
+  `j1-review-link-evidence.machine.rune` and focused pure Rust composer now
+  consume that V7 relationship, the public namespace, one exact
+  `task-conversation.v1` observation and an exact Chronos V9 snapshot. The
+  composer preserves task-conversation as the scope issuer, refuses aliases,
+  ambiguity, thread-specific links without thread evidence, stale revisions
+  and non-`ReadyForReview` status, and passes focused tests plus strict isolated
+  Clippy. Pantheon's read-only `j1-review-link-observe` command now obtains all
+  semantic identities through those public owner clients and compiles through
+  the production binary. A real production-command gate now qualifies exact
+  success, all-three-owner restart, structured Chronos-unavailable refusal and
+  ambiguous exact relationships in one shared room. That gate exposed and
+  repaired two owner defects: Chronos now projects its already-retained
+  terminal attempt number, and Moira participation/tool gates accept Chronos's
+  canonical first incarnation zero while retaining nonzero task-key and
+  attempt fences. The remaining work is a real stale/reopened status sequence
+  and human presentation parity—not a new relationship schema or adapter
+  design. Pantheon must not hash an unbound task name, trust deployment
+  configuration or infer scope.
 - [x] Project Daimon's content-free terminal agent-result binding through
   Moira's independent public agent protocol. Revision `c6c31ac` adds a read-only
   exact session/turn command, complete result DTO, canonical wire, client,

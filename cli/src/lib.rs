@@ -13,6 +13,7 @@ pub mod hestia;
 pub mod hestia_observe;
 mod hosted;
 pub mod j1_agent_result;
+pub mod j1_review_link;
 pub mod management;
 pub mod moira_agent_worker;
 pub mod moira_deliberation;

@@ -64,7 +64,14 @@
       "sha256:28fbc08ee6269639c774a68ebde3ef60f481388cb6947ec8faeff09e72e980ca",
       "sha256:c77461de9292f0a1f832f21d33da780bf03ead7442e74da56fecd89a7b36789a",
       "sha256:a6a75e077b9e926b423a88044497d2a55a48a14dafa4f191229048a03b38dc34",
-      "sha256:7cddd0b95a421c659767c62bca85d12f24ae3ed6fa5cbaf22d3ce2d0f258e073"
+      "sha256:7cddd0b95a421c659767c62bca85d12f24ae3ed6fa5cbaf22d3ce2d0f258e073",
+      "sha256:512e8be9444ef7cfed9bc8e5058bfb10c935e96513670387af6ca64f4d7d7d0d",
+      "sha256:ed94cab9ff0b6c7f81636db2e34eea3d1969639effd6b315999587a074627e1e",
+      "sha256:88772e3292c63dc56226b8183100d950733b6e497e23b57a99eb7a2a4815ab19",
+      "sha256:17ea23b3c6cee6770d0e7fdd5420259b56c3113a8b1bf1d389785bed7a4e027f",
+      "sha256:79d4b6fdbd6e5c6a5c408f5bb3dc832429b8bae529f878db52d0027944fb7ba0",
+      "sha256:fda7da588c6c86f084f7a10ffeef28c4657a70ed943c5b6739b4ad86794b87b2",
+      "sha256:db42dd285511bb3327fec8df0d22e69ba79f2c4432a4968a51f2205f031bda25"
     ],
     "dissent": [
       "Dendrite routed architecture, network, identity, data, security, distributed-systems, and humanism groundings, but formal-methods, agent-systems, operator, and ensemble roles have no fold routes for this context.",
@@ -87,7 +94,7 @@
     {
       "path": "$.machine.edges[publication-accepted->review-ready-with-result].precondition",
       "category": "owner-composition",
-      "question": "Which qualified Pantheon composite consumes Moira's public journey-scoped V7 actor-participation relationship observation, Moira's journey-scoped owner observation of the retained external-task-key/Chronos-task-ID/incarnation/revision provenance, a qualified task-conversation relationship that binds that task identity to the exact Chronos scope, and the current exact Chronos ReadyForReview observation to produce J1 review-link evidence without parsing JSON, scanning a retention-bounded message page as if it were an exact receipt, trusting deployment configuration or caller-supplied aliases, or inventing scope, delivery, acceptance, task mutation, or Done authority?"
+      "question": "Which real owner-status evolution qualifies Pantheon's implemented and multi-process-tested j1-review-link-observe adapter against stale or reopened Chronos evidence after the exact attempt was previously ReadyForReview, while preserving its already-qualified success, three-owner restart, unavailable-owner and ambiguous-relationship behavior and still refusing caller-supplied aliases, inferred acceptance, task mutation or Done authority?"
     },
     {
       "path": "$.projection.strict-evaluator",

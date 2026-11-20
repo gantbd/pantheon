@@ -1,0 +1,245 @@
+(machine j1-review-link-evidence
+  (rosetta
+    (intent "compose one exact J1 review-link observation from independently qualified Moira, task-conversation, and Chronos owner evidence without inventing namespace, scope, status, acceptance, or completion authority")
+    (values owner-preservation exact-identity current-truth typed-refusal no-aliases no-self-promotion)
+    (outcomes "one content-free evidence receipt binds an admitted Moira participation and actor publication to the exact Chronos task, task-conversation scope and room, and current ReadyForReview status" "missing stale ambiguous conflicting or noncanonical owner evidence refuses rather than being repaired from deployment configuration or caller aliases" "the receipt grants no publication delivery acceptance Done rollout or task-mutation authority")
+    (who "the Pantheon J1 evidence composer, the Moira task-agent journey owner, the task-conversation relationship owner, the Chronos workflow owner, and the named human acceptance owner")
+    (what "one bounded read-only join over exact public owner observations")
+    (when "after Moira retains the task namespace and actor-participation relationship, task-conversation retains the task-to-room relationship, and Chronos reports the current task ReadyForReview")
+    (where "Pantheon's J1 review-evidence boundary")
+    (why "a human reviewer needs one attributable route from the exact agent result to the exact work item and room without mistaking correlation or configuration for owner truth")
+    (how "retain complete typed observations; validate each at its owner contract; compare exact journey task incarnation attempt actor room and relationship identities; validate canonical numeric projections and revision ordering; require current ReadyForReview; then issue a content-free receipt or typed refusal")
+    (extent "read-only evidence composition only; no JSON parsing, retention-page scan, deployment alias, public relationship mutation, publication, task transition, acceptance, Done, go-no-go, rollout, or human-disposition authority")
+    (examples "Moira journey J retains task T incarnation 4 attempt 2 and an actor publication in room R; task-conversation owner binds scope S task T incarnation 4 to room R; Chronos currently reports T incarnation 4 attempt 2 ReadyForReview; Pantheon issues one review-link receipt naming those owner revisions"))
+  (initial owner-observations-retained)
+
+  (state owner-observations-retained
+    (context evidence-grounding architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "retain the complete independently obtained owner observations before interpreting their relationship")
+      (values provenance completeness disclosure-bounds)
+      (outcomes "the Moira task-attempt namespace, Moira actor-participation relationship, task-conversation link and Chronos V9 snapshot remain separately attributable with their exact owner revisions and nonclaims")
+      (who "the Pantheon J1 evidence composer")
+      (what "four typed read-only owner observations")
+      (when "before any cross-owner equality claim")
+      (where "one bounded in-memory composition attempt")
+      (why "partial or flattened evidence cannot prove which owner supplied each fact")
+      (how "accept only complete typed owner replies validated by their public contracts and preserve each receipt unchanged")
+      (extent "retention for this composition attempt only; no durable owner mutation")
+      (examples "the task-conversation link retains scope while Chronos separately retains current workflow status")))
+
+  (state owner-identities-qualified
+    (context evidence-grounding architecture-flow-review)
+
+    (rosetta
+      (intent "prove that all four observations refer to the same exact J1 work and conversation relationship")
+      (values exactness canonical-representation owner-separation)
+      (outcomes "Moira namespace and actor-participation observations name the same journey and exact admitted attempt" "Moira Chronos task ID equals the uniquely matching task-conversation task and Chronos snapshot task even when a shared room returns unrelated task links" "Moira and Chronos incarnations equal the uniquely matching task-conversation canonical decimal incarnation" "the current Chronos attempt equals the admitted attempt while a task-level conversation link remains explicitly task-level" "the actor publication room equals the uniquely matching unthreaded task-conversation room; zero or multiple matching links refuse, and a thread-specific link refuses until publication evidence carries exact thread identity" "task-conversation scope remains relationship-owner evidence and is not attributed to Chronos V9")
+      (who "the Pantheon J1 evidence composer")
+      (what "one exact cross-owner identity proof")
+      (when "after complete observations are retained")
+      (where "the J1 evidence composition boundary")
+      (why "matching names alone can cross task incarnation attempt room or owner boundaries")
+      (how "compare typed identities exactly; accept only canonical unsigned-decimal projections where owner protocols use strings; select exactly one link matching the owner-derived task and publication room from a bounded current task-conversation reply; allow unrelated shared-room links but refuse zero duplicate mismatched noncanonical or overflowed matches")
+      (extent "identity and relationship qualification only; no claim about current task status, delivery, acceptance or completion")
+      (examples "task-conversation incarnation 04 refuses rather than being treated as Moira incarnation 4")))
+
+  (state review-status-qualified
+    (context evidence-grounding human-impact-decision)
+
+    (rosetta
+      (intent "prove that the exact Chronos task is currently ready for human review")
+      (values current-owner-truth status-integrity no-stale-promotion)
+      (outcomes "the exact Chronos V9 snapshot is current, coherent, ReadyForReview, succeeded, unblocked and reports the admitted attempt" "the current Chronos revision is not older than the Moira attempt admission or task-conversation observation revision")
+      (who "the Chronos workflow owner and Pantheon evidence composer")
+      (what "one exact current ReadyForReview observation")
+      (when "after cross-owner identity qualification")
+      (where "the exact Chronos owner instance selected by the qualified deployment route")
+      (why "a durable task-room link or completed agent turn does not establish current review readiness")
+      (how "validate the V9 reply against its exact request and require ReadyForReview with succeeded execution, no blocker, the exact attempt, and monotonic canonical revision evidence")
+      (extent "review readiness only; Done is not accepted as an equivalent status and no transition is requested")
+      (examples "a task reopened to InProgress refuses even when the retained result and room link still exist")))
+
+  (state review-link-evidence-issued
+    (context evidence-grounding human-impact-decision)
+
+    (rosetta
+      (intent "issue one content-free receipt that lets a human orient to the exact J1 work and attributable result")
+      (values inspectability owner-lineage human-agency)
+      (outcomes "the receipt binds journey and journey revision, exact task key task ID scope incarnation and attempt, participation/session/profile identity, actor-publication effect source room and message identity, task-conversation link and owner revision, and current Chronos revision and ReadyForReview status" "every constituent owner remains independently inspectable" "the named human acceptance owner receives evidence without an implied disposition")
+      (who "the Pantheon J1 evidence composer and named human acceptance owner")
+      (what "one immutable typed J1 review-link evidence receipt")
+      (when "after exact identity and current status qualification")
+      (where "the composed Chronos task and linked Agora conversation presentation")
+      (why "review needs an orienting attributable path rather than copied prose or a false completion claim")
+      (how "project only the qualified typed identities, owner revisions, status and nonclaims; provide direct owner-observation routes for inspection")
+      (extent "evidence presentation only; no acceptance, rejection, correction, Done, publication-delivery, task mutation, go-no-go or rollout authority")
+      (examples "the review surface links task T in scope S to actor-authored message M in room R and leaves Accept or Return to the named human")))
+
+  (state composition-refused
+    (context evidence-grounding architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "preserve the exact unresolved edge and a safe recovery action without issuing review evidence")
+      (values epistemic-honesty actionable-feedback no-fabrication)
+      (outcomes "the refusal identifies the responsible owner boundary, typed mismatch or unavailable fact, retained evidence identities, and next safe observation or repair" "no partial receipt is presented as review-ready")
+      (who "the Pantheon J1 evidence composer and observing operator")
+      (what "one typed composition refusal")
+      (when "any required observation is missing refused stale ambiguous conflicting noncanonical or not ReadyForReview")
+      (where "the J1 evidence composition boundary")
+      (why "a visible Maybe is safer than an invented Bool join")
+      (how "retain the owner replies and refuse with the nearest owner-observable fact and bounded retry or repair path")
+      (extent "refusal and orientation only; no automatic retry, substitution, aliasing or mutation")
+      (examples "room mismatch names the Moira publication and task-conversation owners and asks for exact re-observation rather than selecting a similarly named room")))
+
+  (edge
+    (from owner-observations-retained)
+    (to owner-identities-qualified)
+    (emit owner-identities-qualified)
+
+    (rosetta
+      (intent "qualify one exact cross-owner work and conversation identity")
+      (values exactness owner-separation canonical-representation)
+      (outcomes "one journey task attempt room and scope relationship is qualified without status or authority promotion")
+      (who "the Pantheon J1 evidence composer")
+      (what "one deterministic identity join")
+      (when "all required owner observations are complete")
+      (where "the J1 evidence boundary")
+      (why "equal labels without exact owner identity permit substitution")
+      (how "compare typed identities and canonical numeric projections exactly")
+      (extent "identity qualification only")
+      (examples "Moira task T incarnation 4 and room R equal the task-conversation and Chronos observations"))
+    (precondition "all four complete public owner observations validate against their exact requests; the Moira namespace and actor-participation relationship name the same journey, retained participation and task attempt; exactly one link in the bounded current task-conversation reply matches the Moira task ID, canonical incarnation, exact attempt and actor publication room while unrelated shared-room links are ignored; the matching link's thread root is absent because publication evidence carries no thread identity; the Chronos task identity incarnation and retained terminal attempt equal the same Moira evidence"))
+
+  (edge
+    (from owner-observations-retained)
+    (to composition-refused)
+    (emit composition-refused)
+
+    (rosetta
+      (intent "refuse incomplete ambiguous or conflicting owner identity evidence")
+      (values uncertainty-honesty no-fabrication)
+      (outcomes "no review-link evidence exists and the unresolved Maybe remains explicit")
+      (who "the Pantheon J1 evidence composer")
+      (what "one typed identity refusal")
+      (when "any required observation or equality fails")
+      (where "the J1 evidence boundary")
+      (why "a partial join is not owner truth")
+      (how "name the failed owner edge and nearest safe observation")
+      (extent "refusal only")
+      (examples "a noncanonical incarnation or mismatched room refuses"))
+    (precondition "any required owner reply is missing refused incomplete invalid ambiguous or fails exact identity, canonical representation, journey, attempt, room, link-currentness or singularity validation"))
+
+  (edge
+    (from owner-identities-qualified)
+    (to review-status-qualified)
+    (emit review-status-qualified)
+
+    (rosetta
+      (intent "qualify current ReadyForReview owner truth for the exact work")
+      (values freshness status-integrity)
+      (outcomes "the exact work is currently ready for human review but is neither accepted nor Done")
+      (who "the Chronos workflow owner and Pantheon evidence composer")
+      (what "one current status proof")
+      (when "after exact identity qualification")
+      (where "the qualified Chronos owner instance")
+      (why "durable result and room evidence do not prove current task status")
+      (how "require coherent ReadyForReview state and monotonic owner revisions")
+      (extent "status observation only")
+      (examples "ReadyForReview with succeeded execution and the exact attempt qualifies"))
+    (precondition "Chronos V9 currently reports the exact task and incarnation ReadyForReview with succeeded execution, no blocker and the owner-retained terminal attempt equal to the admitted attempt; its canonical revision is not older than the Moira attempt admission or task-conversation Chronos observation revision"))
+
+  (edge
+    (from owner-identities-qualified)
+    (to composition-refused)
+    (emit composition-refused)
+
+    (rosetta
+      (intent "refuse absent stale or non-review-ready Chronos truth")
+      (values current-owner-truth actionable-feedback)
+      (outcomes "durable relationship evidence remains intact but no current review-readiness receipt exists")
+      (who "the Pantheon J1 evidence composer")
+      (what "one typed current-status refusal")
+      (when "current Chronos evidence cannot qualify review readiness")
+      (where "the J1 evidence boundary")
+      (why "historical success must not masquerade as current review state")
+      (how "preserve the relationships and request exact owner re-observation or repair")
+      (extent "refusal only")
+      (examples "InProgress Blocked Done or a stale revision refuses"))
+    (precondition "the exact Chronos task is absent refused stale reopened blocked Done or otherwise not currently ReadyForReview, or revision and attempt evidence cannot be ordered without invention"))
+
+  (edge
+    (from review-status-qualified)
+    (to review-link-evidence-issued)
+    (emit review-link-evidence-issued)
+
+    (rosetta
+      (intent "issue one immutable content-free J1 review-link receipt")
+      (values owner-lineage human-agency)
+      (outcomes "a human can inspect the exact task participation and actor-authored room result while acceptance and Done remain separate transitions")
+      (who "the Pantheon J1 evidence composer and named human acceptance owner")
+      (what "one typed review-link evidence receipt")
+      (when "identity and current status proofs remain exact")
+      (where "the composed Chronos and Agora review presentation")
+      (why "review needs an attributable path without a false disposition")
+      (how "project only qualified identities revisions status and nonclaims")
+      (extent "evidence presentation only")
+      (examples "task T in scope S links to message M in room R for human review"))
+    (precondition "the identity proof and current ReadyForReview proof remain exact and every nonclaim is preserved"))
+
+  (signal owner-identities-qualified
+    (rosetta
+      (intent "announce exact cross-owner identity qualification")
+      (values exactness)
+      (outcomes "current status may be evaluated")
+      (who "the Pantheon J1 evidence composer")
+      (what "identity-qualified signal")
+      (when "all identity comparisons pass")
+      (where "the J1 evidence boundary")
+      (why "identity and status are separate proofs")
+      (how "raised by owner-identities-qualified")
+      (extent "no status or authority claim")
+      (examples "one exact task and room relationship qualifies")))
+
+  (signal review-status-qualified
+    (rosetta
+      (intent "announce current ReadyForReview qualification")
+      (values freshness)
+      (outcomes "review-link evidence may be issued")
+      (who "the Pantheon J1 evidence composer")
+      (what "status-qualified signal")
+      (when "current Chronos proof passes")
+      (where "the J1 evidence boundary")
+      (why "review readiness is distinct from acceptance")
+      (how "raised by review-status-qualified")
+      (extent "no acceptance or Done authority")
+      (examples "the exact task is currently ReadyForReview")))
+
+  (signal review-link-evidence-issued
+    (rosetta
+      (intent "announce issuance of review-link evidence")
+      (values inspectability)
+      (outcomes "the named human can inspect the exact evidence")
+      (who "the Pantheon J1 evidence composer")
+      (what "evidence-issued signal")
+      (when "all proof obligations pass")
+      (where "the J1 review surface")
+      (why "the review surface needs a stable typed receipt")
+      (how "raised by review-link-evidence-issued")
+      (extent "no disposition authority")
+      (examples "one receipt links the exact task and message")))
+
+  (signal composition-refused
+    (rosetta
+      (intent "announce a typed unresolved J1 composition edge")
+      (values epistemic-honesty)
+      (outcomes "the operator receives an actionable refusal without fabricated evidence")
+      (who "the Pantheon J1 evidence composer")
+      (what "composition-refused signal")
+      (when "identity or status qualification fails")
+      (where "the J1 evidence boundary")
+      (why "the Maybe must remain visible")
+      (how "raised by composition-refused")
+      (extent "no retry mutation or authority")
+      (examples "a room mismatch or reopened task refuses"))))

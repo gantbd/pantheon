@@ -3888,3 +3888,102 @@ ensemble-fit diagnostic. Its owner-composition question now consumes the V7
 relationship as an established owner fact and asks only for the remaining
 scope/task-conversation join and evidence controller composition.
 
+### 2026-11-20 — typed J1 review-link proof leaf qualifies the scope join
+
+The next descent found that `task-conversation.v1` already owns the missing
+relationship: its durable link retains exact scope, task ID, incarnation,
+optional attempt, Chronos and Agora observation revisions, room, provenance and
+owner revision. Chronos workflow V9 separately owns current task identity,
+incarnation, attempt, revision and status; it does not publish the relationship
+scope. The correct composition therefore preserves task-conversation as scope
+issuer rather than pretending Chronos V9 or deployment configuration supplied
+that fact.
+
+The canonical `j1-review-link-evidence.machine.rune` now describes that
+read-only join. Real Scry admits its five states, five edges and two legitimate
+terminals. Smith formatting passes and Rust compatibility is complete with no
+unsupported obligations. The Rune identity is
+`sha256:d4c5cf24c732455ff3c025861c81ac47e0d76c3a121a28e9f9ba3fc79724e639`
+and typed-IR identity is
+`sha256:c464000dcb1684ed57d038e08d8f405f8a7c9cf14f59c772fb52ad28662f7c76`.
+The single-terminal path checker reports the legitimate typed-refusal sink as
+unable to reach success; the refusal was retained.
+
+`cli/src/j1_review_link.rs` implements the pure typed proof leaf over existing
+public DTOs. It requires exact journey, task key, task ID, canonical
+incarnation, attempt and room equality; treats task-conversation `link_count`
+correctly as registry cardinality; accepts unrelated links returned for a
+shared room but requires exactly one match for the owner-derived task identity;
+refuses a thread-specific relationship because current actor-publication
+evidence has no thread identity; orders owner revisions; and requires the
+current Chronos state to be exactly `ReadyForReview` with succeeded execution. Its custom diagnostic
+surface redacts task, room and actor identities. Four focused tests and strict
+isolated-target Clippy pass. Exact qualification evidence is retained in
+`design/evidence/j1-review-link-evidence-verification.md`.
+
+The production binary now includes read-only `j1-review-link-observe`. It takes
+only peer endpoints and the exact Moira journey identity as selectors. Moira
+supplies task and publication room identity; a room query supplies the unique
+matching task-conversation relationship and scope; the owner-derived task ID
+selects Chronos V9; the pure composer emits a content-free receipt or typed
+actionable refusal. The command accepts no caller scope, task, room, actor,
+attempt or revision aliases. Focused tests, strict isolated Clippy and an
+isolated production-binary check pass.
+
+This closes deterministic join semantics and implements the headless adapter,
+but not its real-process qualification or human surface. Restart,
+stale/reopened, ambiguous-room and unavailable-owner paths still need live
+evidence, followed by presentation to the named human reviewer. The J1
+owner-composition edge remains `Maybe` at that smaller boundary; acceptance,
+`Done`, stakeholder standing and the strict evaluator remain separate.
+
+The J1 authoring request now includes the canonical Rune and Rust composer
+identities and asks for only that operational adapter at the corresponding
+edge. Its new request identity is
+`75ad42d2497a14b512a955b4c0be7751b8c000a4a2f1f4b33c49c1b095efba60`.
+The real `rune-author` gate remains `questions_pending`, emitted no candidate
+and retained the four genuine paths plus the known duplicate ensemble-fit
+diagnostic. This is the correct result: pure deterministic composition is now
+proved, while live owner acquisition and qualification are not.
+
+### 2026-11-20 — J1 review-link runs through real owners and survives restart
+
+The read-only proof leaf now executes through the shipped Pantheon command
+against real Chronos, Moira and task-conversation owners. The qualification
+creates and completes the exact Chronos task, retains the exact Moira journey,
+participation and actor-publication relationship, binds the exact attempt-level
+task-conversation link, invokes `j1-review-link-observe`, cleanly restarts all
+three owners and obtains the identical typed evidence. It then stops Chronos
+and proves structured `chronos_unavailable` guidance, restarts it, creates a
+second exact relationship in the same shared room and proves structured
+`AmbiguousTaskConversationObservation` refusal. Neither failure promotes
+partial evidence.
+
+The real run found two owner-boundary defects that isolated DTO tests could not
+show. Chronos retained the number of the successful attempt internally but
+projected `None` after terminal completion, so exact post-completion composition
+was impossible without guessing. Its authority-free task projection now
+retains the terminal attempt number for `Succeeded` and `Failed` while still
+exposing no lease authority. Moira's task-agent journey already admitted
+Chronos incarnation zero, but its agent-participation and tool-continuation
+validators rejected the same canonical first incarnation as if it were absent.
+They now accept zero and continue to require a nonzero external task key and
+attempt number. Focused owner regressions and the restarted production-command
+gate pass.
+
+The canonical proof was strengthened rather than relaxed: the
+task-conversation relationship must name the exact attempt, and Chronos's
+owner-retained terminal attempt must equal the Moira namespace and admitted
+participation. Scry admits the revised machine; Smith formatting and Rust
+compatibility pass with no unsupported semantics. A real stale/reopened
+Chronos evolution and human presentation without implied acceptance or `Done`
+remain the next boundaries. The headless owner-acquisition adapter itself is no
+longer an open design question.
+
+The revised J1 request identity is
+`a6d4fde8ee537ae7f19371b8bf0b35f393a1900352b50d6089cd2372a05af23e`.
+Real `rune-author` remains `questions_pending`, emits no candidate and retains
+four genuine paths plus the known duplicate ensemble-fit diagnostic. Its J1
+proof-leaf question now asks only for real stale/reopened owner-status
+evolution; it does not rediscover the already-qualified adapter.
+
