@@ -4090,3 +4090,32 @@ invocation commands are bounded and evictable, while `Done` persists. A
 task-centric audit/history owner must preserve or resolve long-lived review
 evidence; until then an evicted receipt is unavailable, never inferred.
 
+### 2026-11-20 — The Maybe Machine qualifies the strict J1 evidence center
+
+The Gray is the Maybe Machine, not a neighboring experimentation zone. That
+clarification is now exercised rather than merely named: the Scry-accepted
+`j1-strict-review-evidence.machine.rune` has separate terminal success and
+refusal sinks. The generic single-success-sink path checker correctly reports
+that `composition-refused` cannot reach `strict-review-evidence-issued`; this is
+retained as proof that unresolved owner evidence cannot silently become Bool.
+Smith reports complete Rust compatibility with no unsupported guarantees.
+
+The first pure Rust projection joins the exact admitted task attempt, Daimon
+execution/result binding, Moira actor publication, task-conversation
+relationship, current Chronos review state and complete Agora identified
+message. It refuses stale revisions, retention gaps, continuation, ambiguity
+and every tested identity, actor, body or digest substitution. Its
+domain-separated receipt contains no result prose and binds the full relevant
+owner lineage, authority, grounding, revisions and exact output digest. Six
+focused tests and strict Clippy pass. The detailed qualification and explicit
+nonclaims are in
+`design/evidence/j1-strict-review-evidence-verification.md`.
+
+This is meaningful progress, not operational completion. The next slice must
+obtain the exact observations through bounded public owner clients and perform
+a final Chronos reobservation after the Agora read. Only that qualified live
+receipt may enter the separately governed UADD human gate; no disposition or
+V10 mutation has been inferred here. The cold focused test build took 8m51s
+while the tests took 0.00s, exposing dependency/build topology as the dominant
+cost and supporting cached focused gates for this proof cell.
+

@@ -1,0 +1,245 @@
+(machine j1-strict-review-evidence
+  (rosetta
+    (intent "issue one strict J1 review-evidence identity only when the Daimon-owned result, Moira-owned actor publication, Agora-owned identified message, task-conversation relationship, and current Chronos review task prove the same exact work")
+    (values owner-preservation exact-content exact-identity current-truth bounded-observation typed-refusal no-self-promotion)
+    (outcomes "one content-free receipt binds the exact owner-qualified agent result and digest to the exact actor-authored Agora message and already-qualified review-link task attempt" "missing evicted stale ambiguous conflicting mismatched or substituted result and publication evidence refuses without weakening the existing review-link proof" "the receipt is evidence for a separately governed human gate and grants no acceptance RevisionRequired Done task mutation publication rollout or go-no-go authority")
+    (who "the Pantheon J1 evidence composer, Daimon result owner, Moira task-agent journey owner, Agora conversation owner, task-conversation relationship owner, Chronos workflow owner, and named human acceptance owner")
+    (what "one bounded read-only exact-content join over owner-issued result, publication, message, relationship, and current review observations")
+    (when "after the J1 review-link receipt and Daimon owner-bound result both qualify, and while the exact published Agora message remains independently observable")
+    (where "Pantheon's strict J1 review-evidence boundary")
+    (why "task-room correlation and agent completion separately do not prove that the human is reviewing the exact qualified result which the admitted actor published")
+    (how "retain complete typed owner evidence; prove one task key incarnation and attempt; read the publication's exact message identity from a bounded revision-consistent Agora page; require exact room sequence message sequence author and body bytes; independently verify the Daimon output digest; then issue a content-free composite identity or typed refusal")
+    (extent "read-only composition only; no unbounded room scan, caller-authored alias, copied private event, thought or tool content, message mutation, human disposition, Chronos review command, retry, acceptance, Done, go-no-go, or rollout authority")
+    (examples "Daimon binds output O to task key K incarnation 4 attempt 2; the qualified review link binds the same attempt to actor A and message M in room R; Agora returns exactly M by identity and sequence with author A and body bytes O; Pantheon issues one strict evidence identity"))
+  (initial owner-evidence-retained)
+
+  (state owner-evidence-retained
+    (context evidence-grounding architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "retain every independently qualified owner observation before claiming a cross-owner result-publication relationship")
+      (values provenance completeness disclosure-bounds)
+      (outcomes "the J1 review-link receipt, Daimon result binding and exact bounded Agora identified-message observation retain separate owner lineage, revisions, identities and nonclaims")
+      (who "the Pantheon J1 evidence composer")
+      (what "three typed owner evidence families")
+      (when "before task-attempt or content equality is interpreted")
+      (where "one bounded in-memory composition attempt")
+      (why "flattening result, publication and task evidence can hide which owner supplied a disputed fact")
+      (how "accept only already-qualified review-link and Daimon result values plus a protocol-valid bounded Agora identified-message page, preserving all source evidence unchanged")
+      (extent "retention for this composition attempt only; no owner mutation or durable acceptance record")
+      (examples "Daimon remains output owner while Agora remains published-message owner")))
+
+  (state task-attempt-qualified
+    (context evidence-grounding architecture-flow-review)
+
+    (rosetta
+      (intent "prove that the Daimon result and review-link receipt name the same exact J1 task attempt")
+      (values exact-identity owner-separation canonical-representation)
+      (outcomes "Daimon's binary task key incarnation and attempt exactly equal the Moira-owned namespace retained by the review-link receipt" "the Daimon execution session turn terminal revision and output digest remain separately attributable" "task ID scope room message and Chronos review revision remain review-link owner facts")
+      (who "the Pantheon J1 evidence composer")
+      (what "one exact task-attempt join")
+      (when "after complete owner evidence is retained")
+      (where "the strict J1 evidence boundary")
+      (why "matching result prose or task labels cannot establish execution-to-attempt identity")
+      (how "compare typed binary task key numeric incarnation and nonzero attempt exactly without hashes of display strings or deployment aliases")
+      (extent "task-attempt identity only; no claim that the result was published or accepted")
+      (examples "Daimon attempt 2 refuses against a review-link for attempt 1 even when task and room labels match")))
+
+  (state result-publication-qualified
+    (context evidence-grounding architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "prove that Moira's retained publication is the exact Agora message containing the exact qualified Daimon result")
+      (values exact-content attributed-publication retention-honesty)
+      (outcomes "exact room message identity message sequence and actor equal the Moira publication evidence" "the current bounded Agora observation is at least the retained publication revision and exposes no retention gap covering the selected message" "the identified message body bytes exactly equal the qualified Daimon assistant bytes and independently hash to the owner-bound output digest" "zero duplicate changed-author changed-body stale or evicted matches refuse")
+      (who "the Agora conversation owner, Moira publication owner, Daimon result owner, and Pantheon J1 evidence composer")
+      (what "one exact result-to-publication proof")
+      (when "after task-attempt identity qualifies")
+      (where "the exact linked Agora room selected by the review-link receipt")
+      (why "a publication receipt without content identity and a result digest without publication identity leave the human reviewing an unproved join")
+      (how "request identified messages through the deployment-fixed participant; bound pages and revisions; select exactly one message by owner-issued ID and sequence; compare room actor and UTF-8 body bytes exactly; recompute SHA-256 and require the Daimon digest")
+      (extent "exact current publication evidence only; no inference from message order, similar prose, search ranking, absent retention, or caller-supplied author")
+      (examples "the same body posted by another actor or under another message identity refuses")))
+
+  (state strict-review-evidence-issued
+    (context evidence-grounding human-impact-decision)
+
+    (rosetta
+      (intent "issue one content-free identity for the exact J1 result currently presented for human review")
+      (values inspectability owner-lineage human-agency no-self-promotion)
+      (outcomes "the receipt binds the review-link identity, Daimon session turn execution task attempt terminal revision and output digest, and Agora room revision message identity sequence author and exact-content proof" "each owner observation remains independently re-observable" "the named human receives the exact challenged evidence without an implied disposition")
+      (who "the Pantheon J1 evidence composer and named human acceptance owner")
+      (what "one immutable typed strict J1 review-evidence receipt")
+      (when "task-attempt and result-publication proofs remain exact and Chronos is still ReadyForReview")
+      (where "the human review presentation and later UADD packet-binding boundary")
+      (why "the human gate must bind the exact reviewed result rather than a room link or completed turn in isolation")
+      (how "canonically project only qualified identities revisions digests and nonclaims, then compute a domain-separated receipt digest for later exact packet binding")
+      (extent "evidence identity only; no UADD response, stakeholder standing, acceptance, correction, rejection, Deferred settlement, Chronos mutation, Done or rollout authority")
+      (examples "receipt E identifies task attempt 2 and output digest D as exact message M while leaving the human response pending")))
+
+  (state composition-refused
+    (context evidence-grounding architecture-flow-review human-impact-decision)
+
+    (rosetta
+      (intent "retain the smallest unresolved J1 evidence join and a safe next observation without issuing a composite")
+      (values epistemic-honesty actionable-feedback no-fabrication maybe-preservation)
+      (outcomes "the refusal names the responsible owner edge, retained evidence identities, retention or freshness condition, and bounded next action" "the review-link and result observations remain independently valid where applicable, but no strict composite or human disposition is implied")
+      (who "the Pantheon J1 evidence composer and observing operator")
+      (what "one typed strict-composition refusal")
+      (when "task-attempt identity, exact message observation, attribution, content equality, digest, freshness, retention or current review state cannot qualify")
+      (where "the strict J1 evidence boundary")
+      (why "The Gray is the Maybe Machine: an unresolved join remains explicit instead of becoming a guessed Bool")
+      (how "preserve qualified inputs, name the nearest owner-observable missing fact, and refuse automatic substitution retry mutation or human-gate preparation")
+      (extent "refusal and orientation only")
+      (examples "an evicted Agora message reports retention-unavailable rather than treating silence as proof that publication never occurred")))
+
+  (edge
+    (from owner-evidence-retained)
+    (to task-attempt-qualified)
+    (emit task-attempt-qualified)
+
+    (rosetta
+      (intent "qualify one exact execution-to-task-attempt identity")
+      (values exact-identity owner-separation)
+      (outcomes "Daimon result and review-link receipt name one exact task key incarnation and attempt")
+      (who "the Pantheon J1 evidence composer")
+      (what "one deterministic task-attempt join")
+      (when "all required owner evidence is complete")
+      (where "the strict J1 evidence boundary")
+      (why "content equality cannot repair an identity mismatch")
+      (how "compare typed task key incarnation and attempt exactly")
+      (extent "identity qualification only")
+      (examples "task key K incarnation 4 attempt 2 matches in both owner receipts"))
+    (precondition "the review-link evidence is fully qualified and currently ReadyForReview; the Daimon result binding is complete and owner-qualified; the Daimon task key, incarnation and nonzero attempt exactly equal the Moira-owned task namespace retained in the review-link receipt"))
+
+  (edge
+    (from owner-evidence-retained)
+    (to composition-refused)
+    (emit composition-refused)
+
+    (rosetta
+      (intent "refuse incomplete or conflicting task-attempt evidence")
+      (values uncertainty-honesty no-substitution)
+      (outcomes "no strict J1 composite exists and the exact Maybe remains visible")
+      (who "the Pantheon J1 evidence composer")
+      (what "one typed task-attempt refusal")
+      (when "required evidence is absent invalid or mismatched")
+      (where "the strict J1 evidence boundary")
+      (why "a similarly named task or completed turn is not the admitted work")
+      (how "retain both owner receipts and name the failed identity edge")
+      (extent "refusal only")
+      (examples "a different incarnation refuses"))
+    (precondition "the review-link or Daimon result evidence is missing refused incomplete stale or invalid, or task key incarnation or attempt differs"))
+
+  (edge
+    (from task-attempt-qualified)
+    (to result-publication-qualified)
+    (emit result-publication-qualified)
+
+    (rosetta
+      (intent "qualify the exact actor-authored publication of the exact result")
+      (values exact-content attribution freshness)
+      (outcomes "one exact current Agora message contains the qualified Daimon result and matches Moira publication identity")
+      (who "the Agora owner, Moira publication owner, Daimon result owner, and Pantheon composer")
+      (what "one deterministic publication-content join")
+      (when "task-attempt identity is exact")
+      (where "the linked Agora room")
+      (why "room correlation does not prove which result was published")
+      (how "select by exact message identity and sequence, compare actor and bytes, and verify the output digest")
+      (extent "publication evidence only")
+      (examples "message M by actor A contains exactly output O"))
+    (precondition "a bounded protocol-valid Agora identified-message observation for the exact linked room contains exactly one message whose owner-issued ID and sequence equal the Moira publication; page revision is not older than the retained Agora revision; the retention frontier covers the message; author equals the retained actor; body bytes exactly equal the qualified Daimon assistant bytes; and independent SHA-256 equals the Daimon output digest"))
+
+  (edge
+    (from task-attempt-qualified)
+    (to composition-refused)
+    (emit composition-refused)
+
+    (rosetta
+      (intent "refuse unavailable ambiguous stale evicted or changed result publication evidence")
+      (values retention-honesty exact-content actionable-feedback)
+      (outcomes "the task-attempt join remains known but no strict review evidence is issued")
+      (who "the Pantheon J1 evidence composer")
+      (what "one typed publication refusal")
+      (when "the exact message-content proof fails")
+      (where "the strict J1 evidence boundary")
+      (why "missing or similar message content cannot stand in for the published result")
+      (how "name the owner mismatch retention edge or freshness failure and stop")
+      (extent "refusal only")
+      (examples "message M was evicted or edited and exact current bytes are unavailable"))
+    (precondition "the exact Agora message observation is missing refused incomplete stale truncated retention-gapped ambiguous duplicated or mismatches room revision identity sequence author body bytes or Daimon output digest"))
+
+  (edge
+    (from result-publication-qualified)
+    (to strict-review-evidence-issued)
+    (emit strict-review-evidence-issued)
+
+    (rosetta
+      (intent "issue one exact strict J1 review-evidence identity")
+      (values owner-lineage inspectability human-agency)
+      (outcomes "one domain-separated content-free receipt identifies the exact result being presented for review")
+      (who "the Pantheon J1 evidence composer and named human acceptance owner")
+      (what "one typed strict evidence receipt")
+      (when "all identity content attribution freshness and current-review proofs remain exact")
+      (where "the J1 review and UADD packet boundary")
+      (why "a later human response requires one exact challenged evidence identity")
+      (how "canonically encode the qualified identities revisions and digests and retain explicit nonclaims")
+      (extent "evidence only")
+      (examples "strict receipt E becomes the challenged evidence identity in a later UADD packet"))
+    (precondition "task-attempt-qualified's outcomes and result-publication-qualified's outcomes hold; the current review-link remains ReadyForReview; canonical receipt encoding is unique and bounded; and every nonclaim remains explicit"))
+
+  (signal task-attempt-qualified
+    (rosetta
+      (intent "announce exact task-attempt qualification")
+      (values exactness)
+      (outcomes "result-publication content may be evaluated")
+      (who "the Pantheon J1 evidence composer")
+      (what "task-attempt-qualified signal")
+      (when "the exact identity join passes")
+      (where "the strict J1 evidence boundary")
+      (why "identity and content are separate proofs")
+      (how "raised by task-attempt-qualified")
+      (extent "no publication or acceptance claim")
+      (examples "one execution is bound to one admitted attempt")))
+
+  (signal result-publication-qualified
+    (rosetta
+      (intent "announce exact result-publication qualification")
+      (values exact-content attribution)
+      (outcomes "strict evidence may be issued")
+      (who "the Pantheon J1 evidence composer")
+      (what "result-publication-qualified signal")
+      (when "message identity author bytes and digest pass")
+      (where "the strict J1 evidence boundary")
+      (why "the human must review the exact qualified result")
+      (how "raised by result-publication-qualified")
+      (extent "no human disposition or task mutation")
+      (examples "the owner-qualified result is the exact published message")))
+
+  (signal strict-review-evidence-issued
+    (rosetta
+      (intent "announce issuance of one strict J1 evidence identity")
+      (values inspectability human-agency)
+      (outcomes "a UADD packet may bind the exact challenged evidence")
+      (who "the Pantheon J1 evidence composer")
+      (what "strict-review-evidence-issued signal")
+      (when "the strict receipt is issued")
+      (where "the human review boundary")
+      (why "the next gate needs an exact evidence identity")
+      (how "raised by strict-review-evidence-issued")
+      (extent "no acceptance authority")
+      (examples "receipt E is ready for separately governed UADD review")))
+
+  (signal composition-refused
+    (rosetta
+      (intent "announce one typed unresolved strict-evidence edge")
+      (values epistemic-honesty maybe-preservation)
+      (outcomes "the operator receives an actionable refusal without fabricated composition")
+      (who "the Pantheon J1 evidence composer")
+      (what "composition-refused signal")
+      (when "identity content attribution freshness retention or current-review proof fails")
+      (where "the strict J1 evidence boundary")
+      (why "The Gray keeps the Maybe observable")
+      (how "raised by composition-refused")
+      (extent "no retry mutation or disposition")
+      (examples "the exact published message is no longer observable"))))

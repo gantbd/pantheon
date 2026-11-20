@@ -92,11 +92,17 @@ read-only input until that repository settles.
   within the existing budget. Checkpoint V5 re-blocks unstarted dependents from
   V1-V4 state without inventing historical acceptance. Exact review commands
   and evidence digests survive lost replies and real Unix-service restart, and
-  content-free review outcome signals are exposed. Remaining J1 work first
-  composes the separately qualified Daimon result, Moira actor publication,
-  task-conversation link and Chronos review snapshot into one strict evidence
-  identity; then a typed UADD packet/response must bind that exact composite to
-  the verified reviewer and authority. Only Approved may become Accepted, only
+  content-free review outcome signals are exposed. Pantheon's Scry-accepted
+  `j1-strict-review-evidence.machine.rune` and pure Rust projection now compose
+  the separately qualified Daimon result, Moira actor publication,
+  task-conversation link, current Chronos review snapshot and complete Agora
+  identified-message observation into one content-free strict evidence
+  identity. Six focused adversarial tests and strict Clippy pass. Remaining J1
+  work must acquire that evidence through bounded public owner clients,
+  reobserve Chronos after the Agora read to close the freshness race, and
+  qualify the real multi-owner sequence; then a typed UADD packet/response must
+  bind that exact composite to the verified reviewer and authority. Only
+  Approved may become Accepted, only
   ChangesRequested may become RevisionRequired, Deferred remains a held Maybe,
   and Rejected remains a distinct non-mutating outcome until an owner contract
   defines its task effect. The Pantheon headless behavior-facade command, real
