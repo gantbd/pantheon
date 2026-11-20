@@ -4174,3 +4174,21 @@ weaker in-process substitute. The next bounded proof is a real stale/reopened
 owner-state refusal. Only after that should the exact receipt enter a typed UADD
 packet and verified human-response composition.
 
+### 2026-11-20 — reopened work cannot reuse the old strict receipt
+
+The remaining stale-owner proof now uses Chronos's real V10 review operation
+and trusted worker. `RevisionRequired` moves the task from `ReadyForReview` to
+`Open` and requires feedback evidence; the current workflow projection then
+correctly carries no active attempt number even though attempt one remains in
+history. The strict command refuses that reopened state. After a real second
+claim and completion returns Chronos to `ReadyForReview` for attempt two, the
+same command refuses `AttemptMismatch` because Moira still admits attempt one.
+It never retargets the prior publication or receipt to newer work.
+
+The original restart, unavailable-owner and ambiguous-relationship gate and
+the new reopen/changed-attempt gate pass together (2/2, 2.11s); strict target
+Clippy passes with warnings denied. The strict evidence cell is now qualified
+for UADD packet design. The next center-out slice must bind this exact receipt
+and challenged content to one verified human request/response without granting
+the request, presenter or agent disposition authority.
+

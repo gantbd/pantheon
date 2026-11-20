@@ -20,12 +20,13 @@ use agora_local_daemon::{
     HostClockV1 as AgoraHostClockV1, ServerIncarnationV1,
 };
 use agora_service::v2::{ServiceLimitsV2, ServiceV2};
-use chronos_client::{WireClientV1, WorkflowWireClientV9};
+use chronos_client::{ReviewWireClientV10, WireClientV1, WorkflowWireClientV9};
 use chronos_engine::{Agent, CommandOutcomeV2, TaskState};
 use chronos_host::worker::{WorkerClientV1, WorkerRequestV1 as Work};
 use chronos_local::LocalClient;
 use chronos_wire::{
-    Command, Outcome, Request, RetrySafety, Revision, TaskSpec, workflow_v9 as workflow,
+    Command, Outcome, Request, RetrySafety, Revision, TaskSpec, review_v10 as review,
+    workflow_v9 as workflow,
 };
 use daimon_host::AuthenticatedSessionV1;
 use daimon_local_daemon::{
@@ -407,7 +408,7 @@ fn seed_chronos(directory: &Path, worker: &mut chronos_standalone::TrustedWorker
                         priority: 0,
                         dependencies: vec![],
                         capabilities: vec![],
-                        max_attempts: 1,
+                        max_attempts: 2,
                         retry_safety: RetrySafety::FenceUnknown,
                     }],
                 },
@@ -481,6 +482,136 @@ fn seed_chronos(directory: &Path, worker: &mut chronos_standalone::TrustedWorker
     assert_eq!(entry.snapshot.attempt_number, Some(1));
     assert_eq!(entry.reference.incarnation, "0");
     revision.parse().unwrap()
+}
+
+fn require_revision_required(directory: &Path) {
+    let mut client = LocalClient::new(directory);
+    let snapshot = client
+        .request_workflow_v9(workflow::Request {
+            version: 9,
+            command: workflow::Command::Snapshot {
+                task: "j1-owned-task".into(),
+            },
+        })
+        .unwrap();
+    let workflow::Outcome::Snapshot {
+        value: Some(entry),
+        revision: Some(expected),
+    } = snapshot.outcome
+    else {
+        panic!("reviewable workflow snapshot expected")
+    };
+    assert_eq!(entry.snapshot.status, workflow::Status::ReadyForReview);
+    assert_eq!(entry.snapshot.attempt_number, Some(1));
+    let digest = |byte: u8| format!("{byte:02x}").repeat(32);
+    let response = client
+        .request_review_v10(review::Request {
+            version: 10,
+            command: review::Command::ExecuteReview {
+                invocation: review::Invocation {
+                    serial: "1".into(),
+                    key: "j1-revision-required".into(),
+                },
+                expected,
+                task: entry.reference,
+                attempt: 1,
+                disposition: review::Disposition::RevisionRequired,
+                evidence: review::Evidence {
+                    decision_sha256: digest(1),
+                    reviewer_sha256: digest(2),
+                    authority_sha256: digest(3),
+                    challenged_sha256: digest(4),
+                    criteria_sha256: digest(5),
+                    findings_sha256: digest(6),
+                    feedback_sha256: Some(digest(7)),
+                },
+            },
+        })
+        .unwrap();
+    assert!(matches!(
+        response.outcome,
+        review::Outcome::ReviewResult {
+            result: review::ReviewResult::Applied {
+                attempt: 1,
+                disposition: review::Disposition::RevisionRequired,
+                ..
+            },
+            ..
+        }
+    ));
+}
+
+fn complete_reopened_attempt(worker: &mut chronos_standalone::TrustedWorkerHandle) {
+    let CommandOutcomeV2::AdvanceTime(Ok(time)) = worker
+        .call_worker(Work::AdvanceTime {
+            now: SystemTime::UNIX_EPOCH + Duration::from_secs(1),
+        })
+        .unwrap()
+        .unwrap()
+    else {
+        panic!("reopened engine time expected")
+    };
+    let CommandOutcomeV2::IssueGrant(Ok(grant)) = worker
+        .call_worker(Work::IssueGrant {
+            agent: Agent::new("j1-reopened-fixture"),
+            time: time.clone(),
+            validity_duration: Duration::from_secs(60),
+            claim_budget: Some(1),
+        })
+        .unwrap()
+        .unwrap()
+    else {
+        panic!("reopened grant expected")
+    };
+    let CommandOutcomeV2::ClaimNext(Ok(Some(task))) = worker
+        .call_worker(Work::ClaimNext {
+            grant,
+            time: time.clone(),
+            lease_duration: Duration::from_secs(30),
+        })
+        .unwrap()
+        .unwrap()
+    else {
+        panic!("reopened task expected")
+    };
+    let TaskState::Running(claim) = task.state else {
+        panic!("reopened running claim expected")
+    };
+    assert!(matches!(
+        worker
+            .call_worker(Work::Complete {
+                task_id: task.id,
+                lease: claim.lease,
+                time,
+            })
+            .unwrap()
+            .unwrap(),
+        CommandOutcomeV2::Complete(Ok(()))
+    ));
+}
+
+fn assert_attempt(
+    directory: &Path,
+    expected_attempt: Option<u32>,
+    expected_status: workflow::Status,
+) {
+    let mut client = LocalClient::new(directory);
+    let response = client
+        .request_workflow_v9(workflow::Request {
+            version: 9,
+            command: workflow::Command::Snapshot {
+                task: "j1-owned-task".into(),
+            },
+        })
+        .unwrap();
+    let workflow::Outcome::Snapshot {
+        value: Some(entry), ..
+    } = response.outcome
+    else {
+        panic!("current workflow snapshot expected")
+    };
+    assert_eq!(entry.snapshot.status, expected_status);
+    assert_eq!(entry.snapshot.attempt_number, expected_attempt);
 }
 
 fn template() -> domain::TemplateV1 {
@@ -1269,5 +1400,95 @@ fn production_command_composes_real_owners_and_survives_restart() {
         .request(&LocalRequestV1::Drain)
         .unwrap();
     relationships.join().unwrap();
+    chronos.stop();
+}
+
+#[test]
+fn strict_command_refuses_reopened_work_and_changed_attempt() {
+    let fixture = Fixture::new();
+    let (chronos, mut worker) = start_chronos(&fixture.chronos, true);
+    seed_chronos(&fixture.chronos, worker.as_mut().unwrap());
+    let (_, publication) = seeded_agora();
+    let journey = seed_moira(&fixture, publication);
+    seed_terminal_participation(&fixture);
+
+    let relationships = start_relationships(&fixture, false);
+    let link_client = TaskConversationLocalClientV1::new(&fixture.relationship_socket);
+    assert_eq!(
+        link_client
+            .request(&LocalRequestV1::Bind {
+                link: LinkWireV1 {
+                    link_id: "77777777777777777777777777777777".into(),
+                    task: TaskReferenceWireV1 {
+                        scope: "product-delivery".into(),
+                        task: "j1-owned-task".into(),
+                        incarnation: "0".into(),
+                        attempt: Some(1),
+                    },
+                    conversation: ConversationReferenceWireV1 {
+                        room: "exact-room".into(),
+                        thread_root: None,
+                    },
+                    operation_id: "88888888888888888888888888888888".into(),
+                    principal_id: "99999999999999999999999999999999".into(),
+                    created_at_unix_seconds: 100,
+                    visibility_principal_id: None,
+                    chronos_revision: "2".into(),
+                    agora_revision: publication.room_revision,
+                    observed_at_unix_seconds: 101,
+                },
+            })
+            .unwrap()
+            .status,
+        "created"
+    );
+
+    let moira = start_moira_connections(&fixture, 2);
+    let participation = start_participation(&fixture, 2);
+    let daimon = start_daimon(&fixture);
+    let (agora_engine, _) = seeded_agora();
+    let agora = start_agora(&fixture, agora_engine);
+    let baseline = invoke_strict(&fixture, journey);
+    moira.join().unwrap();
+    participation.join().unwrap();
+    daimon.join().unwrap();
+    agora.join().unwrap();
+    assert_eq!(baseline["status"], "strict_review_evidence_issued");
+
+    require_revision_required(&fixture.chronos);
+    assert_attempt(&fixture.chronos, None, workflow::Status::Open);
+    let moira = start_moira(&fixture);
+    let reopened = invoke_strict_refusal(&fixture, journey);
+    moira.join().unwrap();
+    assert_eq!(reopened["status"], "evidence_refused");
+    assert!(
+        reopened["detail"]
+            .as_str()
+            .unwrap()
+            .contains("initial J1 review-link observation refused")
+    );
+    assert!(
+        reopened["boundary"]
+            .as_str()
+            .unwrap()
+            .contains("Maybe Machine")
+    );
+
+    complete_reopened_attempt(worker.as_mut().unwrap());
+    assert_attempt(&fixture.chronos, Some(2), workflow::Status::ReadyForReview);
+    let moira = start_moira(&fixture);
+    let changed_attempt = invoke_strict_refusal(&fixture, journey);
+    moira.join().unwrap();
+    assert_eq!(changed_attempt["status"], "evidence_refused");
+    assert!(
+        changed_attempt["detail"]
+            .as_str()
+            .unwrap()
+            .contains("AttemptMismatch")
+    );
+
+    link_client.request(&LocalRequestV1::Drain).unwrap();
+    relationships.join().unwrap();
+    drop(worker);
     chronos.stop();
 }

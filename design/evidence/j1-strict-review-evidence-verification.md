@@ -175,9 +175,22 @@ cost and reuse signal, not domain latency; recurring gates should remain
 focused and eventually share owner fixtures without weakening their process
 boundaries.
 
-This closes successful live strict composition, same-evidence restart and
-unavailable-owner refusal. A real stale or reopened owner-state sequence, UADD
-packet binding, verified reviewer response, Chronos V10 composition,
+This closes successful live strict composition, same-evidence restart,
+unavailable-owner refusal and real stale/reopened owner-state refusal. The
+second gate applies a genuine Chronos V10 `RevisionRequired` with feedback
+evidence. While the task is reopened as `Open`, the strict command refuses; the
+historical first attempt is correctly absent from the current-attempt
+projection. A real worker then completes attempt two and returns the task to
+`ReadyForReview`; the unchanged Moira attempt-one admission still refuses with
+`AttemptMismatch` rather than silently retargeting.
+
+Both gates pass together:
+
+```text
+2 passed; 0 failed; runtime 2.11s
+```
+
+UADD packet binding, verified reviewer response, Chronos V10 composition,
 task-centric durable audit, TUI parity and rollout readiness remain open. Only
 this qualified strict receipt may enter a separately governed UADD request for
 the named human.

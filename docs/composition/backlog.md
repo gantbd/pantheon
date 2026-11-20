@@ -108,9 +108,11 @@ read-only input until that repository settles.
   leaf tests and strict Clippy pass. The real matching owner gate now qualifies
   exact success across both Moira profiles, Daimon, Agora, task-conversation and
   Chronos, reproduces the same strict receipt after owner restart, and preserves
-  an unavailable Chronos observation as a structured Maybe-Machine refusal.
-  A real stale/reopened owner-state sequence remains before the operational cell
-  closes; then a typed UADD packet/response must
+  an unavailable Chronos observation as a structured Maybe-Machine refusal. A
+  second real gate applies Chronos V10 `RevisionRequired`, refuses the reopened
+  `Open` state, completes a real second attempt and then refuses the old Moira
+  admission with `AttemptMismatch`; no prior receipt silently retargets. The
+  strict operational cell is closed. Next, a typed UADD packet/response must
   bind that exact composite to the verified reviewer and authority. Only
   Approved may become Accepted, only
   ChangesRequested may become RevisionRequired, Deferred remains a held Maybe,
