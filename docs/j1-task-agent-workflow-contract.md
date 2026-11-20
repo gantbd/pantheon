@@ -277,9 +277,15 @@ required. Moira `64d5b24` now supplies the independently qualified Aegis
 adapter for the dispatch boundary: it authorizes `Submit` for one exact
 owner-issued participation identity, rejects substituted identity, requires a
 current non-expired decision and returns only non-bearer decision attribution.
-The session-local grant is never persisted. The composer still must invoke
-that adapter freshly after durable prepare and before dispatch; adapter
-availability alone is not participation admission or journey progression.
+The session-local grant is never persisted. Moira `01f3bb4` now adds the
+preceding durable boundary: the journey owner retains the entire qualified
+blueprint in canonical checkpoint V4 before any authority call or participation
+dispatch. Exact replay does not advance storage, divergent intent fences, V1
+through V3 checkpoints remain readable, and a production SQLite reopen retains
+the exact blueprint while leaving the journey at `RoomReady`. The composer
+still must obtain the trusted workflow/deliberation observations, invoke the
+Aegis adapter freshly, dispatch once and reconcile the participation owner;
+prepared state alone is not participation admission or journey progression.
 
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira

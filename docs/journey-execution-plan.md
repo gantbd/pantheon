@@ -2433,6 +2433,17 @@ Operational means observable completed work, not a configured role name:
   participation owner and only then retain the journey transition. No adapter
   constructor, grant handle or successful unit call is itself evidence that a
   participation exists.
+- Moira `01f3bb4` closes the durable prepare portion in the task-agent owner.
+  Canonical checkpoint V4 retains the full owner-reconciled blueprint before
+  authority or dispatch; exact replay is storage-stable, divergence fences and
+  V1–V3 checkpoints upgrade with no invented participation. A production
+  SQLite reopen qualification proves the blueprint survives restart while the
+  journey remains honestly `RoomReady`. Thirteen deterministic journey tests,
+  the SQLite qualification, strict all-target Clippy and the principal reverse
+  dependency build pass. The remaining composer must source the trusted
+  observations, call this prepare mutation, obtain a fresh exact-identity Aegis
+  decision, dispatch once, reconcile absence/match/conflict at the participation
+  owner and only then retain `ParticipationAdmitted`.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

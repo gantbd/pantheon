@@ -587,8 +587,8 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
 const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
     component: "moira-aegis-progression",
     surface: "task-agent.activation.v1",
-    missing: "trusted workflow-relationship and deliberation-member observation, durable prepare-before-dispatch, composition of Moira's qualified fresh command-scoped Aegis participation authority, participation-owner admission and lost-reply reconciliation, subsequent worker/session lifecycle and completed-work receipts; the qualified same-client room path also does not yet retain standalone-process non-bearer Aegis decision attribution",
-    next_boundary: "compose the workflow-relationship and deliberation observers, persist the qualified participation blueprint before dispatch, invoke the existing exact-identity Aegis authority freshly, dispatch and reconcile the participation-owner result, retain only non-bearer decision attribution, then prepare the Daimon open effect",
+    missing: "trusted workflow-relationship and deliberation-member observation, composition of Moira's qualified durable blueprint preparation with its fresh command-scoped Aegis participation authority, participation-owner admission and lost-reply reconciliation, subsequent worker/session lifecycle and completed-work receipts; the qualified same-client room path also does not yet retain standalone-process non-bearer Aegis decision attribution",
+    next_boundary: "compose the workflow-relationship and deliberation observers, call the existing durable blueprint preparation, invoke the existing exact-identity Aegis authority freshly, dispatch once and reconcile absence, exact match or conflict at the participation owner, retain only non-bearer decision attribution, then prepare the Daimon open effect",
 };
 
 const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {
@@ -1033,7 +1033,7 @@ mod tests {
         assert!(
             ROLE_ACTIVATION_GAP
                 .missing
-                .contains("composition of Moira's qualified fresh command-scoped Aegis")
+                .contains("durable blueprint preparation with its fresh command-scoped Aegis")
         );
         assert!(
             ROLE_ACTIVATION_GAP
