@@ -2731,6 +2731,12 @@ fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
         "bind_task_attempt",
         "task_attempt: Option<TaskAttemptBindingV1>",
         "TaskAttemptConflict",
+        "AgoraRoomReceiptV1",
+        "derive_room_binding",
+        "RoomReady",
+        "room: Option<RoomBindingV1>",
+        "bind_room",
+        "RoomConflict",
     ] {
         assert!(
             progression.contains(required),
@@ -2749,7 +2755,9 @@ fn j1_dynamic_workflow_instantiation_remains_moira_owned() {
         "preview_operation",
         "task_attempt_ready",
         "task_attempt_json",
-        r#""aegis_delegation": null"#,
+        "room_ready",
+        "room_json",
+        r#""aegis_decision_attribution": null"#,
         r#""chronos_attempt": chronos_attempt"#,
         r#""daimon_session": null"#,
         r#""completed_work_receipt": null"#,

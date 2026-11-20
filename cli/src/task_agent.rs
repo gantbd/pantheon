@@ -408,10 +408,16 @@ fn preview_json(value: &journey::PreviewViewV1) -> Value {
 
 fn journey_json(value: &journey::JourneyViewV1) -> Value {
     let chronos_attempt = value.task_attempt.map(task_attempt_json);
-    let (activation_status, activation_boundary) = if chronos_attempt.is_some() {
+    let room = value.room.map(room_json);
+    let (activation_status, activation_boundary) = if room.is_some() {
+        (
+            "room_ready",
+            "Moira durably retained the exact Agora owner receipt; this is a task-room relationship fact, not room authority, reusable Aegis authority, participation, session, provider call, or completion",
+        )
+    } else if chronos_attempt.is_some() {
         (
             "task_attempt_ready",
-            "Moira durably retained one exact Chronos claim; no Aegis delegation, participation, Daimon session, provider call, or completed-work receipt is implied",
+            "Moira durably retained one exact Chronos claim; no Aegis authorization, room, participation, Daimon session, provider call, or completed-work receipt is implied",
         )
     } else {
         (
@@ -434,16 +440,30 @@ fn journey_json(value: &journey::JourneyViewV1) -> Value {
         },
         "preview": preview_json(&value.preview),
         "task_attempt": chronos_attempt.clone(),
+        "room": room.clone(),
         "activation": {
             "status": activation_status,
-            "aegis_delegation": null,
+            "aegis_decision_attribution": null,
             "chronos_attempt": chronos_attempt,
+            "room": room,
             "participation": null,
             "daimon_session": null,
             "expires_at": null,
             "completed_work_receipt": null,
             "boundary": activation_boundary,
         },
+    })
+}
+
+fn room_json(value: journey::RoomBindingV1) -> Value {
+    json!({
+        "journey_owner": hex(&value.journey.owner.0),
+        "journey_sequence": value.journey.sequence,
+        "expected_journey_revision": value.expected_journey_revision,
+        "source": hex(&value.source),
+        "room_sequence": value.room_sequence,
+        "agora_revision": value.agora_revision,
+        "boundary": "exact retained Agora owner receipt only; this is a relationship reference, not room authority, an Aegis grant, participation, session, provider invocation, or completion receipt",
     })
 }
 
@@ -674,6 +694,7 @@ mod tests {
                 attempt_number: 2,
                 chronos_revision: 9,
             }),
+            room: None,
         });
         assert_eq!(projected["phase"], "TaskAttemptReady");
         assert_eq!(projected["activation"]["status"], "task_attempt_ready");
@@ -682,8 +703,52 @@ mod tests {
             projected["activation"]["chronos_attempt"],
             projected["task_attempt"]
         );
-        assert!(projected["activation"]["aegis_delegation"].is_null());
+        assert!(projected["activation"]["aegis_decision_attribution"].is_null());
         assert!(projected["activation"]["daimon_session"].is_null());
+
+        let room_ready = journey_json(&journey::JourneyViewV1 {
+            revision: 2,
+            phase: journey::PhaseV1::RoomReady,
+            room: Some(journey::RoomBindingV1 {
+                journey: id,
+                expected_journey_revision: 1,
+                source: id.owner.0,
+                room_sequence: id.sequence,
+                agora_revision: 10,
+            }),
+            ..journey::JourneyViewV1 {
+                id,
+                workflow: journey::WorkflowRefV1 {
+                    owner: id.owner,
+                    sequence: id.sequence,
+                },
+                revision: 1,
+                phase: journey::PhaseV1::TaskAttemptReady,
+                admission: journey::InstantiateRequestV1 {
+                    operation: journey::InstantiateOperationIdV1([19; 16]),
+                    preview: preview.id,
+                    expected_owner_revision: preview.owner_revision,
+                    confirmation: journey::HumanConfirmationV1 {
+                        preview: preview.id,
+                        accountable_human: preview.request.accountable_human,
+                        consequence_digest: preview.consequence_digest,
+                    },
+                },
+                confirmed_at: 101,
+                preview,
+                task_attempt: Some(journey::TaskAttemptBindingV1 {
+                    journey: id,
+                    expected_journey_revision: 0,
+                    task: preview.request.task.task,
+                    attempt_number: 2,
+                    chronos_revision: 9,
+                }),
+                room: None,
+            }
+        });
+        assert_eq!(room_ready["activation"]["status"], "room_ready");
+        assert_eq!(room_ready["room"]["agora_revision"], 10);
+        assert_eq!(room_ready["activation"]["room"], room_ready["room"]);
     }
 
     #[test]

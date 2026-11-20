@@ -2208,9 +2208,25 @@ restarts the SQLite-backed Moira owner between every command and retains the
 same owner-issued preview and journey. Admission remains only `Admitted` until
 the trusted worker/store transition; Pantheon can then observe
 `TaskAttemptReady` without inferring a room, participation, session, provider
-call, authority or Chronos disposition. Current Aegis delegation, later
-progression, aggregate profile and agenda composition remain ahead of TUI
-parity.
+call, authority or Chronos disposition. Exact owner-derived room and later
+progression effects, fresh command-scoped Aegis authorization at dispatch,
+aggregate profile and agenda composition remain ahead of TUI parity. Aegis V1
+grant handles and catalogues are session/epoch-local; the journey must never
+checkpoint them as current authority. It may retain only bounded decision
+attribution for the exact effect, and restart, epoch change or expiry requires
+fresh authorization.
+
+The first room relationship implementation now exercises the correct recovery
+shape without claiming production readiness. Moira's Agora adapter persists the
+exact request before dispatch and the owner outcome before return; the journey
+accepts only its own owner/sequence plus a nonzero Agora revision and then
+publishes `RoomReady`. Unknown delivery repeats only the retained request
+identity. A successful room followed by a journey-store conflict retains the
+receipt, and bind-only recovery plus later replay perform no additional Agora
+mutation. Canonical checkpoints, SQLite, public wire and Pantheon's observer all
+carry the same non-authorizing relationship evidence. A production adapter
+checkpoint store and real authenticated Agora/Aegis process qualification are
+still required before this journey may be called operational.
 
 Chronos revision 66 also makes the priority-10 product-manager alignment task
 and its six prerequisites inspectable through the live dependency graph. The

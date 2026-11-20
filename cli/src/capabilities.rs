@@ -587,8 +587,8 @@ pub const AGENT_TOOL_GAPS: &[AgentToolGap] = &[AgentToolGap {
 const ROLE_ACTIVATION_GAP: AgentRoleGap = AgentRoleGap {
     component: "moira-aegis-progression",
     surface: "task-agent.activation.v1",
-    missing: "owner progression from Moira's persisted exact Chronos task-attempt into a current Aegis delegation and exact participation/worker/session lifecycle with expiry and completed-work receipts",
-    next_boundary: "consume only Moira's durable TaskAttemptReady evidence, retain the current Aegis decision and expiry under its owner, then derive participation and session effects without exposing the Chronos lease or delegation bearer",
+    missing: "production composition of Moira's tested durable Agora room effect with fresh command-scoped Aegis authorization at dispatch, followed by exact participation/worker/session lifecycle and completed-work receipts",
+    next_boundary: "back the RoomReady adapter checkpoint with a production owner store, qualify it through a real authenticated Agora/Aegis port, retain only non-bearer decision attribution, then derive participation from the durable room and task-attempt evidence",
 };
 
 const WORKER_LIFECYCLE_GAP: AgentRoleGap = AgentRoleGap {
@@ -1025,6 +1025,30 @@ mod tests {
             ]
             .into_iter()
             .collect()
+        );
+    }
+
+    #[test]
+    fn role_activation_never_models_volatile_aegis_grants_as_durable_state() {
+        assert!(
+            ROLE_ACTIVATION_GAP
+                .missing
+                .contains("fresh command-scoped Aegis authorization at dispatch")
+        );
+        assert!(
+            ROLE_ACTIVATION_GAP
+                .next_boundary
+                .contains("retain only non-bearer decision attribution")
+        );
+        assert!(
+            !ROLE_ACTIVATION_GAP
+                .missing
+                .contains("current Aegis delegation")
+        );
+        assert!(
+            !ROLE_ACTIVATION_GAP
+                .next_boundary
+                .contains("current Aegis delegation")
         );
     }
 

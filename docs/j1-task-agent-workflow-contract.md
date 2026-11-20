@@ -140,6 +140,14 @@ derives exact effect identities and submits them through selected trusted
 receivers/workers. Pantheon never submits a raw participation binding, Chronos
 lease, Daimon session envelope or Agora room mutation on the workflow's behalf.
 
+Aegis authorization is transversal, not a durable journey phase. A receiver
+must obtain fresh command-scoped authorization immediately before dispatching
+each prepared peer effect. Aegis V1 grant handles, catalogues and ancestry are
+session/epoch-local and must never be checkpointed as current or reusable
+authority. The journey may retain bounded decision attribution, epoch and
+expiry as historical evidence for the exact effect; restart, epoch change or
+expiry requires reauthorization and never revives a prior grant.
+
 ## Minimum state model
 
 1. `Previewed` — read-only, expiring and non-durable unless explicitly retained.
@@ -234,6 +242,20 @@ proves normal progression, restart, conflict recovery and zero additional
 worker requests during rebind. This remains claim evidence, not a lease bearer,
 Aegis delegation, participation, session, provider invocation or completion.
 
+The next deterministic and durable relationship edge is implemented but not
+yet production-composed. Moira now prepares the exact revision-bound Agora room
+request before dispatch, retains the Agora outcome before returning, and
+advances the journey from `TaskAttemptReady` to `RoomReady` only from the exact
+owner/sequence/revision receipt. Outcome-unknown recovery repeats the identical
+Agora request identity; a journey-store conflict after room creation returns
+the successful room receipt, and bind-only recovery performs zero additional
+Agora calls. Canonical checkpoint V3 upgrades admitted V1 and task-attempt V2,
+SQLite retains the relationship transactionally, and the read-only protocol
+projects it. The remaining production gate is a durable room-adapter checkpoint
+store plus a real authenticated Agora/Aegis process qualification. Until that
+gate passes, this is qualified core/adapter evidence, not an operational room
+worker or retained Aegis decision attribution.
+
 Moira `b46ef62` removes caller-supplied observation/expiry/confirmation time:
 clients request a bounded TTL and the owner retains trusted time. Moira
 `28fae97` publishes the independent transport-neutral DTO and canonical wire
@@ -257,7 +279,8 @@ step. Its observer now renders `TaskAttemptReady` and the exact retained claim
 when Moira publishes it, while keeping Aegis delegation, participation, Daimon
 session and completion explicitly absent. This completes cut 1, the headless
 admission portion of cut 3 and the first trusted evidence transition. Current
-Aegis delegation, later owner-derived effects, aggregate profile configuration,
+owner-derived room and participation effects, fresh command-scoped Aegis
+authorization at their dispatch boundaries, aggregate profile configuration,
 operator-agenda projection and TUI parity remain open.
 
 ### Reuse boundary

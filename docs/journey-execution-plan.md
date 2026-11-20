@@ -2342,8 +2342,9 @@ Operational means observable completed work, not a configured role name:
   human confirmation and durable journey observation. Every role plan now
   includes that bounded journey observation. The exact Chronos attempt is now a
   durable first progression receipt. What remains is owner progression from
-  that receipt into a current Aegis delegation and expiry, participation and
-  Daimon worker/session; admission alone still starts no peer effect.
+  that receipt into exact room, participation and Daimon worker/session effects,
+  each freshly authorized through Aegis at its command-scoped dispatch boundary;
+  admission alone still starts no peer effect.
 - Moira `dacd31c` closed the deterministic part of the first progression
   boundary; `9ddb85f` now persists it. The trusted Chronos worker claims once,
   submits the exact zero- or later-incarnation receipt to the journey store and
@@ -2353,9 +2354,13 @@ Operational means observable completed work, not a configured role name:
   claims conflict. A storage conflict after a successful claim returns that
   claim, and bind-only recovery reaches the durable phase with zero further
   Chronos worker requests. A real Chronos server plus SQLite owner proves this
-  behavior. The remaining blocker now begins at current Aegis delegation,
-  participation and worker/session facts; the retained claim is not a lease
-  bearer, authority grant, session, provider call or completion receipt.
+  behavior. The remaining blocker now begins at the owner-prepared Agora room
+  effect, fresh command-scoped Aegis authorization at dispatch, participation
+  and worker/session facts; the retained claim is not a lease bearer, authority
+  grant, session, provider call or completion receipt. Aegis V1 grants and
+  catalogues are session/epoch-local, so no journey checkpoint may call them a
+  current delegation or revive them after restart. Only bounded decision
+  attribution for the exact effect may be retained as historical evidence.
 - The bounded task-agent observer now exposes that retained admission basis
   rather than reducing it to a phase label. Its additive projection includes
   the exact task evidence, template/version/digest, profile and room policy,
@@ -2363,10 +2368,25 @@ Operational means observable completed work, not a configured role name:
   evidence digests, preview and instantiate operation identities, confirmation
   consequence, budgets and policy digests. A separate structured activation
   block is `not_published` while admitted and becomes `task_attempt_ready` only
-  when Moira publishes the exact retained claim. Aegis delegation,
+  when Moira publishes the exact retained claim. Aegis authorization evidence,
   participation, Daimon session, expiry and completed-work receipt remain null.
   This makes the boundary usable for bounded PM/SRE/frontier supervision
   without treating claim evidence as authority, execution or completion.
+- The next owner relationship edge now exists in Moira core and its Agora
+  adapter. The adapter durably prepares one exact revision-bound room request,
+  fences divergent work after uncertain delivery, retains a definitive owner
+  outcome, and composes that receipt into the journey store. A store conflict
+  after successful room creation returns the receipt; bind-only recovery and
+  whole-operation replay issue zero additional Agora requests. The journey
+  advances to `RoomReady` only when source equals the journey owner, room
+  sequence equals the workflow sequence and Agora revision is nonzero.
+  Canonical checkpoint V3 upgrades V1/V2, SQLite retains the relationship, and
+  public wire plus Pantheon observation expose the same exact evidence. Focused
+  tests cover prepare-before-dispatch, outcome-unknown restart, divergent-intent
+  refusal, store-conflict recovery, replay, canonical upgrade and reopen. This
+  is not yet operational: the adapter still needs its production checkpoint
+  store and a real authenticated Agora/Aegis process qualification with bounded
+  non-bearer decision attribution.
 - The product-manager plan no longer lists stakeholder-ensemble observation as
   a missing surface. `moira-deliberation-observe` reuses the same
   status/deliberation/review/status owner algorithm as aggregate headless mode,

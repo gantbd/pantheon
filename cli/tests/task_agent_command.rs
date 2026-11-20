@@ -261,7 +261,7 @@ fn headless_binary_previews_confirms_admits_and_reopens_exact_journey() {
         "0f".repeat(32)
     );
     assert_eq!(observed["journey"]["activation"]["status"], "not_published");
-    assert!(observed["journey"]["activation"]["aegis_delegation"].is_null());
+    assert!(observed["journey"]["activation"]["aegis_decision_attribution"].is_null());
     assert!(observed["journey"]["activation"]["daimon_session"].is_null());
     assert!(observed["journey"]["activation"]["completed_work_receipt"].is_null());
 }
